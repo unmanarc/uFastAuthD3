@@ -1,0 +1,28 @@
+SPDX-License-Identifier: SSPL-1.0 OR LicenseRef-Commercial
+
+Copyright (C) Aaron Mizrachi <dev@unmanarc.com>. All rights reserved.
+
+The sole copyright holder of this software is Aaron Mizrachi (an individual).
+
+This software is offered under a dual-licensing model:
+
+Server Side Public License, version 1 (SSPL v1), as published by MongoDB, Inc.; or
+A commercial/proprietary license granted directly by the copyright holder.
+You may choose and comply with either of the above licenses. If you wish to use this software under terms other than SSPL v1, including commercial use under different conditions, please contact the copyright holder:
+Contact: Aaron Mizrachi <dev@unmanarc.com>
+
+Under the SSPL v1 option:
+This program is licensed under the Server Side Public License, version 1. You may redistribute and/or modify it under the terms of the SSPL v1.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the Server Side Public License for more details.
+
+You should have received a copy of the Server Side Public License along with this program. If not, see:
+
+- https://www.mongodb.com/licensing/server-side-public-license
+- https://spdx.org/licenses/SSPL-1.0.html
+
+------------
+
+Special OpenSSL linking exception:
+
+As a special exception, the copyright holder gives permission to link the code of portions of this program with the OpenSSL library under certain conditions as described in each individual source file and to distribute linked combinations including the program with the OpenSSL library. You must comply with the Server Side Public License in all respects for all of the code used other than as permitted herein. If you modify file(s) with this exception, you may extend this exception to your version of the file(s), but you are not obligated to do so. If you do not wish to do so, delete this exception statement from your version. If you delete this exception statement from all source files in the program, then also delete it in this license file.
