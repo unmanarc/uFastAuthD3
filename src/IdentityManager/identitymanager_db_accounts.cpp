@@ -238,60 +238,6 @@ time_t IdentityManager_DB::Accounts_DB::getAccountCreationTime(const std::string
 
     return std::numeric_limits<time_t>::max();
 }
-/*
-std::list<AccountDetails> IdentityManager_DB::Accounts_DB::searchAccounts(std::string dataTablesFilters, size_t limit, size_t offset)
-{
-    std::list<AccountDetails> ret;
-    Threads::Sync::Lock_RD lock(_parent->m_mutex);
-
-    Abstract::STRING accountName;
-    Abstract::BOOL admin,enabled,confirmed;
-    Abstract::DATETIME expiration;
-
-    std::string sSqlQuery = "SELECT `accountName`,`isAdmin`,`isEnabled`,`expiration`,`isAccountConfirmed` FROM iam.accounts";
-
-    if (!dataTablesFilters.empty())
-    {
-        dataTablesFilters = '%' + dataTablesFilters + '%';
-        // TODO: this is the previous implementation, but now has to be compatible with the new database model
-        //sSqlQuery+=" WHERE (`accountName` LIKE :SEARCHWORDS OR `givenName` LIKE :SEARCHWORDS OR `lastName` LIKE :SEARCHWORDS OR `email` LIKE :SEARCHWORDS OR `description` LIKE :SEARCHWORDS)";
-    }
-
-    if (limit)
-        sSqlQuery+=" LIMIT :LIMIT OFFSET :OFFSET";
-
-    sSqlQuery+=";";
-
-    SQLConnector::QueryInstance i = _parent->m_sqlConnector->qSelect(sSqlQuery,
-                                          {
-                                              {":SEARCHWORDS",MAKE_VAR(STRING,dataTablesFilters)},
-                                              {":LIMIT",MAKE_VAR(UINT64,limit)},
-                                              {":OFFSET",MAKE_VAR(UINT64,offset)}
-                                          },
-                                          { &accountName, &admin, &enabled, &expiration, &confirmed });
-    while (i.getResultsOK() && i.query->step())
-    {
-        AccountDetails rDetail;
-
-        rDetail.accountFlags.confirmed = confirmed.getValue();
-        rDetail.accountFlags.enabled = enabled.getValue();
-        rDetail.accountFlags.admin = admin.getValue();
-        rDetail.expired = !expiration.getValue()?false:expiration.getValue()<time(nullptr);
-        rDetail.accountName = accountName.getValue();
-        rDetail.fieldValues = getAccountDetailValues(accountName.getValue(), ACCOUNT_DETAILS_SEARCH);
-
-        auto allFields = listAccountDetailFields();
-        for (auto &i : rDetail.fieldValues)
-        {
-            if (allFields.find(i.first) != allFields.end())
-                rDetail.fields[i.first] = allFields[i.first];
-        }
-
-        ret.push_back(rDetail);
-    }
-
-    return ret;
-}*/
 
 std::string getColumnNameFromColumnPos(const json &dataTablesFilters, const uint32_t & pos)
 {
@@ -329,12 +275,12 @@ Json::Value IdentityManager_DB::Accounts_DB::searchAccounts(const json &dataTabl
         std::string dir = JSON_ASSTRING(orderArrayElement,"dir","desc");
 
         auto isValidField = [](const std::string& c) -> bool {
-            static const std::vector<std::string> campos_validos = {
+            static const std::vector<std::string> validFields = {
                 "accountName", "creation", "expiration", "lastLogin",
                 "lastChange", "isAdmin", "isEnabled", "isBlocked",
                 "isAccountConfirmed", "creator"
             };
-            return std::find(campos_validos.begin(), campos_validos.end(), c) != campos_validos.end();
+            return std::find(validFields.begin(), validFields.end(), c) != validFields.end();
         };
 
         if (isValidField(columnName))
@@ -428,63 +374,6 @@ Json::Value IdentityManager_DB::Accounts_DB::searchAccounts(const json &dataTabl
     }
 
     return ret;
-
-
-
-/*
-    Abstract::STRING accountName;
-    Abstract::BOOL admin, enabled, confirmed;
-    Abstract::DATETIME expiration;
-
-    std::string sSqlQuery = "SELECT DISTINCT va.`accountName`, va.`isAdmin`, va.`isEnabled`, va.`expiration`, va.`isAccountConfirmed` FROM iam.accounts va";
-
-    if (!sSearchWords.empty())
-    {
-        sSearchWords = '%' + sSearchWords + '%';
-        sSqlQuery += " JOIN iam.accountDetailValues vadv ON va.`accountName` = vadv.`f_accountName`";
-        sSqlQuery += " JOIN iam.accountDetailFields vadf ON vadv.`f_fieldName` = vadf.`fieldName`";
-        sSqlQuery += " WHERE vadf.`includeInSearch` = 1 AND vadv.`value` LIKE :SEARCHWORDS";
-    }
-
-    if (limit)
-    {
-        sSqlQuery += " LIMIT :LIMIT OFFSET :OFFSET";
-    }
-
-    sSqlQuery += ";";
-
-    {
-        SQLConnector::QueryInstance i = _parent->m_sqlConnector->qSelect(sSqlQuery,
-                                                                                          {{":SEARCHWORDS", MAKE_VAR(STRING, sSearchWords)},
-                                                                                           {":LIMIT", MAKE_VAR(UINT64, limit)},
-                                                                                           {":OFFSET", MAKE_VAR(UINT64, offset)}},
-                                                                                          {&accountName, &admin, &enabled, &expiration, &confirmed});
-
-        while (i.getResultsOK() && i.query->step())
-        {
-            AccountDetails rDetail;
-
-            rDetail.accountFlags.confirmed = confirmed.getValue();
-            rDetail.accountFlags.enabled = enabled.getValue();
-            rDetail.accountFlags.admin = admin.getValue();
-            rDetail.expired = !expiration.getValue() ? false : expiration.getValue() < time(nullptr);
-            rDetail.accountName = accountName.getValue();
-            ret.push_back(rDetail);
-        }
-    }
-
-    // Populate fieldValues for all accounts in the result set
-    auto allFields = listAccountDetailFields();
-    for (auto &rDetail : ret)
-    {
-        rDetail.fieldValues = getAccountDetailValues(rDetail.accountName, ACCOUNT_DETAILS_SEARCH);
-        for (auto &i : rDetail.fieldValues)
-        {
-            if (allFields.find(i.first) != allFields.end())
-                rDetail.fields[i.first] = allFields[i.first];
-        }
-    }
-    return ret;*/
 }
 
 std::set<std::string> IdentityManager_DB::Accounts_DB::listAccounts()
