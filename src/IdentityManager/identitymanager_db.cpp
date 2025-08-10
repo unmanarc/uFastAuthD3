@@ -190,13 +190,15 @@ bool IdentityManager_DB::initializeDatabase()
                                     )",
         R"(CREATE TABLE IF NOT EXISTS `iam`.`accountCredentials` (
                                              `f_AuthSlotId`                 INTEGER         NOT NULL,
-                                             `f_accountName`                   VARCHAR(256)    NOT NULL,
+                                             `f_accountName`                   VARCHAR(256) NOT NULL,
                                              `hash`                         VARCHAR(256)    NOT NULL,
                                              `expiration`                   DATETIME        DEFAULT NULL,
                                              `salt`                         VARCHAR(256)            ,
                                              `forcedExpiration`             BOOLEAN         DEFAULT 0,
                                              `badAttempts`                  INTEGER         DEFAULT 0,
-                                             `usedstrengthJSONValidator`    TEXT          NOT NULL,
+                                             `usedstrengthJSONValidator`    TEXT            NOT NULL,
+                                             `lastChange`                   DATETIME        DEFAULT CURRENT_TIMESTAMP NOT NULL,
+
                                              PRIMARY KEY(`f_AuthSlotId`,`f_accountName`),
                                              FOREIGN KEY(`f_AuthSlotId`)      REFERENCES authenticationSlots(`slotId`) ON DELETE CASCADE,
                                              FOREIGN KEY(`f_accountName`)        REFERENCES accounts(`accountName`) ON DELETE CASCADE
@@ -265,7 +267,7 @@ bool IdentityManager_DB::initializeDatabase()
     bool success = true;
     for (const auto &sql : sqlStatements)
     {
-        if (!m_sqlConnector->query(sql.data()))
+        if (!m_sqlConnector->execute(sql.data()))
         {
             LOG_APP->log0(__func__, Logs::LEVEL_CRITICAL, "Failed to execute SQL: '%s'", std::string(sql).c_str());
             success = false;

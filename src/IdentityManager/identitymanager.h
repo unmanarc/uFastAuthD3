@@ -1,5 +1,6 @@
 #pragma once
 
+#include "json/value.h"
 #include <list>
 #include <map>
 #include <memory>
@@ -58,7 +59,7 @@ public:
 
         // Account Details:
         virtual AccountDetails getAccountDetails(const std::string &accountName) = 0;
-        virtual std::list<AccountDetails> searchAccounts(std::string sSearchWords, size_t limit = 0, size_t offset = 0) = 0;
+        virtual Json::Value searchAccounts(const json & dataTablesFilters) = 0;
 
         // Account Expiration:
         virtual bool changeAccountExpiration(const std::string &accountName, time_t expiration = 0) = 0;
