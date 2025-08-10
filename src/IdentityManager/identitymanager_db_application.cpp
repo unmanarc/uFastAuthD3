@@ -244,6 +244,93 @@ bool IdentityManager_DB::Applications_DB::removeApplicationOwner(const std::stri
     return ret;
 }
 
+Json::Value IdentityManager_DB::Applications_DB::searchApplications(const json &dataTablesFilters)
+{
+    Json::Value ret;
+    Threads::Sync::Lock_RD lock(_parent->m_mutex);
+
+    // DataTables:
+    ret["draw"] = dataTablesFilters["draw"];
+
+    uint64_t offset = JSON_ASUINT64(dataTablesFilters,"start",0);
+    uint64_t limit = JSON_ASUINT64(dataTablesFilters,"length",0);
+
+    std::string orderByStatement;
+
+    // Manejo de ordenamiento (order)
+    const Json::Value& orderArray = dataTablesFilters["order"];
+    if (JSON_ISARRAY_D(orderArray) && orderArray.size()>0)
+    {
+        const Json::Value& orderArrayElement = orderArray[0];
+        std::string columnName = getColumnNameFromColumnPos(dataTablesFilters,JSON_ASUINT(orderArrayElement,"column",0));
+        std::string dir = JSON_ASSTRING(orderArrayElement,"dir","desc");
+
+        auto isValidField = [](const std::string& c) -> bool {
+            static const std::vector<std::string> validFields = {
+                "appName", "appDescription", "f_appCreator"
+            };
+            return std::find(validFields.begin(), validFields.end(), c) != validFields.end();
+        };
+
+        if (isValidField(columnName))
+        {
+            orderByStatement = " ORDER BY `" + columnName + "` ";
+            orderByStatement += (dir == "desc") ? "DESC" : "ASC";
+        }
+    }
+
+
+    // Extract the search value from dataTablesFilters
+    std::string searchValue = JSON_ASSTRING(dataTablesFilters["search"],"value","");
+    std::string whereFilters;
+
+    // Build the SQL query with WHERE clause for DataTables search
+    std::string sqlQueryStr = R"(
+        SELECT `appName`,`f_appCreator`,`appDescription` FROM iam.applications
+        )";
+
+    // Add WHERE clause for search term if provided
+    if (!searchValue.empty())
+    {
+        searchValue = "%" + searchValue + "%";
+        whereFilters += "appName LIKE :SEARCHWORDS";
+    }
+
+    {
+        Abstract::STRING appName, appCreator, appDescription;
+        Abstract::DATETIME creation, expiration, lastLogin, lastChange;
+        Abstract::BOOL isAdmin, isEnabled, isBlocked, isAccountConfirmed;
+        SQLConnector::QueryInstance i = _parent->m_sqlConnector->qSelectWithFilters(sqlQueryStr,
+                                                                                    whereFilters,
+                                                                                    {{":SEARCHWORDS", MAKE_VAR(STRING, searchValue)} },
+                                                                                    {&appName, &appCreator, &appDescription},
+                                                                                    orderByStatement, // Order by
+                                                                                    limit, // LIMIT
+                                                                                    offset // OFFSET
+                                                                                    );
+
+
+        while (i.getResultsOK() && i.query->step())
+        {
+            Json::Value row;
+
+            // appName
+            row["appName"] = appName.toJSON();
+            // appCreator
+            row["appCreator"] = appCreator.toJSON();
+            // appDescription
+            row["appDescription"] = appDescription.toJSON();
+            
+            ret["data"].append(row);
+        }
+
+        ret["recordsTotal"] = i.query->getUnfilteredNumRows();
+        ret["recordsFiltered"] = i.query->getNumRows();
+    }
+
+    return ret;
+}
+/*
 std::list<ApplicationDetails> IdentityManager_DB::Applications_DB::searchApplications(std::string sSearchWords, size_t limit, size_t offset)
 {
     std::list<ApplicationDetails> ret;
@@ -282,7 +369,7 @@ std::list<ApplicationDetails> IdentityManager_DB::Applications_DB::searchApplica
 
     return ret;
 }
-
+*/
 bool IdentityManager_DB::Applications_DB::addWebLoginRedirectURIToApplication(const std::string &appName, const std::string &loginRedirectURI)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);

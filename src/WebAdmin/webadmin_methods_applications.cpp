@@ -212,17 +212,7 @@ void WebAdminMethods_Applications::removeApplicationOwner(void *context, APIRetu
 
 void WebAdminMethods_Applications::searchApplications(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
 {
-    json x;
-    int i = 0;
-    for (const auto &strVal : Globals::getIdentityManager()->applications->searchApplications(JSON_ASSTRING(*request.inputJSON, "searchWords", ""), JSON_ASUINT64(*request.inputJSON, "limit", 0),
-                                                                                              JSON_ASUINT64(*request.inputJSON, "offset", 0)))
-    {
-        x[i]["appCreator"] = strVal.appCreator;
-        x[i]["appName"] = strVal.applicationName;
-        x[i]["description"] = strVal.description;
-        i++;
-    }
-    (*response.responseJSON()) = x;
+    (*response.responseJSON()) = Globals::getIdentityManager()->applications->searchApplications(*request.inputJSON);
 }
 
 void WebAdminMethods_Applications::addWebLoginRedirectURIToApplication(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
