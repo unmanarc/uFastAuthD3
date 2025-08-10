@@ -14,31 +14,8 @@
 
 
   /*
-  function drawUserList(response) 
-  {
-    document.getElementById("tbody-ulist").innerHTML = "";
-    let userId = 0;
-    for (let userInfo of response) {
-      let b64UserName = window.btoa(userInfo["accountName"]);
 
-      $("#tbody-ulist").append(
-        `<tr> 
-            <th scope="row" id=ulist-user-${userId}></th>
-            <td id=ulist-givenAndLastName-${userId}></td>
-            <td id=ulist-description-${userId}></td>
-            <td><a href="" id=ulist-mail-${userId}></a></td>
-            <td id=ulist-status-${userId}></td>
-            <td style="text-align: right;">
-              <button type="button" class="btn btn-dark btn-sm" onclick="window.location='account-edit?${b64UserName}'">Edit</button>
-              <!--<button type="button" class="btn btn-danger btn-sm" onclick="window.location='account-remove?${b64UserName}'">Remove</button>-->
-            </td >
-          </tr > `
-      );
-      $(`#ulist - user - ${ userId } `).text(userInfo["accountName"]);
-      $(`#ulist - givenAndLastName - ${ userId } `).text(userInfo["givenName"] + " " + userInfo["lastName"]);
-      $(`#ulist - description - ${ userId } `).text(userInfo["description"]);
-      $(`#ulist - mail - ${ userId } `).text(userInfo["email"]);
-      if (userInfo["enabled"] == true && userInfo["confirmed"] == true && userInfo["expired"] == false)
+
         document.getElementById(`ulist - status - ${ userId } `).innerHTML = " <span class=\"badge bg-primary\">Operational</span>";
       else {
         if (userInfo["enabled"] == false)
@@ -51,23 +28,7 @@
       if (userInfo["superuser"] == true)
         document.getElementById(`ulist - status - ${ userId } `).innerHTML = document.getElementById(`ulist - status - ${ userId }`).innerHTML + " <span class=\"badge bg-danger\">Administrator</span>";
 
-      userId++;
-    }
-  }
-  function ajaxLoadUserList() {
-    $.ajax({
-      url: '/api/v1/searchAccounts',
-      data: JSON.stringify({
-          searchWords: $("#searchField").val(), 
-          limit: 0, 
-          offset: 0 
-      }),
-      type: 'GET',
-      contentType: 'application/json',
-      success: drawUserList,
-      error: commonFunctionError
-    });
-  }*/
+  */
 
 </script>
 
@@ -90,100 +51,115 @@
 </table>
 
 <script>
-//  ajaxLoadUserList();
-
-new DataTable('#myTable', {
+  new DataTable('#myTable', {
     ajax: {
       "url": "/api/v1/searchAccounts",
-      "type" : 'GET',
-      "data": function(d) {
-      return JSON.stringify(d);
-    }
+      "type": 'GET',
+      "data": function (d) {
+        return JSON.stringify(d);
+      }
     },
     processing: true,
     serverSide: true,
     columns: [
-        {
-          data: "accountName",
-          title: "Account Name",
-          render: function(data, type, row) {
-            return '<img src="' + userPNG + '" alt="User Icon" width="16" height="16"> &nbsp;&nbsp;' + data;
-          }
-        },
-        {
-            data: "creation",
-            title: "Creation",
-            render: function(data, type, row) {
-                if (data === null || data === 0) return 'Never';
-                var date = new Date(data * 1000);
-                return date.toLocaleString();
-            }
-        },
-        {
-            data: "expiration",
-            title: "Expiration",
-            render: function(data, type, row) {
-                if (data === null || data === 0) return 'Never';
-                var date = new Date(data * 1000);
-                return date.toLocaleString();
-            }
-        },
-        {
-            data: "lastAccess",
-            title: "Last Access",
-            render: function(data, type, row) {
-                if (data === null || data === 0) return 'Never';
-                var date = new Date(data * 1000);
-                return date.toLocaleString();
-            }
-        },
-        {
-            data: "lastPasswordChange",
-            title: "Last Password Change",
-            render: function(data, type, row) {
-                if (data === null || data === 0) return 'Never';
-                var date = new Date(data * 1000);
-                var today = new Date();
-                var diffTime = Math.abs(today - date);
-                var diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                return diffDays + " days ago";
-            }
-        },
-        { data: "groups", title: "Groups" },
-        { data: "applications", title: "Applications" },
-        {
-          data: null,
-          orderable: false,
-          searchable: false,
-          render: function(data, type, row) {
-           
-            let statusHtml = '';
-            if (row.DT_RowData.isEnabled === true && row.DT_RowData.isAccountConfirmed === true && row.DT_RowData.isBlocked === false)
-              statusHtml += '<span class="badge bg-primary">Operational</span>';
-            else {
-              if (row.DT_RowData.isEnabled === false)
-                statusHtml += '<span class="badge bg-dark">Disabled</span>';
-              if (row.DT_RowData.isAccountConfirmed === false)
-                statusHtml += '<span class="badge bg-warning">Unconfirmed</span>';
-              if (row.DT_RowData.isBlocked === true)
-                statusHtml += '<span class="badge bg-warning">Blocked</span>';
-            }
-            if (row.DT_RowData.isAdmin === true)
-              statusHtml += '<span class="badge bg-danger">Administrator</span>';
-            return statusHtml;
-          }
-        },
-        {
-          data: null,
-          orderable: false,
-          searchable: false,
-          render: function(data, type, row) {
-            let b64UserName = window.btoa(row.accountName);
-            return '<button type="button" class="btn btn-dark btn-sm" onclick="window.location=\'account-edit?' + b64UserName + '\'">Edit</button>';
-          }
+      {
+        data: "accountName",
+        title: "Account Name",
+        render: function (data, type, row) {
+          return '<img src="' + userPNG + '" alt="User Icon" width="16" height="16"> &nbsp;&nbsp;' + data;
         }
+      },
+      {
+        data: "creation",
+        title: "Creation",
+        searchable: false,
+        render: function (data, type, row) {
+          if (data === null || data === 0) return 'Never';
+          var date = new Date(data * 1000);
+          return date.toLocaleString();
+        }
+      },
+      {
+        data: "expiration",
+        title: "Expiration",
+        searchable: false,
+        render: function (data, type, row) {
+          if (data === null || data === 0) return 'Never';
+          var date = new Date(data * 1000);
+          return date.toLocaleString();
+        }
+      },
+      {
+        data: "lastAccess",
+        title: "Last Access",
+        searchable: false,
+        render: function (data, type, row) {
+          if (data === null || data === 0) return 'Never';
+          var date = new Date(data * 1000);
+          return date.toLocaleString();
+        }
+      },
+      {
+        data: "lastPasswordChange",
+        title: "Last Password Change",
+        searchable: false,
+        render: function (data, type, row) {
+          if (data === null || data === 0) return 'Never';
+          var date = new Date(data * 1000);
+          var today = new Date();
+          var diffTime = Math.abs(today - date);
+          var diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+          return diffDays + " days ago";
+        }
+      },
+      {
+        data: "groups",
+        searchable: false,
+        title: "Groups"
+      },
+      {
+        data: "applications",
+        searchable: false,
+        title: "Applications"
+      },
+      {
+        data: null,
+        orderable: false,
+        searchable: false,
+        render: function (data, type, row) {
+
+          let statusHtml = '<div class="d-flex flex-wrap gap-1">';
+          if (row.DT_RowData.isEnabled === true && row.DT_RowData.isAccountConfirmed === true && row.DT_RowData.isBlocked === false)
+            statusHtml += '<span class="badge bg-primary">Operational</span>';
+          else {
+            if (row.DT_RowData.isEnabled === false)
+              statusHtml += '<span class="badge bg-dark">Disabled</span>';
+            if (row.DT_RowData.isAccountConfirmed === false)
+              statusHtml += '<span class="badge bg-warning">Unconfirmed</span>';
+            if (row.DT_RowData.isBlocked === true)
+              statusHtml += '<span class="badge bg-warning">Blocked</span>';
+          }
+          if (row.DT_RowData.isAdmin === true)
+            statusHtml += '<span class="badge bg-danger">Administrator</span>';
+
+
+          statusHtml += '</div>';
+
+
+          return statusHtml;
+        }
+      },
+      {
+        data: null,
+        orderable: false,
+        searchable: false,
+        render: function (data, type, row) {
+          let b64UserName = window.btoa(row.accountName);
+          return '<div style="text-align: right;"><button type="button" class="btn btn-dark btn-sm" onclick="window.location=\'account-edit?' + b64UserName + '\'">Edit</button></div>';
+        }
+      }
     ]
-});
+  });
 </script>
 
 <!--<%include:/hidden/inc.layout.leftpanel.footer.html%>-->
