@@ -341,7 +341,7 @@ public:
         virtual bool removeAccountFromApplication(const std::string &appName, const std::string &accountName) = 0;
         virtual bool addApplicationOwner(const std::string &appName, const std::string &accountName) = 0;
         virtual bool removeApplicationOwner(const std::string &appName, const std::string &accountName) = 0;
-        virtual std::list<ApplicationDetails> searchApplications(std::string sSearchWords, size_t limit = 0, size_t offset = 0) = 0;
+        virtual Json::Value searchApplications(const json & dataTablesFilters) = 0;
 
         // Weblogin return urls:
         virtual bool addWebLoginRedirectURIToApplication(const std::string &appName, const std::string &loginRedirectURI) = 0;
