@@ -336,7 +336,7 @@ bool IdentityManager::AuthController::setAccountPasswordOnScheme(const std::stri
             &&
 
             &&
-           _parent->m_sqlConnector->query("INSERT INTO iam.accountCredentials "
+           _parent->m_sqlConnector->execute("INSERT INTO iam.accountCredentials "
                                 "(`f_AuthSlotId`,`f_accountName`,`hash`,`expiration`,`salt`,`forcedExpiration`)"
                                 " VALUES"
                                 "('0',:account,:hash,:expiration,:salt,:forcedExpiration);",

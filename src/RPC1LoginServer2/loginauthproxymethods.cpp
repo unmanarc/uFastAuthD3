@@ -1,5 +1,4 @@
 #include "loginauthproxymethods.h"
-#include "Mantids30/Helpers/json.h"
 #include "globals.h"
 #include <Mantids30/Server_RESTfulWebAPI/engine.h>
 #include <memory>

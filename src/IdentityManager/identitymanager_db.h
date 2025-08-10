@@ -38,7 +38,7 @@ public:
         time_t getAccountExpirationTime(const std::string &accountName) override;
         time_t getAccountCreationTime(const std::string &accountName) override;
 
-        std::list<AccountDetails> searchAccounts(std::string sSearchWords, size_t limit = 0, size_t offset = 0) override;
+        Json::Value searchAccounts(const json & dataTablesFilters) override;
         std::set<std::string> listAccounts() override;
         std::set<std::string> getAccountRoles(const std::string &accountName, bool lock = true) override;
 

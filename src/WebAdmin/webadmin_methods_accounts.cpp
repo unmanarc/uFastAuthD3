@@ -295,15 +295,7 @@ void WebAdminMethods_Accounts::resetBadAttemptsOnCredential(void *context, APIRe
 
 void WebAdminMethods_Accounts::searchAccounts(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
 {
-    json x;
-    int i = 0;
-    for (const auto &strVal : Globals::getIdentityManager()->accounts->searchAccounts(JSON_ASSTRING(*request.inputJSON, "searchWords", ""), JSON_ASUINT64(*request.inputJSON, "limit", 0),
-                                                                                      JSON_ASUINT64(*request.inputJSON, "offset", 0)))
-    {
-        x[i] = strVal.toJSON();
-        i++;
-    }
-    (*response.responseJSON()) = x;
+    (*response.responseJSON()) = Globals::getIdentityManager()->accounts->searchAccounts(*request.inputJSON);
 }
 
 void WebAdminMethods_Accounts::updateAccountInfo(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
