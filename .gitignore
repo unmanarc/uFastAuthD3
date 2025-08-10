@@ -17,7 +17,7 @@ var/www/ufastauthd3_login/assets/*
 var/www/*/old/*
 
 # Node.js dependencies and build artifacts
-var/www/node_modules/*
+var/www/node_modules*
 var/www/package-lock.json
 
 # Build directories
