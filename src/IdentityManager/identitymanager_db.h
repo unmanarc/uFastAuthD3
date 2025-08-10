@@ -10,6 +10,20 @@ public:
     IdentityManager_DB(Mantids30::Database::SQLConnector *_SQLDirConnection);
     bool initializeDatabase() override;
 
+    static std::string getColumnNameFromColumnPos(const json &dataTablesFilters, const uint32_t & pos)
+    {
+        if (JSON_ISARRAY(dataTablesFilters,"columns"))
+        {
+            if (pos>=dataTablesFilters["columns"].size())
+            {
+                return "";
+            }
+            return JSON_ASSTRING_D(dataTablesFilters["columns"][pos],"");
+        }
+        return "";
+    }
+
+
     class Accounts_DB : public Accounts
     {
     public:
@@ -196,7 +210,8 @@ public:
         bool removeAccountFromApplication(const std::string &appName, const std::string &accountName) override;
         bool addApplicationOwner(const std::string &appName, const std::string &accountName) override;
         bool removeApplicationOwner(const std::string &appName, const std::string &accountName) override;
-        std::list<ApplicationDetails> searchApplications(std::string sSearchWords, size_t limit = 0, size_t offset = 0) override;
+
+        Json::Value searchApplications(const json & dataTablesFilters) override;
 
         // Weblogin return urls:
         bool addWebLoginRedirectURIToApplication(const std::string &appName, const std::string &loginRedirectURI) override;

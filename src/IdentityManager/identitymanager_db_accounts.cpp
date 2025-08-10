@@ -239,18 +239,6 @@ time_t IdentityManager_DB::Accounts_DB::getAccountCreationTime(const std::string
     return std::numeric_limits<time_t>::max();
 }
 
-std::string getColumnNameFromColumnPos(const json &dataTablesFilters, const uint32_t & pos)
-{
-    if (JSON_ISARRAY(dataTablesFilters,"columns"))
-    {
-        if (pos>=dataTablesFilters["columns"].size())
-        {
-            return "";
-        }
-        return JSON_ASSTRING_D(dataTablesFilters["columns"][pos],"");
-    }
-    return "";
-}
 
 
 Json::Value IdentityManager_DB::Accounts_DB::searchAccounts(const json &dataTablesFilters)
