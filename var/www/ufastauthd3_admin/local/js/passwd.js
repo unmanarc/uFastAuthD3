@@ -8,7 +8,7 @@ function checkPasswordReq(password, minsize) {
 
 
     if (password.length < minsize) {
-        ret = "The password should have at leat " + minsize + " characters";
+        ret = "The password should have at least " + minsize + " characters";
     }
     else {
         var upperCharsCount = 0;
