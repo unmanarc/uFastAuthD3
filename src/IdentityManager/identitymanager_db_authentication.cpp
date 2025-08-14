@@ -123,16 +123,13 @@ bool IdentityManager_DB::AuthController_DB::changeCredential(const std::string &
         passwordData.expirationTimestamp = time(nullptr) + authSlots[slotId].defaultExpirationSeconds;
     }
 
-    // TODO: evitar un cambio de password si no estas autenticado en una sesión...
-    // TODO: strength validator.
-
     // Destroy (if exist).
     _parent->m_sqlConnector->execute("DELETE FROM iam.accountCredentials WHERE `f_accountName`=:accountName and `f_AuthSlotId`=:slotId",
                                      {{":accountName", MAKE_VAR(STRING, accountName)}, {":slotId", MAKE_VAR(UINT32, slotId)}});
 
     return _parent->m_sqlConnector->execute(R"( INSERT INTO iam.accountCredentials (`f_AuthSlotId`,`f_accountName`,`hash`,`expiration`,`salt`,`forcedExpiration`,`usedstrengthJSONValidator`)
                                                 VALUES (:slotId,:account,:hash,:expiration,:salt,:forcedExpiration,:usedValidator);)",
-                                            {{":slotId", MAKE_VAR(UINT32, slotId)},
+                                             {{":slotId", MAKE_VAR(UINT32, slotId)},
                                              {":account", MAKE_VAR(STRING, accountName)},
                                              {":hash", MAKE_VAR(STRING, passwordData.hash)},
                                              {":expiration", MAKE_VAR(DATETIME, passwordData.expirationTimestamp)},
@@ -168,10 +165,10 @@ void IdentityManager_DB::AuthController_DB::updateAccountLastAccess(const std::s
     {
         auto updateResult = _parent->m_sqlConnector->qExecute("UPDATE logs.accountsLastAccess SET `lastLogin`=CURRENT_TIMESTAMP WHERE `f_accountName`=:accountName;",
                                                               {{":accountName", MAKE_VAR(STRING, accountName)}});
-        notUpdatedOk = !updateResult.getResultsOK() || updateResult.query->getAffectedRows() == 0;
+        notUpdatedOk = !updateResult.getResultsOK() || updateResult.query->getAffectedRecords() == 0;
     }
 
-    // If no rows were updated, then insert a new record
+    // If no records were updated, then insert a new record
     if (notUpdatedOk)
     {
         _parent->m_sqlConnector->execute("INSERT INTO logs.accountsLastAccess(`f_accountName`, `lastLogin`) VALUES (:accountName, CURRENT_TIMESTAMP);",
