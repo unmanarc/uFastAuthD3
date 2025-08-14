@@ -68,20 +68,22 @@
                     var table = new DataTable('#myTable');
                     table.ajax.reload();
                 } else {
-                    if (response.error && response.message) {
-                        alert("Error: " + response.error + " - " + response.message);
-                    } else {
                         alert("Error " + xhr.status);
                     }
-                }
             },
-            error: commonFunctionError
+            error: function (xhr, status, error) {
+                if (xhr.responseJSON && xhr.responseJSON.error && xhr.responseJSON.message) {
+                    alert("Error: " + xhr.responseJSON.error + " - " + xhr.responseJSON.message);
+                } else {
+                    alert("Error " + xhr.status);
+                }
+            }
         });
     }
 
 </script>
 
-<div class="modal fade" id="modalCreateAccount" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+<div class="modal fade" id="modalCreateAccount" data-bs-backdrop="static" data-bs-keyboard="true" tabindex="-1"
     aria-labelledby="modalCreateAccountLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
         <div class="modal-content">
