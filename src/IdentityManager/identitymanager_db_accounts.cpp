@@ -355,8 +355,8 @@ Json::Value IdentityManager_DB::Accounts_DB::searchAccounts(const json &dataTabl
             ret["data"].append(row);
         }
 
-        ret["recordsTotal"] = i.query->getUnfilteredNumRows();
-        ret["recordsFiltered"] = i.query->getNumRows();
+        ret["recordsTotal"] = i.query->getTotalRecordsCount();
+        ret["recordsFiltered"] = i.query->getFilteredRecordsCount();
 
 
     }
