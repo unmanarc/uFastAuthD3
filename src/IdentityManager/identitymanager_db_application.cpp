@@ -274,7 +274,7 @@ Json::Value IdentityManager_DB::Applications_DB::searchApplications(const json &
 
         if (isValidField(columnName))
         {
-            orderByStatement = " ORDER BY `" + columnName + "` ";
+            orderByStatement = "`" + columnName + "` ";
             orderByStatement += (dir == "desc") ? "DESC" : "ASC";
         }
     }

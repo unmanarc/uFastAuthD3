@@ -18,7 +18,7 @@ public:
             {
                 return "";
             }
-            return JSON_ASSTRING_D(dataTablesFilters["columns"][pos],"");
+            return JSON_ASSTRING(dataTablesFilters["columns"][pos],"data","");
         }
         return "";
     }
