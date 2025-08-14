@@ -293,7 +293,7 @@ Json::Value IdentityManager_DB::Applications_DB::searchApplications(const json &
     if (!searchValue.empty())
     {
         searchValue = "%" + searchValue + "%";
-        whereFilters += "appName LIKE :SEARCHWORDS";
+        whereFilters += "appName LIKE :SEARCHWORDS OR appDescription LIKE :SEARCHWORDS OR f_appCreator LIKE :SEARCHWORDS";
     }
 
     {
