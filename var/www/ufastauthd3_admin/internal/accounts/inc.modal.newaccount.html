@@ -10,7 +10,28 @@
         document.getElementById("newpass1").value = proposedPasswd;
     }
 
-    function ajaxCreateUser() {
+    function createAccountClearParameters() {
+
+        // Reset all password fields to empty
+        document.getElementById("accountName").value = "";
+        document.getElementById("newpass0").value = "";
+        document.getElementById("newpass1").value = "";
+        document.getElementById("newpassGEN").innerText = "";
+
+        // Reset visibility states
+        document.getElementById("pass0TR").style.visibility = "collapse";
+        document.getElementById("pass1TR").style.visibility = "";
+        document.getElementById("pass2TR").style.visibility = "";
+
+        // Reset checkbox states to their original defaults
+        document.getElementById("isEnabled").checked = true;
+        document.getElementById("isConfirmed").checked = false;
+        document.getElementById("isAdmin").checked = false;
+        document.getElementById("isBlocked").checked = false;
+    }
+
+
+    function ajaxCreateAccount() {
         var pwdCheck = checkPasswordReq($("#newpass0").val(), 12);
 
         if ($("#newpass0").val() != $("#newpass1").val()) {
@@ -20,32 +41,38 @@
         }
         else if (pwdCheck != "") {
             alert(pwdCheck);
-           // alert($("#newpass0").val());
+            // alert($("#newpass0").val());
             $("#newpass0").focus();
             return;
         }
 
-        var payloadData = {
-            secretTempPass: $("#newpass0").val(),
-            accountName: $("#accountName").val(),
-            isConfirmed: $("#isConfirmed:checked").length > 0,
-            isEnabled: $("#isEnabled:checked").length > 0,
-            isSuperuser: $("#isSuperuser:checked").length > 0
-        };
-
         $.ajax({
             url: '/api/v1/addAccount',
-            data: {
-                payload: JSON.stringify(payloadData)
-            },
             type: 'POST',
-            success: function (response) {
-                if (response["retCode"] == false) {
-                    alert("User creation failed (" + response["retMsg"] + ").");
+            contentType: 'application/json',
+            data: JSON.stringify({
+                slotId: 1,
+                secretTempPass: $("#newpass0").val(),
+                accountName: $("#accountName").val(),
+                flags: {
+                    "enabled": $("#isEnabled:checked").length > 0,
+                    "confirmed": $("#isConfirmed:checked").length > 0,
+                    "admin": $("#isAdmin:checked").length > 0,
+                    "blocked": $("#isBlocked:checked").length > 0
                 }
-                else {
-               //     alert("User was created!");
-               //     window.location = "/account-edit?" + window.btoa($("#accountName").val());
+            }),
+            success: function (response, textStatus, xhr) {
+                if (xhr.status === 200) {
+                    $('#modalCreateAccount').modal('hide');
+                    // Refresh the DataTable after successful user creation
+                    var table = new DataTable('#myTable');
+                    table.ajax.reload();
+                } else {
+                    if (response.error && response.message) {
+                        alert("Error: " + response.error + " - " + response.message);
+                    } else {
+                        alert("Error " + xhr.status);
+                    }
                 }
             },
             error: commonFunctionError
@@ -54,12 +81,12 @@
 
 </script>
 
-<div class="modal fade" id="modalCreateUser" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
-    aria-labelledby="modalCreateUserLabel" aria-hidden="true">
+<div class="modal fade" id="modalCreateAccount" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+    aria-labelledby="modalCreateAccountLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="modalCreateUserLabel">Create New User Account</h5>
+                <h5 class="modal-title" id="modalCreateAccountLabel">Create New User Account</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
@@ -76,7 +103,7 @@
                     <tr>
                         <td align="right">Account Name: </td>
                         <td><input type="username" name="username" id="accountName" class="form-control"
-                                placeholder="Account Name" onkeypress="javascript:checkUserName()"></td>
+                                placeholder="Account Name" onkeypress="javascript:checkAccountName()"></td>
                     </tr>
 
                     <tr>
@@ -114,19 +141,18 @@
                         <td colspan="2" align="">
                             <h6>&nbsp;Account Status / Privileges</h6>
                             <hr>
-
                             <table width=100% style=" border-spacing: 10px;   border-collapse: separate;">
                                 <tr valign=top>
                                     <td width=50%>
                                         <table width=100% style=" border-spacing: 10px;   border-collapse: separate;">
                                             <tr>
                                                 <td align=""></td>
-                                                <td align="right">Account Enabled: <input type="checkbox" value=""
+                                                <td align="right">Enable Account: <input type="checkbox" value=""
                                                         id="isEnabled" checked></td>
                                             </tr>
                                             <tr>
                                                 <td align=""></td>
-                                                <td align="right">Account Confirmed: <input type="checkbox" value=""
+                                                <td align="right">Confirm Account: <input type="checkbox" value=""
                                                         id="isConfirmed"></td>
                                             </tr>
 
@@ -136,8 +162,14 @@
                                         <table width=100% style=" border-spacing: 10px;   border-collapse: separate;">
                                             <tr>
                                                 <td align=""></td>
-                                                <td align="right">Administrator: <input type="checkbox" value=""
-                                                        id="isSuperuser"></td>
+                                                <td align="right">Administrator Role: <input type="checkbox" value=""
+                                                        id="isAdmin"></td>
+                                            </tr>
+
+                                            <tr>
+                                                <td align=""></td>
+                                                <td align="right">Block Account: <input type="checkbox" value=""
+                                                        id="isBlocked"></td>
                                             </tr>
 
                                         </table>
@@ -152,7 +184,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-success" onclick="javascript:ajaxCreateUser()">Create
+                <button type="button" class="btn btn-success" onclick="javascript:ajaxCreateAccount()">Create
                     Account</button>
             </div>
         </div>
