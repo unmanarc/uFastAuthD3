@@ -87,7 +87,7 @@ void WebAdminMethods_Accounts::addAccount(void *context, APIReturn &response, co
     std::string secretTempPass = JSON_ASSTRING(*request.inputJSON, "secretTempPass", "");
 
     Credential newCredentialData;
-    uint32_t slotId = JSON_ASUINT(*request.inputJSON, "slotId", 0);
+    uint32_t slotId = JSON_ASUINT(*request.inputJSON, "slotId", 1);
 
     // Either tempCredential or secretTempPass must be provided
     if (tempCredential != Json::nullValue)
@@ -110,6 +110,18 @@ void WebAdminMethods_Accounts::addAccount(void *context, APIReturn &response, co
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to change the credential on the new user.");
         return;
     }
+
+    AccountFlags flags;
+    flags.fromJSON((*request.inputJSON)["flags"]);
+
+    // Apply the credential to the new account
+    if (!Globals::getIdentityManager()->accounts->changeAccountFlags(accountName, flags))
+    {
+        response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to change the credential on the new user.");
+        return;
+    }
+
+
 }
 
 void WebAdminMethods_Accounts::changeAccountExpiration(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
