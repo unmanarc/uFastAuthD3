@@ -9,7 +9,7 @@ function checkAppName() {
 }
 
 
-function checkUserName() {
+function checkAccountName() {
     var regex = new RegExp("^[a-zA-Z0-9_-]+$");
     var key = String.fromCharCode(!event.charCode ? event.which : event.charCode);
     if (!regex.test(key)) {
