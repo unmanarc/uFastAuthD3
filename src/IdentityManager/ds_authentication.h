@@ -89,24 +89,6 @@ struct AuthenticationSlotDetails
         jRet["totp2FAStepsToleranceWindow"] = totp2FAStepsToleranceWindow;
         return jRet;
     }
-    /*
-    Json::Value authenticationSlotToJSON(const AuthenticationSlotDetails &data)
-    {
-        Json::Value json;
-
-        json["VERSION"] = "1";
-        json["PMODE"] = std::to_string(data.passwordFunction);
-        json["SALT"] = Mantids30::Helpers::Encoders::toHex(data.ssalt, 4);
-        json["EXPIRATION"] = static_cast<Json::UInt64>(data.expiration);
-        json["FORCE_EXPIRATION"] = data.forceExpiration;
-        json["BAD_ATTEMPTS"] = Json::Value::UInt(data.badAttempts);
-        json["DESCRIPTION"] = data.description;
-        json["REQUIRED_AT_LOGIN"] = data.requiredAtLogin;
-        json["LOCKED"] = data.locked;
-
-        return json;
-    }
-    */
 
     bool isCompatible(const AuthenticationSlotDetails &x) { return x.passwordFunction == passwordFunction; }
 
@@ -164,6 +146,14 @@ struct Credential
         jRet["isLocked"] = isLocked(authPolicy);
 
         return jRet;
+    }
+
+    static Credential createSHA256TemporalCredential(const std::string &password)
+    {
+        Credential cred;
+        cred.slotDetails = AuthenticationSlotDetails("SHA256 Temporal", FN_SHA256, "", 0, 0);
+        cred.hash = Mantids30::Helpers::Crypto::calcSHA256(password);
+        return cred;
     }
 
     Credential getPublicData() const
