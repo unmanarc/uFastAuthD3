@@ -3,6 +3,7 @@
 #include "webadmin_methods.h"
 
 #include "IdentityManager/ds_authentication.h"
+#include "json/value.h"
 #include <Mantids30/Program_Logs/applog.h>
 
 #include "../globals.h"
@@ -45,20 +46,24 @@ void WebAdminMethods_Accounts::addMethods_Accounts(std::shared_ptr<MethodsHandle
 
 void WebAdminMethods_Accounts::addAccount(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
 {
+    // Extract account name from request
     std::string accountName = JSON_ASSTRING(*request.inputJSON, "accountName", "");
 
+    // Check if account already exists
     if (Globals::getIdentityManager()->accounts->doesAccountExist(accountName))
     {
         response.setError(HTTP::Status::S_406_NOT_ACCEPTABLE, "unacceptable_request", "Account Already Exist");
         return;
     }
 
+    // Validate that account name is not empty
     if (accountName.empty())
     {
         response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Account Name is Empty");
         return;
     }
 
+    // Validate account name format using regex (alphanumeric only)
     std::regex accountNameExpr("[a-zA-Z0-9]+");
     if (!regex_match(accountName, accountNameExpr))
     {
@@ -66,35 +71,45 @@ void WebAdminMethods_Accounts::addAccount(void *context, APIReturn &response, co
         return;
     }
 
-    // Create Expired SSHA256 password (require change)
-    /*  AccountCreationDetails getAccountDetails;
-    getAccountDetails.description = JSON_ASSTRING(*request.inputJSON,"description","");
-    getAccountDetails.email = JSON_ASSTRING(*request.inputJSON,"mail","");
-    getAccountDetails.extraData = JSON_ASSTRING(*request.inputJSON,"extraData","");
-    getAccountDetails.givenName = JSON_ASSTRING(*request.inputJSON,"givenName","");
-    getAccountDetails.lastName = JSON_ASSTRING(*request.inputJSON,"lastName","");*/
-
+    // Initialize account flags from request
     AccountFlags accountFlags;
     accountFlags.fromJSON(request.inputJSON);
 
+    // Add the new account to the system with specified expiration and flags
     if (!Globals::getIdentityManager()->accounts->addAccount(accountName, JSON_ASUINT64(*request.inputJSON, "expirationDate", 0), accountFlags, request.jwtToken->getSubject()))
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to add the new account. Check if user already exists");
         return;
     }
 
-    Credential newCredentialData = Credential::createFromJSON(JSON_ASSTRING(*request.inputJSON, "tempCredential", ""));
+    // Extract credential information from request
+    json tempCredential = (*request.inputJSON)["tempCredential"];
+    std::string secretTempPass = JSON_ASSTRING(*request.inputJSON, "secretTempPass", "");
+
+    Credential newCredentialData;
     uint32_t slotId = JSON_ASUINT(*request.inputJSON, "slotId", 0);
 
+    // Either tempCredential or secretTempPass must be provided
+    if (tempCredential != Json::nullValue)
+    {
+        newCredentialData = Credential::createFromJSON(tempCredential);
+    }
+    else if (!secretTempPass.empty())
+    {
+        newCredentialData = Credential::createSHA256TemporalCredential(secretTempPass);
+    }
+    else
+    {
+        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Either tempCredential or secretTempPass must be provided");
+        return;
+    }
+
+    // Apply the credential to the new account
     if (!Globals::getIdentityManager()->authController->changeCredential(accountName, newCredentialData, slotId))
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to change the credential on the new user.");
         return;
     }
-
-    // TODO: que pasa si cambiamos el slot de credenciales mientras hacemos esta operacion?
-    //       creo que lo mejor es que solo se puedan cambiar los esquemas de acceso en un modo "super safe" en donde esté apagado el servidor IAM web,
-    //       solo se admita una conexion admin y ya... de ese modo no habrá race condition en esta cosa...
 }
 
 void WebAdminMethods_Accounts::changeAccountExpiration(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
