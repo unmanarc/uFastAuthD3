@@ -202,6 +202,14 @@ $(document).ready(function () {
                 }
             },
             error: function (xhr, status, error) {
+                // Clear password and OTP fields on authorization error
+                $("#genericPassword").val('');
+                $("#otp").val('');
+
+                // Focus on generic password field after clearing it
+                $("#genericPassword").focus();
+
+                // Show the error message
                 showErrorWithXHR(xhr, status, error);
                 loggedIn = false;
             }
@@ -224,14 +232,14 @@ $(document).ready(function () {
 
         if (passwordFunction === 5) {
             // OTP input
-            $("#genericInputForm").addClass("d-none");
+            $("#genericPasswordForm").addClass("d-none");
             $("#otpForm").removeClass("d-none");
             $("#otp").focus();
         } else if ([1, 2].includes(passwordFunction)) {
             // Password input
             $("#otpForm").addClass("d-none");
-            $("#genericInputForm").removeClass("d-none");
-            $("#genericInput").focus();
+            $("#genericPasswordForm").removeClass("d-none");
+            $("#genericPassword").focus();
         } else {
             alert("Password function not implemented.");
         }
@@ -246,11 +254,11 @@ $(document).ready(function () {
     });
 
     // Event listener for generic input submission
-    $("#genericInputForm").on("submit", function (e) {
+    $("#genericPasswordForm").on("submit", function (e) {
         e.preventDefault();
         const username = $("#username").val();
         const schemeId = 1;
-        const password = $("#genericInput").val();
+        const password = $("#genericPassword").val();
 
         authorizeUser(username, schemeId, password);
     });
