@@ -273,7 +273,7 @@ Json::Value IdentityManager_DB::Accounts_DB::searchAccounts(const json &dataTabl
 
         if (isValidField(columnName))
         {
-            orderByStatement = " ORDER BY `" + columnName + "` ";
+            orderByStatement = "`" + columnName + "` ";
             orderByStatement += (dir == "desc") ? "DESC" : "ASC";
         }
     }
