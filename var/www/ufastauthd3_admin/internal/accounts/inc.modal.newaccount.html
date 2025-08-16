@@ -35,13 +35,12 @@
         var pwdCheck = checkPasswordReq($("#newpass0").val(), 12);
 
         if ($("#newpass0").val() != $("#newpass1").val()) {
-            alert("Password does not match.");
+            showToastError("Password does not match.");
             $("#newpass0").focus();
             return;
         }
         else if (pwdCheck != "") {
-            alert(pwdCheck);
-            // alert($("#newpass0").val());
+            showToastError(pwdCheck);
             $("#newpass0").focus();
             return;
         }
@@ -67,15 +66,18 @@
                     // Refresh the DataTable after successful user creation
                     var table = new DataTable('#myTable');
                     table.ajax.reload();
+
+                    showToastSuccess("Account created successfully.");
+
                 } else {
-                        alert("Error " + xhr.status);
-                    }
+                    showToastError("Error " + xhr.status);
+                }
             },
             error: function (xhr, status, error) {
                 if (xhr.responseJSON && xhr.responseJSON.error && xhr.responseJSON.message) {
-                    alert("Error: " + xhr.responseJSON.error + " - " + xhr.responseJSON.message);
+                    showToastError("Error: " + xhr.responseJSON.error + " - " + xhr.responseJSON.message);
                 } else {
-                    alert("Error " + xhr.status);
+                    showToastError("Error " + xhr.status);
                 }
             }
         });
