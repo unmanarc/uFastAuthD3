@@ -34,6 +34,8 @@ bool IdentityManager_DB::initializeDatabase()
                                              `fieldDescription`      VARCHAR(4096)  NOT NULL,
                                              `fieldRegexpValidator`  TEXT           DEFAULT NULL,
                                              `fieldType`             VARCHAR(256)   NOT NULL DEFAULT 'TEXTLINE',
+                                             `isUnique`              BOOLEAN        NOT NULL DEFAULT FALSE,
+                                             `userCanEdit`           BOOLEAN        NOT NULL DEFAULT FALSE,
                                              `isOptionalField`       BOOLEAN        NOT NULL DEFAULT TRUE,
                                              `includeInSearch`       BOOLEAN        NOT NULL DEFAULT FALSE,
                                              `includeInColumnView`   BOOLEAN        NOT NULL DEFAULT FALSE,

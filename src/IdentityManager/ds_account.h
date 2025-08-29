@@ -13,6 +13,8 @@ struct AccountDetailField
     bool includeInToken = true;
     std::string fieldType = "TEXTLINE";
     bool isOptionalField = true;
+    bool userCanEdit = false;
+    bool isUnique = false;
 
     Json::Value toJSON() const
     {
@@ -20,9 +22,12 @@ struct AccountDetailField
         r["description"] = description;
         r["regexpValidator"] = regexpValidator;
         r["includeInSearch"] = includeInSearch;
+        r["includeInToken"] = includeInToken;
         r["includeInColumnView"] = includeInColumnView;
         r["fieldType"] = fieldType;
         r["isOptionalField"] = isOptionalField;
+        r["isUnique"] = isUnique;
+        r["userCanEdit"] = userCanEdit;
         return r;
     }
 
@@ -31,9 +36,12 @@ struct AccountDetailField
         description = JSON_ASSTRING(r, "description", "");
         regexpValidator = JSON_ASSTRING(r, "regexpValidator", "");
         includeInSearch = JSON_ASBOOL(r, "includeInSearch", true);
+        includeInToken = JSON_ASBOOL(r, "includeInToken", true);
         includeInColumnView = JSON_ASBOOL(r, "includeInColumnView", true);
         fieldType = JSON_ASSTRING(r, "fieldType", "TEXTLINE");
         isOptionalField = JSON_ASBOOL(r, "isOptionalField", true);
+        isUnique = JSON_ASBOOL(r, "isUnique", false);
+        userCanEdit = JSON_ASBOOL(r, "userCanEdit", false);
     }
 };
 struct AccountFlags
@@ -75,7 +83,7 @@ struct AccountDetails
     AccountDetails() {}
 
     std::map<std::string, AccountDetailField> fields;
-    std::map<std::string, std::string> fieldValues;
+    //std::map<std::string, std::string> fieldValues;
     std::string accountName, creator;
     AccountFlags accountFlags;
     time_t expirationDate, creationDate;
@@ -91,11 +99,11 @@ struct AccountDetails
             r["fields"][i.first] = i.second.toJSON();
         }
 
-        r["fieldValues"] = json::null;
+       /* r["fieldValues"] = json::null;
         for (auto &i : fieldValues)
         {
             r["fieldValues"][i.first] = i.second;
-        }
+        }*/
 
         r["accountName"] = accountName;
         r["creator"] = creator;
@@ -116,11 +124,11 @@ struct AccountDetails
         }
 
         // Deserialize 'fieldValues' map
-        const Json::Value &fieldValuesJson = r["fieldValues"];
+        /*const Json::Value &fieldValuesJson = r["fieldValues"];
         for (Json::ValueConstIterator it = fieldValuesJson.begin(); it != fieldValuesJson.end(); ++it)
         {
             fieldValues[it.key().asString()] = it->asString();
-        }
+        }*/
 
         accountName = JSON_ASSTRING(r, "accountName", "");
         creator = JSON_ASSTRING(r, "creator", "");
