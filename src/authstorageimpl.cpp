@@ -35,7 +35,8 @@ bool AuthStorageImpl::createAuth()
     if (boost::to_lower_copy(sDriverName) == "sqlite3")
     {
         SQLConnector_SQLite3 *dbConnector = new SQLConnector_SQLite3();
-        dbConnector->setThrowCPPErrorOnQueryFailure(true);
+
+        dbConnector->setThrowCPPErrorOnQueryFailure(Globals::getConfig()->get<bool>("Auth.TerminateOnSQLError", false));
 
         if (!dbConnector->connectInMemory())
         {
@@ -331,6 +332,9 @@ bool AuthStorageImpl::configureApplication(IdentityManager_DB *identityManager, 
                                                                                {{DB_APPNAME, "AUTH_DELETE"}, "Permission to delete authentication schemes and slots on the IAM"},
                                                                                {{DB_APPNAME, "AUTH_MODIFY"}, "Permission to modify authentication schemes and slots on the IAM"},
                                                                                {{DB_APPNAME, "AUTH_READ"}, "Permission to read authentication schemes and slots on the IAM"},
+
+                                                                               {{DB_APPNAME, "CONFIG_READ"}, "Permission to read the configuration of the IAM"},
+                                                                               {{DB_APPNAME, "CONFIG_WRITE"}, "Permission to write the configuration of the IAM"},
 
                                                                                {{DB_APPNAME, "AUDIT_LOG_VIEW"}, "Permission to access, export and view IAM audit logs"},
                                                                                {{DB_APPNAME, "AUDIT_LOG_CLEAN"}, "Permission to clean/remove audit logs"}};
