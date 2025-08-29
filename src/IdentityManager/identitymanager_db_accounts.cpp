@@ -4,6 +4,7 @@
 
 #include "json/value.h"
 #include <Mantids30/Threads/lock_shared.h>
+#include <boost/regex.hpp>
 #include <regex>
 
 #include <Mantids30/Memory/a_bool.h>
@@ -23,21 +24,21 @@ bool IdentityManager_DB::Accounts_DB::addAccount(const std::string &accountName,
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
 
     bool r = _parent->m_sqlConnector->execute("INSERT INTO iam.accounts (`accountName`,`isAdmin`,`isEnabled`,`isBlocked`,`expiration`,`isAccountConfirmed`,`creator`) "
-                                            "VALUES(:accountName,:admin ,:enabled, :blocked ,:expiration ,:confirmed ,:creator);",
-                                            {{":accountName", MAKE_VAR(STRING, accountName)},
-                                             {":admin", MAKE_VAR(BOOL, accountFlags.admin)},
-                                             {":enabled", MAKE_VAR(BOOL, accountFlags.enabled)},
-                                             {":blocked", MAKE_VAR(BOOL, accountFlags.blocked)},
-                                             {":expiration", MAKE_VAR(DATETIME, expirationDate)},
-                                             {":confirmed", MAKE_VAR(BOOL, accountFlags.confirmed)},
-                                             {":creator", sCreatorAccountName.empty() ? MAKE_NULL_VAR /* null */ : MAKE_VAR(STRING, sCreatorAccountName)}});
+                                              "VALUES(:accountName,:admin ,:enabled, :blocked ,:expiration ,:confirmed ,:creator);",
+                                              {{":accountName", MAKE_VAR(STRING, accountName)},
+                                               {":admin", MAKE_VAR(BOOL, accountFlags.admin)},
+                                               {":enabled", MAKE_VAR(BOOL, accountFlags.enabled)},
+                                               {":blocked", MAKE_VAR(BOOL, accountFlags.blocked)},
+                                               {":expiration", MAKE_VAR(DATETIME, expirationDate)},
+                                               {":confirmed", MAKE_VAR(BOOL, accountFlags.confirmed)},
+                                               {":creator", sCreatorAccountName.empty() ? MAKE_NULL_VAR /* null */ : MAKE_VAR(STRING, sCreatorAccountName)}});
 
     if (r)
     {
         // Now create the activation token...
         r = _parent->m_sqlConnector->execute("INSERT INTO iam.accountsActivationToken (`f_accountName`,`confirmationToken`) "
-                                           "VALUES(:account,:confirmationToken);",
-                                           {{":account", MAKE_VAR(STRING, accountName)}, {":confirmationToken", MAKE_VAR(STRING, _parent->authController->genRandomConfirmationToken())}});
+                                             "VALUES(:account,:confirmationToken);",
+                                             {{":account", MAKE_VAR(STRING, accountName)}, {":confirmationToken", MAKE_VAR(STRING, _parent->authController->genRandomConfirmationToken())}});
         if (r)
         {
             // Now create the credential... but!!... the credential should be a valid subset from an authentication mode...
@@ -64,7 +65,7 @@ bool IdentityManager_DB::Accounts_DB::doesAccountExist(const std::string &accoun
     Threads::Sync::Lock_RD lock(_parent->m_mutex);
 
     SQLConnector::QueryInstance i = _parent->m_sqlConnector->qSelect("SELECT `isEnabled` FROM iam.accounts WHERE `accountName`=:accountName LIMIT 1;",
-                                                                                      {{":accountName", MAKE_VAR(STRING, accountName)}}, {});
+                                                                     {{":accountName", MAKE_VAR(STRING, accountName)}}, {});
     if (i.getResultsOK() && i.query->step())
     {
         ret = true;
@@ -82,7 +83,7 @@ bool IdentityManager_DB::Accounts_DB::disableAccount(const std::string &accountN
     }
 
     return _parent->m_sqlConnector->execute("UPDATE iam.accounts SET `isEnabled`=:enabled WHERE `accountName`=:accountName;",
-                                          {{":enabled", MAKE_VAR(BOOL, !disabled)}, {":accountName", MAKE_VAR(STRING, accountName)}});
+                                            {{":enabled", MAKE_VAR(BOOL, !disabled)}, {":accountName", MAKE_VAR(STRING, accountName)}});
 }
 
 bool IdentityManager_DB::Accounts_DB::confirmAccount(const std::string &accountName, const std::string &confirmationToken)
@@ -91,7 +92,7 @@ bool IdentityManager_DB::Accounts_DB::confirmAccount(const std::string &accountN
 
     Abstract::STRING token;
     SQLConnector::QueryInstance i = _parent->m_sqlConnector->qSelect("SELECT `confirmationToken` FROM iam.accountsActivationToken WHERE `f_accountName`=:accountName LIMIT 1;",
-                                                                                      {{":accountName", MAKE_VAR(STRING, accountName)}}, {&token});
+                                                                     {{":accountName", MAKE_VAR(STRING, accountName)}}, {&token});
 
     if (i.getResultsOK() && i.query->step())
     {
@@ -108,7 +109,7 @@ bool IdentityManager_DB::Accounts_DB::changeAccountExpiration(const std::string 
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
 
     return _parent->m_sqlConnector->execute("UPDATE iam.accounts SET `expiration`=:expiration WHERE `accountName`=:accountName;",
-                                          {{":expiration", MAKE_VAR(DATETIME, expiration)}, {":accountName", MAKE_VAR(STRING, accountName)}});
+                                            {{":expiration", MAKE_VAR(DATETIME, expiration)}, {":accountName", MAKE_VAR(STRING, accountName)}});
 }
 
 AccountFlags IdentityManager_DB::Accounts_DB::getAccountFlags(const std::string &accountName)
@@ -117,7 +118,7 @@ AccountFlags IdentityManager_DB::Accounts_DB::getAccountFlags(const std::string 
 
     Abstract::BOOL enabled, confirmed, admin;
     SQLConnector::QueryInstance i = _parent->m_sqlConnector->qSelect("SELECT `isEnabled`,`isAccountConfirmed`,`isAdmin` FROM iam.accounts WHERE `accountName`=:accountName LIMIT 1;",
-                                                                                      {{":accountName", MAKE_VAR(STRING, accountName)}}, {&enabled, &confirmed, &admin});
+                                                                     {{":accountName", MAKE_VAR(STRING, accountName)}}, {&enabled, &confirmed, &admin});
 
     if (i.getResultsOK() && i.query->step())
     {
@@ -139,7 +140,7 @@ bool IdentityManager_DB::Accounts_DB::updateAccountRoles(const std::string &acco
     for (const auto &role : roleSet)
     {
         if (!_parent->m_sqlConnector->execute("INSERT INTO iam.rolesAccounts (`f_roleName`,`f_accountName`) VALUES(:roleName,:accountName);",
-                                            {{":roleName", MAKE_VAR(STRING, role)}, {":accountName", MAKE_VAR(STRING, accountName)}}))
+                                              {{":roleName", MAKE_VAR(STRING, role)}, {":accountName", MAKE_VAR(STRING, accountName)}}))
             return false;
     }
     return true;
@@ -154,11 +155,12 @@ bool IdentityManager_DB::Accounts_DB::changeAccountFlags(const std::string &acco
         return false;
     }
 
-    return _parent->m_sqlConnector->execute("UPDATE iam.accounts SET `isEnabled`=:enabled,`isAccountConfirmed`=:confirmed,`isAdmin`=:admin WHERE `accountName`=:accountName;",
-                                          {{":enabled", MAKE_VAR(BOOL, accountFlags.enabled)},
-                                           {":confirmed", MAKE_VAR(BOOL, accountFlags.confirmed)},
-                                           {":admin", MAKE_VAR(BOOL, accountFlags.admin)},
-                                           {":accountName", MAKE_VAR(STRING, accountName)}});
+    return _parent->m_sqlConnector->execute("UPDATE iam.accounts SET `isEnabled`=:enabled,`isAccountConfirmed`=:confirmed,`isAdmin`=:admin,`isBlocked`=:blocked WHERE `accountName`=:accountName;",
+                                            {{":enabled", MAKE_VAR(BOOL, accountFlags.enabled)},
+                                             {":confirmed", MAKE_VAR(BOOL, accountFlags.confirmed)},
+                                             {":admin", MAKE_VAR(BOOL, accountFlags.admin)},
+                                             {":blocked", MAKE_VAR(BOOL, accountFlags.blocked)},
+                                             {":accountName", MAKE_VAR(STRING, accountName)}});
 }
 
 AccountDetails IdentityManager_DB::Accounts_DB::getAccountDetails(const std::string &accountName)
@@ -176,9 +178,9 @@ AccountDetails IdentityManager_DB::Accounts_DB::getAccountDetails(const std::str
 
     {
         SQLConnector::QueryInstance i = _parent->m_sqlConnector->qSelect("SELECT `isAdmin`,`creation`, `creator`, `expiration`, `isEnabled`, `isAccountConfirmed` "
-                                                                                          "FROM iam.accounts WHERE `accountName`=:accountName LIMIT 1;",
-                                                                                          {{":accountName", MAKE_VAR(STRING, accountName)}},
-                                                                                          {&isAdmin, &creation, &creator, &expiration, &isEnabled, &isAccountConfirmed});
+                                                                         "FROM iam.accounts WHERE `accountName`=:accountName LIMIT 1;",
+                                                                         {{":accountName", MAKE_VAR(STRING, accountName)}},
+                                                                         {&isAdmin, &creation, &creator, &expiration, &isEnabled, &isAccountConfirmed});
 
         if (i.getResultsOK() && i.query->step())
         {
@@ -194,16 +196,16 @@ AccountDetails IdentityManager_DB::Accounts_DB::getAccountDetails(const std::str
         }
     }
 
-    if (accountExist)
+    /* if (accountExist)
     {
-        details.fieldValues = getAccountDetailValues(accountName, ACCOUNT_DETAILS_ALL);
+        details.fieldValues = getAccountDetailFieldValues(accountName, ACCOUNT_DETAILS_ALL);
 
         for (auto &i : details.fieldValues)
         {
             if (allFields.find(i.first) != allFields.end())
                 details.fields[i.first] = allFields[i.first];
         }
-    }
+    }*/
 
     return details;
 }
@@ -214,7 +216,7 @@ time_t IdentityManager_DB::Accounts_DB::getAccountExpirationTime(const std::stri
 
     Abstract::DATETIME expiration;
     SQLConnector::QueryInstance i = _parent->m_sqlConnector->qSelect("SELECT `expiration` FROM iam.accounts WHERE `accountName`=:accountName LIMIT 1;",
-                                                                                      {{":accountName", MAKE_VAR(STRING, accountName)}}, {&expiration});
+                                                                     {{":accountName", MAKE_VAR(STRING, accountName)}}, {&expiration});
     if (i.getResultsOK() && i.query->step())
     {
         return expiration.getValue();
@@ -228,8 +230,8 @@ time_t IdentityManager_DB::Accounts_DB::getAccountCreationTime(const std::string
     Threads::Sync::Lock_RD lock(_parent->m_mutex);
 
     Abstract::DATETIME creation;
-    SQLConnector::QueryInstance i = _parent->m_sqlConnector->qSelect("SELECT `creation` FROM iam.accounts WHERE `accountName`=:accountName LIMIT 1;",
-                                                                                      {{":accountName", MAKE_VAR(STRING, accountName)}}, {&creation});
+    SQLConnector::QueryInstance i = _parent->m_sqlConnector->qSelect("SELECT `creation` FROM iam.accounts WHERE `accountName`=:accountName LIMIT 1;", {{":accountName", MAKE_VAR(STRING, accountName)}},
+                                                                     {&creation});
 
     if (i.getResultsOK() && i.query->step())
     {
@@ -239,9 +241,7 @@ time_t IdentityManager_DB::Accounts_DB::getAccountCreationTime(const std::string
     return std::numeric_limits<time_t>::max();
 }
 
-
-
-Json::Value IdentityManager_DB::Accounts_DB::searchAccounts(const json &dataTablesFilters)
+Json::Value IdentityManager_DB::Accounts_DB::searchFields(const json &dataTablesFilters)
 {
     Json::Value ret;
     Threads::Sync::Lock_RD lock(_parent->m_mutex);
@@ -249,25 +249,23 @@ Json::Value IdentityManager_DB::Accounts_DB::searchAccounts(const json &dataTabl
     // DataTables:
     ret["draw"] = dataTablesFilters["draw"];
 
-    uint64_t offset = JSON_ASUINT64(dataTablesFilters,"start",0);
-    uint64_t limit = JSON_ASUINT64(dataTablesFilters,"length",0);
+    uint64_t offset = JSON_ASUINT64(dataTablesFilters, "start", 0);
+    uint64_t limit = JSON_ASUINT64(dataTablesFilters, "length", 0);
 
     std::string orderByStatement;
 
     // Manejo de ordenamiento (order)
-    const Json::Value& orderArray = dataTablesFilters["order"];
-    if (JSON_ISARRAY_D(orderArray) && orderArray.size()>0)
+    const Json::Value &orderArray = dataTablesFilters["order"];
+    if (JSON_ISARRAY_D(orderArray) && orderArray.size() > 0)
     {
-        const Json::Value& orderArrayElement = orderArray[0];
-        std::string columnName = getColumnNameFromColumnPos(dataTablesFilters,JSON_ASUINT(orderArrayElement,"column",0));
-        std::string dir = JSON_ASSTRING(orderArrayElement,"dir","desc");
+        const Json::Value &orderArrayElement = orderArray[0];
+        std::string columnName = getColumnNameFromColumnPos(dataTablesFilters, JSON_ASUINT(orderArrayElement, "column", 0));
+        std::string dir = JSON_ASSTRING(orderArrayElement, "dir", "desc");
 
-        auto isValidField = [](const std::string& c) -> bool {
-            static const std::vector<std::string> validFields = {
-                "accountName", "creation", "expiration", "lastLogin",
-                "lastChange", "isAdmin", "isEnabled", "isBlocked",
-                "isAccountConfirmed", "creator"
-            };
+        auto isValidField = [](const std::string &c) -> bool
+        {
+            static const std::vector<std::string> validFields = {"fieldName",       "fieldDescription",    "fieldRegexpValidator", "fieldType", "isOptionalField",
+                                                                 "includeInSearch", "includeInColumnView", "includeInToken",       "isUnique",  "userCanEdit"};
             return std::find(validFields.begin(), validFields.end(), c) != validFields.end();
         };
 
@@ -278,9 +276,114 @@ Json::Value IdentityManager_DB::Accounts_DB::searchAccounts(const json &dataTabl
         }
     }
 
+    // Extract the search value from dataTablesFilters
+    std::string searchValue = JSON_ASSTRING(dataTablesFilters["search"], "value", "");
+    std::string whereFilters;
+
+    // Build the SQL query with WHERE clause for DataTables search
+    std::string sqlQueryStr = R"(
+    SELECT
+        fieldName,
+        fieldDescription,
+        fieldRegexpValidator,
+        fieldType,
+        isOptionalField,
+        includeInSearch,
+        includeInColumnView,
+        includeInToken,
+        isUnique,
+        userCanEdit
+    FROM accountDetailFields
+    )";
+
+    // Add WHERE clause for search term if provided
+    if (!searchValue.empty())
+    {
+        searchValue = "%" + searchValue + "%";
+        whereFilters += "fieldName LIKE :SEARCHWORDS OR fieldDescription LIKE :SEARCHWORDS";
+    }
+
+    {
+        Abstract::STRING fieldName, fieldDescription, fieldRegexpValidator, fieldType;
+        Abstract::BOOL isOptionalField, includeInSearch, includeInColumnView, includeInToken, isUnique, userCanEdit;
+        SQLConnector::QueryInstance i = _parent->m_sqlConnector->qSelectWithFilters(sqlQueryStr, whereFilters, {{":SEARCHWORDS", MAKE_VAR(STRING, searchValue)}},
+                                                                                    {&fieldName, &fieldDescription, &fieldRegexpValidator, &fieldType, &isOptionalField, &includeInSearch,
+                                                                                     &includeInColumnView, &includeInToken, &isUnique, &userCanEdit},
+                                                                                    orderByStatement, // Order by
+                                                                                    limit,            // LIMIT
+                                                                                    offset            // OFFSET
+        );
+
+        while (i.getResultsOK() && i.query->step())
+        {
+            Json::Value row;
+
+            // fieldName
+            row["fieldName"] = fieldName.toJSON();
+            // fieldDescription
+            row["fieldDescription"] = fieldDescription.toJSON();
+            // fieldRegexpValidator
+            row["fieldRegexpValidator"] = fieldRegexpValidator.toJSON();
+            // fieldType
+            row["fieldType"] = fieldType.toJSON();
+            // isOptionalField
+            row["isOptionalField"] = isOptionalField.getValue();
+            // includeInSearch
+            row["includeInSearch"] = includeInSearch.getValue();
+            // includeInColumnView
+            row["includeInColumnView"] = includeInColumnView.getValue();
+            // includeInToken
+            row["includeInToken"] = includeInToken.getValue();
+            // isUnique
+            row["isUnique"] = isUnique.getValue();
+            row["userCanEdit"] = userCanEdit.getValue();
+            ret["data"].append(row);
+        }
+
+        ret["recordsTotal"] = i.query->getTotalRecordsCount();
+        ret["recordsFiltered"] = i.query->getFilteredRecordsCount();
+    }
+
+    return ret;
+}
+
+Json::Value IdentityManager_DB::Accounts_DB::searchAccounts(const json &dataTablesFilters)
+{
+    Json::Value ret;
+    Threads::Sync::Lock_RD lock(_parent->m_mutex);
+
+    // DataTables:
+    ret["draw"] = dataTablesFilters["draw"];
+
+    uint64_t offset = JSON_ASUINT64(dataTablesFilters, "start", 0);
+    uint64_t limit = JSON_ASUINT64(dataTablesFilters, "length", 0);
+
+    std::string orderByStatement;
+
+    // Manejo de ordenamiento (order)
+    const Json::Value &orderArray = dataTablesFilters["order"];
+    if (JSON_ISARRAY_D(orderArray) && orderArray.size() > 0)
+    {
+        const Json::Value &orderArrayElement = orderArray[0];
+        std::string columnName = getColumnNameFromColumnPos(dataTablesFilters, JSON_ASUINT(orderArrayElement, "column", 0));
+        std::string dir = JSON_ASSTRING(orderArrayElement, "dir", "desc");
+
+        auto isValidField = [](const std::string &c) -> bool
+        {
+            static const std::vector<std::string> validFields = {"accountName", "creation",  "expiration", "lastLogin",          "lastChange",
+                                                                 "isAdmin",     "isEnabled", "isBlocked",  "isAccountConfirmed", "creator"};
+            return std::find(validFields.begin(), validFields.end(), c) != validFields.end();
+        };
+
+        if (isValidField(columnName))
+        {
+            orderByStatement = "`" + columnName + "` ";
+            orderByStatement += (dir == "desc") ? "DESC" : "ASC";
+        }
+    }
 
     // Extract the search value from dataTablesFilters
-    std::string searchValue = JSON_ASSTRING(dataTablesFilters["search"],"value","");
+    std::string searchValue = JSON_ASSTRING(dataTablesFilters["search"], "value", "");
     std::string whereFilters;
 
     // Build the SQL query with WHERE clause for DataTables search
@@ -316,16 +419,14 @@ Json::Value IdentityManager_DB::Accounts_DB::searchAccounts(const json &dataTabl
         Abstract::DATETIME creation, expiration, lastLogin, lastChange;
         Abstract::BOOL isAdmin, isEnabled, isBlocked, isAccountConfirmed;
         Abstract::STRING creator;
-        
-        SQLConnector::QueryInstance i = _parent->m_sqlConnector->qSelectWithFilters(sqlQueryStr,
-                                                                                    whereFilters,
-                                                                                    {{":SEARCHWORDS", MAKE_VAR(STRING, searchValue)} },
-                                                                                    {&accountName, &creation, &expiration, &lastLogin, &lastChange, &isAdmin, &isEnabled, &isBlocked, &isAccountConfirmed, &creator},
-                                                                                    orderByStatement, // Order by
-                                                                                    limit, // LIMIT
-                                                                                    offset // OFFSET
-                                                                                    );
 
+        SQLConnector::QueryInstance i = _parent->m_sqlConnector->qSelectWithFilters(sqlQueryStr, whereFilters, {{":SEARCHWORDS", MAKE_VAR(STRING, searchValue)}},
+                                                                                    {&accountName, &creation, &expiration, &lastLogin, &lastChange, &isAdmin, &isEnabled, &isBlocked,
+                                                                                     &isAccountConfirmed, &creator},
+                                                                                    orderByStatement, // Order by
+                                                                                    limit,            // LIMIT
+                                                                                    offset            // OFFSET
+        );
 
         while (i.getResultsOK() && i.query->step())
         {
@@ -357,8 +458,6 @@ Json::Value IdentityManager_DB::Accounts_DB::searchAccounts(const json &dataTabl
 
         ret["recordsTotal"] = i.query->getTotalRecordsCount();
         ret["recordsFiltered"] = i.query->getFilteredRecordsCount();
-
-
     }
 
     return ret;
@@ -387,7 +486,7 @@ std::set<std::string> IdentityManager_DB::Accounts_DB::getAccountRoles(const std
 
     Abstract::STRING role;
     SQLConnector::QueryInstance i = _parent->m_sqlConnector->qSelect("SELECT `f_roleName` FROM iam.rolesAccounts WHERE `f_accountName`=:accountName;",
-                                                                                      {{":accountName", MAKE_VAR(STRING, accountName)}}, {&role});
+                                                                     {{":accountName", MAKE_VAR(STRING, accountName)}}, {&role});
     while (i.getResultsOK() && i.query->step())
     {
         ret.insert(role.getValue());
@@ -414,12 +513,12 @@ bool IdentityManager_DB::Accounts_DB::isThereAnotherAdmin(const std::string &acc
 {
     // Check if there is any admin acount beside this "to be deleted" account...
     SQLConnector::QueryInstance i = _parent->m_sqlConnector->qSelect("SELECT `isEnabled` FROM iam.accounts WHERE `accountName`!=:accountName and "
-                                                                                      "`isAdmin`=:admin and `isEnabled`=:enabled and `isAccountConfirmed`=:confirmed LIMIT 1;",
-                                                                                      {{":accountName", MAKE_VAR(STRING, accountName)},
-                                                                                       {":admin", MAKE_VAR(BOOL, true)},
-                                                                                       {":enabled", MAKE_VAR(BOOL, true)},
-                                                                                       {":confirmed", MAKE_VAR(BOOL, true)}},
-                                                                                      {});
+                                                                     "`isAdmin`=:admin and `isEnabled`=:enabled and `isAccountConfirmed`=:confirmed LIMIT 1;",
+                                                                     {{":accountName", MAKE_VAR(STRING, accountName)},
+                                                                      {":admin", MAKE_VAR(BOOL, true)},
+                                                                      {":enabled", MAKE_VAR(BOOL, true)},
+                                                                      {":confirmed", MAKE_VAR(BOOL, true)}},
+                                                                     {});
 
     if (i.getResultsOK() && i.query->step())
         return true;
@@ -435,7 +534,7 @@ int32_t IdentityManager_DB::Accounts_DB::getAccountBlockTokenNoRenew(const std::
     Abstract::DATETIME lastAccess;
 
     SQLConnector::QueryInstance i = _parent->m_sqlConnector->qSelect("SELECT `blockToken`,`lastAccess` FROM iam.accountsBlockToken WHERE `f_accountName`=:accountName;",
-                                                                                      {{":accountName", MAKE_VAR(STRING, accountName)}}, {&blockToken, &lastAccess});
+                                                                     {{":accountName", MAKE_VAR(STRING, accountName)}}, {&blockToken, &lastAccess});
     if (i.getResultsOK() && i.query->step())
     {
         if (lastAccess.getValue() + authenticationPolicy.blockTokenTimeout > time(nullptr))
@@ -460,7 +559,7 @@ void IdentityManager_DB::Accounts_DB::updateOrCreateBlockToken(const std::string
     if (!_parent->m_sqlConnector->execute("UPDATE iam.accountsBlockToken SET `lastAccess`=CURRENT_TIMESTAMP WHERE `f_accountName`=:accountName;", {{":accountName", MAKE_VAR(STRING, accountName)}}))
     {
         _parent->m_sqlConnector->execute("INSERT INTO iam.accountsBlockToken (`f_accountName`,`blockToken`) VALUES(:account,:blockToken);",
-                                       {{":account", MAKE_VAR(STRING, accountName)}, {":blockToken", MAKE_VAR(STRING, _parent->authController->genRandomConfirmationToken())}});
+                                         {{":account", MAKE_VAR(STRING, accountName)}, {":blockToken", MAKE_VAR(STRING, _parent->authController->genRandomConfirmationToken())}});
     }
 }
 
@@ -513,17 +612,19 @@ bool IdentityManager_DB::Accounts_DB::addAccountDetailField(const std::string &f
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
 
     if (!_parent->m_sqlConnector->execute("INSERT INTO iam.accountDetailFields (`fieldName`, `fieldDescription`, `fieldRegexpValidator`, `fieldType`, "
-                                        "`isOptionalField`, `includeInSearch`, `includeInToken`, `includeInColumnView`)"
-                                        " VALUES (:fieldName, :fieldDescription, :fieldRegexpValidator, :fieldType, :isOptionalField, "
-                                        ":includeInSearch,:includeInToken, :includeInColumnView);",
-                                        {{":fieldName", MAKE_VAR(STRING, fieldName)},
-                                         {":fieldDescription", MAKE_VAR(STRING, details.description)},
-                                         {":fieldRegexpValidator", MAKE_VAR(STRING, details.regexpValidator)},
-                                         {":fieldType", MAKE_VAR(STRING, details.fieldType)},
-                                         {":isOptionalField", MAKE_VAR(BOOL, details.isOptionalField)},
-                                         {":includeInSearch", MAKE_VAR(BOOL, details.includeInSearch)},
-                                         {":includeInToken", MAKE_VAR(BOOL, details.includeInToken)},
-                                         {":includeInColumnView", MAKE_VAR(BOOL, details.includeInColumnView)}}))
+                                          "`isOptionalField`, `includeInSearch`, `includeInToken`, `includeInColumnView`, `isUnique`, `userCanEdit`)"
+                                          " VALUES (:fieldName, :fieldDescription, :fieldRegexpValidator, :fieldType, :isOptionalField, "
+                                          ":includeInSearch,:includeInToken, :includeInColumnView, :isUnique, :userCanEdit);",
+                                          {{":fieldName", MAKE_VAR(STRING, fieldName)},
+                                           {":fieldDescription", MAKE_VAR(STRING, details.description)},
+                                           {":fieldRegexpValidator", MAKE_VAR(STRING, details.regexpValidator)},
+                                           {":fieldType", MAKE_VAR(STRING, details.fieldType)},
+                                           {":isOptionalField", MAKE_VAR(BOOL, details.isOptionalField)},
+                                           {":includeInSearch", MAKE_VAR(BOOL, details.includeInSearch)},
+                                           {":includeInToken", MAKE_VAR(BOOL, details.includeInToken)},
+                                           {":includeInColumnView", MAKE_VAR(BOOL, details.includeInColumnView)},
+                                           {":isUnique", MAKE_VAR(BOOL, details.isUnique)},
+                                           {":userCanEdit", MAKE_VAR(BOOL, details.userCanEdit)}}))
     {
         return false;
     }
@@ -551,12 +652,13 @@ std::map<std::string, AccountDetailField> IdentityManager_DB::Accounts_DB::listA
 
     // Variables para capturar valores de la base de datos
     Abstract::STRING fieldName, fieldDescription, fieldRegexpValidator, fieldType;
-    Abstract::BOOL isOptionalField, includeInSearch, includeInColumnView, includeInToken;
+    Abstract::BOOL isOptionalField, includeInSearch, includeInColumnView, includeInToken, isUnique, userCanEdit;
 
-    SQLConnector::QueryInstance i = _parent->m_sqlConnector
-                                                         ->qSelect("SELECT `fieldName`, `fieldDescription`, `fieldRegexpValidator`, `fieldType`, `isOptionalField`, `includeInSearch`, "
-                                                                   "`includeInColumnView` FROM `iam`.`accountDetailFields`;",
-                                                                   {}, {&fieldName, &fieldDescription, &fieldRegexpValidator, &fieldType, &isOptionalField, &includeInSearch, &includeInColumnView});
+    SQLConnector::QueryInstance i = _parent->m_sqlConnector->qSelect("SELECT `fieldName`, `fieldDescription`, `fieldRegexpValidator`, `fieldType`, `isOptionalField`, `includeInSearch`, "
+                                                                     "`includeInColumnView`, `isUnique`, `userCanEdit`, `includeInToken` FROM `iam`.`accountDetailFields`;",
+                                                                     {},
+                                                                     {&fieldName, &fieldDescription, &fieldRegexpValidator, &fieldType, &isOptionalField, &includeInSearch, &includeInColumnView,
+                                                                      &isUnique, &userCanEdit, &includeInToken});
 
     if (i.getResultsOK())
     {
@@ -570,12 +672,48 @@ std::map<std::string, AccountDetailField> IdentityManager_DB::Accounts_DB::listA
             field.includeInSearch = includeInSearch.getValue();
             field.includeInToken = includeInToken.getValue();
             field.includeInColumnView = includeInColumnView.getValue();
+            field.isUnique = isUnique.getValue();
+            field.userCanEdit = userCanEdit.getValue();
 
             fieldMap[fieldName.getValue()] = field;
         }
     }
 
     return fieldMap;
+}
+std::optional<AccountDetailField> IdentityManager_DB::Accounts_DB::getAccountDetailField(const std::string &fieldName)
+{
+    Threads::Sync::Lock_RD lock(_parent->m_mutex);
+
+    AccountDetailField field;
+
+    // Variables para capturar valores de la base de datos
+    Abstract::STRING fieldDescription, fieldRegexpValidator, fieldType;
+    Abstract::BOOL isOptionalField, includeInSearch, includeInColumnView, includeInToken, isUnique, userCanEdit;
+
+    SQLConnector::QueryInstance i
+        = _parent->m_sqlConnector->qSelect("SELECT `fieldDescription`, `fieldRegexpValidator`, `fieldType`, `isOptionalField`, `includeInSearch`, "
+                                           "`includeInColumnView`, `isUnique`,`userCanEdit`, `includeInToken` FROM `iam`.`accountDetailFields` WHERE `fieldName` = :fieldName;",
+                                           {{":fieldName", MAKE_VAR(STRING, fieldName)}},
+                                           {&fieldDescription, &fieldRegexpValidator, &fieldType, &isOptionalField, &includeInSearch, &includeInColumnView, &isUnique, &userCanEdit, &includeInToken});
+
+    if (i.getResultsOK() && i.query->step())
+    {
+        field.description = fieldDescription.getValue();
+        field.regexpValidator = fieldRegexpValidator.getValue();
+        field.fieldType = fieldType.getValue();
+        field.isOptionalField = isOptionalField.getValue();
+        field.includeInSearch = includeInSearch.getValue();
+        field.includeInToken = includeInToken.getValue();
+        field.includeInColumnView = includeInColumnView.getValue();
+        field.isUnique = isUnique.getValue();
+        field.userCanEdit = userCanEdit.getValue();
+
+        return field;
+    }
+
+    // Return empty optional if not found
+    return std::nullopt;
 }
 
 bool IdentityManager_DB::Accounts_DB::changeAccountDetails(const std::string &accountName, const std::map<std::string, std::string> &fieldsValues, bool resetAllValues)
@@ -593,7 +731,7 @@ bool IdentityManager_DB::Accounts_DB::changeAccountDetails(const std::string &ac
         for (const auto &field : fieldsValues)
         {
             _parent->m_sqlConnector->execute("DELETE FROM iam.accountDetailValues WHERE `f_accountName` = :accountName AND `f_fieldName` = :fieldName;",
-                                           {{":accountName", MAKE_VAR(STRING, accountName)}, {":fieldName", MAKE_VAR(STRING, field.first)}});
+                                             {{":accountName", MAKE_VAR(STRING, accountName)}, {":fieldName", MAKE_VAR(STRING, field.first)}});
         }
     }
 
@@ -615,7 +753,7 @@ bool IdentityManager_DB::Accounts_DB::changeAccountDetails(const std::string &ac
 
         // Inserting the validated value
         if (!_parent->m_sqlConnector->execute("INSERT INTO iam.accountDetailValues (`f_accountName`, `f_fieldName`, `value`) VALUES(:accountName, :fieldName, :value);",
-                                            {{":accountName", MAKE_VAR(STRING, accountName)}, {":fieldName", MAKE_VAR(STRING, field.first)}, {":value", MAKE_VAR(STRING, field.second)}}))
+                                              {{":accountName", MAKE_VAR(STRING, accountName)}, {":fieldName", MAKE_VAR(STRING, field.first)}, {":value", MAKE_VAR(STRING, field.second)}}))
         {
             return false;
         }
@@ -628,19 +766,72 @@ bool IdentityManager_DB::Accounts_DB::removeAccountDetail(const std::string &acc
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
     return _parent->m_sqlConnector->execute("DELETE FROM iam.accountDetailValues WHERE `f_accountName` = :accountName AND `f_fieldName` = :fieldName;",
-                                          {{":accountName", MAKE_VAR(STRING, accountName)}, {":fieldName", MAKE_VAR(STRING, fieldName)}});
+                                            {{":accountName", MAKE_VAR(STRING, accountName)}, {":fieldName", MAKE_VAR(STRING, fieldName)}});
 }
 
-std::map<std::string, std::string> IdentityManager_DB::Accounts_DB::getAccountDetailValues(const std::string &accountName, const AccountDetailsToShow &detailsToShow)
+bool IdentityManager_DB::Accounts_DB::updateAccountDetailFieldValues(const std::string &accountName, const std::list<AccountDetailFieldValue> &fieldValues)
+{
+    auto fields = listAccountDetailFields();
+
+    Threads::Sync::Lock_RW lock(_parent->m_mutex);
+
+    // Primero borramos todos los datos de campos para ese usuario
+    _parent->m_sqlConnector->execute("DELETE FROM iam.accountDetailValues WHERE `f_accountName` = :accountName;", {{":accountName", MAKE_VAR(STRING, accountName)}});
+
+
+    for (const auto &fieldValue : fieldValues)
+    {
+        if (fields.find(fieldValue.name)!=fields.end() && fieldValue.value.has_value())
+        {
+            std::string regexpValidator = fields[fieldValue.name].regexpValidator;
+            std::string value = fieldValue.value.value();
+            try
+            {
+                boost::regex regExp(regexpValidator);
+                if (!boost::regex_match(value, regExp))
+                {
+                    return false;
+                }
+            }
+            catch (const boost::regex_error&)
+            {
+                // if not possible, continue with the rest.
+            }
+        }
+    }
+
+    // Luego insertamos los nuevos datos
+    for (const auto &fieldValue : fieldValues)
+    {
+        if (fieldValue.value.has_value())
+        {
+            if (!_parent->m_sqlConnector->execute("INSERT INTO iam.accountDetailValues (`f_accountName`, `f_fieldName`, `value`) VALUES(:accountName, :fieldName, :value);",
+                                                  {{":accountName", MAKE_VAR(STRING, accountName)},
+                                                   {":fieldName", MAKE_VAR(STRING, fieldValue.name)},
+                                                   {":value", MAKE_VAR(STRING, fieldValue.value.value())}}))
+            {
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+
+std::list<IdentityManager::Accounts::AccountDetailFieldValue> IdentityManager_DB::Accounts_DB::getAccountDetailFieldValues(const std::string &accountName, const AccountDetailsToShow &detailsToShow)
 {
     Threads::Sync::Lock_RD lock(_parent->m_mutex);
 
-    std::map<std::string, std::string> detailValues;
+    std::list<AccountDetailFieldValue> detailValues;
 
-    Abstract::STRING fieldName, value;
+    Abstract::STRING fieldName, fieldDescription, fieldType, fieldRegexpValidator, value;
 
-    std::string query = "SELECT vadv.`f_fieldName`, vadv.`value` FROM iam.accountDetailValues vadv JOIN iam.accountDetailFields vadf ON vadv.`f_fieldName` = "
-                        "vadf.`fieldName` WHERE vadv.`f_accountName` = :accountName";
+    std::string query = R"(
+                            SELECT vadf.fieldName, vadf.fieldDescription, vadf.fieldType, vadf.fieldRegexpValidator, vadv.value
+                            FROM iam.accountDetailFields vadf
+                            LEFT JOIN iam.accountDetailValues vadv ON vadf.fieldName = vadv.f_fieldName
+                            AND vadv.f_accountName = :accountName
+                        )";
 
     switch (detailsToShow)
     {
@@ -659,13 +850,25 @@ std::map<std::string, std::string> IdentityManager_DB::Accounts_DB::getAccountDe
         break;
     }
 
-    SQLConnector::QueryInstance i = _parent->m_sqlConnector->qSelect(query, {{":accountName", MAKE_VAR(STRING, accountName)}}, {&fieldName, &value});
+    SQLConnector::QueryInstance i = _parent->m_sqlConnector->qSelect(query, {{":accountName", MAKE_VAR(STRING, accountName)}},
+                                                                     {&fieldName, &fieldDescription, &fieldType, &fieldRegexpValidator, &value});
 
     if (i.getResultsOK())
     {
         while (i.query->step())
         {
-            detailValues[fieldName.getValue()] = value.getValue();
+            AccountDetailFieldValue field;
+            field.name = fieldName.getValue();
+            field.description = fieldDescription.getValue();
+            field.fieldType = fieldType.getValue();
+            field.fieldRegexpValidator = fieldRegexpValidator.getValue();
+
+            if (value.isNull())
+                field.value = std::nullopt;
+            else
+                field.value = value.getValue();
+
+            detailValues.push_back(field);
         }
     }
 

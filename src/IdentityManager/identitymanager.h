@@ -26,7 +26,7 @@ public:
     IdentityManager();
     virtual ~IdentityManager();
 
-    bool validateAccountForNewAccess(const std::string &accountName,const std::string &appName, Reason &reason,  bool checkValidAppAccount);
+    bool validateAccountForNewAccess(const std::string &accountName, const std::string &appName, Reason &reason, bool checkValidAppAccount);
 
     class Accounts
     {
@@ -59,7 +59,7 @@ public:
 
         // Account Details:
         virtual AccountDetails getAccountDetails(const std::string &accountName) = 0;
-        virtual Json::Value searchAccounts(const json & dataTablesFilters) = 0;
+        virtual Json::Value searchAccounts(const json &dataTablesFilters) = 0;
 
         // Account Expiration:
         virtual bool changeAccountExpiration(const std::string &accountName, time_t expiration = 0) = 0;
@@ -83,6 +83,9 @@ public:
         virtual bool addAccountDetailField(const std::string &fieldName, const AccountDetailField &details) = 0;
         virtual bool removeAccountDetailField(const std::string &fieldName) = 0;
         virtual std::map<std::string, AccountDetailField> listAccountDetailFields() = 0;
+        virtual std::optional<AccountDetailField> getAccountDetailField(const std::string &fieldName) = 0;
+
+        virtual Json::Value searchFields(const json &dataTablesFilters) = 0;
 
         // Account Details
         virtual bool changeAccountDetails(const std::string &accountName, const std::map<std::string, std::string> &fieldsValues, bool resetAllValues = false) = 0;
@@ -96,7 +99,43 @@ public:
             ACCOUNT_DETAILS_TOKEN
         };
 
-        virtual std::map<std::string, std::string> getAccountDetailValues(const std::string &accountName, const AccountDetailsToShow &detailsToShow = ACCOUNT_DETAILS_ALL) = 0;
+        struct AccountDetailFieldValue
+        {
+            std::string name;
+            std::string description;
+            std::string fieldType;
+            std::string fieldRegexpValidator;
+            std::optional<std::string> value;
+
+            Json::Value getJSON() const
+            {
+                Json::Value fieldJson;
+                fieldJson["name"] = name;
+                fieldJson["description"] = description;
+                fieldJson["type"] = fieldType;
+                fieldJson["regexpValidator"] = fieldRegexpValidator;
+
+                if (value.has_value())
+                    fieldJson["value"] = value.value();
+                else
+                    fieldJson["value"] = Json::Value(Json::nullValue);
+                return fieldJson;
+            }
+
+            void fromJSON(const Json::Value &json)
+            {
+                name = JSON_ASSTRING(json, "name", "");
+                description = JSON_ASSTRING(json, "description", "");
+                fieldType = JSON_ASSTRING(json, "type", "");
+                fieldRegexpValidator = JSON_ASSTRING(json, "regexpValidator", "");
+                if (json.isMember("value") && !json["value"].isNull())
+                    value = JSON_ASSTRING(json, "value", "");
+            }
+
+        };
+
+        virtual std::list<AccountDetailFieldValue> getAccountDetailFieldValues(const std::string &accountName, const AccountDetailsToShow &detailsToShow = ACCOUNT_DETAILS_ALL) = 0;
+        virtual bool updateAccountDetailFieldValues(const std::string &accountName, const std::list<AccountDetailFieldValue> & fieldValues)=0;
 
     private:
         IdentityManager *m_parent;
@@ -341,7 +380,7 @@ public:
         virtual bool removeAccountFromApplication(const std::string &appName, const std::string &accountName) = 0;
         virtual bool addApplicationOwner(const std::string &appName, const std::string &accountName) = 0;
         virtual bool removeApplicationOwner(const std::string &appName, const std::string &accountName) = 0;
-        virtual Json::Value searchApplications(const json & dataTablesFilters) = 0;
+        virtual Json::Value searchApplications(const json &dataTablesFilters) = 0;
 
         // Weblogin return urls:
         virtual bool addWebLoginRedirectURIToApplication(const std::string &appName, const std::string &loginRedirectURI) = 0;
