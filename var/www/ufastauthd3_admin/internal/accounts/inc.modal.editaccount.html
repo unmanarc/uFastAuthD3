@@ -1,0 +1,106 @@
+<script>
+    let currentAccount = "";
+</script>
+
+<div class="modal fade" id="modalEditAccount" data-bs-backdrop="static" data-bs-keyboard="true" tabindex="-1"
+    aria-labelledby="modalEditAccountLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalEditAccountLabel">Edit User Account</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <table width=100% style=" border-spacing: 10px;   border-collapse: separate;">
+                    <tr>
+                        <td align="right" width=15%>Editing Account: </td>
+                        <td><input type="username" name="username" id="editAccountName" class="form-control"
+                                placeholder="Account Name" readonly></td>
+                    </tr>
+                </table>
+                <table width=100% style=" border-spacing: 10px;   border-collapse: separate;">
+                    <tr>
+                        <td>
+                            <ul class="nav nav-tabs" id="myTab" role="tablist">
+                                <li class="nav-item">
+                                    <button class="nav-link active" id="details-tab" data-bs-toggle="tab"
+                                        href="#details" type="button" role="tab" aria-controls="details"
+                                        aria-selected="true">Details</button>
+                                </li>
+                                <li class="nav-item">
+                                    <button class="nav-link" id="groups-tab" data-bs-toggle="tab"
+                                        data-bs-target="#groups" type="button" role="tab" aria-controls="groups"
+                                        aria-selected="false">Groups</button>
+                                </li>
+                                <li class="nav-item">
+                                    <button class="nav-link" id="applications-tab" data-bs-toggle="tab"
+                                        data-bs-target="#applications" type="button" role="tab"
+                                        aria-controls="applications" aria-selected="false">Applications</button>
+                                </li>
+                                <!-- <li class="nav-item">
+                                    <button class="nav-link" id="expiration-tab" data-bs-toggle="tab" data-bs-target="#expiration" type="button" role="tab" aria-controls="expiration" aria-selected="false">Expiration</button>
+                                </li> -->
+                                <li class="nav-item">
+                                    <button class="nav-link" id="advanced-tab" data-bs-toggle="tab"
+                                        data-bs-target="#advanced" type="button" role="tab" aria-controls="advanced"
+                                        aria-selected="false">Advanced Controls</button>
+                                </li>
+                                <!-- <li class="nav-item">
+                                <button class="nav-link" id="logs-tab" data-bs-toggle="tab" data-bs-target="#logs" type="button" role="tab" aria-controls="logs" aria-selected="false">Logs</button>
+                                </li> -->
+                            </ul>
+                        </td>
+                    </tr>
+                </table>
+                <div class="tab-content" id="myTabContent">
+                    <!--<%include:/internal/accounts/inc.modal.editaccount_details.html%>-->
+                    <!--<%include:/internal/accounts/inc.modal.editaccount_groups.html%>-->
+                    <!--<%include:/internal/accounts/inc.modal.editaccount_applications.html%>-->
+                    <!--<%include:/internal/accounts/inc.modal.editaccount_advanced.html%>-->
+                    <!--<%include:/internal/accounts/inc.modal.editaccount_logs.html%>-->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script>
+
+    function ajaxValidateAndPopulateAccount() {
+        $.ajax({
+
+            url: '/api/v1/doesAccountExist',
+            type: 'GET',
+            contentType: 'application/json',
+            data: JSON.stringify({ accountName: currentAccount }),
+            success: function (response) {
+                if (response.exists === true) {
+                    document.getElementById("editAccountName").value = currentAccount;
+                    populateDetails(currentAccount);
+                    //populateAccount();
+                } else {
+                    showToastError("Account does not exist");
+                }
+            },
+            error: commonFunctionError
+        });
+    }
+
+
+    function loadAndEditAccount(b64AccountName) {
+        // Decode Base64 to plain text
+        currentAccount = atob(b64AccountName);
+
+        ajaxValidateAndPopulateAccount();
+
+        var hash = location.hash;
+        if (hash == "#applications") {
+            $('#applications-tab').trigger('click');
+        }
+
+    }
+
+
+
+</script>

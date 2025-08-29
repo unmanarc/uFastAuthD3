@@ -1,0 +1,250 @@
+<script>
+    function createAccountFieldClearParameters() {
+        // Reset text inputs
+        document.getElementById("fieldName").value = "";
+        document.getElementById("fieldName").readOnly = false;
+        document.getElementById("fieldName").style.backgroundColor = "#FFFFFF";
+
+        document.getElementById("fieldDescription").value = "";
+        document.getElementById("fieldRegexpValidator").value = "";
+        // Reset select dropdown
+        document.getElementById("fieldType").selectedIndex = 0;
+
+        // Reset checkbox states to their original defaults
+/*        document.getElementById("isOptionalField").checked = true;
+        document.getElementById("isOptionalField").disabled = false;
+        document.getElementById("isOptionalField").readOnly = false;
+
+        document.getElementById("includeInSearch").checked = false;
+        document.getElementById("includeInColumnView").checked = false;*/
+        
+        document.getElementById("includeInToken").checked = false;
+
+        document.getElementById("isUnique").checked = false;
+        document.getElementById("isUnique").disabled = false;
+        document.getElementById("isUnique").readOnly = false;
+
+                document.getElementById("userCanEdit").checked = false;
+        document.getElementById("userCanEdit").disabled = false;
+        document.getElementById("userCanEdit").readOnly = false;
+
+
+        // Change modal title to "Create Accounts Field"
+        document.getElementById("modalCreateAccountFieldLabel").innerText = "Create Accounts Field";
+
+        // Change button text to "Create Field"
+        const createButton = document.querySelector('#modalCreateAccountField .btn-success');
+        if (createButton) {
+            createButton.innerText = "Create Field";
+            createButton.onclick = function () {
+                // Custom logic for creating the field can be added here
+                // For now, we'll just call the existing ajaxCreateAccountField function
+                ajaxCreateAccountField();
+            };
+        }
+    }
+
+    function editAccoundField(fieldNameB64) {
+        const fieldName = window.atob(fieldNameB64);
+
+        $.ajax({
+            url: '/api/v1/getAccountDetailField',
+            type: 'GET',
+            contentType: 'application/json',
+            data: JSON.stringify({
+                fieldName: fieldName
+            }),
+            success: function (response, textStatus, xhr) {
+
+                var myModal = new bootstrap.Modal(document.getElementById("modalCreateAccountField"));
+                myModal.show();
+
+
+                // Populate form fields with response data
+                document.getElementById("fieldName").value = fieldName || "";
+                document.getElementById("fieldName").readOnly = true;
+                document.getElementById("fieldName").style.backgroundColor = "#f8f9fa";
+                document.getElementById("fieldDescription").value = response.description || "";
+                document.getElementById("fieldRegexpValidator").value = response.regexpValidator || "";
+
+
+                // Set select dropdown value
+                const fieldTypeSelect = document.getElementById("fieldType");
+                if (response.fieldType) {
+                    for (let i = 0; i < fieldTypeSelect.options.length; i++) {
+                        if (fieldTypeSelect.options[i].value === response.fieldType) {
+                            fieldTypeSelect.selectedIndex = i;
+                            break;
+                        }
+                    }
+                }
+
+                // Set checkbox states
+/*                document.getElementById("isOptionalField").checked = response.isOptionalField || false;
+                // Disable the checkbox to prevent modification
+                document.getElementById("isOptionalField").disabled = true;
+                document.getElementById("isOptionalField").readOnly = true;
+                document.getElementById("includeInSearch").checked = response.includeInSearch || false;
+                document.getElementById("includeInColumnView").checked = response.includeInColumnView || false;
+                */
+                document.getElementById("includeInToken").checked = response.includeInToken || false;
+                document.getElementById("userCanEdit").checked = response.userCanEdit || false;
+                document.getElementById("isUnique").checked = response.isUnique || false;
+                document.getElementById("isUnique").disabled = true;
+                document.getElementById("isUnique").readOnly = true;
+
+
+                // Change modal title to "Edit Accounts Field"
+                document.getElementById("modalCreateAccountFieldLabel").innerText = "Edit Accounts Field";
+
+                // Change button text to "Update Field"
+                const updateButton = document.querySelector('#modalCreateAccountField .btn-success');
+                if (updateButton) {
+                    updateButton.innerText = "Update Field";
+                    updateButton.onclick = function () {
+                        // Custom logic for updating the field can be added here
+                        // For now, we'll just call the existing ajaxCreateAccountField function
+                        ajaxCreateAccountField();
+                    };
+                }
+
+            },
+            error: commonFunctionError
+        });
+    }
+
+
+    function ajaxCreateAccountField() {
+        const fieldName = $("#fieldName").val();
+
+        // Validate field name to ensure it only contains letters, numbers, hyphens, or underscores
+        const fieldNameRegex = /^[A-Za-z0-9_-]+$/;
+        if (!fieldNameRegex.test(fieldName)) {
+            showToastError("Field name must contain only letters, numbers, hyphens, or underscores.");
+            return;
+        }
+
+        $.ajax({
+            url: '/api/v1/addAccountDetailField',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({
+                fieldName: fieldName,
+                description: $("#fieldDescription").val(),
+                regexpValidator: $("#fieldRegexpValidator").val(),
+                fieldType: $("#fieldType").val(),
+/*                isOptionalField: $("#isOptionalField:checked").length > 0,
+                includeInSearch: $("#includeInSearch:checked").length > 0,
+                includeInColumnView: $("#includeInColumnView:checked").length > 0,*/
+                includeInToken: $("#includeInToken:checked").length > 0,
+                isUnique: $("#isUnique:checked").length > 0,
+                userCanEdit: $("#userCanEdit:checked").length > 0,
+
+            }),
+            success: function (response, textStatus, xhr) {
+                $('#modalCreateAccountField').modal('hide');
+                // Refresh the DataTable after successful field creation
+                var table = new DataTable('#fieldsTable');
+                table.ajax.reload();
+
+                showToastSuccess("Field created successfully.");
+
+            },
+            error: commonFunctionError
+        });
+    }
+</script>
+
+<div class="modal fade" id="modalCreateAccountField" data-bs-backdrop="static" data-bs-keyboard="true" tabindex="-1"
+    aria-labelledby="modalCreateAccountFieldLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalCreateAccountFieldLabel">Create New Accounts Field</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <table width=100% style=" border-spacing: 10px;   border-collapse: separate;">
+                    <tr>
+                        <td colspan="2" align="">
+                            <h6>Accounts Field Info</h6>
+                            <hr>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td align="right">Field Name:</td>
+                        <td><input type="text" name="fieldName" id="fieldName" class="form-control"
+                                placeholder="Field Name (letters, numbers, hyphens, underscores only)" required
+                                oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9_-]/g, '')">
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td align="right">Field Description:</td>
+                        <td><textarea name="fieldDescription" id="fieldDescription" class="form-control"
+                                placeholder="Field Description" rows="3" required></textarea></td>
+                    </tr>
+                    <tr>
+                        <td align="right">Regular Expression Validator:</td>
+                        <td><input type="text" name="fieldRegexpValidator" id="fieldRegexpValidator"
+                                class="form-control" placeholder="Regular Expression Validator (Optional)"></td>
+                    </tr>
+                    <tr>
+                        <td align="right">Field Type:</td>
+                        <td>
+                            <select name="fieldType" id="fieldType" class="form-control">
+                                <option value="TEXTLINE">Text Line</option>
+                                <option value="TEXTAREA">Text Area</option>
+                                <option value="PASSWORD">Password</option>
+                                <option value="EMAIL">Email</option>
+                                <option value="NUMBER">Number</option>
+                                <option value="CHECKBOX">Checkbox (Boolean)</option>
+                            </select>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td colspan="2" align="">
+                            <h6>Field Options</h6>
+                            <hr>
+                        </td>
+                    </tr>
+           <!--         <tr>
+                        <td align="right">Is Optional Field:</td>
+                        <td><input type="checkbox" id="isOptionalField" checked></td>
+                    </tr>
+                    <tr>
+                        <td align="right">Include in Search:</td>
+                        <td><input type="checkbox" id="includeInSearch"></td>
+                    </tr>
+
+                    <tr>
+                        <td align="right">Include in Column View:</td>
+                        <td><input type="checkbox" id="includeInColumnView"></td>
+                    </tr>-->
+
+                    <tr>
+                        <td align="right">Include in Token:</td>
+                        <td><input type="checkbox" id="includeInToken"></td>
+                    </tr>
+
+                    <tr>
+                        <td align="right">Is Unique:</td>
+                        <td><input type="checkbox" id="isUnique"></td>
+                    </tr>
+                    <tr>
+                        <td align="right">User can edit this field:</td>
+                        <td><input type="checkbox" id="userCanEdit"></td>
+                    </tr>
+
+                </table>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-success" onclick="javascript:ajaxCreateAccountField()">Create
+                    Field</button>
+            </div>
+        </div>
+    </div>
+</div>

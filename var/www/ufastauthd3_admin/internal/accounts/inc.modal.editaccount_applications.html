@@ -1,0 +1,153 @@
+<div class="tab-pane fade" id="applications" role="tabpanel" aria-labelledby="applications-tab"
+    style="min-height: 500px;">
+
+    <table width=100% style=" border-spacing: 10px;   border-collapse: separate;">
+
+        <tr id="addApplicationTR">
+            <td align="right">
+                <select class="form-select" aria-label="Default select example" id="applicationsLeft"
+                    style="min-width: 300px;">
+                </select><br>
+                <button type="button" class="btn btn-sm btn-success" onclick="javascript:addApplication()">Add
+                    Application</button>
+            </td>
+        </tr>
+
+        <tr>
+            <td align="center">
+                <h5 style="text-align: left;">User Applications:</h5>
+                <hr>
+            </td>
+        </tr>
+
+        <tr>
+            <td align="center" id="accountAttributesTD">
+            </td>
+        </tr>
+
+    </table>
+</div>
+
+<script>
+
+    function attribRemove(appId, attribId) {
+        $.ajax({
+            url: '/japi_exec?method=attribAccountRemove',
+            headers: { "CSRFToken": csrfToken },
+            data: {
+                payload: JSON.stringify(
+                    {
+                        appName: document.getElementById(`userapp-key-${appId}`).value,
+                        attribName: document.getElementById(`ulist-attribNameById-${appId}-${attribId}`).value,
+                        accountName: $(`#accountName`).val()
+                    }
+                )
+            },
+            type: 'POST',
+            success: function (response) {
+                if (response["retCode"] == true) {
+                    populateAccount();
+                }
+                else {
+                    alert("Internal error modifying the account applications attributes.");
+                }
+            },
+            error: commonFunctionError
+        });
+
+    }
+
+    function addApplicationAttribute(appId) {
+        var appItems = document.getElementById(`applicationsAttribsLeft-${appId}`);
+        var selItem = appItems.selectedIndex;
+        if (selItem == -1) {
+            alert('Please select an attribute');
+            document.getElementById(`applicationsAttribsLeft-${appId}`).focus();
+            return;
+        }
+
+        $.ajax({
+            url: '/japi_exec?method=attribAccountAdd',
+            headers: { "CSRFToken": csrfToken },
+            data: {
+                payload: JSON.stringify(
+                    {
+                        appName: $(`#userapp-key-${appId}`).val(),
+                        attribName: appItems.value,
+                        accountName: $(`#accountName`).val()
+                    }
+                )
+            },
+            type: 'POST',
+            success: function (response) {
+                if (response["retCode"] == true) {
+                    populateAccount();
+                }
+                else {
+                    alert("Internal error modifying the account applications attributes.");
+                }
+            },
+            error: commonFunctionError
+        });
+    }
+
+    function removeApplication(appId) {
+        var appName = document.getElementById(`userapp-key-${appId}`).value;
+
+        $.ajax({
+            url: '/japi_exec?method=applicationAccountRemove',
+            headers: { "CSRFToken": csrfToken },
+            data: {
+                payload: JSON.stringify(
+                    {
+                        accountName: $("#accountName").val(),
+                        appName: appName
+                    }
+                )
+            },
+            type: 'POST',
+            success: function (response) {
+                if (response["retCode"] == true) {
+                    populateAccount();
+                }
+                else {
+                    alert("Internal error modifying the account applications.");
+                }
+            },
+            error: commonFunctionError
+        });
+    }
+
+    function addApplication() {
+        var appItems = document.getElementById("applicationsLeft");
+        var selItem = appItems.selectedIndex;
+        if (selItem == -1) {
+            alert('Please select an application');
+            document.getElementById("applicationsLeft").focus();
+            return;
+        }
+
+        $.ajax({
+            url: '/japi_exec?method=applicationAccountAdd',
+            headers: { "CSRFToken": csrfToken },
+            data: {
+                payload: JSON.stringify(
+                    {
+                        accountName: $("#accountName").val(),
+                        appName: appItems.value
+                    }
+                )
+            },
+            type: 'POST',
+            success: function (response) {
+                if (response["retCode"] == true) {
+                    populateAccount();
+                }
+                else {
+                    alert("Internal error modifying the account applications.");
+                }
+            },
+            error: commonFunctionError
+        });
+    }
+</script>

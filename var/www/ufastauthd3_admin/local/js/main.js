@@ -93,6 +93,7 @@ function ajaxExecuteMethod( methodName, payloadData, successFunction ) {
 }
 */
 
+/*
 function commonFunctionError(xhr, ajaxOptions, thrownError) {
   if (xhr.status == 404) {
     // Session is gone...
@@ -101,9 +102,17 @@ function commonFunctionError(xhr, ajaxOptions, thrownError) {
   else {
     console.log("Network error " + xhr.status);
   }
+}*/
+
+function commonFunctionError(xhr, status, error) {
+  if (xhr.responseJSON && xhr.responseJSON.error && xhr.responseJSON.message) {
+    showToastError("Error: " + xhr.responseJSON.error + " - " + xhr.responseJSON.message);
+  } else {
+    showToastError("Error " + xhr.status);
+  }
 }
 
 function ajaxLoadInfo() {
- $('#welcome').text("Welcome " + user);
- $("#version").text(softwareVersion);
+  $('#welcome').text(user);
+  $("#version").text(softwareVersion);
 }

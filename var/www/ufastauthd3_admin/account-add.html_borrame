@@ -1,0 +1,80 @@
+<!--<%include:/internal/inc.main.header.html%>-->
+<!--<%include:/internal/inc.layout.leftpanel.header.html%>-->
+<!--<%include:/internal/inc.links.accounts.html%>-->
+<!--<%include:/internal/inc.layout.leftpanel.middle.html%>-->
+
+<script>
+  document.getElementById("apptitle").innerHTML = "Accounts &#9658; Create New Account";
+  document.getElementById("mainview-accounts-create-link").style.color = "white";
+
+  function csrfReady() {
+  }
+  function ajaxCreateAccount() {
+    var pwdCheck = checkPasswordReq($("#newpass0").val(), 12);
+
+    if ($("#newpass0").val() != $("#newpass1").val()) {
+      alert("Password does not match.");
+      $("#newpass0").focus();
+      return;
+    }
+    else if (pwdCheck != "") {
+      alert(pwdCheck);
+   //   alert($("#newpass0").val());
+      $("#newpass0").focus();
+      return;
+    }
+
+    var payloadData = {
+      secretTempPass: $("#newpass0").val(),
+      accountName: $("#accountName").val(),
+      givenName: $("#givenName").val(),
+      lastName: $("#lastName").val(),
+      extraData: $("#extraData").val(),
+      description: $("#description").val(),
+      mail: $("#mail").val(),
+      isConfirmed: $("#isConfirmed:checked").length > 0,
+      isEnabled: $("#isEnabled:checked").length > 0,
+      isAdmin: $("#isAdmin:checked").length > 0
+    };
+
+    $.ajax({
+      url: '/japi_exec?method=accountAdd',
+      headers: { "CSRFToken": csrfToken },
+      data: { payload: JSON.stringify(payloadData) },
+      type: 'POST',
+      success: function (response) {
+
+        if (response["retCode"] == false) {
+          alert("User creation failed (" + response["retMsg"] + ").");
+        }
+        else {
+          alert("User was created!");
+          window.location = "/account-edit?" + window.btoa($("#accountName").val());
+        }
+      },
+      error: commonFunctionError
+    });
+  }
+
+  function generateRandomPassword() {
+
+    document.getElementById("pass0TR").style.visibility = "";
+    document.getElementById("pass1TR").style.visibility = "collapse";
+    document.getElementById("pass2TR").style.visibility = "collapse";
+    var proposedPasswd = genNewPassword();
+    document.getElementById("newpassGEN").innerText = proposedPasswd;
+    document.getElementById("newpass0").value = proposedPasswd;
+    document.getElementById("newpass1").value = proposedPasswd;
+  }
+
+
+</script>
+
+<!-- Trigger the modal with a button -->
+<button type="button" class="btn btn-primary" data-toggle="modal" data-target="#createAccountModal">
+  Open Create Account Modal
+</button>
+
+<hr>
+<!--<%include:/internal/inc.layout.leftpanel.footer.html%>-->
+<!--<%include:/internal/inc.main.footer.html%>-->
