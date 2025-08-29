@@ -13,11 +13,12 @@ using ClientDetails = Mantids30::Sessions::ClientDetails;
 void WebAdminMethods_Applications::addMethods_Applications(std::shared_ptr<MethodsHandler> methods)
 {
     using SecurityOptions = Mantids30::API::RESTful::MethodsHandler::SecurityOptions;
+    methods->addResource(MethodsHandler::GET, "searchApplications", &searchApplications, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
+    methods->addResource(MethodsHandler::DELETE, "removeApplication", &removeApplication, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_DELETE"});
+    methods->addResource(MethodsHandler::POST, "addApplication", &addApplication, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_CREATE"});
 
     // Applications
-    methods->addResource(MethodsHandler::GET, "getApplicationInfo", &getApplicationInfo, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
-    methods->addResource(MethodsHandler::POST, "addApplication", &addApplication, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_CREATE"});
-    methods->addResource(MethodsHandler::POST, "removeApplication", &removeApplication, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_DELETE"});
+   /* methods->addResource(MethodsHandler::GET, "getApplicationInfo", &getApplicationInfo, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
     methods->addResource(MethodsHandler::GET, "doesApplicationExist", &doesApplicationExist, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
     methods->addResource(MethodsHandler::GET, "getApplicationDescription", &getApplicationDescription, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
     methods->addResource(MethodsHandler::POST, "updateApplicationDescription", &updateApplicationDescription, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"});
@@ -32,7 +33,6 @@ void WebAdminMethods_Applications::addMethods_Applications(std::shared_ptr<Metho
     methods->addResource(MethodsHandler::POST, "removeAccountFromApplication", &removeAccountFromApplication, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"});
     methods->addResource(MethodsHandler::POST, "addApplicationOwner", &addApplicationOwner, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"});
     methods->addResource(MethodsHandler::POST, "removeApplicationOwner", &removeApplicationOwner, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"});
-    methods->addResource(MethodsHandler::GET, "searchApplications", &searchApplications, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
     methods->addResource(MethodsHandler::POST, "modifyWebLoginJWTConfigForApplication", &modifyWebLoginJWTConfigForApplication, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"});
     methods->addResource(MethodsHandler::GET, "getWebLoginJWTConfigFromApplication", &getWebLoginJWTConfigFromApplication, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
     methods->addResource(MethodsHandler::POST, "setWebLoginJWTSigningKeyForApplication", &setWebLoginJWTSigningKeyForApplication, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"});
@@ -42,18 +42,13 @@ void WebAdminMethods_Applications::addMethods_Applications(std::shared_ptr<Metho
     methods->addResource(MethodsHandler::GET, "listWebLoginRedirectURIsFromApplication", &listWebLoginRedirectURIsFromApplication, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
     methods->addResource(MethodsHandler::POST, "addWebLoginOriginURLToApplication", &addWebLoginOriginURLToApplication, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"});
     methods->addResource(MethodsHandler::POST, "removeWebLoginOriginURLToApplication", &removeWebLoginOriginURLToApplication, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"});
-    methods->addResource(MethodsHandler::GET, "listWebLoginOriginUrlsFromApplication", &listWebLoginOriginUrlsFromApplication, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
+    methods->addResource(MethodsHandler::GET, "listWebLoginOriginUrlsFromApplication", &listWebLoginOriginUrlsFromApplication, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});*/
 }
 
-void WebAdminMethods_Applications::addApplication(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
+
+void WebAdminMethods_Applications::searchApplications(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
 {
-    if (!Globals::getIdentityManager()->applications->addApplication(JSON_ASSTRING(*request.inputJSON, "appName", ""), JSON_ASSTRING(*request.inputJSON, "description", ""),
-                                                                     JSON_ASSTRING(*request.inputJSON, "appKey", ""), request.jwtToken->getSubject()))
-    {
-        response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Internal Error");
-        return;
-    }
-    return;
+    (*response.responseJSON()) = Globals::getIdentityManager()->applications->searchApplications(*request.inputJSON);
 }
 
 void WebAdminMethods_Applications::removeApplication(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
@@ -72,6 +67,20 @@ void WebAdminMethods_Applications::removeApplication(void *context, APIReturn &r
         return;
     }
 }
+void WebAdminMethods_Applications::addApplication(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
+{
+    if (!Globals::getIdentityManager()->applications->addApplication(JSON_ASSTRING(*request.inputJSON, "appName", ""), JSON_ASSTRING(*request.inputJSON, "description", ""),
+                                                                     JSON_ASSTRING(*request.inputJSON, "appKey", ""), request.jwtToken->getSubject()))
+    {
+        response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Internal Error");
+        return;
+    }
+    return;
+}
+
+
+/*
+
 
 void WebAdminMethods_Applications::doesApplicationExist(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
 {
@@ -85,7 +94,7 @@ void WebAdminMethods_Applications::doesApplicationExist(void *context, APIReturn
 void WebAdminMethods_Applications::getApplicationDescription(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     (*response.responseJSON()) = Globals::getIdentityManager()->applications->getApplicationDescription(JSON_ASSTRING(*request.inputJSON, "appName", ""));
-}
+}*/
 /*
 void WebAdminMethods_Applications::getApplicationAPIKey(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
 {
@@ -93,7 +102,6 @@ void WebAdminMethods_Applications::getApplicationAPIKey(void *context, APIReturn
     payloadOut["appKey"] = Globals::getIdentityManager()->getApplicationAPIKey( JSON_ASSTRING(*request.inputJSON,"appName",""));
     return payloadOut;
 }
-*/
 void WebAdminMethods_Applications::getApplicationInfo(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     json payloadOut;
@@ -117,9 +125,6 @@ void WebAdminMethods_Applications::getApplicationInfo(void *context, APIReturn &
     {
         auto getAccountDetails = Globals::getIdentityManager()->accounts->getAccountDetails(acct);
         payloadOut["accounts"][i]["name"] = acct;
-        /*        payloadOut["accounts"][i]["description"] = getAccountDetails.description;
-        payloadOut["accounts"][i]["givenName"] = getAccountDetails.givenName;
-        payloadOut["accounts"][i]["lastName"] = getAccountDetails.lastName;*/
         i++;
     }
 
@@ -210,10 +215,6 @@ void WebAdminMethods_Applications::removeApplicationOwner(void *context, APIRetu
     }
 }
 
-void WebAdminMethods_Applications::searchApplications(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
-{
-    (*response.responseJSON()) = Globals::getIdentityManager()->applications->searchApplications(*request.inputJSON);
-}
 
 void WebAdminMethods_Applications::addWebLoginRedirectURIToApplication(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
 {
@@ -315,4 +316,4 @@ void WebAdminMethods_Applications::getWebLoginJWTSigningKeyForApplication(void *
     std::string appName = JSON_ASSTRING(*request.inputJSON, "appName", "");
     std::string signingKey = Globals::getIdentityManager()->applications->getWebLoginJWTSigningKeyForApplication(appName);
     (*response.responseJSON()) = signingKey;
-}
+}*/

@@ -1,0 +1,84 @@
+<script>
+    function generateRandomKey() {
+        var proposedKey = genNewKey();
+        document.getElementById("appKey").value = proposedKey;
+    }
+
+    function createApplicationClearParameters() {
+        generateRandomKey();
+    }
+
+
+    function ajaxCreateApplication() {
+        $.ajax({
+            url: '/api/v1/addApplication',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({
+                appName: $("#appName").val(),
+                description: $("#appDescription").val(),
+                appKey: $("#appKey").val()
+            }),
+            success: function (response, textStatus, xhr) {
+                $('#modalCreateApplication').modal('hide');
+                // Refresh the DataTable after successful user creation
+                var table = new DataTable('#ApplicationsTable');
+                table.ajax.reload();
+
+                showToastSuccess("Application created successfully.");
+
+
+            },
+            error: commonFunctionError
+        });
+    }
+
+</script>
+
+<div class="modal fade" id="modalCreateApplication" data-bs-backdrop="static" data-bs-keyboard="true" tabindex="-1"
+    aria-labelledby="modalCreateApplicationLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalCreateApplicationLabel">Create New Application</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+
+
+                <table width=100% style=" border-spacing: 10px;   border-collapse: separate;">
+                    <tr>
+                        <td align="right">Application Name: </td>
+                        <td><input type="text" name="appName" id="appName" class="form-control"
+                                placeholder="Application Name" style="text-transform: uppercase"
+                                oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9_-]/g, '')"></td>
+                    </tr>
+                    <tr>
+                        <td align="right">Description: </td>
+                        <td><input id="appDescription" class="form-control" placeholder="Description"></td>
+                    </tr>
+                    <tr>
+                        <td align="right">Key: </td>
+                        <td>
+
+                            <div class="input-group">
+                                <input id="appKey" class="form-control" placeholder="" readonly>
+                                &nbsp;
+                                <button type="button" class="btn btn-light"
+                                    onclick="javascript:generateRandomKey()">&#128259;</button>
+                            </div>
+
+                        </td>
+                    </tr>
+                </table>
+
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-success" onclick="javascript:ajaxCreateApplication()">Create
+                    Application</button>
+            </div>
+        </div>
+    </div>
+</div>
