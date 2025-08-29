@@ -15,8 +15,12 @@ public:
 protected:
     static void addMethods_Applications(std::shared_ptr<MethodsHandler> methods);
 
-    static void addApplication(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
+    static void searchApplications(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
     static void removeApplication(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
+    static void addApplication(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
+
+/*
+    static void removeApplicationOwner(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
     static void doesApplicationExist(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
     static void getApplicationDescription(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
     static void getApplicationAPIKey(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
@@ -32,8 +36,6 @@ protected:
     static void addAccountToApplication(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
     static void removeAccountFromApplication(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
     static void addApplicationOwner(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
-    static void removeApplicationOwner(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
-    static void searchApplications(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
     static void addWebLoginRedirectURIToApplication(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
     static void removeWebLoginRedirectURIToApplication(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
     static void listWebLoginRedirectURIsFromApplication(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
@@ -43,5 +45,6 @@ protected:
     static void modifyWebLoginJWTConfigForApplication(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
     static void getWebLoginJWTConfigFromApplication(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
     static void setWebLoginJWTSigningKeyForApplication(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
-    static void getWebLoginJWTSigningKeyForApplication(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
+    static void getWebLoginJWTSigningKeyForApplication(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);*/
 };
+

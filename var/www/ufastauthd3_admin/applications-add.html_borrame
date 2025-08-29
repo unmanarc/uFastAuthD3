@@ -1,6 +1,6 @@
 <!--<%include:/includes/inc.main.header.html%>-->
 <!--<%include:/includes/inc.layout.leftpanel.header.html%>-->
-<!--<%include:/includes/inc.links.applications.html%>-->
+<!--<%include:/includes/applications/inc.links.applications.html%>-->
 <!--<%include:/includes/inc.layout.leftpanel.middle.html%>-->
 
 
@@ -60,8 +60,7 @@
     </tr>
     <tr>
         <td align="right">Application Name: </td>
-        <td><input type="text" name="appName" id="appName" class="form-control" placeholder="Application Name"
-                style="text-transform: uppercase" onkeypress="javascript:checkAppName()"></td>
+        <td><input type="text" name="appName" id="appName" class="form-control" placeholder="Application Name" onkeypress="javascript:checkApplicationName()"></td>
     </tr>
     <tr>
         <td align="right">Description: </td>
