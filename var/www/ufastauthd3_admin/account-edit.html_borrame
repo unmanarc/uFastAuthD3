@@ -9,8 +9,6 @@
 <table width=100% style=" border-spacing: 10px;   border-collapse: separate;">
   <tr><td align="right" width=15%>Editing Account: </td><td><input type="username" name="username" id="accountName" class="form-control" placeholder="Account Name" readonly></td></tr>
 </table>
-
-
 <table width=100% style=" border-spacing: 10px;   border-collapse: separate;">
 <tr>
   <td>
@@ -73,7 +71,7 @@
                   </td>
                   <td width=50%>
                     <table width=100% style=" border-spacing: 10px;   border-collapse: separate;">
-                      <tr><td align=""></td> <td align="right">Administrator: <input type="checkbox" value="" id="isSuperUser"></td></tr>
+                      <tr><td align=""></td> <td align="right">Administrator: <input type="checkbox" value="" id="isAdmin"></td></tr>
                      </table>
                   </td>
                 </tr>
@@ -213,131 +211,6 @@
 <script>
   document.getElementById("apptitle").innerHTML = "Accounts &#9658; Edit Account";
 
-  function attribRemove(appId,attribId)
-  {
-    $.ajax({
-      url: '/japi_exec?method=attribAccountRemove',
-      headers: { "CSRFToken": csrfToken },
-      data: {
-        payload: JSON.stringify(
-          {
-            appName: document.getElementById(`userapp-key-${appId}`).value,
-            attribName: document.getElementById(`ulist-attribNameById-${appId}-${attribId}`).value,
-            accountName: $(`#accountName`).val()
-          }
-        )
-      },
-      type: 'POST',
-      success: function (response) {
-        if (response["retCode"] == true) {
-          populateAccount();
-        }
-        else {
-          alert("Internal error modifying the account applications attributes.");
-        }
-      },
-      error: commonFunctionError
-    });
-
-  }
-
-  function addApplicationAttribute(appId)
-  {
-    var appItems = document.getElementById(`applicationsAttribsLeft-${appId}`);
-    var selItem = appItems.selectedIndex;
-    if (selItem == -1) 
-    {
-      alert('Please select an attribute');
-      document.getElementById(`applicationsAttribsLeft-${appId}`).focus();
-      return;
-    }
-
-    $.ajax({
-      url: '/japi_exec?method=attribAccountAdd',
-      headers: { "CSRFToken": csrfToken },
-      data: {
-        payload: JSON.stringify(
-          {
-            appName: $(`#userapp-key-${appId}`).val(),
-            attribName: appItems.value,
-            accountName: $(`#accountName`).val()
-          }
-        )
-      },
-      type: 'POST',
-      success: function (response) {
-        if (response["retCode"] == true) {
-          populateAccount();
-        }
-        else {
-          alert("Internal error modifying the account applications attributes.");
-        }
-      },
-      error: commonFunctionError
-    });
-  }
-
-  function removeApplication(appId)
-  {
-    var appName = document.getElementById(`userapp-key-${appId}`).value;
-
-    $.ajax({
-      url: '/japi_exec?method=applicationAccountRemove',
-      headers: { "CSRFToken": csrfToken },
-      data: {
-        payload: JSON.stringify(
-          {
-            accountName: $("#accountName").val(),
-            appName: appName
-          }
-        )
-      },
-      type: 'POST',
-      success: function (response) {
-        if (response["retCode"] == true) {
-          populateAccount();
-        }
-        else {
-          alert("Internal error modifying the account applications.");
-        }
-      },
-      error: commonFunctionError
-    });
-  }
-
-  function addApplication() {
-    var appItems = document.getElementById("applicationsLeft");
-    var selItem = appItems.selectedIndex;
-    if (selItem == -1) 
-    {
-      alert('Please select an application');
-      document.getElementById("applicationsLeft").focus();
-      return;
-    }
-
-    $.ajax({
-      url: '/japi_exec?method=applicationAccountAdd',
-      headers: { "CSRFToken": csrfToken },
-      data: {
-        payload: JSON.stringify(
-          {
-            accountName: $("#accountName").val(),
-            appName: appItems.value
-          }
-        )
-      },
-      type: 'POST',
-      success: function (response) {
-        if (response["retCode"] == true) {
-          populateAccount();
-        }
-        else {
-          alert("Internal error modifying the account applications.");
-        }
-      },
-      error: commonFunctionError
-    });
-  }
 
   function moveToUsedGroup() {
     var leftlist = document.getElementById("groupsLeft");
@@ -397,64 +270,6 @@
     });
   }
 
-  function modifyAccountDetails() {
-    $.ajax({
-      url: '/japi_exec?method=accountChangeBasicInfo',
-      headers: { "CSRFToken": csrfToken },
-      data: {
-        payload: JSON.stringify(
-          {
-            accountName: $("#accountName").val(),
-            description: $("#description").val(),
-            givenName: $("#givenName").val(),
-            lastName: $("#lastName").val(),
-            email: $("#email").val(),
-            extraData: $("#extraData").val(),
-            isConfirmed: $("#isConfirmed:checked").length > 0,
-            isEnabled: $("#isEnabled:checked").length > 0,
-            isSuperuser: $("#isSuperUser:checked").length > 0
-          }
-        )
-      },
-      type: 'POST',
-      success: function (response) {
-        if (response["retCode"] == true) {
-        //  populateAccount();
-          alert("Account Information Modified!");
-        }
-        else {
-          alert("Internal error modifying the account.");
-        }
-        //   populateAccount();
-      },
-      error: commonFunctionError
-    });
-  }
-
-  function removeAccount() {
-    var r = confirm("Do you really want to completly remove this account?\nConsider disabling it instead.");
-    if (r == true) {
-      $.ajax({
-        url: '/japi_exec?method=accountRemove',
-        headers: { "CSRFToken": csrfToken },
-        data: { payload: JSON.stringify({ accountName: $("#accountName").val() }) },
-        type: 'POST',
-        success: function (response) {
-          if (response["retCode"] == true) {
-            alert("Account Removed!");
-          }
-          else {
-            alert("Internal error removing the account.");
-          }
-          window.location = "/accounts";
-        },
-        error: commonFunctionError
-      });
-    } else {
-      alert("Remove Operation Aborted!");
-    }
-  }
-
   function populateAccount() {
 
     var accountName = $("#accountName").val();
@@ -473,7 +288,7 @@
 
         document.getElementById("isEnabled").checked = response["enabled"] == true;
         document.getElementById("isConfirmed").checked = response["confirmed"] == true;
-        document.getElementById("isSuperUser").checked = response["superuser"] == true;
+        document.getElementById("isAdmin").checked = response["superuser"] == true;
 
         document.getElementById('groupsRight').innerHTML = "";
         document.getElementById('groupsLeft').innerHTML = "";

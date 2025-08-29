@@ -1,4 +1,15 @@
 function showToast(htmlMessage, type) {
+
+
+    // Sanitize htmlMessage to prevent XSS
+    const sanitizedMessage = htmlMessage
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#x27;');
+
+
     const toastType = type === 'error' ? '#ff2a00' : '#00ff7a';
     const toastTitle = type === 'error' ? 'Notification Error' : 'Notification';
     const toast = $(`
@@ -10,7 +21,7 @@ function showToast(htmlMessage, type) {
               <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
             </div>
             <div class="toast-body">
-              ${htmlMessage}
+              ${sanitizedMessage}
             </div>
           </div>
         `);

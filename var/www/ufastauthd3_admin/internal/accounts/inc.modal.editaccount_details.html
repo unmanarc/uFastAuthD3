@@ -1,0 +1,299 @@
+<script>
+
+    function displayUpdateFunction() {
+        document.getElementById('modifyButtons').style.display = 'block';
+    }
+</script>
+<div class="tab-pane fade show active" id="details" role="tabpanel" aria-labelledby="details-tab"
+    style="min-height: 500px;">
+    <table width=100% style=" border-spacing: 10px;   border-collapse: separate;">
+        <tr>
+            <td>
+                <div class="card" style="text-align: center;">
+                    <div class="card-header">
+                        Account Details
+                    </div>
+                    <div class="card-body">
+                        <table width=100% style=" border-spacing: 10px;   border-collapse: separate;" id="detailsTable">
+                            <!-- Dynamic fields will be inserted here -->
+                        </table>
+                    </div>
+                </div>
+                <br>
+                <div class="card" style="text-align: center;">
+                    <div class="card-header">
+                        Account Privileges
+                    </div>
+                    <div class="card-body">
+                        <table width=100% style=" border-spacing: 10px;   border-collapse: separate;">
+                            <tr valign=top>
+                                <td width=50%>
+                                    <table width=100% style=" border-spacing: 10px;   border-collapse: separate;">
+                                        <tr>
+                                            <td align=""></td>
+                                            <td align="right">Account Enabled: <input type="checkbox" value=""
+                                                    id="isEnabledEdit" onchange="displayUpdateFunction()"></td>
+                                        </tr>
+                                        <tr>
+                                            <td align=""></td>
+                                            <td align="right">Account Confirmed: <input type="checkbox" value=""
+                                                    id="isConfirmedEdit" onchange="displayUpdateFunction()"></td>
+                                        </tr>
+                                    </table>
+                                </td>
+                                <td width=50%>
+                                    <table width=100% style=" border-spacing: 10px;   border-collapse: separate;">
+                                        <tr>
+                                            <td align=""></td>
+                                            <td align="right">Administrator: <input type="checkbox" value=""
+                                                    id="isAdminEdit" onchange="displayUpdateFunction()"></td>
+                                        </tr>
+                                        <tr>
+                                            <td align=""></td>
+                                            <td align="right">Account Blocked: <input type="checkbox" value=""
+                                                    id="isBlockedEdit" onchange="displayUpdateFunction()"></td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2" align="right" id="modifyButtons" style="display:none;">
+                <button type="button" class="btn btn-dark" onclick="javascript:discardAccountDetails()">Discard
+                    Changes</button>
+                <button type="button" class="btn btn-warning" onclick="javascript:modifyAccountDetails()">Update Account
+                    Details</button>
+            </td>
+        </tr>
+    </table>
+</div>
+
+
+<script>
+    function modifyAccountDetails() {
+        var fieldValues = [];
+        // Assuming you have dynamic fields in detailsTable that need to be sent
+        // Here we collect the values from the table rows
+
+        try {
+            $('#detailsTable tr').each(function () {
+                var $row = $(this);
+                var $input = $row.find('input, select, textarea');
+                if ($input.length > 0) {
+                    var id = $input.attr('id');
+                    if (id) {
+                        // Reverse the hex ID to get the field name
+                        var fieldName = '';
+                        for (var i = id.length - 2; i >= 0; i -= 2) {
+                            var hex = id.substr(i, 2);
+                            var char = String.fromCharCode(parseInt(hex, 16));
+                            fieldName = char + fieldName;
+                        }
+                        var value = $input.val();
+
+                        // Validate regex if available
+                        if (window.fieldRegexpMap && window.fieldRegexpMap[fieldName]) {
+                            let ok = false;
+                            try {
+                                var regexp = new RegExp(window.fieldRegexpMap[fieldName]);
+                                ok = true;
+                            } catch (e) {
+                                // Do nothing...
+                            }
+
+                            if (ok===true && !regexp.test(value)) {
+
+                                showToastError("Field '" + fieldName + "' does not match the required format.");
+                                throw new Error("Validation failed for field '" + fieldName + "'");
+                            }
+                        }
+
+                        if (value !== '') {
+                            fieldValues.push({
+                                name: fieldName,
+                                value: value
+                            });
+                        }
+                        else {
+                            fieldValues.push({
+                                name: fieldName
+                            });
+                        }
+                    }
+                }
+            });
+        } catch (error) {
+            console.error("An error occurred while collecting field values:", error);
+            return;
+        }
+
+        // Send the updated field values
+        $.ajax({
+            url: '/api/v1/updateAccountDetailFieldsValues',
+            type: 'PUT',
+            contentType: 'application/json',
+            data: JSON.stringify({
+                accountName: currentAccount,
+                fieldValues: fieldValues,
+            }),
+            success: function (response, textStatus, xhr) {
+
+                $.ajax({
+                    url: '/api/v1/changeAccountFlags',
+                    type: 'PATCH',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        accountName: currentAccount,
+                        flags: {
+                            enabled: document.getElementById('isEnabledEdit').checked,
+                            confirmed: document.getElementById('isConfirmedEdit').checked,
+                            admin: document.getElementById('isAdminEdit').checked,
+                            blocked: document.getElementById('isBlockedEdit').checked
+                        }
+                    }),
+                    success: function (response, textStatus, xhr) {
+                        showToastSuccess("Account details updated successfully.");
+                        // Reload everything.
+                        discardAccountDetails();
+                    },
+                    error: commonFunctionError
+                });
+            },
+            error: commonFunctionError
+        });
+    }
+
+    function discardAccountDetails() {
+        document.getElementById('modifyButtons').style.display = 'none';
+        populateDetails(currentAccount);
+    }
+
+    function populateDetails(currentAccount) {
+        $.ajax({
+            url: '/api/v1/getAccountFlags',
+            type: 'GET',
+            contentType: 'application/json',
+            data: JSON.stringify({
+                accountName: currentAccount
+            }),
+            success: function (response, textStatus, xhr) {
+                const flags = response;
+                document.getElementById('isEnabledEdit').checked = flags.enabled;
+                document.getElementById('isConfirmedEdit').checked = flags.confirmed;
+                document.getElementById('isAdminEdit').checked = flags.admin;
+                document.getElementById('isBlockedEdit').checked = flags.blocked;
+            },
+            error: commonFunctionError
+        });
+
+
+        document.getElementById('detailsTable').innerHTML = '';
+        $.ajax({
+            url: '/api/v1/getAccountDetailFieldsValues',
+            type: 'GET',
+            contentType: 'application/json',
+            data: JSON.stringify({
+                accountName: currentAccount
+            }),
+            success: function (response, textStatus, xhr) {
+                const table = $('#detailsTable');
+                table.empty(); // Clear any existing rows
+
+                // First loop: create input fields without values
+                response.forEach(function (field) {
+                    let inputField = '';
+                    const fieldName = field.name;
+                    const fieldType = field.type;
+                    const fieldDescription = field.description || '';
+                    const encodedFieldName = unescape(encodeURIComponent(fieldName)).split('').map(char => char.charCodeAt(0).toString(16).padStart(2, '0')).join(''); // Hex encode the field name
+                    switch (fieldType) {
+                        case 'TEXTLINE':
+                            inputField = `<input type="text" class="form-control" id='${encodedFieldName}'>`;
+                            break;
+                        case 'TEXTAREA':
+                            inputField = `<textarea class="form-control" id='${encodedFieldName}'></textarea>`;
+                            break;
+                        case 'PASSWORD':
+                            inputField = `<input type="password" class="form-control" id='${encodedFieldName}'>`;
+                            break;
+                        case 'EMAIL':
+                            inputField = `<input type="email" class="form-control" id='${encodedFieldName}'>`;
+                            break;
+                        case 'NUMBER':
+                            inputField = `<input type="number" class="form-control" id='${encodedFieldName}'>`;
+                            break;
+                        case 'CHECKBOX':
+                            inputField = `<input type="checkbox" class="form-check-input" id='${encodedFieldName}'>`;
+                            break;
+                        default:
+                            inputField = `<!-- invalid input type -->`;
+                    }
+                    const row = `
+                            <tr>
+                                <td align="right"><span id='desc-${encodedFieldName}'></span>: &nbsp;</td>
+                                <td align="left">${inputField}</td>
+                            </tr>
+                        `;
+
+                    table.append(row);
+                });
+
+                window.fieldRegexpMap = {};
+
+
+                // Second loop: populate values and apply regex validation
+                response.forEach(function (field) {
+                    const fieldName = field.name;
+                    const fieldDescription = field.description || '';
+                    const value = field.value;
+                    const fieldType = field.type;
+                    const fieldRegexp = field.regexpValidator || '';
+                    const encodedFieldName = unescape(encodeURIComponent(fieldName)).split('').map(char => char.charCodeAt(0).toString(16).padStart(2, '0')).join(''); // Hex encode the field name
+
+                    // Set the description text for the span element
+                    document.getElementById(`desc-${encodedFieldName}`).textContent = fieldDescription;
+                    const inputElement = $(`#${encodedFieldName}`);
+
+
+                    // Apply oninput transformation to TEXTLINE fields
+                    if (fieldRegexp) {
+                        try {
+                            const regex = new RegExp(fieldRegexp);
+                            if (fieldType === 'TEXTLINE' || fieldType === 'TEXTAREA' || fieldType === 'EMAIL' || fieldType === 'NUMBER') {
+                                // Store the fieldRegexp associated with fieldName in a map
+                                window.fieldRegexpMap[fieldName] = fieldRegexp;
+
+                                inputElement.on('input', function () {
+                                    displayUpdateFunction();
+                                    // Apply regex validation if regexpValidator exists
+                                    const currentValue = $(this).val();
+                                    if (currentValue !== '' && !regex.test(currentValue)) {
+                                        $(this).addClass('is-invalid');
+                                    } else {
+                                        $(this).removeClass('is-invalid');
+                                    }
+                                });
+                            }
+                        } catch (e) {
+                            console.error("Invalid regex for field " + fieldName + ": ", e);
+                        }
+                    }
+                    if (value === null || value === undefined) return;
+
+                    if (inputElement.length > 0) {
+                        if (fieldType === 'CHECKBOX') {
+                            inputElement.prop('checked', value);
+                        } else {
+                            inputElement.val(value);
+                        }
+                    }
+                });
+            },
+            error: commonFunctionError
+        });
+    }
+</script>

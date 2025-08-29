@@ -1,0 +1,75 @@
+<div class="tab-pane fade" id="advanced" role="tabpanel" aria-labelledby="advanced-tab" style="min-height: 500px;">
+    <table width=100% style=" border-spacing: 10px;   border-collapse: separate;">
+        <tr>
+            <td align="center">
+                <div class="card" style="text-align: center;">
+                    <div class="card-header">
+                        Passwords / Secrets
+                    </div>
+                    <div class="card-body">
+                        <h5 class="card-title"> Secret Management </h5>
+                        <p class="card-text">You can edit this account password/secrets here.</p>
+                        <button type="button" class="btn btn-success btn-sm" data-bs-toggle="modal"
+                            data-bs-target="#changePwdModal" onclick="javascript:populatePasswordList();">Change Account
+                            Secrets</button>
+
+                    </div>
+                </div>
+                <br>
+
+                <div class="card" style="text-align: center;">
+                    <div class="card-header">
+                        Remove This Account
+                    </div>
+                    <div class="card-body">
+                        <h5 class="card-title"> Account Removal Warning! </h5>
+                        <p class="card-text">Removing the account will destroy all the information
+                            associated in the database, including possible logs, we strongly
+                            recommend to disable it instead.</p>
+                        <button type="button" class="btn btn-danger btn-sm" onclick="javascript:removeAccount()">Remove
+                            Account</button>
+                    </div>
+                </div>
+            </td>
+        </tr>
+    </table>
+</div>
+
+<script>
+    function removeAccount() {
+        var r = confirm("Do you really want to completly remove this account?\nConsider disabling it instead.");
+        if (r == true) {
+
+            $.ajax({
+                url: '/api/v1/removeAccount',
+                type: 'DELETE',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    accountName: currentAccount
+                }),
+                success: function (response, textStatus, xhr) {
+                    showToastSuccess("Account " + currentAccount + " successfully removed.");
+                    $('#editAccountModal').modal('hide');
+                },
+                error: function (xhr, status, error) {
+                    if (xhr.responseJSON && xhr.responseJSON.error && xhr.responseJSON.message) {
+                        showToastError("Error: " + xhr.responseJSON.error + " - " + xhr.responseJSON.message);
+                    } else {
+                        showToastError("Error " + xhr.status);
+                    }
+                }
+            });
+        } else {
+            alert("Remove Operation Aborted!");
+        }
+    }
+
+
+
+
+
+
+
+
+
+</script>

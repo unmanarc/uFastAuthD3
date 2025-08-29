@@ -7,13 +7,13 @@
     <meta name="description" content="">
     <meta name="author" content="">
     <title>uFastAuthD3 Authentication Server</title>
-    
+
     <!-- Bootstrap core CSS -->
     <link href="/assets/css/bootstrap.min.css" rel="stylesheet" type="text/css">
     <!-- JQuery -->
     <script src="/assets/js/jquery.min.js"></script>
     <!-- DataTables -->
-    <script src="/assets/js/dataTables.min.js"></script> 
+    <script src="/assets/js/dataTables.min.js"></script>
     <script src="/assets/js/dataTables.dataTables.js"></script>
     <link href="/assets/css/dataTables.dataTables.min.css" rel="stylesheet" type="text/css">
 
@@ -47,32 +47,34 @@
                 </button>
                 <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
                     <ul class="navbar-nav ml-auto">
-                        <li class="nav-item active">
-                            <div class="nav-link" id="welcome" style="color:white;">Welcome</div>
-                        </li>
-                    <li class="nav-item active">
-                        <div class="nav-link" style="color:greenyellow;">-</div>
-                    </li>
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" role="button"
-                               data-bs-toggle="dropdown" aria-expanded="false" style="color:white;">
-                              Directory
+                                data-bs-toggle="dropdown" aria-expanded="false" style="color:white;">
+                                Identity Management
                             </a>
                             <ul class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
-                                <li><a class="dropdown-item" href="/accounts">Accounts</a></li>
+                                <li><a class="dropdown-item" href="/accounts">User Accounts</a></li>
                                 <li><a class="dropdown-item" href="/groups">Groups</a></li>
                                 <li><a class="dropdown-item" href="/applications">Applications</a></li>
                             </ul>
                         </li>
-
-                         <li class="nav-item dropdown">
+                        <li class="nav-item active">
+                            <div class="nav-link" style="color:greenyellow;">|</div>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/settings" style="color:white;">System Settings</a>
+                        </li>
+                        <li class="nav-item active">
+                            <div class="nav-link" style="color:greenyellow;">|</div>
+                        </li>
+                        <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" id="dropdown01" data-bs-toggle="dropdown"
                                 aria-haspopup="true" aria-expanded="false" style="color:white;">
-                              My Account
+                                My Profile ( <strong><span id="welcome" style="color:greenyellow;">Welcome</span></strong> )
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdown01">
-                                <li><a class="dropdown-item" href="/secrets">Change Password</a></li>
-                                <li><a class="dropdown-item" onclick="javascript:logout()">Logout</a></li>
+                                <li><a class="dropdown-item" href="/secrets">Update Password</a></li>
+                                <li><a class="dropdown-item" onclick="javascript:logout()">Sign Out</a></li>
                             </ul>
                         </li>
                     </ul>
@@ -86,4 +88,3 @@
             <h4 style="color: black;" id="apptitle"> Unmanarc's Fast Authentication Daemon v3 </h4>
         </center>
         <hr>
-        

@@ -1,0 +1,162 @@
+<!--<%include:/internal/inc.main.header.html%>-->
+
+<!--<%include:/internal/inc.layout.leftpanel.header.html%>-->
+<!--<%include:/internal/accounts/inc.links.accounts.html%>-->
+<!--<%include:/internal/inc.layout.leftpanel.middle.html%>-->
+
+<script>
+  document.getElementById("apptitle").innerHTML = "Accounts &#9658; Accounts Fields";
+  document.getElementById("mainview-account-fields-link").style.color = "white";
+</script>
+
+<div class="container-fluid" style="width: 95%;">
+  <div class="d-flex justify-content-end mb-3">
+    <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalCreateAccountField"
+      onclick="createAccountFieldClearParameters()">
+      Add Field
+    </button>
+  </div>
+  <hr>
+  <table id="fieldsTable" class="display">
+    <thead>
+      <tr>
+        <th scope="col">Field Name</th>
+        <th scope="col">Field Description</th>
+        <th scope="col">Field Regexp Validator</th>
+        <th scope="col">Field Type</th>
+        <!--<th scope="col">Is Optional Field</th>
+                <th scope="col">Include In Search</th>
+        <th scope="col">Include In Column View</th>-->
+        <th scope="col">Include In Token</th>
+        <th scope="col">Is Unique</th>
+        <th scope="col">User Can Edit</th>
+        <th scope="col" style="text-align: right;">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+    </tbody>
+  </table>
+</div>
+
+<script>
+  function deleteField(fieldNameB64) {
+    if (!confirm("Are you sure you want to delete this field?")) {
+      return;
+    }
+    const fieldName = window.atob(fieldNameB64);
+    $.ajax({
+      url: '/api/v1/removeAccountDetailField',
+      type: 'DELETE',
+      contentType: 'application/json',
+      data: JSON.stringify({
+        fieldName: fieldName
+      }),
+      success: function (response, textStatus, xhr) {
+        // Refresh the DataTable after successful field creation
+        $('#fieldsTable').DataTable().ajax.reload();
+        showToastSuccess("Field created successfully.");
+      },
+      error: function (xhr, status, error) {
+        if (xhr.responseJSON && xhr.responseJSON.error && xhr.responseJSON.message) {
+          showToastError("Error: " + xhr.responseJSON.error + " - " + xhr.responseJSON.message);
+        } else {
+          showToastError("Error " + xhr.status);
+        }
+      }
+    });
+
+  }
+
+
+  new DataTable('#fieldsTable', {
+    ajax: {
+      "url": "/api/v1/searchFields",
+      "type": 'GET',
+      "data": function (d) {
+        return JSON.stringify(d);
+      }
+    },
+    processing: true,
+    serverSide: true,
+    columns: [
+      {
+        data: "fieldName",
+        title: "Field Name"
+      },
+      {
+        data: "fieldDescription",
+        title: "Field Description"
+      },
+      {
+        data: "fieldRegexpValidator",
+        title: "Field Regexp Validator"
+      },
+      {
+        data: "fieldType",
+        title: "Field Type"
+      },
+    /*  {
+        data: "isOptionalField",
+        title: "Is Optional Field",
+        render: function (data, type, row) {
+          return data ? 'Yes' : 'No';
+        }
+      },
+      {
+        data: "includeInSearch",
+        title: "Include In Search",
+        render: function (data, type, row) {
+          return data ? 'Yes' : 'No';
+        }
+      },
+      {
+        data: "includeInColumnView",
+        title: "Include In Column View",
+        render: function (data, type, row) {
+          return data ? 'Yes' : 'No';
+        }
+      },*/
+      {
+        data: "includeInToken",
+        title: "Include In Token",
+        render: function (data, type, row) {
+          return data ? 'Yes' : 'No';
+        }
+      },
+      {
+        data: "isUnique",
+        title: "Is Unique",
+        render: function (data, type, row) {
+          return data ? 'Yes' : 'No';
+        }
+      },
+      {
+        data: "userCanEdit",
+        title: "User Can Edit",
+        render: function (data, type, row) {
+          return data ? 'Yes' : 'No';
+        }
+      },
+      {
+        data: null,
+        orderable: false,
+        searchable: false,
+        render: function (data, type, row) {
+          let b64FieldName = window.btoa(row.fieldName);
+          return `<div style="text-align: right;">
+                      <!-- <button type="button" class="btn btn-dark btn-sm" data-bs-toggle="modal" data-bs-target="#modalEditField" onclick="editAccoundField('${b64FieldName}')">
+                         Edit
+                       </button>-->
+                      <button type="button" class="btn btn-danger btn-sm" onclick="deleteField('${b64FieldName}')">
+                        Remove
+                      </button>
+                  </div>`;
+        }
+      }
+    ]
+  });
+</script>
+
+<!--<%include:/internal/account-fields/inc.modal.newaccountfield.html%>-->
+<!--<%include:/internal/inc.layout.leftpanel.footer.html%>-->
+<!--<%include:/internal/inc.main.footer.html%>-->

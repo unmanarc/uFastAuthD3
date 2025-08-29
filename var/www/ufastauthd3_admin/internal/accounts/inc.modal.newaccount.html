@@ -61,25 +61,16 @@
                 }
             }),
             success: function (response, textStatus, xhr) {
-                if (xhr.status === 200) {
-                    $('#modalCreateAccount').modal('hide');
-                    // Refresh the DataTable after successful user creation
-                    var table = new DataTable('#myTable');
-                    table.ajax.reload();
+                $('#modalCreateAccount').modal('hide');
+                // Refresh the DataTable after successful user creation
+                var table = new DataTable('#accountsTable');
+                table.ajax.reload();
 
-                    showToastSuccess("Account created successfully.");
+                showToastSuccess("Account created successfully.");
 
-                } else {
-                    showToastError("Error " + xhr.status);
-                }
+
             },
-            error: function (xhr, status, error) {
-                if (xhr.responseJSON && xhr.responseJSON.error && xhr.responseJSON.message) {
-                    showToastError("Error: " + xhr.responseJSON.error + " - " + xhr.responseJSON.message);
-                } else {
-                    showToastError("Error " + xhr.status);
-                }
-            }
+            error: commonFunctionError
         });
     }
 
