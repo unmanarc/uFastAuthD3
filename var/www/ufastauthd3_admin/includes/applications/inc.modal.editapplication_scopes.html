@@ -4,7 +4,7 @@
 
         <tr>
             <td colspan="2" align="right">
-                <div class="card">
+                <div class="card"  id="addModifyScope">
                     <div class="card-body">
                         <b>Add New Scope:</b><br><br>
                         <input type="username" name="scopeName" id="scopeName" class="form-control"
@@ -25,7 +25,7 @@
                         <tr bgcolor=grey>
                             <th scope="col">ID</th>
                             <th scope="col">Description</th>
-                            <th scope="col" style="text-align: right;">Controls</th>
+                            <th scope="col" style="text-align: right;"></th>
                         </tr>
                     </thead>
                     <tbody id="tbody-scopes">
@@ -38,24 +38,34 @@
 </div>
 
 <script>
-    function populateApplicationScopes(scopes) {
+    function populateApplicationScopes(scopes, modifiable) {
         document.getElementById("tbody-scopes").innerHTML = "";
 
         if (scopes != null) {
             let scopeId = 0;
 
             for (let scope of scopes) {
+                let removeButton = '';
+                if (modifiable === true) {
+                    document.getElementById("addModifyScope").style.display = "block";
+                    removeButton = `<button type="button" class="btn btn-light btn-sm" onclick="javascript:scopeRemove(${scopeId});">&#10006;</button>`;
+                }
+                else
+                {
+                    document.getElementById("addModifyScope").style.display = "none";
+                }
 
                 $("#tbody-scopes").append(
                     `<tr> 
-                <th scope="row" id=ulist-scopeName-${scopeId} width=20%></th>
-                <td id=ulist-scopeDescription-${scopeId}></td>
-                <td style="text-align: right;">
-                  <input type=hidden id="ulist-scopeNameById-${scopeId}">
-                  <button type="button" class="btn btn-light btn-sm" onclick="javascript:scopeRemove(${scopeId});">&#10006;</button>
-                </td>
-              </tr>`
+                        <th scope="row" id=ulist-scopeName-${scopeId} width=20%></th>
+                        <td id=ulist-scopeDescription-${scopeId}></td>
+                        <td style="text-align: right;">
+                        <input type=hidden id="ulist-scopeNameById-${scopeId}">
+                        ${removeButton}
+                        </td>
+                    </tr>`
                 );
+                
                 document.getElementById(`ulist-scopeNameById-${scopeId}`).value = scope["id"];
                 $(`#ulist-scopeName-${scopeId}`).text(scope["id"]);
                 $(`#ulist-scopeDescription-${scopeId}`).text(scope["description"]);

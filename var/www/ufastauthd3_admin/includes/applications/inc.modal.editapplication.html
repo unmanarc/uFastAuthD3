@@ -31,6 +31,13 @@
                                         data-bs-target="#details" type="button" role="tab" aria-controls="details"
                                         aria-selected="true">Application Details</button>
                                 </li>
+
+                                <li class="nav-item">
+                                    <button class="nav-link" id="tokens-tab" data-bs-toggle="tab"
+                                        data-bs-target="#tokens" type="button" role="tab" aria-controls="tokens"
+                                        aria-selected="false">JSON Web Tokens</button>
+                                </li>
+
                                 <li class="nav-item">
                                     <button class="nav-link" id="scopes-tab" data-bs-toggle="tab"
                                         data-bs-target="#scopes" type="button" role="tab" aria-controls="scopes"
@@ -54,6 +61,7 @@
                 <div class="tab-content" id="myTabContent">
                     <!--<%include:/includes/applications/inc.modal.editapplication_details.html%>-->
                     <!--<%include:/includes/applications/inc.modal.editapplication_scopes.html%>-->
+                    <!--<%include:/includes/applications/inc.modal.editapplication_tokens.html%>-->
                     <!--<%include:/includes/applications/inc.modal.editapplication_accounts.html%>-->
                     <!--<%include:/includes/applications/inc.modal.editapplication_advanced.html%>-->
                 </div>
@@ -71,8 +79,9 @@
             contentType: 'application/json',
             data: JSON.stringify({ appName: currentApplication }),
             success: function (response) {
+                populateApplicationTokensConfig(response["tokenConfig"]);
                 populateApplicationDetails(response["details"]);
-                populateApplicationScopes(response["scopes"]);
+                populateApplicationScopes(response["scopes"],response["advanced"]["scopesModifiable"]);
                 populateApplicationAccounts(response["accounts"]);
             },
             error: commonFunctionError

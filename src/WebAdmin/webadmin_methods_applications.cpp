@@ -70,12 +70,17 @@ void WebAdminMethods_Applications::removeApplication(void *context, APIReturn &r
 }
 void WebAdminMethods_Applications::addApplication(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
 {
-    if (!Globals::getIdentityManager()->applications->addApplication(JSON_ASSTRING(*request.inputJSON, "appName", ""), JSON_ASSTRING(*request.inputJSON, "description", ""),
-                                                                     JSON_ASSTRING(*request.inputJSON, "appKey", ""), request.jwtToken->getSubject()))
+    if (!Globals::getIdentityManager()->applications->addApplication(JSON_ASSTRING(*request.inputJSON, "appName", ""),
+                                                                     JSON_ASSTRING(*request.inputJSON, "description", ""),
+                                                                     JSON_ASSTRING(*request.inputJSON, "appKey", ""),
+                                                                     request.jwtToken->getSubject(),
+                                                                     JSON_ASBOOL(*request.inputJSON, "scopesModifiable", false)
+                                                                     ))
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Internal Error");
         return;
     }
+
     return;
 }
 
@@ -108,6 +113,24 @@ void WebAdminMethods_Applications::getApplicationInfo(void *context, APIReturn &
         return;
     }
     
+    auto scopesModifiable = Globals::getIdentityManager()->applications->canManuallyModifyApplicationScopes(appName);
+    if (scopesModifiable.has_value())
+    {
+        payloadOut["advanced"]["scopesModifiable"] = scopesModifiable.value();
+    }
+    else
+    {
+        response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to retrieve scopes modifiable status");
+        return;
+    }
+    
+
+    ApplicationTokenProperties appWebLoginTokenConfig = Globals::getIdentityManager()->applications->getWebLoginJWTConfigFromApplication(appName);
+
+
+    payloadOut["tokenConfig"] = appWebLoginTokenConfig.toJSON();
+
+
     payloadOut["details"]["description"] = Globals::getIdentityManager()->applications->getApplicationDescription(appName);
 
     // Get associated scope...

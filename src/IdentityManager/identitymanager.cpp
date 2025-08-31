@@ -74,7 +74,7 @@ bool IdentityManager::initializeApplicationWithScheme(const std::string &appName
 
     if (!applications->doesApplicationExist(appName))
     {
-        r = r && applications->addApplication(appName, appDescription, Mantids30::Helpers::Random::createRandomString(32), owner);
+        r = r && applications->addApplication(appName, appDescription, Mantids30::Helpers::Random::createRandomString(32), owner, false);
         r = r && applications->setApplicationWebLoginCallbackURI(appName, "https://iamadmin.localhost:9443/auth/api/v1/callback"); // Redirection callback URI
         r = r && applications->addWebLoginRedirectURIToApplication(appName, "https://iamadmin.localhost:9443/");                   // Allowed redirects.
         r = r && applications->addWebLoginOriginURLToApplication(appName, "https://iamadmin.localhost:9443");                      // Origin (eg. retokenization)

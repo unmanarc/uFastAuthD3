@@ -35,7 +35,7 @@ bool IdentityManager_DB::initializeDatabase()
                                              `fieldRegexpValidator`  TEXT           DEFAULT NULL,
                                              `fieldType`             VARCHAR(256)   NOT NULL DEFAULT 'TEXTLINE',
                                              `isUnique`              BOOLEAN        NOT NULL DEFAULT FALSE,
-                                             `userCanEdit`           BOOLEAN        NOT NULL DEFAULT FALSE,
+                                             `canUserEdit`           BOOLEAN        NOT NULL DEFAULT FALSE,
                                              `isOptionalField`       BOOLEAN        NOT NULL DEFAULT TRUE,
                                              `includeInSearch`       BOOLEAN        NOT NULL DEFAULT FALSE,
                                              `includeInColumnView`   BOOLEAN        NOT NULL DEFAULT FALSE,
@@ -58,6 +58,7 @@ bool IdentityManager_DB::initializeDatabase()
                                              `f_appCreator`          VARCHAR(256)  NOT NULL,
                                              `appDescription`        VARCHAR(4096) NOT NULL,
                                              `apiKey`                VARCHAR(512)  NOT NULL,
+                                             `canManualModifyScope`  BOOLEAN NOT NULL DEFAULT FALSE,
                                               FOREIGN KEY(`f_appCreator`)   REFERENCES accounts(`accountName`) ON DELETE CASCADE
                                               PRIMARY KEY(`appName`)
                                               UNIQUE(`apiKey`)
