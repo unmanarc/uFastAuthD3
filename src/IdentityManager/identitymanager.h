@@ -360,10 +360,11 @@ public:
         virtual ~Applications() {}
         /////////////////////////////////////////////////////////////////////////////////
         // applications:
-        virtual bool addApplication(const std::string &appName, const std::string &applicationDescription, const std::string &apiKey, const std::string &sOwnerAccountName) = 0;
+        virtual bool addApplication(const std::string &appName, const std::string &applicationDescription, const std::string &apiKey, const std::string &sOwnerAccountName, bool canUserModifyScope) = 0;
         virtual bool removeApplication(const std::string &appName) = 0;
         virtual bool doesApplicationExist(const std::string &appName) = 0;
 
+        virtual std::optional<bool> canManuallyModifyApplicationScopes(const std::string &appName) = 0;
         virtual std::string getApplicationDescription(const std::string &appName) = 0;
         virtual std::string getApplicationAPIKey(const std::string &appName) = 0;
         virtual bool updateApplicationDescription(const std::string &appName, const std::string &applicationDescription) = 0;

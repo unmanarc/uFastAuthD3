@@ -16,18 +16,19 @@ using namespace Mantids30::Database;
 using namespace Mantids30::Helpers;
 using namespace Mantids30;
 
-bool IdentityManager_DB::Applications_DB::addApplication(const std::string &appName, const std::string &applicationDescription, const std::string &apiKey, const std::string &sOwnerAccountName)
+bool IdentityManager_DB::Applications_DB::addApplication(const std::string &appName, const std::string &applicationDescription, const std::string &apiKey, const std::string &sOwnerAccountName, bool canUserModifyScope)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
 
     // Insert into iam.applications.
     bool appInsertSuccess = _parent->m_sqlConnector
-                                ->execute("INSERT INTO iam.applications (`appName`, `f_appCreator`, `appDescription`, `apiKey`) VALUES (:appName, :appCreator, :description, :apiKey);",
+                                ->execute("INSERT INTO iam.applications (`appName`, `f_appCreator`, `appDescription`, `apiKey`, `canManualModifyScope`) VALUES (:appName, :appCreator, :description, :apiKey, :canManualModifyScope);",
                                         {
                                             {":appName", MAKE_VAR(STRING, appName)},
                                             {":appCreator", MAKE_VAR(STRING, sOwnerAccountName)},
                                             {":description", MAKE_VAR(STRING, applicationDescription)},
                                             {":apiKey", MAKE_VAR(STRING, Encoders::encodeToBase64Obf(apiKey))},
+                                            {":canManualModifyScope", MAKE_VAR(BOOL, canUserModifyScope)}
                                         });
 
     // If the insertion is successful, insert another row default values into iam.applicationsJWTTokenConfig.
@@ -67,6 +68,21 @@ bool IdentityManager_DB::Applications_DB::doesApplicationExist(const std::string
         ret = true;
     }
     return ret;
+}
+
+std::optional<bool> IdentityManager_DB::Applications_DB::canManuallyModifyApplicationScopes(const std::string &appName)
+{
+    Threads::Sync::Lock_RD lock(_parent->m_mutex);
+
+    Abstract::BOOL r;
+    SQLConnector::QueryInstance i = _parent->m_sqlConnector->qSelect("SELECT `canManualModifyScope` FROM iam.applications WHERE `appName`=:appName LIMIT 1;",
+                                                                     {{":appName", MAKE_VAR(STRING, appName)}}, {&r});
+    if (i.getResultsOK() && i.query->step())
+    {
+        return r.getValue();
+    }
+
+    return std::nullopt;
 }
 
 std::string IdentityManager_DB::Applications_DB::getApplicationDescription(const std::string &appName)

@@ -13,6 +13,21 @@ struct ApplicationDetails
 };
 struct ApplicationTokenProperties
 {
+    Json::Value toJSON() const
+    {
+        Json::Value root(Json::objectValue);
+        root["appName"] = appName;
+        root["tempMFATokenTimeout"] = tempMFATokenTimeout;
+        root["sessionInactivityTimeout"] = sessionInactivityTimeout;
+        root["tokenType"] = tokenType;
+        root["allowRefreshTokenRenovation"] = allowRefreshTokenRenovation;
+        root["includeApplicationScopes"] = includeApplicationScopes;
+        root["includeBasicAccountInfo"] = includeBasicAccountInfo;
+        root["maintainRevocationAndLogoutInfo"] = maintainRevocationAndLogoutInfo;
+        root["tokensConfiguration"] = tokensConfiguration;
+        return root;
+    }
+
     std::string appName;
     uint32_t tempMFATokenTimeout;
     uint32_t sessionInactivityTimeout;

@@ -24,9 +24,9 @@
         document.getElementById("isUnique").disabled = false;
         document.getElementById("isUnique").readOnly = false;
 
-                document.getElementById("userCanEdit").checked = false;
-        document.getElementById("userCanEdit").disabled = false;
-        document.getElementById("userCanEdit").readOnly = false;
+                document.getElementById("canUserEdit").checked = false;
+        document.getElementById("canUserEdit").disabled = false;
+        document.getElementById("canUserEdit").readOnly = false;
 
 
         // Change modal title to "Create Accounts Field"
@@ -88,7 +88,7 @@
                 document.getElementById("includeInColumnView").checked = response.includeInColumnView || false;
                 */
                 document.getElementById("includeInToken").checked = response.includeInToken || false;
-                document.getElementById("userCanEdit").checked = response.userCanEdit || false;
+                document.getElementById("canUserEdit").checked = response.canUserEdit || false;
                 document.getElementById("isUnique").checked = response.isUnique || false;
                 document.getElementById("isUnique").disabled = true;
                 document.getElementById("isUnique").readOnly = true;
@@ -138,7 +138,7 @@
                 includeInColumnView: $("#includeInColumnView:checked").length > 0,*/
                 includeInToken: $("#includeInToken:checked").length > 0,
                 isUnique: $("#isUnique:checked").length > 0,
-                userCanEdit: $("#userCanEdit:checked").length > 0,
+                canUserEdit: $("#canUserEdit:checked").length > 0,
 
             }),
             success: function (response, textStatus, xhr) {
@@ -235,7 +235,7 @@
                     </tr>
                     <tr>
                         <td align="right">User can edit this field:</td>
-                        <td><input type="checkbox" id="userCanEdit"></td>
+                        <td><input type="checkbox" id="canUserEdit"></td>
                     </tr>
 
                 </table>

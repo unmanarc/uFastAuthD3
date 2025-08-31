@@ -265,7 +265,7 @@ Json::Value IdentityManager_DB::Accounts_DB::searchFields(const json &dataTables
         auto isValidField = [](const std::string &c) -> bool
         {
             static const std::vector<std::string> validFields = {"fieldName",       "fieldDescription",    "fieldRegexpValidator", "fieldType", "isOptionalField",
-                                                                 "includeInSearch", "includeInColumnView", "includeInToken",       "isUnique",  "userCanEdit"};
+                                                                 "includeInSearch", "includeInColumnView", "includeInToken",       "isUnique",  "canUserEdit"};
             return std::find(validFields.begin(), validFields.end(), c) != validFields.end();
         };
 
@@ -292,7 +292,7 @@ Json::Value IdentityManager_DB::Accounts_DB::searchFields(const json &dataTables
         includeInColumnView,
         includeInToken,
         isUnique,
-        userCanEdit
+        canUserEdit
     FROM accountDetailFields
     )";
 
@@ -305,10 +305,10 @@ Json::Value IdentityManager_DB::Accounts_DB::searchFields(const json &dataTables
 
     {
         Abstract::STRING fieldName, fieldDescription, fieldRegexpValidator, fieldType;
-        Abstract::BOOL isOptionalField, includeInSearch, includeInColumnView, includeInToken, isUnique, userCanEdit;
+        Abstract::BOOL isOptionalField, includeInSearch, includeInColumnView, includeInToken, isUnique, canUserEdit;
         SQLConnector::QueryInstance i = _parent->m_sqlConnector->qSelectWithFilters(sqlQueryStr, whereFilters, {{":SEARCHWORDS", MAKE_VAR(STRING, searchValue)}},
                                                                                     {&fieldName, &fieldDescription, &fieldRegexpValidator, &fieldType, &isOptionalField, &includeInSearch,
-                                                                                     &includeInColumnView, &includeInToken, &isUnique, &userCanEdit},
+                                                                                     &includeInColumnView, &includeInToken, &isUnique, &canUserEdit},
                                                                                     orderByStatement, // Order by
                                                                                     limit,            // LIMIT
                                                                                     offset            // OFFSET
@@ -336,7 +336,7 @@ Json::Value IdentityManager_DB::Accounts_DB::searchFields(const json &dataTables
             row["includeInToken"] = includeInToken.getValue();
             // isUnique
             row["isUnique"] = isUnique.getValue();
-            row["userCanEdit"] = userCanEdit.getValue();
+            row["canUserEdit"] = canUserEdit.getValue();
             ret["data"].append(row);
         }
 
@@ -612,9 +612,9 @@ bool IdentityManager_DB::Accounts_DB::addAccountDetailField(const std::string &f
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
 
     if (!_parent->m_sqlConnector->execute("INSERT INTO iam.accountDetailFields (`fieldName`, `fieldDescription`, `fieldRegexpValidator`, `fieldType`, "
-                                          "`isOptionalField`, `includeInSearch`, `includeInToken`, `includeInColumnView`, `isUnique`, `userCanEdit`)"
+                                          "`isOptionalField`, `includeInSearch`, `includeInToken`, `includeInColumnView`, `isUnique`, `canUserEdit`)"
                                           " VALUES (:fieldName, :fieldDescription, :fieldRegexpValidator, :fieldType, :isOptionalField, "
-                                          ":includeInSearch,:includeInToken, :includeInColumnView, :isUnique, :userCanEdit);",
+                                          ":includeInSearch,:includeInToken, :includeInColumnView, :isUnique, :canUserEdit);",
                                           {{":fieldName", MAKE_VAR(STRING, fieldName)},
                                            {":fieldDescription", MAKE_VAR(STRING, details.description)},
                                            {":fieldRegexpValidator", MAKE_VAR(STRING, details.regexpValidator)},
@@ -624,7 +624,7 @@ bool IdentityManager_DB::Accounts_DB::addAccountDetailField(const std::string &f
                                            {":includeInToken", MAKE_VAR(BOOL, details.includeInToken)},
                                            {":includeInColumnView", MAKE_VAR(BOOL, details.includeInColumnView)},
                                            {":isUnique", MAKE_VAR(BOOL, details.isUnique)},
-                                           {":userCanEdit", MAKE_VAR(BOOL, details.userCanEdit)}}))
+                                           {":canUserEdit", MAKE_VAR(BOOL, details.canUserEdit)}}))
     {
         return false;
     }
@@ -652,13 +652,13 @@ std::map<std::string, AccountDetailField> IdentityManager_DB::Accounts_DB::listA
 
     // Variables para capturar valores de la base de datos
     Abstract::STRING fieldName, fieldDescription, fieldRegexpValidator, fieldType;
-    Abstract::BOOL isOptionalField, includeInSearch, includeInColumnView, includeInToken, isUnique, userCanEdit;
+    Abstract::BOOL isOptionalField, includeInSearch, includeInColumnView, includeInToken, isUnique, canUserEdit;
 
     SQLConnector::QueryInstance i = _parent->m_sqlConnector->qSelect("SELECT `fieldName`, `fieldDescription`, `fieldRegexpValidator`, `fieldType`, `isOptionalField`, `includeInSearch`, "
-                                                                     "`includeInColumnView`, `isUnique`, `userCanEdit`, `includeInToken` FROM `iam`.`accountDetailFields`;",
+                                                                     "`includeInColumnView`, `isUnique`, `canUserEdit`, `includeInToken` FROM `iam`.`accountDetailFields`;",
                                                                      {},
                                                                      {&fieldName, &fieldDescription, &fieldRegexpValidator, &fieldType, &isOptionalField, &includeInSearch, &includeInColumnView,
-                                                                      &isUnique, &userCanEdit, &includeInToken});
+                                                                      &isUnique, &canUserEdit, &includeInToken});
 
     if (i.getResultsOK())
     {
@@ -673,7 +673,7 @@ std::map<std::string, AccountDetailField> IdentityManager_DB::Accounts_DB::listA
             field.includeInToken = includeInToken.getValue();
             field.includeInColumnView = includeInColumnView.getValue();
             field.isUnique = isUnique.getValue();
-            field.userCanEdit = userCanEdit.getValue();
+            field.canUserEdit = canUserEdit.getValue();
 
             fieldMap[fieldName.getValue()] = field;
         }
@@ -689,13 +689,13 @@ std::optional<AccountDetailField> IdentityManager_DB::Accounts_DB::getAccountDet
 
     // Variables para capturar valores de la base de datos
     Abstract::STRING fieldDescription, fieldRegexpValidator, fieldType;
-    Abstract::BOOL isOptionalField, includeInSearch, includeInColumnView, includeInToken, isUnique, userCanEdit;
+    Abstract::BOOL isOptionalField, includeInSearch, includeInColumnView, includeInToken, isUnique, canUserEdit;
 
     SQLConnector::QueryInstance i
         = _parent->m_sqlConnector->qSelect("SELECT `fieldDescription`, `fieldRegexpValidator`, `fieldType`, `isOptionalField`, `includeInSearch`, "
-                                           "`includeInColumnView`, `isUnique`,`userCanEdit`, `includeInToken` FROM `iam`.`accountDetailFields` WHERE `fieldName` = :fieldName;",
+                                           "`includeInColumnView`, `isUnique`,`canUserEdit`, `includeInToken` FROM `iam`.`accountDetailFields` WHERE `fieldName` = :fieldName;",
                                            {{":fieldName", MAKE_VAR(STRING, fieldName)}},
-                                           {&fieldDescription, &fieldRegexpValidator, &fieldType, &isOptionalField, &includeInSearch, &includeInColumnView, &isUnique, &userCanEdit, &includeInToken});
+                                           {&fieldDescription, &fieldRegexpValidator, &fieldType, &isOptionalField, &includeInSearch, &includeInColumnView, &isUnique, &canUserEdit, &includeInToken});
 
     if (i.getResultsOK() && i.query->step())
     {
@@ -707,7 +707,7 @@ std::optional<AccountDetailField> IdentityManager_DB::Accounts_DB::getAccountDet
         field.includeInToken = includeInToken.getValue();
         field.includeInColumnView = includeInColumnView.getValue();
         field.isUnique = isUnique.getValue();
-        field.userCanEdit = userCanEdit.getValue();
+        field.canUserEdit = canUserEdit.getValue();
 
         return field;
     }

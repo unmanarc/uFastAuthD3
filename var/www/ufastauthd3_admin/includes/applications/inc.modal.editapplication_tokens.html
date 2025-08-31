@@ -1,0 +1,144 @@
+<div class="tab-pane fade" id="tokens" role="tabpanel" aria-labelledby="tokens-tab" style="min-height: 500px;">
+
+    <div class="container-fluid mt-3">
+        <div class="row">
+            <!-- Main Configuration Card -->
+            <div class="col-md-6">
+                <div class="card mb-3">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">Main Token Configuration</h5>
+                    </div>
+                    <div class="card-body">
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="tempMFATokenTimeout" class="form-label">MFA Token Timeout (seconds)</label>
+                                <input type="number" class="form-control" id="tempMFATokenTimeout">
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="sessionInactivityTimeout" class="form-label">Session Timeout
+                                    (seconds)</label>
+                                <input type="number" class="form-control" id="sessionInactivityTimeout">
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="tokenType" class="form-label">Token Type</label>
+                            <select class="form-select" id="tokenType">
+                                <option value="HS256">HS256</option>
+                                <option value="HS384">HS384</option>
+                                <option value="HS512">HS512</option>
+                                <option value="RS256">RS256</option>
+                                <option value="RS384">RS384</option>
+                                <option value="RS512">RS512</option>
+                            </select>
+                        </div>
+
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="allowRefreshTokenRenovation">
+                            <label class="form-check-label" for="allowRefreshTokenRenovation">
+                                Allow Refresh Token Renewal
+                            </label>
+                        </div>
+
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="includeApplicationScopes">
+                            <label class="form-check-label" for="includeApplicationScopes">
+                                Include Application Scopes
+                            </label>
+                        </div>
+
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="includeBasicAccountInfo">
+                            <label class="form-check-label" for="includeBasicAccountInfo">
+                                Include Basic Account Info
+                            </label>
+                        </div>
+
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="maintainRevocationAndLogoutInfo">
+                            <label class="form-check-label" for="maintainRevocationAndLogoutInfo">
+                                Maintain Revocation and Logout Info
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Access Token Configuration Card -->
+            <div class="col-md-6">
+                <div class="card mb-3">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">Access Token Settings</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="accessTokenPath" class="form-label">Access Token Path</label>
+                            <input type="text" class="form-control" id="accessTokenPath" placeholder="/">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="accessTokenTimeout" class="form-label">Access Token Timeout (seconds)</label>
+                            <input type="number" class="form-control" id="accessTokenTimeout">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mb-3">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">Refresh Token Settings</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="refreshTokenPath" class="form-label">Refresh Token Path</label>
+                            <input type="text" class="form-control" id="refreshTokenPath" placeholder="/auth">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="refreshTokenTimeout" class="form-label">Refresh Token Timeout (seconds)</label>
+                            <input type="number" class="form-control" id="refreshTokenTimeout">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Refresh Token Configuration Card -->
+            <div class="col-md-6">
+
+            </div>
+
+        </div>
+    </div>
+
+</div>
+
+<script>
+    function populateApplicationTokensConfig(tokensConfig) {
+        if (tokensConfig != null) {
+            // Main configuration
+            document.getElementById('tempMFATokenTimeout').value = tokensConfig.tempMFATokenTimeout || '';
+            document.getElementById('sessionInactivityTimeout').value = tokensConfig.sessionInactivityTimeout || '';
+            document.getElementById('tokenType').value = tokensConfig.tokenType || 'HS256';
+            document.getElementById('allowRefreshTokenRenovation').checked = tokensConfig.allowRefreshTokenRenovation || false;
+            document.getElementById('includeApplicationScopes').checked = tokensConfig.includeApplicationScopes || false;
+            document.getElementById('includeBasicAccountInfo').checked = tokensConfig.includeBasicAccountInfo || false;
+            document.getElementById('maintainRevocationAndLogoutInfo').checked = tokensConfig.maintainRevocationAndLogoutInfo || false;
+
+            // Token configuration
+            if (tokensConfig.tokensConfiguration) {
+                const tokens = tokensConfig.tokensConfiguration;
+
+                if (tokens.accessToken) {
+                    document.getElementById('accessTokenPath').value = tokens.accessToken.path || '/';
+                    document.getElementById('accessTokenTimeout').value = tokens.accessToken.timeout || 300;
+                }
+
+                if (tokens.refreshToken) {
+                    document.getElementById('refreshTokenPath').value = tokens.refreshToken.path || '/auth';
+                    document.getElementById('refreshTokenTimeout').value = tokens.refreshToken.timeout || 2592000;
+                }
+            }
+        }
+    }
+</script>

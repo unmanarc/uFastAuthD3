@@ -13,7 +13,7 @@ struct AccountDetailField
     bool includeInToken = true;
     std::string fieldType = "TEXTLINE";
     bool isOptionalField = true;
-    bool userCanEdit = false;
+    bool canUserEdit = false;
     bool isUnique = false;
 
     Json::Value toJSON() const
@@ -27,7 +27,7 @@ struct AccountDetailField
         r["fieldType"] = fieldType;
         r["isOptionalField"] = isOptionalField;
         r["isUnique"] = isUnique;
-        r["userCanEdit"] = userCanEdit;
+        r["canUserEdit"] = canUserEdit;
         return r;
     }
 
@@ -41,7 +41,7 @@ struct AccountDetailField
         fieldType = JSON_ASSTRING(r, "fieldType", "TEXTLINE");
         isOptionalField = JSON_ASBOOL(r, "isOptionalField", true);
         isUnique = JSON_ASBOOL(r, "isUnique", false);
-        userCanEdit = JSON_ASBOOL(r, "userCanEdit", false);
+        canUserEdit = JSON_ASBOOL(r, "canUserEdit", false);
     }
 };
 struct AccountFlags

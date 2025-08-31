@@ -1,9 +1,12 @@
 <script>
 
     function createApplicationClearParameters() {
-        generateRandomKey("appKey");
-        $("#appName").val('');
-        $("#appDescription").val('');
+        generateRandomKey("appKeyCreate");
+        $("#appNameCreate").val('');
+        $("#appDescriptionCreate").val('');
+        $("#scopesModifiableCreate").prop("checked", false);
+        // TODO:
+        $('.nav-tabs a:first').tab('show')
     }
 
 
@@ -13,9 +16,10 @@
             type: 'POST',
             contentType: 'application/json',
             data: JSON.stringify({
-                appName: $("#appName").val(),
-                description: $("#appDescription").val(),
-                appKey: $("#appKey").val()
+                appName: $("#appNameCreate").val(),
+                description: $("#appDescriptionCreate").val(),
+                scopesModifiable: $("#scopesModifiableCreate").is(":checked"),
+                appKey: $("#appKeyCreate").val()
             }),
             success: function (response, textStatus, xhr) {
                 $('#modalCreateApplication').modal('hide');
@@ -24,8 +28,6 @@
                 table.ajax.reload();
 
                 showToastSuccess("Application created successfully.");
-
-
             },
             error: commonFunctionError
         });
@@ -46,42 +48,91 @@
 
                 <table width=100% style=" border-spacing: 10px;   border-collapse: separate;">
                     <tr>
-                        <td align="right">Application Name: </td>
-                        <td><input type="text" name="appName" id="appName" class="form-control"
-                                placeholder="Application Name" style="text-transform: uppercase"
-                                oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9_-]/g, '')"></td>
-                    </tr>
-                    <tr>
-                        <td align="right">Description: </td>
-                        <td><input id="appDescription" class="form-control" placeholder="Description"></td>
-                    </tr>
-                    <tr>
-                        <td align="right">Key: </td>
                         <td>
-
-                            <div class="input-group">
-                                <input type="password" id="appKey" class="form-control" placeholder="" readonly>
-                                <button type="button" class="btn btn-outline-secondary" id="togglePassword">
-                                    <i class="fas fa-eye"></i>
-                                </button>
-                                <button type="button" class="btn btn-outline-secondary" onclick="javascript:generateRandomKey('appKey')">
-                                    <i class="fas fa-sync-alt"></i>
-                                </button>
-                            </div>
-
-                            <script>
-                                document.getElementById('togglePassword').addEventListener('click', function () {
-                                    const passwordField = document.getElementById('appKey');
-                                    const type = passwordField.getAttribute('type') === 'password' ? 'text' : 'password';
-                                    passwordField.setAttribute('type', type);
-                                    this.innerHTML = type === 'password' ? '<i class="fas fa-eye"></i>' : '<i class="fas fa-eye-slash"></i>';
-                                });
-                            </script>
-
-
+                            <ul class="nav nav-tabs" id="myTabCreate" role="tablist">
+                                <li class="nav-item">
+                                    <button class="nav-link active" id="details-tab-create" data-bs-toggle="tab"
+                                        data-bs-target="#detailsCreate" type="button" role="tab"
+                                        aria-controls="detailsCreate" aria-selected="true">Application Details</button>
+                                </li>
+                                <li class="nav-item">
+                                    <button class="nav-link" id="advanced-tab-create" data-bs-toggle="tab"
+                                        data-bs-target="#advancedCreate" type="button" role="tab"
+                                        aria-controls="advancedCreate" aria-selected="false">Advanced Controls</button>
+                                </li>
+                            </ul>
                         </td>
                     </tr>
                 </table>
+
+                <div class="tab-content" id="myTabContentCreate">
+
+                    <div class="tab-pane fade show active" id="detailsCreate" role="tabpanel"
+                        aria-labelledby="details-tab-create" style="min-height: 500px;">
+                        <table width=100% style=" border-spacing: 10px;   border-collapse: separate;">
+                            <tr>
+                                <td align="right">Application Name: </td>
+                                <td><input type="text" name="appName" id="appNameCreate" class="form-control"
+                                        placeholder="Application Name" style="text-transform: uppercase"
+                                        oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9_-]/g, '')">
+                                </td>
+                            </tr>
+                            <tr>
+                                <td align="right">Description: </td>
+                                <td><input id="appDescriptionCreate" class="form-control" placeholder="Description">
+                                </td>
+                            </tr>
+                            <tr>
+                                <td align="right">Key: </td>
+                                <td>
+
+                                    <div class="input-group">
+                                        <input type="password" id="appKeyCreate" class="form-control" placeholder=""
+                                            readonly>
+                                        <button type="button" class="btn btn-outline-secondary"
+                                            id="togglePasswordCreate">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-outline-secondary"
+                                            onclick="javascript:generateRandomKey('appKeyCreate')">
+                                            <i class="fas fa-sync-alt"></i>
+                                        </button>
+                                    </div>
+
+                                    <script>
+                                        document.getElementById('togglePasswordCreate').addEventListener('click', function () {
+                                            const passwordField = document.getElementById('appKeyCreate');
+                                            const type = passwordField.getAttribute('type') === 'password' ? 'text' : 'password';
+                                            passwordField.setAttribute('type', type);
+                                            this.innerHTML = type === 'password' ? '<i class="fas fa-eye"></i>' : '<i class="fas fa-eye-slash"></i>';
+                                        });
+                                    </script>
+
+
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <div class="tab-pane fade" id="advancedCreate" role="tabpanel" aria-labelledby="advanced-tab-create"
+                        style="min-height: 500px;">
+                        <table width=100% style=" border-spacing: 10px;   border-collapse: separate;">
+                            <tr>
+                                <td align="right">Scopes Modifiable: </td>
+                                <td>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="scopesModifiableCreate">
+                                        <label class="form-check-label" for="scopesModifiableCreate">
+                                            Allow manual modification of scopes
+                                        </label>
+                                    </div>
+                                </td>
+                            </tr>
+
+                        </table>
+                    </div>
+
+                </div>
 
 
             </div>

@@ -195,10 +195,11 @@ public:
 
         /////////////////////////////////////////////////////////////////////////////////
         // applications:
-        bool addApplication(const std::string &appName, const std::string &applicationDescription, const std::string &apiKey, const std::string &sOwnerAccountName) override;
+        bool addApplication(const std::string &appName, const std::string &applicationDescription, const std::string &apiKey, const std::string &sOwnerAccountName, bool canUserModifyScope) override;
         bool removeApplication(const std::string &appName) override;
         bool doesApplicationExist(const std::string &appName) override;
 
+        std::optional<bool> canManuallyModifyApplicationScopes(const std::string &appName) override;
         std::string getApplicationDescription(const std::string &appName) override;
         std::string getApplicationAPIKey(const std::string &appName) override;
         bool updateApplicationAPIKey(const std::string &appName, const std::string &apiKey) override;
