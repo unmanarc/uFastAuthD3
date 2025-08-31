@@ -54,13 +54,13 @@ void WebAdminMethods_Accounts::addMethods_Accounts(std::shared_ptr<MethodsHandle
     methods->addResource(MethodsHandler::POST, "disableAccount", &disableAccount, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_DISABLE"});
     methods->addResource(MethodsHandler::GET, "doesAccountExist", &doesAccountExist, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_READ"});
     methods->addResource(MethodsHandler::GET, "getAccountBlockToken", &getAccountBlockToken, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"});
-    methods->addResource(MethodsHandler::GET, "getAccountDirectApplicationPermissions", &getAccountDirectApplicationPermissions, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_READ"});
+    methods->addResource(MethodsHandler::GET, "getAccountDirectApplicationScopes", &getAccountDirectApplicationScopes, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_READ"});
     methods->addResource(MethodsHandler::GET, "getAccountDetails", &getAccountDetails, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_READ"});
     methods->addResource(MethodsHandler::GET, "getAccountExpirationTime", &getAccountExpirationTime, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_READ"});
     methods->addResource(MethodsHandler::GET, "getAccountInfo", &getAccountInfo, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_READ"});
     methods->addResource(MethodsHandler::GET, "getAccountLastAccess", &getAccountLastAccess, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_READ"});
     methods->addResource(MethodsHandler::GET, "getAccountRoles", &getAccountRoles, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_READ"});
-    methods->addResource(MethodsHandler::GET, "getAccountUsableApplicationPermissions", &getAccountUsableApplicationPermissions, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_READ"});
+    methods->addResource(MethodsHandler::GET, "getAccountUsableApplicationScopes", &getAccountUsableApplicationScopes, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_READ"});
     methods->addResource(MethodsHandler::GET, "isAccountExpired", &isAccountExpired, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_READ"});
     methods->addResource(MethodsHandler::GET, "listAccounts", &listAccounts, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_READ"});
     methods->addResource(MethodsHandler::POST, "removeAccount", &removeAccount, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_DELETE"});
@@ -68,7 +68,7 @@ void WebAdminMethods_Accounts::addMethods_Accounts(std::shared_ptr<MethodsHandle
     methods->addResource(MethodsHandler::GET, "searchAccounts", &searchAccounts, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_READ"});
     methods->addResource(MethodsHandler::POST, "updateAccountInfo", &updateAccountInfo, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"});
     methods->addResource(MethodsHandler::POST, "updateAccountRoles", &updateAccountRoles, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"});
-    methods->addResource(MethodsHandler::GET, "validateAccountApplicationPermission", &validateAccountApplicationPermission, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_READ"});
+    methods->addResource(MethodsHandler::GET, "validateAccountApplicationScope", &validateAccountApplicationScope, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_READ"});
     methods->addResource(MethodsHandler::POST, "blockAccountUsingToken", &blockAccountUsingToken, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"});*/
 }
 
@@ -199,13 +199,18 @@ void WebAdminMethods_Accounts::changeAccountFlags(void *context, APIReturn &resp
 void WebAdminMethods_Accounts::doesAccountExist(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     std::string accountName = JSON_ASSTRING(*request.inputJSON, "accountName", "");
+
     if (accountName.empty())
     {
         response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Account Name is Empty");
         return;
     }
 
-    (*response.responseJSON())["exists"] =  Globals::getIdentityManager()->accounts->doesAccountExist(accountName);
+    if (!Globals::getIdentityManager()->accounts->doesAccountExist(accountName))
+    {
+        response.setError(HTTP::Status::S_404_NOT_FOUND, "not_found", "The Account does not exist in the system.");
+        return;
+    }
 }
 
 
@@ -394,9 +399,9 @@ void WebAdminMethods_Accounts::updateAccountRoles(void *context, APIReturn &resp
     }
 }
 
-void WebAdminMethods_Accounts::validateAccountApplicationPermission(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
+void WebAdminMethods_Accounts::validateAccountApplicationScope(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
 {
-    (*response.responseJSON()) = Globals::getIdentityManager()->authController->validateAccountApplicationPermission(JSON_ASSTRING(*request.inputJSON, "accountName", ""),
+    (*response.responseJSON()) = Globals::getIdentityManager()->authController->validateAccountApplicationScope(JSON_ASSTRING(*request.inputJSON, "accountName", ""),
                                                                                                                      {JSON_ASSTRING(*request.inputJSON, "appName", ""),
                                                                                                                       JSON_ASSTRING(*request.inputJSON, "id", "")});
 }
@@ -450,10 +455,10 @@ void WebAdminMethods_Accounts::getAccountBlockToken(void *context, APIReturn &re
     (*response.responseJSON()) = Globals::getIdentityManager()->accounts->getAccountBlockToken(JSON_ASSTRING(*request.inputJSON, "accountName", ""));
 }
 
-void WebAdminMethods_Accounts::getAccountDirectApplicationPermissions(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
+void WebAdminMethods_Accounts::getAccountDirectApplicationScopes(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
 {
-    (*response.responseJSON()) = WebAdmin_Methods::permissionListToJSON(
-        Globals::getIdentityManager()->authController->getAccountDirectApplicationPermissions(JSON_ASSTRING(*request.inputJSON, "accountName", "")));
+    (*response.responseJSON()) = WebAdmin_Methods::scopeListToJSON(
+        Globals::getIdentityManager()->authController->getAccountDirectApplicationScopes(JSON_ASSTRING(*request.inputJSON, "accountName", "")));
 }
 
 void WebAdminMethods_Accounts::getAccountDetails(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
@@ -495,8 +500,8 @@ void WebAdminMethods_Accounts::getAccountInfo(void *context, APIReturn &response
         }
     }
 
-    auto directPermissions = Globals::getIdentityManager()->authController->getAccountDirectApplicationPermissions(JSON_ASSTRING(*request.inputJSON, "accountName", ""));
-    auto usablePermissions = Globals::getIdentityManager()->authController->getAccountUsableApplicationPermissions(JSON_ASSTRING(*request.inputJSON, "accountName", ""));
+    auto directScopes = Globals::getIdentityManager()->authController->getAccountDirectApplicationScopes(JSON_ASSTRING(*request.inputJSON, "accountName", ""));
+    auto usableScopes = Globals::getIdentityManager()->authController->getAccountUsableApplicationScopes(JSON_ASSTRING(*request.inputJSON, "accountName", ""));
 
     auto listAccountApplications = Globals::getIdentityManager()->applications->listAccountApplications(JSON_ASSTRING(*request.inputJSON, "accountName", ""));
     i = 0;
@@ -507,37 +512,37 @@ void WebAdminMethods_Accounts::getAccountInfo(void *context, APIReturn &response
         (*response.responseJSON())["applications"][i]["description"] = Globals::getIdentityManager()->applications->getApplicationDescription(applicationName);
 
         int j = 0;
-        for (const auto &directApplicationPermission : directPermissions)
+        for (const auto &directApplicationScope : directScopes)
         {
-            if (directApplicationPermission.appName == applicationName)
+            if (directApplicationScope.appName == applicationName)
             {
-                (*response.responseJSON())["applications"][i]["directPermissions"][j]["id"] = directApplicationPermission.permissionId;
-                (*response.responseJSON())["applications"][i]["directPermissions"][j]["description"] = Globals::getIdentityManager()->authController->getApplicationPermissionDescription(
-                    directApplicationPermission);
+                (*response.responseJSON())["applications"][i]["directScopes"][j]["id"] = directApplicationScope.scopeId;
+                (*response.responseJSON())["applications"][i]["directScopes"][j]["description"] = Globals::getIdentityManager()->authController->getApplicationScopeDescription(
+                    directApplicationScope);
                 j++;
             }
         }
 
         j = 0;
-        for (const auto &permission : Globals::getIdentityManager()->authController->listApplicationPermissions(applicationName))
+        for (const auto &scope : Globals::getIdentityManager()->authController->listApplicationScopes(applicationName))
         {
-            if (directPermissions.find(permission) == directPermissions.end())
+            if (directScopes.find(scope) == directScopes.end())
             {
-                (*response.responseJSON())["applications"][i]["directPermissionsLeft"][j]["id"] = permission.permissionId;
-                (*response.responseJSON())["applications"][i]["directPermissionsLeft"][j]["description"] = Globals::getIdentityManager()->authController->getApplicationPermissionDescription(
-                    permission);
+                (*response.responseJSON())["applications"][i]["directScopesLeft"][j]["id"] = scope.scopeId;
+                (*response.responseJSON())["applications"][i]["directScopesLeft"][j]["description"] = Globals::getIdentityManager()->authController->getApplicationScopeDescription(
+                    scope);
                 j++;
             }
         }
 
         j = 0;
-        for (const auto &usablePermission : usablePermissions)
+        for (const auto &usableScope : usableScopes)
         {
-            if (usablePermission.appName == applicationName)
+            if (usableScope.appName == applicationName)
             {
-                (*response.responseJSON())["applications"][i]["usablePermissions"][j]["id"] = usablePermission.permissionId;
-                (*response.responseJSON())["applications"][i]["usablePermissions"][j]["description"] = Globals::getIdentityManager()->authController->getApplicationPermissionDescription(
-                    usablePermission);
+                (*response.responseJSON())["applications"][i]["usableScopes"][j]["id"] = usableScope.scopeId;
+                (*response.responseJSON())["applications"][i]["usableScopes"][j]["description"] = Globals::getIdentityManager()->authController->getApplicationScopeDescription(
+                    usableScope);
                 j++;
             }
         }
@@ -567,10 +572,10 @@ void WebAdminMethods_Accounts::getAccountRoles(void *context, APIReturn &respons
     (*response.responseJSON()) = Helpers::setToJSON(Globals::getIdentityManager()->accounts->getAccountRoles(JSON_ASSTRING(*request.inputJSON, "accountName", "")));
 }
 
-void WebAdminMethods_Accounts::getAccountUsableApplicationPermissions(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
+void WebAdminMethods_Accounts::getAccountUsableApplicationScopes(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
 {
-    (*response.responseJSON()) = WebAdmin_Methods::permissionListToJSON(
-        Globals::getIdentityManager()->authController->getAccountUsableApplicationPermissions(JSON_ASSTRING(*request.inputJSON, "accountName", "")));
+    (*response.responseJSON()) = WebAdmin_Methods::scopeListToJSON(
+        Globals::getIdentityManager()->authController->getAccountUsableApplicationScopes(JSON_ASSTRING(*request.inputJSON, "accountName", "")));
 }
 
 void WebAdminMethods_Accounts::isAccountExpired(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)

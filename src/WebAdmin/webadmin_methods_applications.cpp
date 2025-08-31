@@ -16,13 +16,14 @@ void WebAdminMethods_Applications::addMethods_Applications(std::shared_ptr<Metho
     methods->addResource(MethodsHandler::GET, "searchApplications", &searchApplications, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
     methods->addResource(MethodsHandler::DELETE, "removeApplication", &removeApplication, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_DELETE"});
     methods->addResource(MethodsHandler::POST, "addApplication", &addApplication, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_CREATE"});
+    methods->addResource(MethodsHandler::GET, "doesApplicationExist", &doesApplicationExist, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
+    methods->addResource(MethodsHandler::GET, "getApplicationInfo", &getApplicationInfo, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
+    methods->addResource(MethodsHandler::PATCH, "updateApplicationDescription", &updateApplicationDescription, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"});
+    methods->addResource(MethodsHandler::PATCH, "updateApplicationAPIKey", &updateApplicationAPIKey, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"});
 
     // Applications
-   /* methods->addResource(MethodsHandler::GET, "getApplicationInfo", &getApplicationInfo, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
-    methods->addResource(MethodsHandler::GET, "doesApplicationExist", &doesApplicationExist, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
+   /*
     methods->addResource(MethodsHandler::GET, "getApplicationDescription", &getApplicationDescription, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
-    methods->addResource(MethodsHandler::POST, "updateApplicationDescription", &updateApplicationDescription, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"});
-    methods->addResource(MethodsHandler::POST, "updateApplicationAPIKey", &updateApplicationAPIKey, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"});
     methods->addResource(MethodsHandler::GET, "listApplications", &listApplications, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
     methods->addResource(MethodsHandler::GET, "validateApplicationOwner", &validateApplicationOwner, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
     methods->addResource(MethodsHandler::GET, "validateApplicationAccount", &validateApplicationAccount, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
@@ -78,43 +79,44 @@ void WebAdminMethods_Applications::addApplication(void *context, APIReturn &resp
     return;
 }
 
-
-/*
-
-
 void WebAdminMethods_Applications::doesApplicationExist(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
 {
-    if (!Globals::getIdentityManager()->applications->doesApplicationExist(JSON_ASSTRING(*request.inputJSON, "appName", "")))
+    std::string appName = JSON_ASSTRING(*request.inputJSON, "appName", "");
+
+    if (appName.empty())
     {
-        response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Internal Error");
+        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Application Name is Empty");
         return;
     }
-}
 
-void WebAdminMethods_Applications::getApplicationDescription(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
-{
-    (*response.responseJSON()) = Globals::getIdentityManager()->applications->getApplicationDescription(JSON_ASSTRING(*request.inputJSON, "appName", ""));
-}*/
-/*
-void WebAdminMethods_Applications::getApplicationAPIKey(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
-{
+    if (!Globals::getIdentityManager()->applications->doesApplicationExist(appName))
+    {
+        response.setError(HTTP::Status::S_404_NOT_FOUND, "not_found", "The Application does not exist in the system.");
+        return;
+    }
 
-    payloadOut["appKey"] = Globals::getIdentityManager()->getApplicationAPIKey( JSON_ASSTRING(*request.inputJSON,"appName",""));
-    return payloadOut;
 }
 void WebAdminMethods_Applications::getApplicationInfo(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     json payloadOut;
     std::string appName = JSON_ASSTRING(*request.inputJSON, "appName", "");
-    payloadOut["description"] = Globals::getIdentityManager()->applications->getApplicationDescription(appName);
 
-    // Get associated permission...
-    auto attrList = Globals::getIdentityManager()->authController->listApplicationPermissions(appName);
-    int i = 0;
-    for (const auto &permission : attrList)
+
+    if (appName.empty())
     {
-        payloadOut["permissions"][i]["id"] = permission.permissionId;
-        payloadOut["permissions"][i]["description"] = Globals::getIdentityManager()->authController->getApplicationPermissionDescription(permission);
+        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Application Name is Empty");
+        return;
+    }
+    
+    payloadOut["details"]["description"] = Globals::getIdentityManager()->applications->getApplicationDescription(appName);
+
+    // Get associated scope...
+    auto attrList = Globals::getIdentityManager()->authController->listApplicationScopes(appName);
+    int i = 0;
+    for (const auto &scope : attrList)
+    {
+        payloadOut["scopes"][i]["id"] = scope.id;
+        payloadOut["scopes"][i]["description"] = Globals::getIdentityManager()->authController->getApplicationScopeDescription(scope);
         i++;
     }
 
@@ -131,9 +133,19 @@ void WebAdminMethods_Applications::getApplicationInfo(void *context, APIReturn &
     (*response.responseJSON()) = payloadOut;
 }
 
+
+
 void WebAdminMethods_Applications::updateApplicationDescription(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
 {
-    if (!Globals::getIdentityManager()->applications->updateApplicationDescription(JSON_ASSTRING(*request.inputJSON, "appName", ""), JSON_ASSTRING(*request.inputJSON, "description", "")))
+    std::string appName = JSON_ASSTRING(*request.inputJSON, "appName", "");
+
+    if (appName.empty())
+    {
+        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Application Name is Empty");
+        return;
+    }
+
+    if (!Globals::getIdentityManager()->applications->updateApplicationDescription(appName, JSON_ASSTRING(*request.inputJSON, "description", "")))
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Internal Error");
     }
@@ -141,11 +153,37 @@ void WebAdminMethods_Applications::updateApplicationDescription(void *context, A
 
 void WebAdminMethods_Applications::updateApplicationAPIKey(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
 {
-    if (!Globals::getIdentityManager()->applications->updateApplicationAPIKey(JSON_ASSTRING(*request.inputJSON, "appName", ""), JSON_ASSTRING(*request.inputJSON, "appKey", "")))
+    std::string appName = JSON_ASSTRING(*request.inputJSON, "appName", "");
+
+    if (appName.empty())
+    {
+        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Application Name is Empty");
+        return;
+    }
+
+    if (!Globals::getIdentityManager()->applications->updateApplicationAPIKey(appName, JSON_ASSTRING(*request.inputJSON, "appKey", "")))
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Internal Error");
     }
 }
+
+
+/*
+
+
+
+void WebAdminMethods_Applications::getApplicationDescription(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
+{
+    (*response.responseJSON()) = Globals::getIdentityManager()->applications->getApplicationDescription(JSON_ASSTRING(*request.inputJSON, "appName", ""));
+}*/
+/*
+void WebAdminMethods_Applications::getApplicationAPIKey(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
+{
+
+    payloadOut["appKey"] = Globals::getIdentityManager()->getApplicationAPIKey( JSON_ASSTRING(*request.inputJSON,"appName",""));
+    return payloadOut;
+}
+
 
 void WebAdminMethods_Applications::listApplications(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
 {
@@ -268,7 +306,7 @@ void WebAdminMethods_Applications::modifyWebLoginJWTConfigForApplication(void *c
     tokenInfo.tempMFATokenTimeout = (*request.inputJSON)["tempMFATokenTimeout"].asUInt();
     tokenInfo.sessionInactivityTimeout = (*request.inputJSON)["sessionInactivityTimeout"].asUInt();
     tokenInfo.tokenType = JSON_ASSTRING(*request.inputJSON, "tokenType", "");
-    tokenInfo.includeApplicationPermissions = (*request.inputJSON)["includeApplicationPermissions"].asBool();
+    tokenInfo.includeApplicationScopes = (*request.inputJSON)["includeApplicationScopes"].asBool();
     tokenInfo.includeBasicAccountInfo = (*request.inputJSON)["includeBasicAccountInfo"].asBool();
     tokenInfo.maintainRevocationAndLogoutInfo = (*request.inputJSON)["maintainRevocationAndLogoutInfo"].asBool();
     tokenInfo.allowRefreshTokenRenovation = (*request.inputJSON)["allowRefreshTokenRenovation"].asBool();
@@ -292,7 +330,7 @@ void WebAdminMethods_Applications::getWebLoginJWTConfigFromApplication(void *con
     payloadOut["tempMFATokenTimeout"] = tokenInfo.tempMFATokenTimeout;
     payloadOut["sessionInactivityTimeout"] = tokenInfo.sessionInactivityTimeout;
     payloadOut["tokenType"] = tokenInfo.tokenType;
-    payloadOut["includeApplicationPermissions"] = tokenInfo.includeApplicationPermissions;
+    payloadOut["includeApplicationScopes"] = tokenInfo.includeApplicationScopes;
     payloadOut["includeBasicAccountInfo"] = tokenInfo.includeBasicAccountInfo;
     payloadOut["maintainRevocationAndLogoutInfo"] = tokenInfo.maintainRevocationAndLogoutInfo;
     payloadOut["allowRefreshTokenRenovation"] = tokenInfo.allowRefreshTokenRenovation;

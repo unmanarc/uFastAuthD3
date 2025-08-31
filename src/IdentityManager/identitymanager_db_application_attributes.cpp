@@ -8,30 +8,30 @@ using namespace Mantids30;
 using namespace Mantids30::Memory;
 using namespace Mantids30::Database;
 
-bool IdentityManager_DB::AuthController_DB::addApplicationPermission(const ApplicationPermission &applicationPermission, const std::string &sDescription)
+bool IdentityManager_DB::AuthController_DB::addApplicationScope(const ApplicationScope &applicationScope, const std::string &sDescription)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
-    return _parent->m_sqlConnector->execute("INSERT INTO iam.applicationPermissions (`f_appName`,`permissionId`,`description`) VALUES(:appName,:permissionId,:description);",
-                                          {{":appName", MAKE_VAR(STRING, applicationPermission.appName)},
-                                           {":permissionId", MAKE_VAR(STRING, applicationPermission.permissionId)},
+    return _parent->m_sqlConnector->execute("INSERT INTO iam.applicationScopes (`f_appName`,`scopeId`,`description`) VALUES(:appName,:scopeId,:description);",
+                                          {{":appName", MAKE_VAR(STRING, applicationScope.appName)},
+                                           {":scopeId", MAKE_VAR(STRING, applicationScope.id)},
                                            {":description", MAKE_VAR(STRING, sDescription)}});
 }
 
-bool IdentityManager_DB::AuthController_DB::removeApplicationPermission(const ApplicationPermission &applicationPermission)
+bool IdentityManager_DB::AuthController_DB::removeApplicationScope(const ApplicationScope &applicationScope)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
-    return _parent->m_sqlConnector->execute("DELETE FROM iam.applicationPermissions WHERE `permissionId`=:permissionId and `f_appName`=:appName;",
-                                          {{":appName", MAKE_VAR(STRING, applicationPermission.appName)}, {":permissionId", MAKE_VAR(STRING, applicationPermission.permissionId)}});
+    return _parent->m_sqlConnector->execute("DELETE FROM iam.applicationScopes WHERE `scopeId`=:scopeId and `f_appName`=:appName;",
+                                          {{":appName", MAKE_VAR(STRING, applicationScope.appName)}, {":scopeId", MAKE_VAR(STRING, applicationScope.id)}});
 }
 
-bool IdentityManager_DB::AuthController_DB::doesApplicationPermissionExist(const ApplicationPermission &applicationPermission)
+bool IdentityManager_DB::AuthController_DB::doesApplicationScopeExist(const ApplicationScope &applicationScope)
 {
     bool ret = false;
     Threads::Sync::Lock_RD lock(_parent->m_mutex);
 
     SQLConnector::QueryInstance i
-        = _parent->m_sqlConnector->qSelect("SELECT `description` FROM iam.applicationPermissions WHERE `permissionId`=:permissionId and `f_appName`=:appName LIMIT 1;",
-                                           {{":appName", MAKE_VAR(STRING, applicationPermission.appName)}, {":permissionId", MAKE_VAR(STRING, applicationPermission.permissionId)}}, {});
+        = _parent->m_sqlConnector->qSelect("SELECT `description` FROM iam.applicationScopes WHERE `scopeId`=:scopeId and `f_appName`=:appName LIMIT 1;",
+                                           {{":appName", MAKE_VAR(STRING, applicationScope.appName)}, {":scopeId", MAKE_VAR(STRING, applicationScope.id)}}, {});
     if (i.getResultsOK() && i.query->step())
     {
         ret = true;
@@ -39,71 +39,71 @@ bool IdentityManager_DB::AuthController_DB::doesApplicationPermissionExist(const
     return ret;
 }
 
-bool IdentityManager_DB::AuthController_DB::addApplicationPermissionToRole(const ApplicationPermission &applicationPermission, const std::string &roleName)
+bool IdentityManager_DB::AuthController_DB::addApplicationScopeToRole(const ApplicationScope &applicationScope, const std::string &roleName)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
 
-    return _parent->m_sqlConnector->execute("INSERT INTO iam.applicationPermissionsAtRole (`f_appName`,`f_permissionId`,`f_roleName`) VALUES(:appName,:permissionId,:roleName);",
-                                          {{":appName", MAKE_VAR(STRING, applicationPermission.appName)},
-                                           {":permissionId", MAKE_VAR(STRING, applicationPermission.permissionId)},
+    return _parent->m_sqlConnector->execute("INSERT INTO iam.applicationScopeRoles (`f_appName`,`f_scopeId`,`f_roleName`) VALUES(:appName,:scopeId,:roleName);",
+                                          {{":appName", MAKE_VAR(STRING, applicationScope.appName)},
+                                           {":scopeId", MAKE_VAR(STRING, applicationScope.id)},
                                            {":roleName", MAKE_VAR(STRING, roleName)}});
 }
 
-bool IdentityManager_DB::AuthController_DB::removeApplicationPermissionFromRole(const ApplicationPermission &applicationPermission, const std::string &roleName, bool lock)
+bool IdentityManager_DB::AuthController_DB::removeApplicationScopeFromRole(const ApplicationScope &applicationScope, const std::string &roleName, bool lock)
 {
     bool ret = false;
     if (lock)
         _parent->m_mutex.lock();
-    ret = _parent->m_sqlConnector->execute("DELETE FROM iam.applicationPermissionsAtRole WHERE `f_permissionId`=:permissionId and `f_appName`=:appName AND `f_roleName`=:roleName;",
-                                         {{":appName", MAKE_VAR(STRING, applicationPermission.appName)},
-                                          {":permissionId", MAKE_VAR(STRING, applicationPermission.permissionId)},
+    ret = _parent->m_sqlConnector->execute("DELETE FROM iam.applicationScopeRoles WHERE `f_scopeId`=:scopeId and `f_appName`=:appName AND `f_roleName`=:roleName;",
+                                         {{":appName", MAKE_VAR(STRING, applicationScope.appName)},
+                                          {":scopeId", MAKE_VAR(STRING, applicationScope.id)},
                                           {":roleName", MAKE_VAR(STRING, roleName)}});
     if (lock)
         _parent->m_mutex.unlock();
     return ret;
 }
 
-bool IdentityManager_DB::AuthController_DB::addApplicationPermissionToAccount(const ApplicationPermission &applicationPermission, const std::string &accountName)
+bool IdentityManager_DB::AuthController_DB::addApplicationScopeToAccount(const ApplicationScope &applicationScope, const std::string &accountName)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
-    return _parent->m_sqlConnector->execute("INSERT INTO iam.applicationPermissionsAtAccount (`f_appName`,`f_permissionId`,`f_accountName`) VALUES(:appName,:permissionId,:accountName);",
-                                          {{":appName", MAKE_VAR(STRING, applicationPermission.appName)},
-                                           {":permissionId", MAKE_VAR(STRING, applicationPermission.permissionId)},
+    return _parent->m_sqlConnector->execute("INSERT INTO iam.applicationScopeAccounts (`f_appName`,`f_scopeId`,`f_accountName`) VALUES(:appName,:scopeId,:accountName);",
+                                          {{":appName", MAKE_VAR(STRING, applicationScope.appName)},
+                                           {":scopeId", MAKE_VAR(STRING, applicationScope.id)},
                                            {":accountName", MAKE_VAR(STRING, accountName)}});
 }
 
-bool IdentityManager_DB::AuthController_DB::removeApplicationPermissionFromAccount(const ApplicationPermission &applicationPermission, const std::string &accountName, bool lock)
+bool IdentityManager_DB::AuthController_DB::removeApplicationScopeFromAccount(const ApplicationScope &applicationScope, const std::string &accountName, bool lock)
 {
     bool ret = false;
     if (lock)
         _parent->m_mutex.lock();
-    ret = _parent->m_sqlConnector->execute("DELETE FROM iam.applicationPermissionsAtAccount WHERE `f_permissionId`=:permissionId AND `f_appName`=:appName AND `f_accountName`=:accountName;",
-                                         {{":appName", MAKE_VAR(STRING, applicationPermission.appName)},
-                                          {":permissionId", MAKE_VAR(STRING, applicationPermission.permissionId)},
+    ret = _parent->m_sqlConnector->execute("DELETE FROM iam.applicationScopeAccounts WHERE `f_scopeId`=:scopeId AND `f_appName`=:appName AND `f_accountName`=:accountName;",
+                                         {{":appName", MAKE_VAR(STRING, applicationScope.appName)},
+                                          {":scopeId", MAKE_VAR(STRING, applicationScope.id)},
                                           {":accountName", MAKE_VAR(STRING, accountName)}});
     if (lock)
         _parent->m_mutex.unlock();
     return ret;
 }
 
-bool IdentityManager_DB::AuthController_DB::updateApplicationPermissionDescription(const ApplicationPermission &applicationPermission, const std::string &description)
+bool IdentityManager_DB::AuthController_DB::updateApplicationScopeDescription(const ApplicationScope &applicationScope, const std::string &description)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
-    return _parent->m_sqlConnector->execute("UPDATE iam.applicationPermissions SET `description`=:description WHERE `permissionId`=:permissionId AND `f_appName`=:appName;",
-                                          {{":appName", MAKE_VAR(STRING, applicationPermission.appName)},
-                                           {":permissionId", MAKE_VAR(STRING, applicationPermission.permissionId)},
+    return _parent->m_sqlConnector->execute("UPDATE iam.applicationScopes SET `description`=:description WHERE `scopeId`=:scopeId AND `f_appName`=:appName;",
+                                          {{":appName", MAKE_VAR(STRING, applicationScope.appName)},
+                                           {":scopeId", MAKE_VAR(STRING, applicationScope.id)},
                                            {":description", MAKE_VAR(STRING, description)}});
 }
 
-std::string IdentityManager_DB::AuthController_DB::getApplicationPermissionDescription(const ApplicationPermission &applicationPermission)
+std::string IdentityManager_DB::AuthController_DB::getApplicationScopeDescription(const ApplicationScope &applicationScope)
 {
     std::string ret;
     Threads::Sync::Lock_RD lock(_parent->m_mutex);
 
     Abstract::STRING description;
     SQLConnector::QueryInstance i
-        = _parent->m_sqlConnector->qSelect("SELECT `description` FROM iam.applicationPermissions WHERE `permissionId`=:permissionId AND `f_appName`=:appName LIMIT 1;",
-                                           {{":appName", MAKE_VAR(STRING, applicationPermission.appName)}, {":permissionId", MAKE_VAR(STRING, applicationPermission.permissionId)}}, {&description});
+        = _parent->m_sqlConnector->qSelect("SELECT `description` FROM iam.applicationScopes WHERE `scopeId`=:scopeId AND `f_appName`=:appName LIMIT 1;",
+                                           {{":appName", MAKE_VAR(STRING, applicationScope.appName)}, {":scopeId", MAKE_VAR(STRING, applicationScope.id)}}, {&description});
     if (i.getResultsOK() && i.query->step())
     {
         return description.getValue();
@@ -111,26 +111,26 @@ std::string IdentityManager_DB::AuthController_DB::getApplicationPermissionDescr
     return "";
 }
 
-std::set<ApplicationPermission> IdentityManager_DB::AuthController_DB::listApplicationPermissions(const std::string &applicationName)
+std::set<ApplicationScope> IdentityManager_DB::AuthController_DB::listApplicationScopes(const std::string &applicationName)
 {
-    std::set<ApplicationPermission> ret;
+    std::set<ApplicationScope> ret;
     Threads::Sync::Lock_RD lock(_parent->m_mutex);
 
-    Abstract::STRING sAppName, sPermissionId;
+    Abstract::STRING sAppName, sScopeId;
 
-    std::string sqlQuery = "SELECT `f_appName`,`permissionId` FROM iam.applicationPermissions;";
+    std::string sqlQuery = "SELECT `f_appName`,`scopeId` FROM iam.applicationScopes;";
     if (!applicationName.empty())
-        sqlQuery = "SELECT `f_appName`,`permissionId` FROM iam.applicationPermissions WHERE `f_appName`=:appName;";
+        sqlQuery = "SELECT `f_appName`,`scopeId` FROM iam.applicationScopes WHERE `f_appName`=:appName;";
 
-    SQLConnector::QueryInstance i = _parent->m_sqlConnector->qSelect(sqlQuery, {{":appName", MAKE_VAR(STRING, applicationName)}}, {&sAppName, &sPermissionId});
+    SQLConnector::QueryInstance i = _parent->m_sqlConnector->qSelect(sqlQuery, {{":appName", MAKE_VAR(STRING, applicationName)}}, {&sAppName, &sScopeId});
     while (i.getResultsOK() && i.query->step())
     {
-        ret.insert({sAppName.getValue(), sPermissionId.getValue()});
+        ret.insert({sAppName.getValue(), sScopeId.getValue()});
     }
     return ret;
 }
 
-std::set<std::string> IdentityManager_DB::AuthController_DB::getApplicationPermissionsForRole(const ApplicationPermission &applicationPermission, bool lock)
+std::set<std::string> IdentityManager_DB::AuthController_DB::getApplicationScopesForRole(const ApplicationScope &applicationScope, bool lock)
 {
     std::set<std::string> ret;
     if (lock)
@@ -138,8 +138,8 @@ std::set<std::string> IdentityManager_DB::AuthController_DB::getApplicationPermi
 
     Abstract::STRING roleName;
     SQLConnector::QueryInstance i
-        = _parent->m_sqlConnector->qSelect("SELECT `f_roleName` FROM iam.applicationPermissionsAtRole WHERE `f_permissionId`=:permissionId AND `f_appName`=:appName;",
-                                           {{":appName", MAKE_VAR(STRING, applicationPermission.appName)}, {":permissionId", MAKE_VAR(STRING, applicationPermission.permissionId)}}, {&roleName});
+        = _parent->m_sqlConnector->qSelect("SELECT `f_roleName` FROM iam.applicationScopeRoles WHERE `f_scopeId`=:scopeId AND `f_appName`=:appName;",
+                                           {{":appName", MAKE_VAR(STRING, applicationScope.appName)}, {":scopeId", MAKE_VAR(STRING, applicationScope.id)}}, {&roleName});
     while (i.getResultsOK() && i.query->step())
     {
         ret.insert(roleName.getValue());
@@ -150,7 +150,7 @@ std::set<std::string> IdentityManager_DB::AuthController_DB::getApplicationPermi
     return ret;
 }
 
-std::set<std::string> IdentityManager_DB::AuthController_DB::listAccountsOnApplicationPermission(const ApplicationPermission &applicationPermission, bool lock)
+std::set<std::string> IdentityManager_DB::AuthController_DB::listAccountsOnApplicationScope(const ApplicationScope &applicationScope, bool lock)
 {
     std::set<std::string> ret;
     if (lock)
@@ -158,8 +158,8 @@ std::set<std::string> IdentityManager_DB::AuthController_DB::listAccountsOnAppli
 
     Abstract::STRING accountName;
     SQLConnector::QueryInstance i
-        = _parent->m_sqlConnector->qSelect("SELECT `f_accountName` FROM iam.applicationPermissionsAtAccount WHERE `f_permissionId`=:permissionId AND `f_appName`=:appName;",
-                                           {{":appName", MAKE_VAR(STRING, applicationPermission.appName)}, {":permissionId", MAKE_VAR(STRING, applicationPermission.permissionId)}}, {&accountName});
+        = _parent->m_sqlConnector->qSelect("SELECT `f_accountName` FROM iam.applicationScopeAccounts WHERE `f_scopeId`=:scopeId AND `f_appName`=:appName;",
+                                           {{":appName", MAKE_VAR(STRING, applicationScope.appName)}, {":scopeId", MAKE_VAR(STRING, applicationScope.id)}}, {&accountName});
     while (i.getResultsOK() && i.query->step())
     {
         ret.insert(accountName.getValue());
@@ -170,14 +170,14 @@ std::set<std::string> IdentityManager_DB::AuthController_DB::listAccountsOnAppli
     return ret;
 }
 
-std::list<ApplicationPermissionDetails> IdentityManager_DB::AuthController_DB::searchApplicationPermissions(const std::string &appName, std::string sSearchWords, size_t limit, size_t offset)
+std::list<ApplicationScopeDetails> IdentityManager_DB::AuthController_DB::searchApplicationScopes(const std::string &appName, std::string sSearchWords, size_t limit, size_t offset)
 {
-    std::list<ApplicationPermissionDetails> ret;
+    std::list<ApplicationScopeDetails> ret;
     Threads::Sync::Lock_RD lock(_parent->m_mutex);
 
-    Abstract::STRING permissionId, description;
+    Abstract::STRING scopeId, description;
 
-    std::string sSqlQuery = "SELECT `permissionId`,`description` FROM iam.applications WHERE `f_appName`=:APPNAME";
+    std::string sSqlQuery = "SELECT `scopeId`,`description` FROM iam.applications WHERE `f_appName`=:APPNAME";
 
     if (!sSearchWords.empty())
     {
@@ -195,13 +195,13 @@ std::list<ApplicationPermissionDetails> IdentityManager_DB::AuthController_DB::s
                                                                                        {":SEARCHWORDS", MAKE_VAR(STRING, sSearchWords)},
                                                                                        {":LIMIT", MAKE_VAR(UINT64, limit)},
                                                                                        {":OFFSET", MAKE_VAR(UINT64, offset)}},
-                                                                                      {&permissionId, &description});
+                                                                                      {&scopeId, &description});
     while (i.getResultsOK() && i.query->step())
     {
-        ApplicationPermissionDetails rDetail;
+        ApplicationScopeDetails rDetail;
 
         rDetail.description = description.getValue();
-        rDetail.permissionId = permissionId.getValue();
+        rDetail.id = scopeId.getValue();
 
         ret.push_back(rDetail);
     }
@@ -209,14 +209,14 @@ std::list<ApplicationPermissionDetails> IdentityManager_DB::AuthController_DB::s
     return ret;
 }
 
-bool IdentityManager_DB::AuthController_DB::validateAccountDirectApplicationPermission(const std::string &accountName, const ApplicationPermission &applicationPermission)
+bool IdentityManager_DB::AuthController_DB::validateAccountDirectApplicationScope(const std::string &accountName, const ApplicationScope &applicationScope)
 {
     Threads::Sync::Lock_RD lock(_parent->m_mutex);
 
-    SQLConnector::QueryInstance i = _parent->m_sqlConnector->qSelect("SELECT `f_accountName` FROM iam.applicationPermissionsAtAccount WHERE "
-                                                                                      "`f_permissionId`=:permissionId AND `f_accountName`=:accountName AND `f_appName`=:appName;",
-                                                                                      {{":permissionId", MAKE_VAR(STRING, applicationPermission.permissionId)},
-                                                                                       {":appName", MAKE_VAR(STRING, applicationPermission.appName)},
+    SQLConnector::QueryInstance i = _parent->m_sqlConnector->qSelect("SELECT `f_accountName` FROM iam.applicationScopeAccounts WHERE "
+                                                                                      "`f_scopeId`=:scopeId AND `f_accountName`=:accountName AND `f_appName`=:appName;",
+                                                                                      {{":scopeId", MAKE_VAR(STRING, applicationScope.id)},
+                                                                                       {":appName", MAKE_VAR(STRING, applicationScope.appName)},
                                                                                        {":accountName", MAKE_VAR(STRING, accountName)}},
                                                                                       {});
     return (i.getResultsOK() && i.query->step());

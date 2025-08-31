@@ -18,14 +18,14 @@ struct ApplicationTokenProperties
     uint32_t sessionInactivityTimeout;
     std::string tokenType;
     bool allowRefreshTokenRenovation;
-    bool includeApplicationPermissions;
+    bool includeApplicationScopes;
     bool includeBasicAccountInfo;
     bool maintainRevocationAndLogoutInfo;
     Json::Value tokensConfiguration;
 };
-struct ApplicationPermissionDetails
+struct ApplicationScopeDetails
 {
-    ApplicationPermissionDetails() {}
-    std::string permissionId;
+    ApplicationScopeDetails() {}
+    std::string id;
     std::string description;
 };

@@ -1,0 +1,44 @@
+<div class="tab-pane fade" id="accounts" role="tabpanel" aria-labelledby="accounts-tab" style="min-height: 500px;">
+    <table width=100% style=" border-spacing: 10px;   border-collapse: separate;">
+        <tr>
+            <td colspan="2" align="right">
+                <table class="table table-hover">
+                    <thead class="thead-light">
+                        <tr bgcolor=grey>
+                            <th scope="col">Account Name</th>
+                            <th scope="col" style="text-align: right;">Controls</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody-accounts">
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+    </table>
+</div>
+
+<script>
+    function populateApplicationAccounts(accounts) {
+        document.getElementById("tbody-accounts").innerHTML = "";
+        if (accounts != null) {
+            let accountId = 0;
+
+            for (let account of accounts) {
+
+                $("#tbody-accounts").append(
+                    `<tr> 
+                <th scope="row" id=ulist-accountName-${accountId}></th>
+                <td style="text-align: right;">
+                  <input type=hidden id="ulist-accountNameById-${accountId}">
+                  <button type="button" class="btn btn-dark btn-sm" onclick="javascript:accountModifyScopes(${accountId})">Modify Scopes</button>
+                  <button type="button" class="btn btn-light btn-sm" onclick="javascript:accountRemove(${accountId})">&#10006;</button>
+                </td>
+              </tr>`
+                );
+                document.getElementById(`ulist-accountNameById-${accountId}`).value = account["name"];
+                $(`#ulist-accountName-${accountId}`).text(account["name"]);
+                accountId++;
+            }
+        }
+    }
+</script>

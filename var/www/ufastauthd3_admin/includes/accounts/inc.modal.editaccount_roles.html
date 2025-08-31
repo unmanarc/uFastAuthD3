@@ -1,22 +1,22 @@
-<div class="tab-pane fade" id="groups" role="tabpanel" aria-labelledby="groups-tab" style="min-height: 500px;">
+<div class="tab-pane fade" id="roles" role="tabpanel" aria-labelledby="roles-tab" style="min-height: 500px;">
     <table width=100% style=" border-spacing: 10px;   border-collapse: separate;">
 
         <tr>
-            <td width=50% align="center">Available Groups:<br>
+            <td width=50% align="center">Available Roles:<br>
                 <select multiple aria-label="multiple select example" style="min-height: 250px; min-width: 100%;"
-                    id="groupsLeft">
+                    id="rolesLeft">
                 </select><br>
             </td>
             <td>
                 <button type="button" class="btn btn-light btn-sm"
-                    onclick="javascript:moveToUsedGroup()">&#9658;</button>
+                    onclick="javascript:moveToUsedRole()">&#9658;</button>
                 <br><br>
                 <button type="button" class="btn btn-light btn-sm"
-                    onclick="javascript:moveToUnusedGroup()">&#9668;</button>
+                    onclick="javascript:moveToUnusedRole()">&#9668;</button>
             </td>
-            <td width=50% align="center">Used Groups:<br>
+            <td width=50% align="center">Used Roles:<br>
                 <select multiple aria-label="multiple select example" style="min-height: 250px; min-width: 100%;"
-                    id="groupsRight">
+                    id="rolesRight">
                 </select><br>
             </td>
         </tr>

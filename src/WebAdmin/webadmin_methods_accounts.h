@@ -53,13 +53,13 @@ protected:
     static void resetBadAttemptsOnCredential(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
     static void getAccountExpirationTime(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
     static void isAccountExpired(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
-    static void validateAccountApplicationPermission(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
+    static void validateAccountApplicationScope(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
     static void getAccountBlockToken(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
     static void blockAccountUsingToken(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
     static void listAccounts(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
     static void getAccountRoles(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
-    static void getAccountDirectApplicationPermissions(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
-    static void getAccountUsableApplicationPermissions(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
+    static void getAccountDirectApplicationScopes(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
+    static void getAccountUsableApplicationScopes(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
 */
 private:
     static std::map<std::string, std::string> jsonToMap(const json &jValue);

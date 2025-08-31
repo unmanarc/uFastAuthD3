@@ -1,0 +1,108 @@
+<script>
+    let currentApplication = "";
+</script>
+
+<div class="modal fade" id="modalEditApplication" data-bs-backdrop="static" data-bs-keyboard="true" tabindex="-1"
+    aria-labelledby="modalEditApplicationLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-scrollable modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalEditApplicationLabel">Edit Application</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+
+
+                <table width=100% style=" border-spacing: 10px;   border-collapse: separate;">
+                    <tr>
+                        <td align="right" width=15%>Application ID: </td>
+                        <td><input type="username" name="editApplicationName" id="editApplicationName" class="form-control"
+                                placeholder="Application Name" readonly style="background-color: #e9ecef;"></td>
+                    </tr>
+                </table>
+
+
+                <table width=100% style=" border-spacing: 10px;   border-collapse: separate;">
+                    <tr>
+                        <td>
+                            <ul class="nav nav-tabs" id="myTab" role="tablist">
+                                <li class="nav-item">
+                                    <button class="nav-link active" id="details-tab" data-bs-toggle="tab"
+                                        data-bs-target="#details" type="button" role="tab" aria-controls="details"
+                                        aria-selected="true">Application Details</button>
+                                </li>
+                                <li class="nav-item">
+                                    <button class="nav-link" id="scopes-tab" data-bs-toggle="tab"
+                                        data-bs-target="#scopes" type="button" role="tab" aria-controls="scopes"
+                                        aria-selected="false">Application Scopes</button>
+                                </li>
+                                <li class="nav-item">
+                                    <button class="nav-link" id="accounts-tab" data-bs-toggle="tab"
+                                        data-bs-target="#accounts" type="button" role="tab" aria-controls="accounts"
+                                        aria-selected="false">Associated Accounts</button>
+                                </li>
+                                <li class="nav-item">
+                                    <button class="nav-link" id="advanced-tab" data-bs-toggle="tab"
+                                        data-bs-target="#advanced" type="button" role="tab" aria-controls="advanced"
+                                        aria-selected="false">Advanced Controls</button>
+                                </li>
+                            </ul>
+                        </td>
+                    </tr>
+                </table>
+
+                <div class="tab-content" id="myTabContent">
+                    <!--<%include:/includes/applications/inc.modal.editapplication_details.html%>-->
+                    <!--<%include:/includes/applications/inc.modal.editapplication_scopes.html%>-->
+                    <!--<%include:/includes/applications/inc.modal.editapplication_accounts.html%>-->
+                    <!--<%include:/includes/applications/inc.modal.editapplication_advanced.html%>-->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script>
+    function populateApplication() {
+        $.ajax({
+            url: '/api/v1/getApplicationInfo',
+            type: 'GET',
+            contentType: 'application/json',
+            data: JSON.stringify({ appName: currentApplication }),
+            success: function (response) {
+                populateApplicationDetails(response["details"]);
+                populateApplicationScopes(response["scopes"]);
+                populateApplicationAccounts(response["accounts"]);
+            },
+            error: commonFunctionError
+        });
+    }
+
+    function ajaxValidateAndPopulateApplication() {
+        $.ajax({
+            url: '/api/v1/doesApplicationExist',
+            type: 'GET',
+            contentType: 'application/json',
+            data: JSON.stringify({ appName: currentApplication }),
+            success: function (response) {
+                document.getElementById("editApplicationName").value = currentApplication;
+                populateApplication(currentApplication);
+            },
+            error: commonFunctionError
+        });
+    }
+
+    function loadAndEditApplication(b64ApplicationName) {
+        // Decode Base64 to plain text
+        currentApplication = atob(b64ApplicationName);
+
+        ajaxValidateAndPopulateApplication();
+
+        var hash = location.hash;
+        if (hash == "#applications") {
+            $('#applications-tab').trigger('click');
+        }
+
+    }
+</script>

@@ -1,14 +1,14 @@
 <!--<%include:/includes/inc.main.header.html%>-->
 <!--<%include:/includes/inc.layout.leftpanel.header.html%>-->
-<!--<%include:/includes/inc.links.groups.html%>-->
+<!--<%include:/includes/inc.links.roles.html%>-->
 <!--<%include:/includes/inc.layout.leftpanel.middle.html%>-->
 
 <script>
-  document.getElementById("apptitle").innerHTML = "Groups &#9658; Groups Directory";
-  document.getElementById("mainview-group-directory-link").style.color = "white";
+  document.getElementById("apptitle").innerHTML = "Roles &#9658; Roles Directory";
+  document.getElementById("mainview-role-directory-link").style.color = "white";
 
-  function ajaxLoadGroupList() {
-    var method = "groupsBasicInfoSearch";
+  function ajaxLoadRoleList() {
+    var method = "rolesBasicInfoSearch";
     $.ajax({
       url: '/japi_exec?method=' + method,
       headers: { "CSRFToken": csrfToken },
@@ -17,24 +17,24 @@
       success: function (response) {
         document.getElementById("tbody-ulist").innerHTML = "";
         if (response == null) return;
-        let groupId = 0;
-        for (let groupInfo of response) {
-          let b64GroupName = window.btoa(groupInfo["groupName"]);
+        let roleId = 0;
+        for (let roleInfo of response) {
+          let b64RoleName = window.btoa(roleInfo["roleName"]);
 
           $("#tbody-ulist").append(
             `<tr> 
-                <th scope="row" id=ulist-group-${groupId}></th>
-                <td id=ulist-description-${groupId}></td>
+                <th scope="row" id=ulist-role-${roleId}></th>
+                <td id=ulist-description-${roleId}></td>
                 <td style="text-align: right;">
-                  <button type="button" class="btn btn-dark btn-sm" onclick="window.location='group-edit?${b64GroupName}'">Edit</button>
-                  <!--<button type="button" class="btn btn-danger btn-sm" onclick="window.location='group-remove?${b64GroupName}'">Remove</button>-->
+                  <button type="button" class="btn btn-dark btn-sm" onclick="window.location='role-edit?${b64RoleName}'">Edit</button>
+                  <!--<button type="button" class="btn btn-danger btn-sm" onclick="window.location='role-remove?${b64RoleName}'">Remove</button>-->
                 </td>
               </tr>`
           );
-          $(`#ulist-group-${groupId}`).text(groupInfo["groupName"]);
-          $(`#ulist-description-${groupId}`).text(groupInfo["description"]);
+          $(`#ulist-role-${roleId}`).text(roleInfo["roleName"]);
+          $(`#ulist-description-${roleId}`).text(roleInfo["description"]);
          
-          groupId++;
+          roleId++;
         }
       },
       error: commonFunctionError
@@ -43,13 +43,13 @@
 
   // Default Main View:
   function csrfReady() {
-    ajaxLoadGroupList();
+    ajaxLoadRoleList();
   }
 </script>
 
 <table width=100% style=" border-spacing: 10px;   border-collapse: separate;">
   <tr><td align="right">
-    <input type="text" placeholder="Search Field" onkeyup="javascript:ajaxLoadGroupList();" id="searchField">
+    <input type="text" placeholder="Search Field" onkeyup="javascript:ajaxLoadRoleList();" id="searchField">
     <hr>
   </td></tr>
 </table>
@@ -57,7 +57,7 @@
 <table class="table table-hover">
     <thead class="thead-dark">
       <tr bgcolor=black>
-        <th scope="col">Group Name</th>
+        <th scope="col">Role Name</th>
         <th scope="col">Description</th>
         <th scope="col" style="text-align: right;">Controls&nbsp;</th>
       </tr>

@@ -21,10 +21,10 @@ protected:
     static void addAccountToRole(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
     static void removeAccountFromRole(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
     static void updateRoleDescription(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
-    static void validateApplicationPermissionOnRole(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
+    static void validateApplicationScopeOnRole(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
     static void getRoleDescription(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
     static void getRolesList(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
-    static void getRoleApplicationPermissions(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
+    static void getRoleApplicationScopes(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
     static void getRoleAccounts(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
     static void searchRoles(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
     static void getRoleInfo(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);

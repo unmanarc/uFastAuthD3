@@ -24,6 +24,7 @@ var/www/package-lock.json
 build/*
 borrame/*
 */borrame/*
+*borrame
 
 # CMake cache
 CMakeCache.txt

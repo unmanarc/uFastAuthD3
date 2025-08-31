@@ -67,7 +67,7 @@ public:
         virtual time_t getAccountCreationTime(const std::string &accountName) = 0;
         bool isAccountExpired(const std::string &accountName);
 
-        // Account Flag Permissions:
+        // Account Flag Scopes:
         virtual AccountFlags getAccountFlags(const std::string &accountName) = 0;
         virtual bool changeAccountFlags(const std::string &accountName, const AccountFlags &accountFlags) = 0;
 
@@ -182,31 +182,31 @@ public:
         AuthenticationPolicy getAuthenticationPolicy();
         void setAuthenticationPolicy(const AuthenticationPolicy &newAuthenticationPolicy);
 
-        virtual std::set<ApplicationPermission> getAccountDirectApplicationPermissions(const std::string &accountName, bool lock = true) = 0;
+        virtual std::set<ApplicationScope> getAccountDirectApplicationScopes(const std::string &accountName, bool lock = true) = 0;
 
-        virtual bool validateAccountApplicationPermission(const std::string &accountName, const ApplicationPermission &applicationPermission) override;
+        virtual bool validateAccountApplicationScope(const std::string &accountName, const ApplicationScope &applicationScope) override;
 
-        std::set<ApplicationPermission> getAccountUsableApplicationPermissions(const std::string &accountName);
+        std::set<ApplicationScope> getAccountUsableApplicationScopes(const std::string &accountName);
 
-        virtual bool validateApplicationPermissionOnRole(const std::string &roleName, const ApplicationPermission &applicationPermission, bool lock = true) = 0;
-        virtual std::set<ApplicationPermission> getRoleApplicationPermissions(const std::string &roleName, bool lock = true) = 0;
+        virtual bool validateApplicationScopeOnRole(const std::string &roleName, const ApplicationScope &applicationScope, bool lock = true) = 0;
+        virtual std::set<ApplicationScope> getRoleApplicationScopes(const std::string &roleName, bool lock = true) = 0;
 
         /////////////////////////////////////////////////////////////////////////////////
-        // permissions:
-        virtual bool addApplicationPermission(const ApplicationPermission &applicationPermission, const std::string &description) = 0;
-        virtual bool removeApplicationPermission(const ApplicationPermission &applicationPermission) = 0;
-        virtual bool doesApplicationPermissionExist(const ApplicationPermission &applicationPermission) = 0;
-        virtual bool addApplicationPermissionToRole(const ApplicationPermission &applicationPermission, const std::string &roleName) = 0;
-        virtual bool removeApplicationPermissionFromRole(const ApplicationPermission &applicationPermission, const std::string &roleName, bool lock = true) = 0;
-        virtual bool addApplicationPermissionToAccount(const ApplicationPermission &applicationPermission, const std::string &accountName) = 0;
-        virtual bool removeApplicationPermissionFromAccount(const ApplicationPermission &applicationPermission, const std::string &accountName, bool lock = true) = 0;
-        virtual bool updateApplicationPermissionDescription(const ApplicationPermission &applicationPermission, const std::string &description) = 0;
-        virtual std::string getApplicationPermissionDescription(const ApplicationPermission &applicationPermission) = 0;
-        virtual std::set<ApplicationPermission> listApplicationPermissions(const std::string &applicationName = "") = 0;
-        virtual std::set<std::string> getApplicationPermissionsForRole(const ApplicationPermission &applicationPermission, bool lock = true) = 0;
-        virtual std::set<std::string> listAccountsOnApplicationPermission(const ApplicationPermission &applicationPermission, bool lock = true) = 0;
-        virtual std::list<ApplicationPermissionDetails> searchApplicationPermissions(const std::string &appName, std::string sSearchWords, size_t limit = 0, size_t offset = 0) = 0;
-        virtual bool validateAccountDirectApplicationPermission(const std::string &accountName, const ApplicationPermission &applicationPermission) = 0;
+        // scopes:
+        virtual bool addApplicationScope(const ApplicationScope &applicationScope, const std::string &description) = 0;
+        virtual bool removeApplicationScope(const ApplicationScope &applicationScope) = 0;
+        virtual bool doesApplicationScopeExist(const ApplicationScope &applicationScope) = 0;
+        virtual bool addApplicationScopeToRole(const ApplicationScope &applicationScope, const std::string &roleName) = 0;
+        virtual bool removeApplicationScopeFromRole(const ApplicationScope &applicationScope, const std::string &roleName, bool lock = true) = 0;
+        virtual bool addApplicationScopeToAccount(const ApplicationScope &applicationScope, const std::string &accountName) = 0;
+        virtual bool removeApplicationScopeFromAccount(const ApplicationScope &applicationScope, const std::string &accountName, bool lock = true) = 0;
+        virtual bool updateApplicationScopeDescription(const ApplicationScope &applicationScope, const std::string &description) = 0;
+        virtual std::string getApplicationScopeDescription(const ApplicationScope &applicationScope) = 0;
+        virtual std::set<ApplicationScope> listApplicationScopes(const std::string &applicationName = "") = 0;
+        virtual std::set<std::string> getApplicationScopesForRole(const ApplicationScope &applicationScope, bool lock = true) = 0;
+        virtual std::set<std::string> listAccountsOnApplicationScope(const ApplicationScope &applicationScope, bool lock = true) = 0;
+        virtual std::list<ApplicationScopeDetails> searchApplicationScopes(const std::string &appName, std::string sSearchWords, size_t limit = 0, size_t offset = 0) = 0;
+        virtual bool validateAccountDirectApplicationScope(const std::string &accountName, const ApplicationScope &applicationScope) = 0;
 
         // Account bad attempts for pass slot id...
         virtual void resetBadAttemptsOnCredential(const std::string &accountName, const uint32_t &slotId) = 0;

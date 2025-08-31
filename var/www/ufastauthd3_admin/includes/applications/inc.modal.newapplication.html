@@ -1,11 +1,7 @@
 <script>
-    function generateRandomKey() {
-        var proposedKey = genNewKey();
-        document.getElementById("appKey").value = proposedKey;
-    }
 
     function createApplicationClearParameters() {
-        generateRandomKey();
+        generateRandomKey("appKey");
         $("#appName").val('');
         $("#appDescription").val('');
     }
@@ -64,11 +60,24 @@
                         <td>
 
                             <div class="input-group">
-                                <input id="appKey" class="form-control" placeholder="" readonly>
-                                &nbsp;
-                                <button type="button" class="btn btn-light"
-                                    onclick="javascript:generateRandomKey()">&#128259;</button>
+                                <input type="password" id="appKey" class="form-control" placeholder="" readonly>
+                                <button type="button" class="btn btn-outline-secondary" id="togglePassword">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary" onclick="javascript:generateRandomKey('appKey')">
+                                    <i class="fas fa-sync-alt"></i>
+                                </button>
                             </div>
+
+                            <script>
+                                document.getElementById('togglePassword').addEventListener('click', function () {
+                                    const passwordField = document.getElementById('appKey');
+                                    const type = passwordField.getAttribute('type') === 'password' ? 'text' : 'password';
+                                    passwordField.setAttribute('type', type);
+                                    this.innerHTML = type === 'password' ? '<i class="fas fa-eye"></i>' : '<i class="fas fa-eye-slash"></i>';
+                                });
+                            </script>
+
 
                         </td>
                     </tr>

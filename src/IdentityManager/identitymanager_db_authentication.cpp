@@ -64,15 +64,15 @@ Credential IdentityManager_DB::AuthController_DB::retrieveCredential(const std::
     return ret;
 }
 
-bool IdentityManager_DB::AuthController_DB::validateApplicationPermissionOnRole(const std::string &roleName, const ApplicationPermission &permission, bool lock)
+bool IdentityManager_DB::AuthController_DB::validateApplicationScopeOnRole(const std::string &roleName, const ApplicationScope &scope, bool lock)
 {
     bool ret = false;
     if (lock)
         _parent->m_mutex.lockShared();
 
     SQLConnector::QueryInstance i
-        = _parent->m_sqlConnector->qSelect("SELECT `f_roleName` FROM iam.applicationPermissionsAtRole WHERE `f_permissionId`=:permissionId AND `f_appName`=:appName AND `f_roleName`=:roleName;",
-                                           {{":permissionId", MAKE_VAR(STRING, permission.permissionId)}, {":appName", MAKE_VAR(STRING, permission.appName)}, {":roleName", MAKE_VAR(STRING, roleName)}},
+        = _parent->m_sqlConnector->qSelect("SELECT `f_roleName` FROM iam.applicationScopeRoles WHERE `f_scopeId`=:scopeId AND `f_appName`=:appName AND `f_roleName`=:roleName;",
+                                           {{":scopeId", MAKE_VAR(STRING, scope.id)}, {":appName", MAKE_VAR(STRING, scope.appName)}, {":roleName", MAKE_VAR(STRING, roleName)}},
                                            {});
     ret = (i.getResultsOK()) && i.query->step();
 
@@ -81,18 +81,18 @@ bool IdentityManager_DB::AuthController_DB::validateApplicationPermissionOnRole(
     return ret;
 }
 
-std::set<ApplicationPermission> IdentityManager_DB::AuthController_DB::getRoleApplicationPermissions(const std::string &roleName, bool lock)
+std::set<ApplicationScope> IdentityManager_DB::AuthController_DB::getRoleApplicationScopes(const std::string &roleName, bool lock)
 {
-    std::set<ApplicationPermission> ret;
+    std::set<ApplicationScope> ret;
     if (lock)
         _parent->m_mutex.lockShared();
 
-    Abstract::STRING sAppName, sPermissionName;
-    SQLConnector::QueryInstance i = _parent->m_sqlConnector->qSelect("SELECT `f_appName`,`f_permissionId` FROM iam.applicationPermissionsAtRole WHERE `f_roleName`=:roleName;",
-                                                                     {{":roleName", MAKE_VAR(STRING, roleName)}}, {&sAppName, &sPermissionName});
+    Abstract::STRING sAppName, sScopeName;
+    SQLConnector::QueryInstance i = _parent->m_sqlConnector->qSelect("SELECT `f_appName`,`f_scopeId` FROM iam.applicationScopeRoles WHERE `f_roleName`=:roleName;",
+                                                                     {{":roleName", MAKE_VAR(STRING, roleName)}}, {&sAppName, &sScopeName});
     while (i.getResultsOK() && i.query->step())
     {
-        ret.insert({sAppName.getValue(), sPermissionName.getValue()});
+        ret.insert({sAppName.getValue(), sScopeName.getValue()});
     }
 
     if (lock)
@@ -497,18 +497,18 @@ void IdentityManager_DB::AuthController_DB::incrementBadAttemptsOnCredential(con
                                      {{":accountName", MAKE_VAR(STRING, accountName)}, {":slotId", MAKE_VAR(UINT32, slotId)}});
 }
 
-std::set<ApplicationPermission> IdentityManager_DB::AuthController_DB::getAccountDirectApplicationPermissions(const std::string &accountName, bool lock)
+std::set<ApplicationScope> IdentityManager_DB::AuthController_DB::getAccountDirectApplicationScopes(const std::string &accountName, bool lock)
 {
-    std::set<ApplicationPermission> ret;
+    std::set<ApplicationScope> ret;
     if (lock)
         _parent->m_mutex.lockShared();
 
-    Abstract::STRING appName, permission;
-    SQLConnector::QueryInstance i = _parent->m_sqlConnector->qSelect("SELECT `f_appName`,`f_permissionId` FROM iam.applicationPermissionsAtAccount WHERE `f_accountName`=:accountName;",
-                                                                     {{":accountName", MAKE_VAR(STRING, accountName)}}, {&appName, &permission});
+    Abstract::STRING appName, scopeId;
+    SQLConnector::QueryInstance i = _parent->m_sqlConnector->qSelect("SELECT `f_appName`,`f_scopeId` FROM iam.applicationScopeAccounts WHERE `f_accountName`=:accountName;",
+                                                                     {{":accountName", MAKE_VAR(STRING, accountName)}}, {&appName, &scopeId});
     while (i.getResultsOK() && i.query->step())
     {
-        ret.insert({appName.getValue(), permission.getValue()});
+        ret.insert({appName.getValue(), scopeId.getValue()});
     }
 
     if (lock)

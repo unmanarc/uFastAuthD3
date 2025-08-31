@@ -373,11 +373,11 @@
 
             if (application["directAttribsLeft"] != null)
             {
-              for (let attribLeft of application["directAttribsLeft"]) {
+              for (let permissionLeft of application["directAttribsLeft"]) {
                 var sel = document.getElementById(`applicationsAttribsLeft-${appId}`);
                 var opt = document.createElement('option');
-                opt.appendChild(document.createTextNode(attribLeft["name"] + ': ' + attribLeft["description"]));
-                opt.value = attribLeft["name"];
+                opt.appendChild(document.createTextNode(permissionLeft["name"] + ': ' + permissionLeft["description"]));
+                opt.value = permissionLeft["name"];
                 sel.appendChild(opt);
               }
             }
@@ -385,24 +385,24 @@
 
             if (application["directAttribs"] != null)
             {
-              let attribId = 0;
+              let permissionId = 0;
 
               for (let directAttrib of application["directAttribs"]) {
 
                 document.getElementById(`applicationsDirectAttribs-${appId}`).innerHTML+= `<tr> 
-                    <th scope="row" id=ulist-attribName-${appId}-${attribId} width=20%></th>
-                    <td id=ulist-attribDescription-${appId}-${attribId}></td>
+                    <th scope="row" id=ulist-permissionName-${appId}-${permissionId} width=20%></th>
+                    <td id=ulist-permissionDescription-${appId}-${permissionId}></td>
                     <td style="text-align: right;">
-                      <input type=hidden id="ulist-attribNameById-${appId}-${attribId}">
-                      <button type="button" class="btn btn-light btn-sm" onclick="javascript:attribRemove(${appId},${attribId});">&#10006;</button>
+                      <input type=hidden id="ulist-permissionNameById-${appId}-${permissionId}">
+                      <button type="button" class="btn btn-light btn-sm" onclick="javascript:permissionRemove(${appId},${permissionId});">&#10006;</button>
                     </td>
                   </tr>`;
 
 
-                document.getElementById(`ulist-attribNameById-${appId}-${attribId}`).value = directAttrib["name"];
-                $(`#ulist-attribName-${appId}-${attribId}`).text(directAttrib["name"]);
-                $(`#ulist-attribDescription-${appId}-${attribId}`).text(directAttrib["description"]);
-                attribId++;
+                document.getElementById(`ulist-permissionNameById-${appId}-${permissionId}`).value = directAttrib["name"];
+                $(`#ulist-permissionName-${appId}-${permissionId}`).text(directAttrib["name"]);
+                $(`#ulist-permissionDescription-${appId}-${permissionId}`).text(directAttrib["description"]);
+                permissionId++;
               }
             }
             appId++;

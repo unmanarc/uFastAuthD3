@@ -307,47 +307,47 @@ bool AuthStorageImpl::configureApplication(IdentityManager_DB *identityManager, 
         LOG_APP->log0(__func__, Logs::LEVEL_CRITICAL, "Application '%s' does not exist, aborting.", DB_APPNAME);
         return false;
     }
-    std::list<std::pair<ApplicationPermission, std::string>> appPermissions = {{{DB_APPNAME, "SELF_PWDCHANGE"}, "Permission to change my own password"},
-                                                                               {{DB_APPNAME, "SELF_READ"}, "Permission to read my own user data from the IAM system"},
-                                                                               {{DB_APPNAME, "SELF_DELETE"}, "Permission to delete my own user"},
+    std::list<std::pair<ApplicationScope, std::string>> appScopes = {{{DB_APPNAME, "SELF_PWDCHANGE"}, "Scope to change my own password"},
+                                                                               {{DB_APPNAME, "SELF_READ"}, "Scope to read my own user data from the IAM system"},
+                                                                               {{DB_APPNAME, "SELF_DELETE"}, "Scope to delete my own user"},
 
-                                                                               {{DB_APPNAME, "ACCOUNT_READ"}, "Permission to read accounts data from the IAM system"},
-                                                                               {{DB_APPNAME, "ACCOUNT_DELETE"}, "Permission to delete accounts from the IAM system"},
-                                                                               {{DB_APPNAME, "ACCOUNT_MODIFY"}, "Permission to edit accounts details, roles, and permissions"},
-                                                                               {{DB_APPNAME, "ACCOUNT_PWDDCHANGE"}, "Permission to change account passwords"},
-                                                                               {{DB_APPNAME, "ACCOUNT_DISABLE"}, "Permission to disable/lock accounts"},
-                                                                               {{DB_APPNAME, "ACCOUNT_ENABLE"}, "Permission to enable/unlock accounts"},
+                                                                               {{DB_APPNAME, "ACCOUNT_READ"}, "Scope to read accounts data from the IAM system"},
+                                                                               {{DB_APPNAME, "ACCOUNT_DELETE"}, "Scope to delete accounts from the IAM system"},
+                                                                               {{DB_APPNAME, "ACCOUNT_MODIFY"}, "Scope to edit accounts details, roles, and scopes"},
+                                                                               {{DB_APPNAME, "ACCOUNT_PWDDCHANGE"}, "Scope to change account passwords"},
+                                                                               {{DB_APPNAME, "ACCOUNT_DISABLE"}, "Scope to disable/lock accounts"},
+                                                                               {{DB_APPNAME, "ACCOUNT_ENABLE"}, "Scope to enable/unlock accounts"},
 
-                                                                               {{DB_APPNAME, "ROLE_CREATE"}, "Permission to create roles on the IAM system"},
-                                                                               {{DB_APPNAME, "ROLE_READ"}, "Permission to read roles from the IAM system"},
-                                                                               {{DB_APPNAME, "ROLE_DELETE"}, "Permission to remove roles from the IAM system"},
-                                                                               {{DB_APPNAME, "ROLE_MODIFY"}, "Permission to modify roles and their associated permissions"},
+                                                                               {{DB_APPNAME, "ROLE_CREATE"}, "Scope to create roles on the IAM system"},
+                                                                               {{DB_APPNAME, "ROLE_READ"}, "Scope to read roles from the IAM system"},
+                                                                               {{DB_APPNAME, "ROLE_DELETE"}, "Scope to remove roles from the IAM system"},
+                                                                               {{DB_APPNAME, "ROLE_MODIFY"}, "Scope to modify roles and their associated scopes"},
 
-                                                                               {{DB_APPNAME, "APP_CREATE"}, "Permission to create applications on the IAM"},
-                                                                               {{DB_APPNAME, "APP_DELETE"}, "Permission to delete application's from the IAM"},
-                                                                               {{DB_APPNAME, "APP_MODIFY"}, "Permission to modify application data on the IAM"},
-                                                                               {{DB_APPNAME, "APP_READ"}, "Permission to read application data from the IAM"},
+                                                                               {{DB_APPNAME, "APP_CREATE"}, "Scope to create applications on the IAM"},
+                                                                               {{DB_APPNAME, "APP_DELETE"}, "Scope to delete application's from the IAM"},
+                                                                               {{DB_APPNAME, "APP_MODIFY"}, "Scope to modify application data on the IAM"},
+                                                                               {{DB_APPNAME, "APP_READ"}, "Scope to read application data from the IAM"},
 
-                                                                               {{DB_APPNAME, "AUTH_CREATE"}, "Permission to create authentication schemes and slots on the IAM"},
-                                                                               {{DB_APPNAME, "AUTH_DELETE"}, "Permission to delete authentication schemes and slots on the IAM"},
-                                                                               {{DB_APPNAME, "AUTH_MODIFY"}, "Permission to modify authentication schemes and slots on the IAM"},
-                                                                               {{DB_APPNAME, "AUTH_READ"}, "Permission to read authentication schemes and slots on the IAM"},
+                                                                               {{DB_APPNAME, "AUTH_CREATE"}, "Scope to create authentication schemes and slots on the IAM"},
+                                                                               {{DB_APPNAME, "AUTH_DELETE"}, "Scope to delete authentication schemes and slots on the IAM"},
+                                                                               {{DB_APPNAME, "AUTH_MODIFY"}, "Scope to modify authentication schemes and slots on the IAM"},
+                                                                               {{DB_APPNAME, "AUTH_READ"}, "Scope to read authentication schemes and slots on the IAM"},
 
-                                                                               {{DB_APPNAME, "CONFIG_READ"}, "Permission to read the configuration of the IAM"},
-                                                                               {{DB_APPNAME, "CONFIG_WRITE"}, "Permission to write the configuration of the IAM"},
+                                                                               {{DB_APPNAME, "CONFIG_READ"}, "Scope to read the configuration of the IAM"},
+                                                                               {{DB_APPNAME, "CONFIG_WRITE"}, "Scope to write the configuration of the IAM"},
 
-                                                                               {{DB_APPNAME, "AUDIT_LOG_VIEW"}, "Permission to access, export and view IAM audit logs"},
-                                                                               {{DB_APPNAME, "AUDIT_LOG_CLEAN"}, "Permission to clean/remove audit logs"}};
+                                                                               {{DB_APPNAME, "AUDIT_LOG_VIEW"}, "Scope to access, export and view IAM audit logs"},
+                                                                               {{DB_APPNAME, "AUDIT_LOG_CLEAN"}, "Scope to clean/remove audit logs"}};
 
-    for (auto &permission : appPermissions)
+    for (auto &scope : appScopes)
     {
-        if (!identityManager->authController->doesApplicationPermissionExist(permission.first))
+        if (!identityManager->authController->doesApplicationScopeExist(scope.first))
         {
-            LOG_APP->log0(__func__, Logs::LEVEL_WARN, "Permission '%s' does not exist, creating it.", permission.first.permissionId.c_str());
+            LOG_APP->log0(__func__, Logs::LEVEL_WARN, "Scope '%s' does not exist, creating it.", scope.first.id.c_str());
 
-            if (!identityManager->authController->addApplicationPermission(permission.first, permission.second))
+            if (!identityManager->authController->addApplicationScope(scope.first, scope.second))
             {
-                LOG_APP->log0(__func__, Logs::LEVEL_CRITICAL, "Failed to create the permission '%s'.", permission.first.permissionId.c_str());
+                LOG_APP->log0(__func__, Logs::LEVEL_CRITICAL, "Failed to create the scope '%s'.", scope.first.id.c_str());
                 return false;
             }
         }

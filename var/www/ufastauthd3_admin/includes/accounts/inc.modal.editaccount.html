@@ -4,7 +4,7 @@
 
 <div class="modal fade" id="modalEditAccount" data-bs-backdrop="static" data-bs-keyboard="true" tabindex="-1"
     aria-labelledby="modalEditAccountLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-xl">
+    <div class="modal-dialog modal-dialog-scrollable modal-xl">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="modalEditAccountLabel">Edit User Account</h5>
@@ -14,8 +14,8 @@
                 <table width=100% style=" border-spacing: 10px;   border-collapse: separate;">
                     <tr>
                         <td align="right" width=15%>Editing Account: </td>
-                        <td><input type="username" name="username" id="editAccountName" class="form-control"
-                                placeholder="Account Name" readonly></td>
+                        <td><input type="text" name="username" id="editAccountName" class="form-control"
+                                placeholder="Account Name" readonly style="background-color: #e9ecef;"></td>
                     </tr>
                 </table>
                 <table width=100% style=" border-spacing: 10px;   border-collapse: separate;">
@@ -28,9 +28,9 @@
                                         aria-selected="true">Details</button>
                                 </li>
                                 <li class="nav-item">
-                                    <button class="nav-link" id="groups-tab" data-bs-toggle="tab"
-                                        data-bs-target="#groups" type="button" role="tab" aria-controls="groups"
-                                        aria-selected="false">Groups</button>
+                                    <button class="nav-link" id="roles-tab" data-bs-toggle="tab"
+                                        data-bs-target="#roles" type="button" role="tab" aria-controls="roles"
+                                        aria-selected="false">Roles</button>
                                 </li>
                                 <li class="nav-item">
                                     <button class="nav-link" id="applications-tab" data-bs-toggle="tab"
@@ -54,7 +54,7 @@
                 </table>
                 <div class="tab-content" id="myTabContent">
                     <!--<%include:/includes/accounts/inc.modal.editaccount_details.html%>-->
-                    <!--<%include:/includes/accounts/inc.modal.editaccount_groups.html%>-->
+                    <!--<%include:/includes/accounts/inc.modal.editaccount_roles.html%>-->
                     <!--<%include:/includes/accounts/inc.modal.editaccount_applications.html%>-->
                     <!--<%include:/includes/accounts/inc.modal.editaccount_advanced.html%>-->
                     <!--<%include:/includes/accounts/inc.modal.editaccount_logs.html%>-->
@@ -74,14 +74,10 @@
             type: 'GET',
             contentType: 'application/json',
             data: JSON.stringify({ accountName: currentAccount }),
-            success: function (response) {
-                if (response.exists === true) {
-                    document.getElementById("editAccountName").value = currentAccount;
-                    populateDetails(currentAccount);
-                    //populateAccount();
-                } else {
-                    showToastError("Account does not exist");
-                }
+            success: function (response) 
+            {
+                document.getElementById("editAccountName").value = currentAccount;
+                populateAccountDetails(currentAccount);
             },
             error: commonFunctionError
         });

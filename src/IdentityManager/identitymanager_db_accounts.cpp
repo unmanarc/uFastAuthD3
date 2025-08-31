@@ -443,7 +443,7 @@ Json::Value IdentityManager_DB::Accounts_DB::searchAccounts(const json &dataTabl
             // lastChange
             row["lastPasswordChange"] = lastChange.toJSON();
 
-            row["groups"] = "";
+            row["roles"] = "";
 
             row["applications"] = "";
 

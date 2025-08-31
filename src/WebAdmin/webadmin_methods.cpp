@@ -6,32 +6,32 @@ using namespace Mantids30;
 void WebAdmin_Methods::addMethods(std::shared_ptr<MethodsHandler> methods)
 {
     addMethods_Accounts(methods);
-    addMethods_Permissions(methods);
+    addMethods_Scopes(methods);
     addMethods_Applications(methods);
     addMethods_Roles(methods);
 }
 
-json WebAdmin_Methods::permissionListToJSON(const std::set<ApplicationPermission> &permissions)
+json WebAdmin_Methods::scopeListToJSON(const std::set<ApplicationScope> &scopes)
 {
     json x;
     int i = 0;
-    for (const auto &permission : permissions)
+    for (const auto &scope : scopes)
     {
-        x[i]["appName"] = permission.appName;
-        x[i]["id"] = permission.permissionId;
-        x[i++]["description"] = Globals::getIdentityManager()->authController->getApplicationPermissionDescription(permission);
+        x[i]["appName"] = scope.appName;
+        x[i]["id"] = scope.id;
+        x[i++]["description"] = Globals::getIdentityManager()->authController->getApplicationScopeDescription(scope);
     }
     return x;
 }
 
-std::set<ApplicationPermission> WebAdmin_Methods::iPermissionsLeftListForRole(const std::string &appName, const std::string &roleName)
+std::set<ApplicationScope> WebAdmin_Methods::iScopesLeftListForRole(const std::string &appName, const std::string &roleName)
 {
-    auto permissionsLeft = Globals::getIdentityManager()->authController->listApplicationPermissions(appName);
-    auto rolePermissions = Globals::getIdentityManager()->authController->getRoleApplicationPermissions(roleName);
+    auto scopesLeft = Globals::getIdentityManager()->authController->listApplicationScopes(appName);
+    auto roleScopes = Globals::getIdentityManager()->authController->getRoleApplicationScopes(roleName);
 
-    for (const auto &rolePermission : rolePermissions)
+    for (const auto &roleScope : roleScopes)
     {
-        permissionsLeft.erase(rolePermission);
+        scopesLeft.erase(roleScope);
     }
-    return permissionsLeft;
+    return scopesLeft;
 }

@@ -18,13 +18,15 @@ protected:
     static void searchApplications(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
     static void removeApplication(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
     static void addApplication(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
+    static void doesApplicationExist(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
+    static void getApplicationInfo(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
+    static void updateApplicationDescription(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
+    static void updateApplicationAPIKey(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
 
 /*
     static void removeApplicationOwner(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
-    static void doesApplicationExist(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
     static void getApplicationDescription(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
     static void getApplicationAPIKey(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
-    static void getApplicationInfo(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
     static void updateApplicationDescription(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
     static void updateApplicationAPIKey(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
     static void listApplications(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);

@@ -1,0 +1,66 @@
+<div class="tab-pane fade" id="scopes" role="tabpanel" aria-labelledby="scopes-tab" style="min-height: 500px;">
+    <table width=100% style=" border-spacing: 10px;   border-collapse: separate;">
+
+
+        <tr>
+            <td colspan="2" align="right">
+                <div class="card">
+                    <div class="card-body">
+                        <b>Add New Scope:</b><br><br>
+                        <input type="username" name="scopeName" id="scopeName" class="form-control"
+                            placeholder="Scope Name" style="text-transform: uppercase"
+                            onkeypress="javascript:checkApplicationName()"><br>
+                        <input id="scopeDescription" class="form-control" placeholder="Scope Description">
+                        <br>
+                        <right><button type="button" class="btn btn-success"
+                                onclick="javascript:addApplicationScope()">Add Application
+                                Scope</button></right>
+
+                    </div>
+                </div>
+                <br>
+
+                <table class="table table-hover">
+                    <thead class="thead-light">
+                        <tr bgcolor=grey>
+                            <th scope="col">ID</th>
+                            <th scope="col">Description</th>
+                            <th scope="col" style="text-align: right;">Controls</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody-scopes">
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+
+    </table>
+</div>
+
+<script>
+    function populateApplicationScopes(scopes) {
+        document.getElementById("tbody-scopes").innerHTML = "";
+
+        if (scopes != null) {
+            let scopeId = 0;
+
+            for (let scope of scopes) {
+
+                $("#tbody-scopes").append(
+                    `<tr> 
+                <th scope="row" id=ulist-scopeName-${scopeId} width=20%></th>
+                <td id=ulist-scopeDescription-${scopeId}></td>
+                <td style="text-align: right;">
+                  <input type=hidden id="ulist-scopeNameById-${scopeId}">
+                  <button type="button" class="btn btn-light btn-sm" onclick="javascript:scopeRemove(${scopeId});">&#10006;</button>
+                </td>
+              </tr>`
+                );
+                document.getElementById(`ulist-scopeNameById-${scopeId}`).value = scope["id"];
+                $(`#ulist-scopeName-${scopeId}`).text(scope["id"]);
+                $(`#ulist-scopeDescription-${scopeId}`).text(scope["description"]);
+                scopeId++;
+            }
+        }
+    }
+</script>

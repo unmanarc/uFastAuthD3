@@ -21,7 +21,7 @@
         </tr>
 
         <tr>
-            <td align="center" id="accountAttributesTD">
+            <td align="center" id="accountScopesTD">
             </td>
         </tr>
 
@@ -30,15 +30,15 @@
 
 <script>
 
-    function attribRemove(appId, attribId) {
+    function scopeRemove(appId, scopeId) {
         $.ajax({
-            url: '/japi_exec?method=attribAccountRemove',
+            url: '/japi_exec?method=scopeAccountRemove',
             headers: { "CSRFToken": csrfToken },
             data: {
                 payload: JSON.stringify(
                     {
                         appName: document.getElementById(`userapp-key-${appId}`).value,
-                        attribName: document.getElementById(`ulist-attribNameById-${appId}-${attribId}`).value,
+                        scopeName: document.getElementById(`ulist-scopeNameById-${appId}-${scopeId}`).value,
                         accountName: $(`#accountName`).val()
                     }
                 )
@@ -49,7 +49,7 @@
                     populateAccount();
                 }
                 else {
-                    alert("Internal error modifying the account applications attributes.");
+                    alert("Internal error modifying the account applications scopes.");
                 }
             },
             error: commonFunctionError
@@ -57,23 +57,23 @@
 
     }
 
-    function addApplicationAttribute(appId) {
-        var appItems = document.getElementById(`applicationsAttribsLeft-${appId}`);
+    function addApplicationScope(appId) {
+        var appItems = document.getElementById(`applicationsScopesLeft-${appId}`);
         var selItem = appItems.selectedIndex;
         if (selItem == -1) {
-            alert('Please select an attribute');
-            document.getElementById(`applicationsAttribsLeft-${appId}`).focus();
+            alert('Please select an scope');
+            document.getElementById(`applicationsScopesLeft-${appId}`).focus();
             return;
         }
 
         $.ajax({
-            url: '/japi_exec?method=attribAccountAdd',
+            url: '/japi_exec?method=scopeAccountAdd',
             headers: { "CSRFToken": csrfToken },
             data: {
                 payload: JSON.stringify(
                     {
                         appName: $(`#userapp-key-${appId}`).val(),
-                        attribName: appItems.value,
+                        scopeName: appItems.value,
                         accountName: $(`#accountName`).val()
                     }
                 )
@@ -84,7 +84,7 @@
                     populateAccount();
                 }
                 else {
-                    alert("Internal error modifying the account applications attributes.");
+                    alert("Internal error modifying the account applications scopes.");
                 }
             },
             error: commonFunctionError

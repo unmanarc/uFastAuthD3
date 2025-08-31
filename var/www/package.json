@@ -5,12 +5,15 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "make-dirs": "mkdir -pv ufastauthd3_login/assets/js ufastauthd3_admin/assets/js",
+    "build-assets": "npm run make-dirs && npm run copy-bootstrap && npm run copy-jquery && npm run copy-datatables && npm run copy-datatables-dt && npm run copy-fontawesome-woff2 && npm run copy-fontawesome-css && npm run copy-fontawesome-solid-css",
+    "make-dirs": "mkdir -pv ufastauthd3_login/assets/js ufastauthd3_admin/assets/js ufastauthd3_admin/assets/webfonts ufastauthd3_login/assets/webfonts ufastauthd3_admin/assets/css ufastauthd3_login/assets/css",
     "copy-bootstrap": "cp -r node_modules/bootstrap/dist/* ufastauthd3_login/assets/ && cp -r node_modules/bootstrap/dist/* ufastauthd3_admin/assets/",
     "copy-jquery": "cp -r node_modules/jquery/dist/* ufastauthd3_login/assets/js/ && cp -r node_modules/jquery/dist/* ufastauthd3_admin/assets/js/",
     "copy-datatables": "cp -r node_modules/datatables.net/js/ ufastauthd3_admin/assets/ && cp -r node_modules/datatables.net/types/ ufastauthd3_admin/assets/",
     "copy-datatables-dt": "cp -r node_modules/datatables.net-dt/js/ ufastauthd3_admin/assets/ && cp -r node_modules/datatables.net-dt/css/ ufastauthd3_admin/assets/ && cp -r node_modules/datatables.net-dt/types/ ufastauthd3_admin/assets/",
-    "build-assets": "npm run make-dirs && npm run copy-bootstrap && npm run copy-jquery && npm run copy-datatables && npm run copy-datatables-dt"
+    "copy-fontawesome-woff2": "cp node_modules/@fortawesome/fontawesome-free/webfonts/fa-solid-900.woff2 ufastauthd3_login/assets/webfonts/ && cp node_modules/@fortawesome/fontawesome-free/webfonts/fa-solid-900.woff2 ufastauthd3_admin/assets/webfonts/",
+    "copy-fontawesome-css": "cp node_modules/@fortawesome/fontawesome-free/css/fontawesome.min.css ufastauthd3_login/assets/css/ && cp node_modules/@fortawesome/fontawesome-free/css/fontawesome.min.css ufastauthd3_admin/assets/css/",
+    "copy-fontawesome-solid-css": "cp node_modules/@fortawesome/fontawesome-free/css/solid.min.css ufastauthd3_login/assets/css/ && cp node_modules/@fortawesome/fontawesome-free/css/solid.min.css ufastauthd3_admin/assets/css/"
   },
   "keywords": [],
   "author": "",
@@ -19,6 +22,7 @@
     "bootstrap": "^5.3.3",
     "datatables.net": "^2.3.2",
     "datatables.net-dt": "^2.3.2",
-    "jquery": "^3.7.1"
+    "jquery": "^3.7.1",
+    "@fortawesome/fontawesome-free": "^7.0.0"
   }
 }
