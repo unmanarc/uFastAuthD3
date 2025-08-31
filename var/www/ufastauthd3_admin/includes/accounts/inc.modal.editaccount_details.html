@@ -11,7 +11,7 @@
             <td>
                 <div class="card" style="text-align: center;">
                     <div class="card-header">
-                        Account Details
+                        Account Details Fields
                     </div>
                     <div class="card-body">
                         <table width=100% style=" border-spacing: 10px;   border-collapse: separate;" id="detailsTable">
@@ -105,7 +105,7 @@
                                 // Do nothing...
                             }
 
-                            if (ok===true && !regexp.test(value)) {
+                            if (ok === true && !regexp.test(value)) {
 
                                 showToastError("Field '" + fieldName + "' does not match the required format.");
                                 throw new Error("Validation failed for field '" + fieldName + "'");
@@ -169,10 +169,10 @@
 
     function discardAccountDetails() {
         document.getElementById('modifyButtons').style.display = 'none';
-        populateDetails(currentAccount);
+        populateAccountDetails(currentAccount);
     }
 
-    function populateDetails(currentAccount) {
+    function populateAccountDetails(currentAccount) {
         $.ajax({
             url: '/api/v1/getAccountFlags',
             type: 'GET',

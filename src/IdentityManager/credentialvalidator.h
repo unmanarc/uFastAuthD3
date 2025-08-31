@@ -27,18 +27,18 @@ struct hash<TokenCacheKey>
 };
 } // namespace std
 
-struct ApplicationPermission
+struct ApplicationScope
 {
-    bool operator<(const ApplicationPermission &x) const
+    bool operator<(const ApplicationScope &x) const
     {
         if (x.appName < appName)
             return true;
-        else if (x.appName == appName && x.permissionId < permissionId)
+        else if (x.appName == appName && x.id < id)
             return true;
         else
             return false;
     }
-    std::string appName, permissionId;
+    std::string appName, id;
 };
 
 struct AppAuthExtras
@@ -135,12 +135,12 @@ public:
         = 0;
 
     /**
-     * @brief Validates an account permissions for a given account name and application permission.
-     * @param accountName The name of the account to validate the permission for.
-     * @param applicationPermission The application permission to validate.
-     * @return true if the account permission is valid, false otherwise.
+     * @brief Validates an account scope for a given account name and application scope.
+     * @param accountName The name of the account to validate the scope for.
+     * @param applicationScope The application scope to validate.
+     * @return true if the account scope is valid, false otherwise.
      */
-    virtual bool validateAccountApplicationPermission(const std::string &accountName, const ApplicationPermission &applicationPermission) = 0;
+    virtual bool validateAccountApplicationScope(const std::string &accountName, const ApplicationScope &applicationScope) = 0;
 
     // Cleanup function to remove expired google authenticator tokens
     void cleanupExpiredTokens();

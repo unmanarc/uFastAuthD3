@@ -1,0 +1,105 @@
+<script>
+    function displayUpdateFunction() {
+        document.getElementById('modifyButtons').style.display = 'block';
+    }
+</script>
+
+<div class="tab-pane fade show active" id="details" role="tabpanel" aria-labelledby="details-tab"
+    style="min-height: 500px;">
+    <table width=100% style=" border-spacing: 10px;   border-collapse: separate;">
+
+        <tr>
+            <td align="right">Description: </td>
+            <td><input id="description" oninput="displayUpdateFunction()" onchange="displayUpdateFunction()"
+                    class="form-control" placeholder="Description"></td>
+        </tr>
+
+        <tr>
+            <td align="right">Key: </td>
+            <td>
+
+                <div class="input-group">
+                    <input id="newAppKey" class="form-control"
+                        placeholder="Click Refresh Icon to create a new the key -->" readonly>
+                    <button type="button" class="btn btn-light"
+                        onclick="javascript:generateRandomKey('newAppKey'); displayUpdateFunction()">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                </div>
+
+            </td>
+        </tr>
+
+
+    </table>
+    <table width=100% style=" border-spacing: 10px;   border-collapse: separate;">
+
+        <tr>
+            <td colspan="2" align="right" id="modifyButtons" style="display:none;">
+
+                <button type="button" class="btn btn-dark" onclick="javascript:discardApplicationDetails()">Discard
+                    Changes</button>
+                <button type="button" class="btn btn-warning" onclick="javascript:modifyApplicationDetails()">Update
+                    Application
+                    Details</button>
+            </td>
+        </tr>
+
+
+    </table>
+</div>
+
+
+<script>
+    function populateApplicationDetails(details) {
+        document.getElementById("description").value = details["description"];
+        document.getElementById("newAppKey").value = '';
+    }
+
+    function discardApplicationDetails() {
+        document.getElementById('modifyButtons').style.display = 'none';
+        populateApplication();
+    }
+
+    function modifyApplicationDetails() {
+        var description = document.getElementById("description").value;
+        var key = document.getElementById("newAppKey").value;
+
+        // Update description via PATCH
+        $.ajax({
+            url: '/api/v1/updateApplicationDescription',
+            type: 'PATCH',
+            contentType: 'application/json',
+            data: JSON.stringify({
+                appName: currentApplication,
+                description: description
+            }),
+            success: function (response, textStatus, xhr) {
+                // Update API key if needed
+                if (key && key !== '') {
+                    $.ajax({
+                        url: '/api/v1/updateApplicationAPIKey',
+                        type: 'PATCH',
+                        contentType: 'application/json',
+                        data: JSON.stringify({
+                            appName: currentApplication,
+                            appKey: key
+                        }),
+                        success: function (response, textStatus, xhr) {
+                            showToastSuccess("Application details updated successfully.");
+                            discardApplicationDetails();
+                        },
+                        error: commonFunctionError
+                    });
+                } else {
+                    showToastSuccess("Application description updated successfully.");
+                    discardApplicationDetails();
+                }
+            },
+            error: commonFunctionError
+        });
+
+    }
+
+
+</script>

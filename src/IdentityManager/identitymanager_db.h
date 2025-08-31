@@ -123,27 +123,27 @@ public:
             _parent = parent;
         }
 
-        std::set<ApplicationPermission> getAccountDirectApplicationPermissions(const std::string &accountName, bool lock = true) override;
+        std::set<ApplicationScope> getAccountDirectApplicationScopes(const std::string &accountName, bool lock = true) override;
 
-        bool validateApplicationPermissionOnRole(const std::string &roleName, const ApplicationPermission &permission, bool lock = true) override;
-        std::set<ApplicationPermission> getRoleApplicationPermissions(const std::string &roleName, bool lock = true) override;
+        bool validateApplicationScopeOnRole(const std::string &roleName, const ApplicationScope &scope, bool lock = true) override;
+        std::set<ApplicationScope> getRoleApplicationScopes(const std::string &roleName, bool lock = true) override;
 
         /////////////////////////////////////////////////////////////////////////////////
-        // application permissions:
-        bool addApplicationPermission(const ApplicationPermission &applicationPermission, const std::string &description) override;
-        bool removeApplicationPermission(const ApplicationPermission &applicationPermission) override;
-        bool doesApplicationPermissionExist(const ApplicationPermission &applicationPermission) override;
-        bool addApplicationPermissionToRole(const ApplicationPermission &applicationPermission, const std::string &roleName) override;
-        bool removeApplicationPermissionFromRole(const ApplicationPermission &applicationPermission, const std::string &roleName, bool lock = true) override;
-        bool addApplicationPermissionToAccount(const ApplicationPermission &applicationPermission, const std::string &accountName) override;
-        bool removeApplicationPermissionFromAccount(const ApplicationPermission &applicationPermission, const std::string &accountName, bool lock = true) override;
-        bool updateApplicationPermissionDescription(const ApplicationPermission &applicationPermission, const std::string &description) override;
-        std::string getApplicationPermissionDescription(const ApplicationPermission &applicationPermission) override;
-        std::set<ApplicationPermission> listApplicationPermissions(const std::string &applicationName = "") override;
-        std::set<std::string> getApplicationPermissionsForRole(const ApplicationPermission &applicationPermission, bool lock = true) override;
-        std::set<std::string> listAccountsOnApplicationPermission(const ApplicationPermission &applicationPermission, bool lock = true) override;
-        std::list<ApplicationPermissionDetails> searchApplicationPermissions(const std::string &appName, std::string sSearchWords, size_t limit = 0, size_t offset = 0) override;
-        bool validateAccountDirectApplicationPermission(const std::string &accountName, const ApplicationPermission &applicationPermission) override;
+        // application scope:
+        bool addApplicationScope(const ApplicationScope &applicationScope, const std::string &description) override;
+        bool removeApplicationScope(const ApplicationScope &applicationScope) override;
+        bool doesApplicationScopeExist(const ApplicationScope &applicationScope) override;
+        bool addApplicationScopeToRole(const ApplicationScope &applicationScope, const std::string &roleName) override;
+        bool removeApplicationScopeFromRole(const ApplicationScope &applicationScope, const std::string &roleName, bool lock = true) override;
+        bool addApplicationScopeToAccount(const ApplicationScope &applicationScope, const std::string &accountName) override;
+        bool removeApplicationScopeFromAccount(const ApplicationScope &applicationScope, const std::string &accountName, bool lock = true) override;
+        bool updateApplicationScopeDescription(const ApplicationScope &applicationScope, const std::string &description) override;
+        std::string getApplicationScopeDescription(const ApplicationScope &applicationScope) override;
+        std::set<ApplicationScope> listApplicationScopes(const std::string &applicationName = "") override;
+        std::set<std::string> getApplicationScopesForRole(const ApplicationScope &applicationScope, bool lock = true) override;
+        std::set<std::string> listAccountsOnApplicationScope(const ApplicationScope &applicationScope, bool lock = true) override;
+        std::list<ApplicationScopeDetails> searchApplicationScopes(const std::string &appName, std::string sSearchWords, size_t limit = 0, size_t offset = 0) override;
+        bool validateAccountDirectApplicationScope(const std::string &accountName, const ApplicationScope &applicationScope) override;
 
         // Account bad attempts for pass slot id...
         void resetBadAttemptsOnCredential(const std::string &accountName, const uint32_t &slotId) override;

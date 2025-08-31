@@ -23,7 +23,7 @@ select {
 button, select {
   text-transform: none;
 }
-button, input, optgroup, select, textarea {
+button, input, optrole, select, textarea {
   margin: 0;
   font-family: inherit;
   font-size: inherit;

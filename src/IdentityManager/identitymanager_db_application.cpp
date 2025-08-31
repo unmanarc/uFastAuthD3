@@ -467,7 +467,7 @@ bool IdentityManager_DB::Applications_DB::modifyWebLoginJWTConfigForApplication(
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
     return _parent->m_sqlConnector->execute("UPDATE iam.applicationsJWTTokenConfig SET "
                                           "tempMFATokenTimeout=:tempMFATokenTimeout, sessionInactivityTimeout=:sessionInactivityTimeout, "
-                                          "tokenType=:tokenType, includeApplicationPermissions=:includeApplicationPermissions, "
+                                          "tokenType=:tokenType, includeApplicationScopes=:includeApplicationScopes, "
                                           "includeBasicAccountInfo=:includeBasicAccountInfo, allowRefreshTokenRenovation=:allowRefreshTokenRenovation, "
                                           "tokensConfigJSON=:tokensConfigJSON, "
                                           "maintainRevocationAndLogoutInfo=:maintainRevocationAndLogoutInfo WHERE f_appName=:appName;",
@@ -475,7 +475,7 @@ bool IdentityManager_DB::Applications_DB::modifyWebLoginJWTConfigForApplication(
                                            {":tempMFATokenTimeout", MAKE_VAR(UINT32, tokenInfo.tempMFATokenTimeout)},
                                            {":sessionInactivityTimeout", MAKE_VAR(UINT32, tokenInfo.sessionInactivityTimeout)},
                                            {":tokenType", MAKE_VAR(STRING, tokenInfo.tokenType)},
-                                           {":includeApplicationPermissions", MAKE_VAR(BOOL, tokenInfo.includeApplicationPermissions)},
+                                           {":includeApplicationScopes", MAKE_VAR(BOOL, tokenInfo.includeApplicationScopes)},
                                            {":includeBasicAccountInfo", MAKE_VAR(BOOL, tokenInfo.includeBasicAccountInfo)},
                                            {":allowRefreshTokenRenovation", MAKE_VAR(BOOL, tokenInfo.allowRefreshTokenRenovation)},
                                            {":allowRefreshTokenRenovation", MAKE_VAR(BOOL, tokenInfo.allowRefreshTokenRenovation)},
@@ -493,22 +493,22 @@ ApplicationTokenProperties IdentityManager_DB::Applications_DB::getWebLoginJWTCo
     // Define las variables para capturar los valores de la base de datos.
     Abstract::UINT32 tempMFATokenTimeout, sessionInactivityTimeout;
     Abstract::STRING tokenType,tokensConfigJSON;
-    Abstract::BOOL includeApplicationPermissions, includeBasicAccountInfo, maintainRevocationAndLogoutInfo, allowRefreshTokenRenovation;
+    Abstract::BOOL includeApplicationScopes, includeBasicAccountInfo, maintainRevocationAndLogoutInfo, allowRefreshTokenRenovation;
 
     SQLConnector::QueryInstance i
         = _parent->m_sqlConnector->qSelect("SELECT allowRefreshTokenRenovation,tempMFATokenTimeout, sessionInactivityTimeout, tokenType, "
-                                           "includeApplicationPermissions, includeBasicAccountInfo, maintainRevocationAndLogoutInfo, tokensConfigJSON "
+                                           "includeApplicationScopes, includeBasicAccountInfo, maintainRevocationAndLogoutInfo, tokensConfigJSON "
                                            "FROM iam.applicationsJWTTokenConfig "
                                            "WHERE f_appName=:appName;",
                                            {{":appName", MAKE_VAR(STRING, appName)}},
                                            {&allowRefreshTokenRenovation, &tempMFATokenTimeout, &sessionInactivityTimeout, &tokenType,
-                                            &includeApplicationPermissions, &includeBasicAccountInfo, &maintainRevocationAndLogoutInfo,&tokensConfigJSON });
+                                            &includeApplicationScopes, &includeBasicAccountInfo, &maintainRevocationAndLogoutInfo,&tokensConfigJSON });
     if (i.getResultsOK() && i.query->step())
     {
         tokenInfo.tempMFATokenTimeout = tempMFATokenTimeout.getValue();
         tokenInfo.sessionInactivityTimeout = sessionInactivityTimeout.getValue();
         tokenInfo.tokenType = tokenType.getValue();
-        tokenInfo.includeApplicationPermissions = includeApplicationPermissions.getValue();
+        tokenInfo.includeApplicationScopes = includeApplicationScopes.getValue();
         tokenInfo.includeBasicAccountInfo = includeBasicAccountInfo.getValue();
         tokenInfo.maintainRevocationAndLogoutInfo = maintainRevocationAndLogoutInfo.getValue();
         tokenInfo.allowRefreshTokenRenovation = allowRefreshTokenRenovation.getValue();

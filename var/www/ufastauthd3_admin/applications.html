@@ -39,6 +39,12 @@
 
 
 <script>
+  function generateRandomKey(id) {
+    var proposedKey = genNewKey();
+
+    document.getElementById(id).value = proposedKey;
+  }
+
   new DataTable('#ApplicationsTable', {
     ajax: {
       "url": "/api/v1/searchApplications",
@@ -73,10 +79,11 @@
         searchable: false,
         render: function (data, type, row) {
           let b64AppName = window.btoa(row.appName);
-          return '<div class="d-flex flex-wrap gap-1 justify-content-end">' +
-            '<button type="button" class="btn btn-dark btn-sm" onclick="window.location=\'application-edit?' + b64AppName + '\'">Edit</button>' +
-            '<button type="button" class="btn btn-danger btn-sm" onclick="window.location=\'application-remove?' + b64AppName + '\'">Remove</button>' +
-            '</div>';
+          return `<div class="d-flex flex-wrap gap-1 justify-content-end">
+                        <button type="button" class="btn btn-dark btn-sm" data-bs-toggle="modal" data-bs-target="#modalEditApplication" onclick="loadAndEditApplication('${b64AppName}')">
+                          Edit
+                        </button>
+                      </div>`;
         }
       }
     ]

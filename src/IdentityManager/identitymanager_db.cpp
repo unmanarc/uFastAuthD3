@@ -103,7 +103,7 @@ bool IdentityManager_DB::initializeDatabase()
                                             `accessTokenSigningKey`           TEXT DEFAULT NULL,
                                             `accessTokenValidationKey`        TEXT DEFAULT NULL,
                                             `tokensConfigJSON`              TEXT NOT NULL DEFAULT '{ "accessToken" : {"path" : "/", "timeout" : 300},"refreshToken" : {"path" : "/auth", "timeout" : 2592000} }',
-                                            `includeApplicationPermissions`   BOOLEAN NOT NULL DEFAULT TRUE,
+                                            `includeApplicationScopes`   BOOLEAN NOT NULL DEFAULT TRUE,
                                             `includeBasicAccountInfo`         BOOLEAN NOT NULL DEFAULT TRUE,
                                             `maintainRevocationAndLogoutInfo` BOOLEAN NOT NULL DEFAULT FALSE,
                                             `allowRefreshTokenRenovation`     BOOLEAN NOT NULL DEFAULT TRUE,
@@ -111,11 +111,11 @@ bool IdentityManager_DB::initializeDatabase()
                                             PRIMARY KEY (`f_appName`)
                                                                         );
                                     )",
-        R"(CREATE TABLE IF NOT EXISTS `iam`.`applicationPermissions` (
+        R"(CREATE TABLE IF NOT EXISTS `iam`.`applicationScopes` (
                                              `f_appName`               VARCHAR(256) NOT NULL,
-                                             `permissionId`            VARCHAR(256) NOT NULL,
+                                             `scopeId`            VARCHAR(256) NOT NULL,
                                              `description`     VARCHAR(4096),
-                                             PRIMARY KEY(`f_appName`,`permissionId`),
+                                             PRIMARY KEY(`f_appName`,`scopeId`),
                                              FOREIGN KEY(`f_appName`)   REFERENCES applications(`appName`) ON DELETE CASCADE
                                                                         );
                                     )",
@@ -220,21 +220,21 @@ bool IdentityManager_DB::initializeDatabase()
                                              UNIQUE (`f_roleName`, `f_accountName`)
                                                                         );
                                     )",
-        R"(CREATE TABLE IF NOT EXISTS `iam`.`applicationPermissionsAtRole` (
+        R"(CREATE TABLE IF NOT EXISTS `iam`.`applicationScopeRoles` (
                                              `f_appName`            VARCHAR(256) NOT NULL,
-                                             `f_permissionId`       VARCHAR(256) NOT NULL,
+                                             `f_scopeId`       VARCHAR(256) NOT NULL,
                                              `f_roleName`           VARCHAR(256) NOT NULL,
-                                             FOREIGN KEY(`f_appName`,`f_permissionId`) REFERENCES applicationPermissions(`f_appName`,`permissionId`) ON DELETE CASCADE,
+                                             FOREIGN KEY(`f_appName`,`f_scopeId`) REFERENCES applicationScopes(`f_appName`,`scopeId`) ON DELETE CASCADE,
                                              FOREIGN KEY(`f_roleName`)              REFERENCES roles(`roleName`) ON DELETE CASCADE,
-                                             UNIQUE (`f_appName`, `f_permissionId`, `f_roleName`) );
+                                             UNIQUE (`f_appName`, `f_scopeId`, `f_roleName`) );
                                     )",       
-        R"(CREATE TABLE IF NOT EXISTS `iam`.`applicationPermissionsAtAccount` (
+        R"(CREATE TABLE IF NOT EXISTS `iam`.`applicationScopeAccounts` (
                                               `f_appName`                VARCHAR(256) NOT NULL,
-                                              `f_permissionId`           VARCHAR(256) NOT NULL,
+                                              `f_scopeId`           VARCHAR(256) NOT NULL,
                                               `f_accountName`            VARCHAR(256) NOT NULL,
-                                              FOREIGN KEY(`f_appName`,`f_permissionId`) REFERENCES applicationPermissions(`f_appName`,`permissionId`) ON DELETE CASCADE,
+                                              FOREIGN KEY(`f_appName`,`f_scopeId`) REFERENCES applicationScopes(`f_appName`,`scopeId`) ON DELETE CASCADE,
                                               FOREIGN KEY(`f_accountName`, `f_appName`) REFERENCES applicationAccounts(`f_accountName`, `f_appName`) ON DELETE CASCADE,
-                                              UNIQUE (`f_appName`, `f_permissionId`, `f_accountName`)
+                                              UNIQUE (`f_appName`, `f_scopeId`, `f_accountName`)
                                                                         );
                                     )",
         // LOGS:

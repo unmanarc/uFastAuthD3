@@ -5,7 +5,7 @@
 This command updates the specified npm packages (jquery, bootstrap, datatables.net) to their latest versions available in the registry, modifying the package-lock.json and updating the node_modules directory accordingly.
 
 ```bash
-npm update jquery bootstrap datatables.net datatables.net-dt
+npm update jquery bootstrap datatables.net datatables.net-dt @fortawesome/fontawesome-free
 ```
 
 ## Install files into the project

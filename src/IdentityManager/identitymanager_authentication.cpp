@@ -261,16 +261,16 @@ bool IdentityManager::AuthController::changeAccountAuthenticatedCredential(const
     return changeCredential(accountName, passwordData, slotId);
 }
 
-bool IdentityManager::AuthController::validateAccountApplicationPermission(const std::string &accountName, const ApplicationPermission &applicationPermission)
+bool IdentityManager::AuthController::validateAccountApplicationScope(const std::string &accountName, const ApplicationScope &applicationScope)
 {
     Threads::Sync::Lock_RD lock(m_parent->m_mutex);
-    if (validateAccountDirectApplicationPermission(accountName, applicationPermission))
+    if (validateAccountDirectApplicationScope(accountName, applicationScope))
     {
         return true;
     }
     for (const std::string &roleName : m_parent->accounts->getAccountRoles(accountName, false))
     {
-        if (validateApplicationPermissionOnRole(roleName, applicationPermission, false))
+        if (validateApplicationScopeOnRole(roleName, applicationScope, false))
         {
             return true;
         }
@@ -278,19 +278,19 @@ bool IdentityManager::AuthController::validateAccountApplicationPermission(const
     return false;
 }
 
-std::set<ApplicationPermission> IdentityManager::AuthController::getAccountUsableApplicationPermissions(const std::string &accountName)
+std::set<ApplicationScope> IdentityManager::AuthController::getAccountUsableApplicationScopes(const std::string &accountName)
 {
-    std::set<ApplicationPermission> x;
+    std::set<ApplicationScope> x;
     Threads::Sync::Lock_RD lock(m_parent->m_mutex);
-    // Take permissions from the account
-    for (const ApplicationPermission &permission : getAccountDirectApplicationPermissions(accountName, false))
-        x.insert(permission);
+    // Take scope from the account
+    for (const ApplicationScope &scope : getAccountDirectApplicationScopes(accountName, false))
+        x.insert(scope);
 
-    // Take the permissions from the belonging roles
+    // Take the scope from the belonging roles
     for (const std::string &roleName : m_parent->accounts->getAccountRoles(accountName, false))
     {
-        for (const ApplicationPermission &permission : getRoleApplicationPermissions(roleName, false))
-            x.insert(permission);
+        for (const ApplicationScope &scope : getRoleApplicationScopes(roleName, false))
+            x.insert(scope);
     }
     return x;
 }

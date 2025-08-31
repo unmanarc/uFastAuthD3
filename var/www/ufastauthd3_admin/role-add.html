@@ -1,40 +1,40 @@
 <!--<%include:/includes/inc.main.header.html%>-->
 <!--<%include:/includes/inc.layout.leftpanel.header.html%>-->
-<!--<%include:/includes/inc.links.groups.html%>-->
+<!--<%include:/includes/inc.links.roles.html%>-->
 <!--<%include:/includes/inc.layout.leftpanel.middle.html%>-->
 
 <script>
-    document.getElementById("apptitle").innerHTML = "Groups &#9658; Create New Group";
-    document.getElementById("mainview-group-create-link").style.color = "white";
+    document.getElementById("apptitle").innerHTML = "Roles &#9658; Create New Role";
+    document.getElementById("mainview-role-create-link").style.color = "white";
 
     function csrfReady() {
     }
-    function ajaxCreateGroup() {
+    function ajaxCreateRole() {
 
         var payloadData = {
-            groupName: $("#groupName").val().toUpperCase(),
-            groupDescription: $("#description").val()
+            roleName: $("#roleName").val().toUpperCase(),
+            roleDescription: $("#description").val()
         };
 
         $.ajax({
-            url: '/japi_exec?method=groupAdd',
+            url: '/japi_exec?method=roleAdd',
             headers: { "CSRFToken": csrfToken },
             data: { payload: JSON.stringify(payloadData) },
             type: 'POST',
             success: function (response) {
 
                 if (response["retCode"] == false) {
-                    alert("Group creation failed (" + response["retMsg"] + ").");
+                    alert("Role creation failed (" + response["retMsg"] + ").");
                 }
                 else {
-                    alert("Group was created!");
-                    window.location = "/group-edit?" + window.btoa($("#groupName").val().toUpperCase());
+                    alert("Role was created!");
+                    window.location = "/role-edit?" + window.btoa($("#roleName").val().toUpperCase());
                 }
             },
             error: commonFunctionError
         });
     }
-    function checkGroupName() {
+    function checkRoleName() {
         var regex = new RegExp("^[a-zA-Z0-9_-]+$");
         var key = String.fromCharCode(!event.charCode ? event.which : event.charCode);
         if (!regex.test(key)) {
@@ -47,19 +47,19 @@
 <table width=100% style=" border-spacing: 10px;   border-collapse: separate;">
     <tr>
         <td colspan="2" align="right"> <button type="button" class="btn btn-success"
-                onclick="javascript:ajaxCreateGroup()">Create Group</button> </td>
+                onclick="javascript:ajaxCreateRole()">Create Role</button> </td>
     </tr>
 
     <tr>
         <td colspan="2" align="">
-            <h5>Group Info</h5>
+            <h5>Role Info</h5>
             <hr>
         </td>
     </tr>
     <tr>
-        <td align="right">Group Name: </td>
-        <td><input type="text" name="groupName" id="groupName" class="form-control" placeholder="Group Name"
-                style="text-transform: uppercase" onkeypress="javascript:checkGroupName()"></td>
+        <td align="right">Role Name: </td>
+        <td><input type="text" name="roleName" id="roleName" class="form-control" placeholder="Role Name"
+                style="text-transform: uppercase" onkeypress="javascript:checkRoleName()"></td>
     </tr>
     <tr>
         <td align="right">Description: </td>

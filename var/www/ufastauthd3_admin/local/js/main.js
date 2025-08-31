@@ -73,7 +73,7 @@ function ajaxRemoteExecuteMethod( methodPermLevel, target, methodName, payload, 
     success: successFunction,
     error: function (result) {
       console.log("ERR");
-      alert("Error Executing Remote Method...\nInsufficient Permissions");
+      alert("Error Executing Remote Method...\nInsufficient Scopes");
     }
   });
 }
@@ -87,7 +87,7 @@ function ajaxExecuteMethod( methodName, payloadData, successFunction ) {
     success: successFunction,
     error: function (result) {
       console.log("ERR");
-      alert("Error Executing Remote Method...\nInsufficient Permissions");
+      alert("Error Executing Remote Method...\nInsufficient Scopes");
     }
   });
 }
@@ -97,7 +97,7 @@ function ajaxExecuteMethod( methodName, payloadData, successFunction ) {
 function commonFunctionError(xhr, ajaxOptions, thrownError) {
   if (xhr.status == 404) {
     // Session is gone...
-    console.log("Session expired or unauthorized access attempted. Status code: " + xhr.status + ". The user may have been logged out, or the requested resource might not be accessible due to permission restrictions.");
+    console.log("Session expired or unauthorized access attempted. Status code: " + xhr.status + ". The user may have been logged out, or the requested resource might not be accessible due to scope restrictions.");
   }
   else {
     console.log("Network error " + xhr.status);

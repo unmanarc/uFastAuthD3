@@ -37,15 +37,15 @@ void TokensManager::configureAccessToken(Mantids30::DataFormat::JWT::Token &acce
     accessToken.addClaim("app", appName);
     //accessToken.addClaim( "tokensConfig", tokenProperties.tokensConfiguration["accessToken"] );
 
-    // Get the user permissions if needed for this application...
-    if (tokenProperties.includeApplicationPermissions)
+    // Get the user scope if needed for this application...
+    if (tokenProperties.includeApplicationScopes)
     {
-        auto x = identityManager->authController->getAccountUsableApplicationPermissions(jwtAccountName);
+        auto x = identityManager->authController->getAccountUsableApplicationScopes(jwtAccountName);
         for (const auto &i : x)
         {
             if (i.appName == appName)
             {
-                accessToken.addPermission(i.permissionId);
+                accessToken.addScope(i.id);
             }
         }
     }
