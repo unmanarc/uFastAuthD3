@@ -478,7 +478,7 @@ std::list<std::string> IdentityManager_DB::Applications_DB::listWebLoginOriginUr
     return originUrls;
 }
 
-bool IdentityManager_DB::Applications_DB::modifyWebLoginJWTConfigForApplication(const ApplicationTokenProperties &tokenInfo)
+bool IdentityManager_DB::Applications_DB::updateWebLoginJWTConfigForApplication(const ApplicationTokenProperties &tokenInfo)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
     return _parent->m_sqlConnector->execute("UPDATE iam.applicationsJWTTokenConfig SET "

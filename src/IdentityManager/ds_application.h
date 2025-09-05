@@ -1,8 +1,9 @@
 #pragma once
 
-#include "json/value.h"
+#include <Mantids30/Helpers/json.h>
 #include <stdint.h>
 #include <string>
+#include <optional>
 
 struct ApplicationDetails
 {
@@ -11,6 +12,15 @@ struct ApplicationDetails
     std::string appCreator;
     std::string description;
 };
+
+struct AppError
+{
+    uint32_t http_code;
+    std::string error;
+    std::string message;
+};
+
+
 struct ApplicationTokenProperties
 {
     Json::Value toJSON() const
@@ -26,6 +36,29 @@ struct ApplicationTokenProperties
         root["maintainRevocationAndLogoutInfo"] = maintainRevocationAndLogoutInfo;
         root["tokensConfiguration"] = tokensConfiguration;
         return root;
+    }
+    std::optional<AppError> fromJSON(const Json::Value& root)
+    {
+        appName = JSON_ASSTRING(root, "appName", "");
+        if (appName.empty())
+        {
+            AppError error;
+            error.http_code = 400;
+            error.error = "invalid_request";
+            error.message = "Application name cannot be empty.";
+            return error;
+        }
+
+        tempMFATokenTimeout = JSON_ASUINT(root, "tempMFATokenTimeout", 0);
+        sessionInactivityTimeout = JSON_ASUINT(root, "sessionInactivityTimeout", 0);
+        tokenType = JSON_ASSTRING(root, "tokenType", "");
+        allowRefreshTokenRenovation = JSON_ASBOOL(root, "allowRefreshTokenRenovation", false);
+        includeApplicationScopes = JSON_ASBOOL(root, "includeApplicationScopes", false);
+        includeBasicAccountInfo = JSON_ASBOOL(root, "includeBasicAccountInfo", false);
+        maintainRevocationAndLogoutInfo = JSON_ASBOOL(root, "maintainRevocationAndLogoutInfo", false);
+        tokensConfiguration = root["tokensConfiguration"];
+        
+        return std::nullopt;
     }
 
     std::string appName;

@@ -34,6 +34,8 @@ void WebAdminMethods_Accounts::addMethods_Accounts(std::shared_ptr<MethodsHandle
     methods->addResource(MethodsHandler::GET, "doesAccountExist", &doesAccountExist, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_READ"});
     methods->addResource(MethodsHandler::GET, "searchAccounts", &searchAccounts, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_READ"});
     methods->addResource(MethodsHandler::GET, "getAccountDetailFieldsValues", &getAccountDetailFieldsValues, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_READ"});
+    methods->addResource(MethodsHandler::GET, "getAccountApplications", &getAccountApplications, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_READ"});
+
     methods->addResource(MethodsHandler::PUT, "updateAccountDetailFieldsValues", &updateAccountDetailFieldsValues, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"});
 
     methods->addResource(MethodsHandler::GET, "getAccountFlags", &getAccountFlags, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_READ"});
@@ -217,6 +219,73 @@ void WebAdminMethods_Accounts::doesAccountExist(void *context, APIReturn &respon
 void WebAdminMethods_Accounts::searchAccounts(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     (*response.responseJSON()) = Globals::getIdentityManager()->accounts->searchAccounts(*request.inputJSON);
+}
+
+void WebAdminMethods_Accounts::getAccountApplications(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
+{
+    const std::string accountName = JSON_ASSTRING(*request.inputJSON, "accountName", "");
+
+    int i = 0;
+
+    std::set<std::string> listAccountApplications = Globals::getIdentityManager()->applications->listAccountApplications(accountName);
+    std::set<ApplicationScope> directScopes = Globals::getIdentityManager()->authController->getAccountDirectApplicationScopes(accountName);
+    std::set<ApplicationScope> usableScopes = Globals::getIdentityManager()->authController->getAccountUsableApplicationScopes(accountName);
+
+    for (const auto &applicationName : listAccountApplications)
+    {
+        (*response.responseJSON())["applications"][i]["name"] = applicationName;
+        // TODO: optimize:
+        (*response.responseJSON())["applications"][i]["description"] = Globals::getIdentityManager()->applications->getApplicationDescription(applicationName);
+
+        int j = 0;
+        for (const auto &directApplicationScope : directScopes)
+        {
+            if (directApplicationScope.appName == applicationName)
+            {
+                (*response.responseJSON())["applications"][i]["directScopes"][j]["id"] = directApplicationScope.id;
+                (*response.responseJSON())["applications"][i]["directScopes"][j]["description"] = Globals::getIdentityManager()->authController->getApplicationScopeDescription(
+                    directApplicationScope);
+                j++;
+            }
+        }
+
+        j = 0;
+        for (const auto &scope : Globals::getIdentityManager()->authController->listApplicationScopes(applicationName))
+        {
+            if (directScopes.find(scope) == directScopes.end())
+            {
+                (*response.responseJSON())["applications"][i]["directScopesLeft"][j]["id"] = scope.id;
+                (*response.responseJSON())["applications"][i]["directScopesLeft"][j]["description"] = Globals::getIdentityManager()->authController->getApplicationScopeDescription(
+                    scope);
+                j++;
+            }
+        }
+
+        j = 0;
+        for (const auto &usableScope : usableScopes)
+        {
+            if (usableScope.appName == applicationName)
+            {
+                (*response.responseJSON())["applications"][i]["usableScopes"][j]["id"] = usableScope.id;
+                (*response.responseJSON())["applications"][i]["usableScopes"][j]["description"] = Globals::getIdentityManager()->authController->getApplicationScopeDescription(
+                    usableScope);
+                j++;
+            }
+        }
+        i++;
+    }
+
+    i = 0;
+
+    for (const auto &applicationName : Globals::getIdentityManager()->applications->listApplications())
+    {
+        if (listAccountApplications.find(applicationName) == listAccountApplications.end())
+        {
+            (*response.responseJSON())["applicationsLeft"][i]["name"] = applicationName;
+            (*response.responseJSON())["applicationsLeft"][i]["description"] = Globals::getIdentityManager()->applications->getApplicationDescription(applicationName);
+            i++;
+        }
+    }
 }
 
 void WebAdminMethods_Accounts::searchFields(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
@@ -500,66 +569,7 @@ void WebAdminMethods_Accounts::getAccountInfo(void *context, APIReturn &response
         }
     }
 
-    auto directScopes = Globals::getIdentityManager()->authController->getAccountDirectApplicationScopes(JSON_ASSTRING(*request.inputJSON, "accountName", ""));
-    auto usableScopes = Globals::getIdentityManager()->authController->getAccountUsableApplicationScopes(JSON_ASSTRING(*request.inputJSON, "accountName", ""));
 
-    auto listAccountApplications = Globals::getIdentityManager()->applications->listAccountApplications(JSON_ASSTRING(*request.inputJSON, "accountName", ""));
-    i = 0;
-    for (const auto &applicationName : listAccountApplications)
-    {
-        (*response.responseJSON())["applications"][i]["name"] = applicationName;
-        // TODO: optimize:
-        (*response.responseJSON())["applications"][i]["description"] = Globals::getIdentityManager()->applications->getApplicationDescription(applicationName);
-
-        int j = 0;
-        for (const auto &directApplicationScope : directScopes)
-        {
-            if (directApplicationScope.appName == applicationName)
-            {
-                (*response.responseJSON())["applications"][i]["directScopes"][j]["id"] = directApplicationScope.scopeId;
-                (*response.responseJSON())["applications"][i]["directScopes"][j]["description"] = Globals::getIdentityManager()->authController->getApplicationScopeDescription(
-                    directApplicationScope);
-                j++;
-            }
-        }
-
-        j = 0;
-        for (const auto &scope : Globals::getIdentityManager()->authController->listApplicationScopes(applicationName))
-        {
-            if (directScopes.find(scope) == directScopes.end())
-            {
-                (*response.responseJSON())["applications"][i]["directScopesLeft"][j]["id"] = scope.scopeId;
-                (*response.responseJSON())["applications"][i]["directScopesLeft"][j]["description"] = Globals::getIdentityManager()->authController->getApplicationScopeDescription(
-                    scope);
-                j++;
-            }
-        }
-
-        j = 0;
-        for (const auto &usableScope : usableScopes)
-        {
-            if (usableScope.appName == applicationName)
-            {
-                (*response.responseJSON())["applications"][i]["usableScopes"][j]["id"] = usableScope.scopeId;
-                (*response.responseJSON())["applications"][i]["usableScopes"][j]["description"] = Globals::getIdentityManager()->authController->getApplicationScopeDescription(
-                    usableScope);
-                j++;
-            }
-        }
-        i++;
-    }
-
-    i = 0;
-
-    for (const auto &applicationName : Globals::getIdentityManager()->applications->listApplications())
-    {
-        if (listAccountApplications.find(applicationName) == listAccountApplications.end())
-        {
-            (*response.responseJSON())["applicationsLeft"][i]["name"] = applicationName;
-            (*response.responseJSON())["applicationsLeft"][i]["description"] = Globals::getIdentityManager()->applications->getApplicationDescription(applicationName);
-            i++;
-        }
-    }
 }
 
 void WebAdminMethods_Accounts::getAccountLastAccess(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
