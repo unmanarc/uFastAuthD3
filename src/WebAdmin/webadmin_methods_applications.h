@@ -22,6 +22,7 @@ protected:
     static void getApplicationInfo(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
     static void updateApplicationDescription(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
     static void updateApplicationAPIKey(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
+    static void updateWebLoginJWTConfigForApplication(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
 
 /*
     static void removeApplicationOwner(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
@@ -44,7 +45,6 @@ protected:
     static void addWebLoginOriginURLToApplication(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
     static void removeWebLoginOriginURLToApplication(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
     static void listWebLoginOriginUrlsFromApplication(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
-    static void modifyWebLoginJWTConfigForApplication(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
     static void getWebLoginJWTConfigFromApplication(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
     static void setWebLoginJWTSigningKeyForApplication(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
     static void getWebLoginJWTSigningKeyForApplication(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);*/

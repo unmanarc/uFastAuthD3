@@ -125,7 +125,7 @@
       </tr>
 
       <tr>
-        <td align="center" id="accountAttributesTD">
+        <td align="center" id="accountScopesTD">
         </td>
       </tr>
       
@@ -292,8 +292,6 @@
 
         document.getElementById('groupsRight').innerHTML = "";
         document.getElementById('groupsLeft').innerHTML = "";
-        document.getElementById('accountAttributesTD').innerHTML = "";
-        document.getElementById('applicationsLeft').innerHTML = "";
 
         if (response["groups"] != null) {
           for (let group of response["groups"]) {
@@ -315,101 +313,8 @@
         }
 
 
-        if (response["applicationsLeft"]!=null)
-        {
-          for (let applicationLeft of response["applicationsLeft"]) {
-           
-            var sel = document.getElementById('applicationsLeft');
-            var opt = document.createElement('option');
-            opt.appendChild(document.createTextNode(applicationLeft["name"] + ': ' + applicationLeft["description"]));
-            opt.value = applicationLeft["name"];
-            sel.appendChild(opt);
-          }
-        }
+     
 
-        if (response["applications"] != null) {
-          let appId = 0;
-          for (let application of response["applications"]) {
-
-            $("#accountAttributesTD").append(
-              `
-              <input type=hidden id="userapp-key-${appId}">
-              <div class="card" style="max-width: 80%; text-align: left;">
-              <div class="card-header">
-                  <h5 style="float: left; width: 50%; text-align: left;" id="userapp-title-${appId}">Text Left</h2>
-                  <p style="float: left; width: 50%; text-align: right;">  <button type="button" class="btn btn-sm btn-light" onclick="javascript:removeApplication('${appId}')">	&#10006;</button> </p>
-              </div>
-
-              <div class="card-body">
-                <table width=100% style=" border-spacing: 10px;   border-collapse: separate;"><tr><td align=right>
-                  <select class="form-select" aria-label="Default select example" id="applicationsAttribsLeft-${appId}" style="min-width: 300px;">
-                  </select><br>
-                  <button type="button" class="btn btn-sm btn-success" onclick="javascript:addApplicationAttribute('${appId}')">Add Application Attribute</button>
-                  </td></tr>
-                </table>
-
-              <br>
-              <p class="card-text">
-                  <table class="table table-hover">
-                    <thead class="thead-light">
-                      <tr bgcolor=grey>
-                        <th scope="col">Attribute Name</th>
-                        <th scope="col">Description</th>
-                        <th scope="col" style="text-align: right;">Controls</th>
-                      </tr>
-                    </thead>
-                    <tbody id="applicationsDirectAttribs-${appId}">
-                    </tbody>
-                  </table>
-               </p>
-
-              </div>
-              </div>
-              <br>
-              `
-            );
-            $(`#userapp-title-${appId}`).text(application["name"] + ': ' + application["description"]);
-            $(`#userapp-key-${appId}`).val(application["name"]);
-
-            if (application["directAttribsLeft"] != null)
-            {
-              for (let permissionLeft of application["directAttribsLeft"]) {
-                var sel = document.getElementById(`applicationsAttribsLeft-${appId}`);
-                var opt = document.createElement('option');
-                opt.appendChild(document.createTextNode(permissionLeft["name"] + ': ' + permissionLeft["description"]));
-                opt.value = permissionLeft["name"];
-                sel.appendChild(opt);
-              }
-            }
-
-
-            if (application["directAttribs"] != null)
-            {
-              let permissionId = 0;
-
-              for (let directAttrib of application["directAttribs"]) {
-
-                document.getElementById(`applicationsDirectAttribs-${appId}`).innerHTML+= `<tr> 
-                    <th scope="row" id=ulist-permissionName-${appId}-${permissionId} width=20%></th>
-                    <td id=ulist-permissionDescription-${appId}-${permissionId}></td>
-                    <td style="text-align: right;">
-                      <input type=hidden id="ulist-permissionNameById-${appId}-${permissionId}">
-                      <button type="button" class="btn btn-light btn-sm" onclick="javascript:permissionRemove(${appId},${permissionId});">&#10006;</button>
-                    </td>
-                  </tr>`;
-
-
-                document.getElementById(`ulist-permissionNameById-${appId}-${permissionId}`).value = directAttrib["name"];
-                $(`#ulist-permissionName-${appId}-${permissionId}`).text(directAttrib["name"]);
-                $(`#ulist-permissionDescription-${appId}-${permissionId}`).text(directAttrib["description"]);
-                permissionId++;
-              }
-            }
-            appId++;
-          }
-        }
-
-        //accountAttributesTD
 
 
         //superUserToggled();

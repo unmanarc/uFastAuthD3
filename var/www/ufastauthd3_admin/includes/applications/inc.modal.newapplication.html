@@ -11,6 +11,20 @@
 
 
     function ajaxCreateApplication() {
+
+        var appName = $("#appNameCreate").val().trim();
+        var appDescription = $("#appDescriptionCreate").val().trim();
+
+        if (appName === '') {
+            $("#appNameCreate").focus();
+            return false;
+        }
+
+        if (appDescription === '') {
+            $("#appDescriptionCreate").focus();
+            return false;
+        }
+
         $.ajax({
             url: '/api/v1/addApplication',
             type: 'POST',

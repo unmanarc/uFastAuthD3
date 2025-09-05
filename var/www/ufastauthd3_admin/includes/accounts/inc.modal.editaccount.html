@@ -69,7 +69,6 @@
 
     function ajaxValidateAndPopulateAccount() {
         $.ajax({
-
             url: '/api/v1/doesAccountExist',
             type: 'GET',
             contentType: 'application/json',
@@ -78,6 +77,7 @@
             {
                 document.getElementById("editAccountName").value = currentAccount;
                 populateAccountDetails(currentAccount);
+                populateAccountApplications(currentAccount);
             },
             error: commonFunctionError
         });
@@ -94,9 +94,6 @@
         if (hash == "#applications") {
             $('#applications-tab').trigger('click');
         }
-
     }
-
-
 
 </script>

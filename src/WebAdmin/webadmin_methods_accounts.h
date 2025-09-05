@@ -19,6 +19,7 @@ protected:
     static void addAccount(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
     static void doesAccountExist(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
     static void searchAccounts(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
+    static void getAccountApplications(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
 
     // Fields:
     static void searchFields(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);

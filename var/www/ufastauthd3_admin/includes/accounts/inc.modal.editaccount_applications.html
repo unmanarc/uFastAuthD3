@@ -30,27 +30,125 @@
 
 <script>
 
+    function populateAccountApplications(currentAccount) {
+        document.getElementById('accountScopesTD').innerHTML = "";
+        document.getElementById('applicationsLeft').innerHTML = "";
+
+        $.ajax({
+            url: '/api/v1/getAccountApplications',
+            type: 'GET',
+            contentType: 'application/json',
+            data: JSON.stringify({
+                accountName: currentAccount
+            }),
+            success: function (response, textStatus, xhr) {
+                if (response["applicationsLeft"] != null) {
+                    for (let applicationLeft of response["applicationsLeft"]) {
+
+                        var sel = document.getElementById('applicationsLeft');
+                        var opt = document.createElement('option');
+                        opt.appendChild(document.createTextNode(applicationLeft["name"] + ': ' + applicationLeft["description"]));
+                        opt.value = applicationLeft["name"];
+                        sel.appendChild(opt);
+                    }
+                }
+
+                if (response["applications"] != null) {
+                    let appId = 0;
+                    for (let application of response["applications"]) {
+
+                        $("#accountScopesTD").append(
+                            `
+                                <input type=hidden id="userapp-key-${appId}">
+                                <div class="card" style="max-width: 80%; text-align: left;">
+                                <div class="card-header">
+                                    <h5 style="float: left; width: 50%; text-align: left;" id="userapp-title-${appId}">Text Left</h2>
+                                    <p style="float: left; width: 50%; text-align: right;">  <button type="button" class="btn btn-sm btn-light" onclick="javascript:removeApplication('${appId}')">	&#10006;</button> </p>
+                                </div>
+
+                                <div class="card-body">
+                                    <table width=100% style=" border-spacing: 10px;   border-collapse: separate;"><tr><td align=right>
+                                    <select class="form-select" aria-label="Default select example" id="applicationsScopesLeft-${appId}" style="min-width: 300px;">
+                                    </select><br>
+                                    <button type="button" class="btn btn-sm btn-success" onclick="javascript:addApplicationScope('${appId}')">Add Application Scope</button>
+                                    </td></tr>
+                                    </table>
+
+                                <br>
+                                <p class="card-text">
+                                    <table class="table table-hover">
+                                        <thead class="thead-light">
+                                        <tr bgcolor=grey>
+                                            <th scope="col">Scope Name</th>
+                                            <th scope="col">Description</th>
+                                            <th scope="col" style="text-align: right;">Controls</th>
+                                        </tr>
+                                        </thead>
+                                        <tbody id="applicationsDirectScopes-${appId}">
+                                        </tbody>
+                                    </table>
+                                </p>
+
+                                </div>
+                                </div>
+                                <br>
+                                `
+                        );
+                        $(`#userapp-title-${appId}`).text(application["name"] + ': ' + application["description"]);
+                        $(`#userapp-key-${appId}`).val(application["name"]);
+
+                        if (application["directScopesLeft"] != null) {
+                            for (let permissionLeft of application["directScopesLeft"]) {
+                                var sel = document.getElementById(`applicationsScopesLeft-${appId}`);
+                                var opt = document.createElement('option');
+                                opt.appendChild(document.createTextNode(permissionLeft["name"] + ': ' + permissionLeft["description"]));
+                                opt.value = permissionLeft["name"];
+                                sel.appendChild(opt);
+                            }
+                        }
+
+                        if (application["directScopes"] != null) {
+                            let permissionId = 0;
+
+                            for (let directAttrib of application["directScopes"]) {
+
+                                document.getElementById(`applicationsDirectScopes-${appId}`).innerHTML += `
+                                    <tr> 
+                                    <th scope="row" id=ulist-permissionName-${appId}-${permissionId} width=20%></th>
+                                    <td id=ulist-permissionDescription-${appId}-${permissionId}></td>
+                                    <td style="text-align: right;">
+                                        <input type=hidden id="ulist-permissionNameById-${appId}-${permissionId}">
+                                        <button type="button" class="btn btn-light btn-sm" onclick="javascript:permissionRemove(${appId},${permissionId});">&#10006;</button>
+                                    </td>
+                                    </tr>`;
+
+                                document.getElementById(`ulist-permissionNameById-${appId}-${permissionId}`).value = directAttrib["name"];
+                                $(`#ulist-permissionName-${appId}-${permissionId}`).text(directAttrib["name"]);
+                                $(`#ulist-permissionDescription-${appId}-${permissionId}`).text(directAttrib["description"]);
+                                permissionId++;
+                            }
+                        }
+                        appId++;
+                    }
+                }
+
+            },
+            error: commonFunctionError
+        });
+    }
+
     function scopeRemove(appId, scopeId) {
         $.ajax({
-            url: '/japi_exec?method=scopeAccountRemove',
-            headers: { "CSRFToken": csrfToken },
-            data: {
-                payload: JSON.stringify(
-                    {
-                        appName: document.getElementById(`userapp-key-${appId}`).value,
-                        scopeName: document.getElementById(`ulist-scopeNameById-${appId}-${scopeId}`).value,
-                        accountName: $(`#accountName`).val()
-                    }
-                )
-            },
+            url: '/api/v1/scopeAccountRemove',
             type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({
+                appName: document.getElementById(`userapp-key-${appId}`).value,
+                scopeName: document.getElementById(`ulist-scopeNameById-${appId}-${scopeId}`).value,
+                accountName: $(`#accountName`).val()
+            }),
             success: function (response) {
-                if (response["retCode"] == true) {
-                    populateAccount();
-                }
-                else {
-                    alert("Internal error modifying the account applications scopes.");
-                }
+                populateAccount();
             },
             error: commonFunctionError
         });
@@ -67,25 +165,16 @@
         }
 
         $.ajax({
-            url: '/japi_exec?method=scopeAccountAdd',
-            headers: { "CSRFToken": csrfToken },
-            data: {
-                payload: JSON.stringify(
-                    {
-                        appName: $(`#userapp-key-${appId}`).val(),
-                        scopeName: appItems.value,
-                        accountName: $(`#accountName`).val()
-                    }
-                )
-            },
+            url: '/api/v1/scopeAccountAdd',
             type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({
+                appName: $(`#userapp-key-${appId}`).val(),
+                scopeName: appItems.value,
+                accountName: $(`#accountName`).val()
+            }),
             success: function (response) {
-                if (response["retCode"] == true) {
-                    populateAccount();
-                }
-                else {
-                    alert("Internal error modifying the account applications scopes.");
-                }
+                populateAccount();
             },
             error: commonFunctionError
         });
@@ -95,24 +184,15 @@
         var appName = document.getElementById(`userapp-key-${appId}`).value;
 
         $.ajax({
-            url: '/japi_exec?method=applicationAccountRemove',
-            headers: { "CSRFToken": csrfToken },
-            data: {
-                payload: JSON.stringify(
-                    {
-                        accountName: $("#accountName").val(),
-                        appName: appName
-                    }
-                )
-            },
+            url: '/api/v1/applicationAccountRemove',
             type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({
+                accountName: $("#accountName").val(),
+                appName: appName
+            }),
             success: function (response) {
-                if (response["retCode"] == true) {
-                    populateAccount();
-                }
-                else {
-                    alert("Internal error modifying the account applications.");
-                }
+                populateAccount();
             },
             error: commonFunctionError
         });
@@ -128,24 +208,15 @@
         }
 
         $.ajax({
-            url: '/japi_exec?method=applicationAccountAdd',
-            headers: { "CSRFToken": csrfToken },
-            data: {
-                payload: JSON.stringify(
-                    {
-                        accountName: $("#accountName").val(),
-                        appName: appItems.value
-                    }
-                )
-            },
+            url: '/api/v1/applicationAccountAdd',
             type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({
+                accountName: $("#accountName").val(),
+                appName: appItems.value
+            }),
             success: function (response) {
-                if (response["retCode"] == true) {
-                    populateAccount();
-                }
-                else {
-                    alert("Internal error modifying the account applications.");
-                }
+                populateAccount();
             },
             error: commonFunctionError
         });

@@ -1,67 +1,128 @@
-<div class="tab-pane fade" id="tokens" role="tabpanel" aria-labelledby="tokens-tab" style="min-height: 500px;">
-
+<div class="tab-pane" id="tokens" role="tabpanel" aria-labelledby="tokens-tab" style="min-height: 500px;">
     <div class="container-fluid mt-3">
         <div class="row">
             <!-- Main Configuration Card -->
             <div class="col-md-6">
                 <div class="card mb-3">
                     <div class="card-header bg-primary text-white">
-                        <h5 class="mb-0">Main Token Configuration</h5>
+                        <h5 class="mb-0">JWT Tokens Configuration</h5>
                     </div>
                     <div class="card-body">
-
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label for="tempMFATokenTimeout" class="form-label">MFA Token Timeout (seconds)</label>
-                                <input type="number" class="form-control" id="tempMFATokenTimeout">
+                                <input type="number" class="form-control" id="tempMFATokenTimeout"
+                                    oninput="displayUpdateTokensFunction(); updatePrettyTime('tempMFATokenTimeout', 'tempMFATokenTimeoutPretty')"
+                                    onchange="displayUpdateTokensFunction(); updatePrettyTime('tempMFATokenTimeout', 'tempMFATokenTimeoutPretty')">
+                                <small id="tempMFATokenTimeoutPretty" class="form-text text-muted"></small>
                             </div>
-
                             <div class="col-md-6 mb-3">
                                 <label for="sessionInactivityTimeout" class="form-label">Session Timeout
                                     (seconds)</label>
-                                <input type="number" class="form-control" id="sessionInactivityTimeout">
+                                <input type="number" class="form-control" id="sessionInactivityTimeout"
+                                    oninput="displayUpdateTokensFunction(); updatePrettyTime('sessionInactivityTimeout', 'sessionInactivityTimeoutPretty')"
+                                    onchange="displayUpdateTokensFunction(); updatePrettyTime('sessionInactivityTimeout', 'sessionInactivityTimeoutPretty')">
+                                <small id="sessionInactivityTimeoutPretty" class="form-text text-muted"></small>
                             </div>
                         </div>
-
                         <div class="mb-3">
                             <label for="tokenType" class="form-label">Token Type</label>
-                            <select class="form-select" id="tokenType">
+                            <select class="form-select" id="tokenType" oninput="tokenTypeChanged()"
+                                onchange="tokenTypeChanged()">
                                 <option value="HS256">HS256 (HMAC-SHA256: Symmetric algorithm using SHA-256)</option>
                                 <option value="HS384">HS384 (HMAC-SHA384: Symmetric algorithm using SHA-384)</option>
                                 <option value="HS512">HS512 (HMAC-SHA512: Symmetric algorithm using SHA-512)</option>
-                                <option value="RS256">RS256 (RSA-SHA256: Asymmetric algorithm using SHA-256 with RSA keys)</option>
-                                <option value="RS384">RS384 (RSA-SHA384: Asymmetric algorithm using SHA-384 with RSA keys)</option>
-                                <option value="RS512">RS512 (RSA-SHA512: Asymmetric algorithm using SHA-512 with RSA keys)</option>
+                                <option value="RS256">RS256 (RSA-SHA256: Asymmetric algorithm using SHA-256 with RSA
+                                    keys)</option>
+                                <option value="RS384">RS384 (RSA-SHA384: Asymmetric algorithm using SHA-384 with RSA
+                                    keys)</option>
+                                <option value="RS512">RS512 (RSA-SHA512: Asymmetric algorithm using SHA-512 with RSA
+                                    keys)</option>
                             </select>
                         </div>
-
                         <div class="form-check mb-3">
-                            <input class="form-check-input" type="checkbox" id="allowRefreshTokenRenovation">
+                            <input class="form-check-input" type="checkbox" id="allowRefreshTokenRenovation"
+                                oninput="displayUpdateTokensFunction()" onchange="displayUpdateTokensFunction()">
                             <label class="form-check-label" for="allowRefreshTokenRenovation">
                                 Allow Refresh Token Renewal
                             </label>
                         </div>
-
                         <div class="form-check mb-3">
-                            <input class="form-check-input" type="checkbox" id="includeApplicationScopes">
+                            <input class="form-check-input" type="checkbox" id="includeApplicationScopes"
+                                oninput="displayUpdateTokensFunction()" onchange="displayUpdateTokensFunction()">
                             <label class="form-check-label" for="includeApplicationScopes">
                                 Include Application Scopes
                             </label>
                         </div>
-
                         <div class="form-check mb-3">
-                            <input class="form-check-input" type="checkbox" id="includeBasicAccountInfo">
+                            <input class="form-check-input" type="checkbox" id="includeBasicAccountInfo"
+                                oninput="displayUpdateTokensFunction()" onchange="displayUpdateTokensFunction()">
                             <label class="form-check-label" for="includeBasicAccountInfo">
                                 Include Basic Account Info
                             </label>
                         </div>
-
                         <div class="form-check mb-3">
-                            <input class="form-check-input" type="checkbox" id="maintainRevocationAndLogoutInfo">
+                            <input class="form-check-input" type="checkbox" id="maintainRevocationAndLogoutInfo"
+                                oninput="displayUpdateTokensFunction()" onchange="displayUpdateTokensFunction()">
                             <label class="form-check-label" for="maintainRevocationAndLogoutInfo">
                                 Maintain Revocation and Logout Info
                             </label>
                         </div>
+                    </div>
+                </div>
+
+                <!-- JWT HS Key Modification Card -->
+                <div class="card mb-3" id="modifyHSKey" style="display:none;">
+                    <div class="card-header bg-danger text-white">
+                        <h5 class="mb-0">Modify Current JWT HS Key</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="newHSKey" class="form-label">New HS Key (Password)</label>
+                            <div class="input-group">
+                                <input type="password" class="form-control" id="newHSKey" placeholder="Enter new key">
+
+                                <button type="button" class="btn btn-outline-secondary" id="toggleHSKeyCreate">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary"
+                                    onclick="javascript:generateRandomKey('newHSKey')">
+                                    <i class="fas fa-sync-alt"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-danger" onclick="javascript:modifyHSKey()">Modify HS Key</button>
+
+                        <script>
+                            document.getElementById('toggleHSKeyCreate').addEventListener('click', function () {
+                                const passwordField = document.getElementById('newHSKey');
+                                const type = passwordField.getAttribute('type') === 'password' ? 'text' : 'password';
+                                passwordField.setAttribute('type', type);
+                                this.innerHTML = type === 'password' ? '<i class="fas fa-eye"></i>' : '<i class="fas fa-eye-slash"></i>';
+                            });
+
+
+
+                        </script>
+                    </div>
+                </div>
+
+                <!-- JWT RS Keys Upload Card -->
+                <div class="card mb-3" id="modifyRSKey" style="display:none;">
+                    <div class="card-header bg-danger text-white">
+                        <h5 class="mb-0">Modify Current JWT RS Keys</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="validationKeyFile" class="form-label">Validation Key File (Public Key)</label>
+                            <input type="file" class="form-control" id="validationKeyFile" accept=".pem,.key">
+                        </div>
+                        <div class="mb-3">
+                            <label for="signingKeyFile" class="form-label">Signing Key File (Private Key)</label>
+                            <input type="file" class="form-control" id="signingKeyFile" accept=".pem,.key">
+                        </div>
+                        <button type="button" class="btn btn-danger" onclick="javascript:uploadRSKeys()">Upload RS
+                            Keys</button>
                     </div>
                 </div>
             </div>
@@ -70,51 +131,115 @@
             <div class="col-md-6">
                 <div class="card mb-3">
                     <div class="card-header bg-success text-white">
-                        <h5 class="mb-0">Access Token Settings</h5>
+                        <h5 class="mb-0">Access Token Cookie Settings</h5>
                     </div>
                     <div class="card-body">
                         <div class="mb-3">
                             <label for="accessTokenPath" class="form-label">Access Token Path</label>
-                            <input type="text" class="form-control" id="accessTokenPath" placeholder="/">
+                            <input type="text" class="form-control" id="accessTokenPath" placeholder="/"
+                                oninput="validateUrlPath('accessTokenPath')" onchange="displayUpdateTokensFunction()">
                         </div>
-
                         <div class="mb-3">
                             <label for="accessTokenTimeout" class="form-label">Access Token Timeout (seconds)</label>
-                            <input type="number" class="form-control" id="accessTokenTimeout">
+                            <input type="number" class="form-control" id="accessTokenTimeout"
+                                oninput="displayUpdateTokensFunction(); updatePrettyTime('accessTokenTimeout', 'accessTokenTimeoutPretty')"
+                                onchange="displayUpdateTokensFunction(); updatePrettyTime('accessTokenTimeout', 'accessTokenTimeoutPretty')">
+                            <small id="accessTokenTimeoutPretty" class="form-text text-muted"></small>
                         </div>
                     </div>
                 </div>
 
                 <div class="card mb-3">
                     <div class="card-header bg-success text-white">
-                        <h5 class="mb-0">Refresh Token Settings</h5>
+                        <h5 class="mb-0">Refresh Token Cookie Settings</h5>
                     </div>
                     <div class="card-body">
                         <div class="mb-3">
                             <label for="refreshTokenPath" class="form-label">Refresh Token Path</label>
-                            <input type="text" class="form-control" id="refreshTokenPath" placeholder="/auth">
+                            <input type="text" class="form-control" id="refreshTokenPath" placeholder="/auth"
+                                oninput="validateUrlPath('refreshTokenPath')" onchange="displayUpdateTokensFunction()">
                         </div>
-
                         <div class="mb-3">
                             <label for="refreshTokenTimeout" class="form-label">Refresh Token Timeout (seconds)</label>
-                            <input type="number" class="form-control" id="refreshTokenTimeout">
+                            <input type="number" class="form-control" id="refreshTokenTimeout"
+                                oninput="displayUpdateTokensFunction(); updatePrettyTime('refreshTokenTimeout', 'refreshTokenTimeoutPretty')"
+                                onchange="displayUpdateTokensFunction(); updatePrettyTime('refreshTokenTimeout', 'refreshTokenTimeoutPretty')">
+                            <small id="refreshTokenTimeoutPretty" class="form-text text-muted"></small>
                         </div>
                     </div>
                 </div>
             </div>
-
-            <!-- Refresh Token Configuration Card -->
-            <div class="col-md-6">
-
-            </div>
-
         </div>
-    </div>
 
+        <div class="row mt-3" id="modifyTokenButtons" style="display:none;">
+            <div class="col-12 d-flex justify-content-end">
+                <button type="button" class="btn btn-dark me-2" onclick="javascript:discardApplicationTokenConfig()">Discard Changes</button>
+                <button type="button" class="btn btn-warning" onclick="modifyApplicationTokenConfig()">Update Application Details</button>
+            </div>
+        </div>
+
+    </div>
 </div>
 
 <script>
+
+    let currentTokenConfig;
+
+    function tokenTypeChanged() {
+        document.getElementById('modifyRSKey').style.display = 'none';
+        document.getElementById('modifyHSKey').style.display = 'none';
+
+        displayUpdateTokensFunction();
+    }
+
+    function validateUrlPath(inputId) {
+        const element = document.getElementById(inputId);
+        const path = element.value;
+        const cleanedPath = path.replace(/[^a-zA-Z0-9\-_\/.%]/g, '');
+        element.value = cleanedPath;
+        displayUpdateTokensFunction();
+    }
+
+
+    function displayUpdateTokensFunction() {
+        document.getElementById('modifyTokenButtons').style.display = 'block';
+    }
+
+    function updatePrettyTime(inputId, outputId) {
+        const seconds = parseInt(document.getElementById(inputId).value);
+        if (isNaN(seconds) || seconds <= 0) {
+            document.getElementById(outputId).textContent = '';
+            return;
+        }
+
+        const days = Math.floor(seconds / 86400);
+        const hours = Math.floor((seconds % 86400) / 3600);
+        const minutes = Math.floor((seconds % 3600) / 60);
+        const remainingSeconds = seconds % 60;
+
+        let prettyTime = '';
+        if (days > 0) prettyTime += days + (days === 1 ? ' day' : ' days');
+        if (hours > 0) prettyTime += (prettyTime ? ', ' : '') + hours + (hours === 1 ? ' hour' : ' hours');
+        if (minutes > 0) prettyTime += (prettyTime ? ' and ' : '') + minutes + (minutes === 1 ? ' minute' : ' minutes');
+        if (remainingSeconds > 0) prettyTime += (prettyTime ? ' and ' : '') + remainingSeconds + (remainingSeconds === 1 ? ' second' : ' seconds');
+
+        document.getElementById(outputId).textContent = 'Equivalent: ' + prettyTime;
+    }
+
+    function discardApplicationTokenConfig() {
+        populateApplicationTokensConfig(currentTokenConfig);
+    }
+
     function populateApplicationTokensConfig(tokensConfig) {
+        document.getElementById('modifyTokenButtons').style.display = 'none';
+
+
+        document.getElementById('newHSKey').value = '';
+        document.getElementById('validationKeyFile').value = '';
+        document.getElementById('signingKeyFile').value = '';
+
+
+        
         if (tokensConfig != null) {
             // Main configuration
             document.getElementById('tempMFATokenTimeout').value = tokensConfig.tempMFATokenTimeout || '';
@@ -124,6 +249,14 @@
             document.getElementById('includeApplicationScopes').checked = tokensConfig.includeApplicationScopes || false;
             document.getElementById('includeBasicAccountInfo').checked = tokensConfig.includeBasicAccountInfo || false;
             document.getElementById('maintainRevocationAndLogoutInfo').checked = tokensConfig.maintainRevocationAndLogoutInfo || false;
+
+            if (tokensConfig.tokenType.startsWith('HS')) {
+                document.getElementById('modifyRSKey').style.display = 'none';
+                document.getElementById('modifyHSKey').style.display = 'block';
+            } else {
+                document.getElementById('modifyRSKey').style.display = 'block';
+                document.getElementById('modifyHSKey').style.display = 'none';
+            }
 
             // Token configuration
             if (tokensConfig.tokensConfiguration) {
@@ -139,6 +272,53 @@
                     document.getElementById('refreshTokenTimeout').value = tokens.refreshToken.timeout || 2592000;
                 }
             }
+            updatePrettyTime('tempMFATokenTimeout', 'tempMFATokenTimeoutPretty');
+            updatePrettyTime('sessionInactivityTimeout', 'sessionInactivityTimeoutPretty');
+            updatePrettyTime('accessTokenTimeout', 'accessTokenTimeoutPretty');
+            updatePrettyTime('refreshTokenTimeout', 'refreshTokenTimeoutPretty');
         }
+
+        currentTokenConfig = tokensConfig;
     }
+
+    function modifyApplicationTokenConfig() {
+        $.ajax({
+            url: '/api/v1/updateWebLoginJWTConfigForApplication',
+            type: 'PATCH',
+            contentType: 'application/json',
+            data: JSON.stringify(getModifiedApplicationTokenConfig()),
+            success: function (response, textStatus, xhr) {
+                showToastSuccess("Application token configuration updated successfully.");
+                ajaxValidateAndPopulateApplication();
+            },
+            error: commonFunctionError
+        });
+    }
+
+    function getModifiedApplicationTokenConfig() {
+        const tokensConfig = {
+            appName: currentApplication,
+            tempMFATokenTimeout: parseInt(document.getElementById('tempMFATokenTimeout').value) || 0,
+            sessionInactivityTimeout: parseInt(document.getElementById('sessionInactivityTimeout').value) || 0,
+            tokenType: document.getElementById('tokenType').value,
+            allowRefreshTokenRenovation: document.getElementById('allowRefreshTokenRenovation').checked,
+            includeApplicationScopes: document.getElementById('includeApplicationScopes').checked,
+            includeBasicAccountInfo: document.getElementById('includeBasicAccountInfo').checked,
+            maintainRevocationAndLogoutInfo: document.getElementById('maintainRevocationAndLogoutInfo').checked,
+            tokensConfiguration: {
+                accessToken: {
+                    path: document.getElementById('accessTokenPath').value || '/',
+                    timeout: parseInt(document.getElementById('accessTokenTimeout').value) || 300
+                },
+                refreshToken: {
+                    path: document.getElementById('refreshTokenPath').value || '/auth',
+                    timeout: parseInt(document.getElementById('refreshTokenTimeout').value) || 2592000
+                }
+            }
+        };
+        // Return the JSON configuration
+        return tokensConfig;
+    }
+
+
 </script>

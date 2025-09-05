@@ -20,6 +20,7 @@ void WebAdminMethods_Applications::addMethods_Applications(std::shared_ptr<Metho
     methods->addResource(MethodsHandler::GET, "getApplicationInfo", &getApplicationInfo, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
     methods->addResource(MethodsHandler::PATCH, "updateApplicationDescription", &updateApplicationDescription, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"});
     methods->addResource(MethodsHandler::PATCH, "updateApplicationAPIKey", &updateApplicationAPIKey, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"});
+    methods->addResource(MethodsHandler::PATCH, "updateWebLoginJWTConfigForApplication", &updateWebLoginJWTConfigForApplication, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"});
 
     // Applications
    /*
@@ -34,7 +35,6 @@ void WebAdminMethods_Applications::addMethods_Applications(std::shared_ptr<Metho
     methods->addResource(MethodsHandler::POST, "removeAccountFromApplication", &removeAccountFromApplication, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"});
     methods->addResource(MethodsHandler::POST, "addApplicationOwner", &addApplicationOwner, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"});
     methods->addResource(MethodsHandler::POST, "removeApplicationOwner", &removeApplicationOwner, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"});
-    methods->addResource(MethodsHandler::POST, "modifyWebLoginJWTConfigForApplication", &modifyWebLoginJWTConfigForApplication, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"});
     methods->addResource(MethodsHandler::GET, "getWebLoginJWTConfigFromApplication", &getWebLoginJWTConfigFromApplication, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
     methods->addResource(MethodsHandler::POST, "setWebLoginJWTSigningKeyForApplication", &setWebLoginJWTSigningKeyForApplication, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"});
     methods->addResource(MethodsHandler::GET, "getWebLoginJWTSigningKeyForApplication", &getWebLoginJWTSigningKeyForApplication, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
@@ -70,6 +70,39 @@ void WebAdminMethods_Applications::removeApplication(void *context, APIReturn &r
 }
 void WebAdminMethods_Applications::addApplication(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
 {
+
+    // Extract application name and description from input JSON
+    std::string appName = JSON_ASSTRING(*request.inputJSON, "appName", "");
+    std::string appDescription = JSON_ASSTRING(*request.inputJSON, "appDescription", "");
+
+    // Validate input data
+    if (appName.empty())
+    {
+        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Application name is required");
+        return;
+    }
+
+    if (appName.length() > 255)
+    {
+        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Application name must be less than 255 characters");
+        return;
+    }
+
+    // Check for invalid characters in appName
+    if (appName.find_first_not_of("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-") != std::string::npos)
+    {
+        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Application name contains invalid characters");
+        return;
+    }
+
+    // Validate that the application doesn't already exist
+    if (Globals::getIdentityManager()->applications->doesApplicationExist(appName))
+    {
+        response.setError(HTTP::Status::S_409_CONFLICT, "conflict", "Application already exists");
+        return;
+    }
+
+    // Attempt to create the new application
     if (!Globals::getIdentityManager()->applications->addApplication(JSON_ASSTRING(*request.inputJSON, "appName", ""),
                                                                      JSON_ASSTRING(*request.inputJSON, "description", ""),
                                                                      JSON_ASSTRING(*request.inputJSON, "appKey", ""),
@@ -77,7 +110,7 @@ void WebAdminMethods_Applications::addApplication(void *context, APIReturn &resp
                                                                      JSON_ASBOOL(*request.inputJSON, "scopesModifiable", false)
                                                                      ))
     {
-        response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Internal Error");
+        response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to create application");
         return;
     }
 
@@ -191,10 +224,24 @@ void WebAdminMethods_Applications::updateApplicationAPIKey(void *context, APIRet
 }
 
 
+void WebAdminMethods_Applications::updateWebLoginJWTConfigForApplication(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
+{
+    ApplicationTokenProperties tokenInfo;
+    auto err = tokenInfo.fromJSON( *request.inputJSON );
+    if (err.has_value())
+    {
+        response.setError((Network::Protocols::HTTP::Status::Codes)err->http_code, err->error, err->message);
+        return;
+    }
+
+    if (!Globals::getIdentityManager()->applications->updateWebLoginJWTConfigForApplication(tokenInfo))
+    {
+        response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Internal Error");
+        return;
+    }
+}
+
 /*
-
-
-
 void WebAdminMethods_Applications::getApplicationDescription(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     (*response.responseJSON()) = Globals::getIdentityManager()->applications->getApplicationDescription(JSON_ASSTRING(*request.inputJSON, "appName", ""));
@@ -320,26 +367,6 @@ void WebAdminMethods_Applications::listWebLoginOriginUrlsFromApplication(void *c
     (*response.responseJSON()) = Helpers::listToJSON(Globals::getIdentityManager()->applications->listWebLoginOriginUrlsFromApplication(JSON_ASSTRING(*request.inputJSON, "appName", "")));
 }
 
-void WebAdminMethods_Applications::modifyWebLoginJWTConfigForApplication(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
-{
-    ApplicationTokenProperties tokenInfo;
-
-    tokenInfo.appName = JSON_ASSTRING(*request.inputJSON, "appName", "");
-    tokenInfo.tokensConfiguration = (*request.inputJSON)["tokensConfiguration"];
-    tokenInfo.tempMFATokenTimeout = (*request.inputJSON)["tempMFATokenTimeout"].asUInt();
-    tokenInfo.sessionInactivityTimeout = (*request.inputJSON)["sessionInactivityTimeout"].asUInt();
-    tokenInfo.tokenType = JSON_ASSTRING(*request.inputJSON, "tokenType", "");
-    tokenInfo.includeApplicationScopes = (*request.inputJSON)["includeApplicationScopes"].asBool();
-    tokenInfo.includeBasicAccountInfo = (*request.inputJSON)["includeBasicAccountInfo"].asBool();
-    tokenInfo.maintainRevocationAndLogoutInfo = (*request.inputJSON)["maintainRevocationAndLogoutInfo"].asBool();
-    tokenInfo.allowRefreshTokenRenovation = (*request.inputJSON)["allowRefreshTokenRenovation"].asBool();
-
-    if (!Globals::getIdentityManager()->applications->modifyWebLoginJWTConfigForApplication(tokenInfo))
-    {
-        response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Internal Error");
-        return;
-    }
-}
 
 void WebAdminMethods_Applications::getWebLoginJWTConfigFromApplication(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
 {

@@ -411,7 +411,7 @@ public:
         virtual std::map<std::string, ActivityData> listApplicationActivities(const std::string &appName) = 0;
 
         // Tokens:
-        virtual bool modifyWebLoginJWTConfigForApplication(const ApplicationTokenProperties &tokenInfo) = 0;
+        virtual bool updateWebLoginJWTConfigForApplication(const ApplicationTokenProperties &tokenInfo) = 0;
         virtual ApplicationTokenProperties getWebLoginJWTConfigFromApplication(const std::string &appName) = 0;
         virtual bool setWebLoginJWTSigningKeyForApplication(const std::string &appName, const std::string &signingKey) = 0;
         virtual std::string getWebLoginJWTSigningKeyForApplication(const std::string &appName) = 0;

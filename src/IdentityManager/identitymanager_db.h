@@ -234,7 +234,7 @@ public:
         std::list<std::string> listWebLoginOriginUrlsFromApplication(const std::string &appName) override;
 
         // Application Token:
-        bool modifyWebLoginJWTConfigForApplication(const ApplicationTokenProperties &tokenInfo) override;
+        bool updateWebLoginJWTConfigForApplication(const ApplicationTokenProperties &tokenInfo) override;
         ApplicationTokenProperties getWebLoginJWTConfigFromApplication(const std::string &appName) override;
         bool setWebLoginJWTSigningKeyForApplication(const std::string &appName, const std::string &signingKey) override;
         std::string getWebLoginJWTSigningKeyForApplication(const std::string &appName) override;
