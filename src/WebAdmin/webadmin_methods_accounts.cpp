@@ -40,6 +40,7 @@ void WebAdminMethods_Accounts::addMethods_Accounts(std::shared_ptr<MethodsHandle
     methods->addResource(MethodsHandler::GET, "getAccountFlags", &getAccountFlags, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_READ"});
     methods->addResource(MethodsHandler::PATCH, "changeAccountFlags", &changeAccountFlags, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH,
                          {"ACCOUNT_MODIFY"});
+    methods->addResource(MethodsHandler::DELETE, "removeAccount", &removeAccount, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_DELETE"});
 
 
     //Accounts-Applications:
@@ -77,7 +78,6 @@ void WebAdminMethods_Accounts::addMethods_Accounts(std::shared_ptr<MethodsHandle
     methods->addResource(MethodsHandler::GET, "getAccountUsableApplicationScopes", &getAccountUsableApplicationScopes, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_READ"});
     methods->addResource(MethodsHandler::GET, "isAccountExpired", &isAccountExpired, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_READ"});
     methods->addResource(MethodsHandler::GET, "listAccounts", &listAccounts, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_READ"});
-    methods->addResource(MethodsHandler::POST, "removeAccount", &removeAccount, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_DELETE"});
     methods->addResource(MethodsHandler::POST, "resetBadAttemptsOnCredential", &resetBadAttemptsOnCredential, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"});
     methods->addResource(MethodsHandler::GET, "searchAccounts", &searchAccounts, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_READ"});
     methods->addResource(MethodsHandler::POST, "updateAccountInfo", &updateAccountInfo, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"});
@@ -455,6 +455,23 @@ void WebAdminMethods_Accounts::updateAccountDetailFieldsValues(void *context, AP
     // Return 200.
 }
 
+void WebAdminMethods_Accounts::removeAccount(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
+{
+    std::string accountName = JSON_ASSTRING(*request.inputJSON, "accountName", "");
+
+    if (accountName.empty())
+    {
+        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Account name is required");
+        return;
+    }
+
+    if (!Globals::getIdentityManager()->accounts->removeAccount(accountName))
+    {
+        response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to remove the account.");
+    }
+}
+
+
 /*
 void WebAdminMethods_Accounts::updateAccountInfo(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
 {
@@ -655,13 +672,6 @@ void WebAdminMethods_Accounts::listAccounts(void *context, APIReturn &response, 
     (*response.responseJSON()) = Helpers::setToJSON(Globals::getIdentityManager()->accounts->listAccounts());
 }
 
-void WebAdminMethods_Accounts::removeAccount(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
-{
-    if (!Globals::getIdentityManager()->accounts->removeAccount(JSON_ASSTRING(*request.inputJSON, "accountName", "")))
-    {
-        response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Internal Error");
-    }
-}
 
 void WebAdminMethods_Accounts::resetBadAttemptsOnCredential(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
 {

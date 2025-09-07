@@ -3,6 +3,7 @@
 #include "../globals.h"
 #include "defs.h"
 #include "webadmin_methods.h"
+#include <regex>
 #include <Mantids30/Program_Logs/applog.h>
 
 using namespace Mantids30::Program;
@@ -15,10 +16,11 @@ void WebAdminMethods_ApplicationsScopes::addMethods_Scopes(std::shared_ptr<Metho
     methods->addResource(MethodsHandler::POST, "addApplicationScopeToAccount", &addApplicationScopeToAccount, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"});
     methods->addResource(MethodsHandler::DELETE, "removeApplicationScopeFromAccount", &removeApplicationScopeFromAccount, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"});
 
-    // Application Scopes
-/*
     methods->addResource(MethodsHandler::POST, "addApplicationScope", &addApplicationScope, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"});
     methods->addResource(MethodsHandler::DELETE, "removeApplicationScope", &removeApplicationScope, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"});
+
+    // Application Scopes
+/*
     methods->addResource(MethodsHandler::POST, "addApplicationScopeToRole", &addApplicationScopeToRole, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"});
     methods->addResource(MethodsHandler::DELETE, "removeApplicationScopeFromRole", &removeApplicationScopeFromRole, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"});
     methods->addResource(MethodsHandler::POST, "updateApplicationScopeDescription", &updateApplicationScopeDescription, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"});
@@ -81,11 +83,32 @@ void WebAdminMethods_ApplicationsScopes::removeApplicationScopeFromAccount(void 
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Internal Error");
     }
 }
-
-/*
 void WebAdminMethods_ApplicationsScopes::addApplicationScope(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     std::string appName = JSON_ASSTRING(*request.inputJSON, "appName", "");
+    std::string scopeId = JSON_ASSTRING(*request.inputJSON, "scopeId", "");
+    std::string description = JSON_ASSTRING(*request.inputJSON, "description", "");
+
+    // Validate input parameters
+    if (appName.empty())
+    {
+        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_parameters", "Application name cannot be empty");
+        return;
+    }
+
+    if (scopeId.empty())
+    {
+        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_parameters", "Scope ID cannot be empty");
+        return;
+    }
+
+    // Validate scopeId format: [0-9A-Z_]+
+    const std::regex scopeIdPattern("^[0-9A-Z_-]+$");
+    if (!std::regex_match(scopeId, scopeIdPattern))
+    {
+        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_parameters", "Scope ID must match the pattern [0-9A-Z_-]+");
+        return;
+    }
 
     // Don't modify scope from our directory.
     if (appName == DB_APPNAME)
@@ -94,15 +117,29 @@ void WebAdminMethods_ApplicationsScopes::addApplicationScope(void *context, APIR
         return;
     }
 
-    if (!Globals::getIdentityManager()->authController->addApplicationScope({appName, JSON_ASSTRING(*request.inputJSON, "id", "")}, JSON_ASSTRING(*request.inputJSON, "description", "")))
+    if (!Globals::getIdentityManager()->authController->addApplicationScope({appName, scopeId}, description))
     {
-        response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Internal Error");
+        response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "The application scope may already exist.");
     }
 }
 
 void WebAdminMethods_ApplicationsScopes::removeApplicationScope(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     std::string appName = JSON_ASSTRING(*request.inputJSON, "appName", "");
+    std::string scopeId = JSON_ASSTRING(*request.inputJSON, "scopeId", "");
+
+    // Validate input parameters
+    if (appName.empty())
+    {
+        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_parameters", "Application name cannot be empty");
+        return;
+    }
+
+    if (scopeId.empty())
+    {
+        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_parameters", "Scope ID cannot be empty");
+        return;
+    }
 
     // Don't modify scope from our directory.
     if (appName == DB_APPNAME)
@@ -111,11 +148,14 @@ void WebAdminMethods_ApplicationsScopes::removeApplicationScope(void *context, A
         return;
     }
 
-    if (!Globals::getIdentityManager()->authController->removeApplicationScope({appName, JSON_ASSTRING(*request.inputJSON, "id", "")}))
+    if (!Globals::getIdentityManager()->authController->removeApplicationScope({appName, scopeId}))
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Internal Error");
     }
 }
+
+
+/*
 
 void WebAdminMethods_ApplicationsScopes::addApplicationScopeToRole(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
 {
