@@ -116,15 +116,16 @@ AccountFlags IdentityManager_DB::Accounts_DB::getAccountFlags(const std::string 
 {
     AccountFlags r;
 
-    Abstract::BOOL enabled, confirmed, admin;
-    SQLConnector::QueryInstance i = _parent->m_sqlConnector->qSelect("SELECT `isEnabled`,`isAccountConfirmed`,`isAdmin` FROM iam.accounts WHERE `accountName`=:accountName LIMIT 1;",
-                                                                     {{":accountName", MAKE_VAR(STRING, accountName)}}, {&enabled, &confirmed, &admin});
+    Abstract::BOOL enabled, confirmed, admin,blocked;
+    SQLConnector::QueryInstance i = _parent->m_sqlConnector->qSelect("SELECT `isEnabled`,`isAccountConfirmed`,`isAdmin`,`isBlocked` FROM iam.accounts WHERE `accountName`=:accountName LIMIT 1;",
+                                                                     {{":accountName", MAKE_VAR(STRING, accountName)}}, {&enabled, &confirmed, &admin,&blocked});
 
     if (i.getResultsOK() && i.query->step())
     {
         r.enabled = enabled.getValue();
         r.confirmed = confirmed.getValue();
         r.admin = admin.getValue();
+        r.blocked = blocked.getValue();
     }
 
     return r;
