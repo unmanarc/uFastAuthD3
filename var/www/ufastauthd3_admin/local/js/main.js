@@ -39,7 +39,7 @@ function ajaxAuthReCheck()
       {
         // Session is gone...
         clearInterval(intervalId);
-        alert("Session Expired");
+        showToastError("Session Expired");
         logout();
       }
       else
@@ -73,7 +73,7 @@ function ajaxRemoteExecuteMethod( methodPermLevel, target, methodName, payload, 
     success: successFunction,
     error: function (result) {
       console.log("ERR");
-      alert("Error Executing Remote Method...\nInsufficient Scopes");
+      showToastError("Error Executing Remote Method...\nInsufficient Scopes");
     }
   });
 }
@@ -87,7 +87,7 @@ function ajaxExecuteMethod( methodName, payloadData, successFunction ) {
     success: successFunction,
     error: function (result) {
       console.log("ERR");
-      alert("Error Executing Remote Method...\nInsufficient Scopes");
+      showToastError("Error Executing Remote Method...\nInsufficient Scopes");
     }
   });
 }

@@ -24,10 +24,10 @@
             success: function (response) {
 
                 if (response["retCode"] == false) {
-                    alert("Role creation failed (" + response["retMsg"] + ").");
+                    showToastError("Role creation failed (" + response["retMsg"] + ").");
                 }
                 else {
-                    alert("Role was created!");
+                    showToastSuccess("Role was created!");
                     window.location = "/role-edit?" + window.btoa($("#roleName").val().toUpperCase());
                 }
             },

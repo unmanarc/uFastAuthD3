@@ -1,5 +1,4 @@
-<div class="tab-pane fade" id="applications" role="tabpanel" aria-labelledby="applications-tab"
-    style="min-height: 500px;">
+<div class="tab-pane" id="applications" role="tabpanel" aria-labelledby="applications-tab" style="min-height: 500px;">
 
     <table width=100% style=" border-spacing: 10px;   border-collapse: separate;">
 
@@ -8,7 +7,7 @@
                 <select class="form-select" aria-label="Default select example" id="applicationsLeft"
                     style="min-width: 300px;">
                 </select><br>
-                <button type="button" class="btn btn-sm btn-success" onclick="javascript:addApplication()">Add
+                <button type="button" class="btn btn-sm btn-success" onclick="javascript:addAccountToApplication()">Add
                     Application</button>
             </td>
         </tr>
@@ -30,7 +29,7 @@
 
 <script>
 
-    function populateAccountApplications(currentAccount) {
+    function populateAccountApplications() {
         document.getElementById('accountScopesTD').innerHTML = "";
         document.getElementById('applicationsLeft').innerHTML = "";
 
@@ -57,75 +56,78 @@
                     let appId = 0;
                     for (let application of response["applications"]) {
 
-                        $("#accountScopesTD").append(
-                            `
-                                <input type=hidden id="userapp-key-${appId}">
-                                <div class="card" style="max-width: 80%; text-align: left;">
-                                <div class="card-header">
-                                    <h5 style="float: left; width: 50%; text-align: left;" id="userapp-title-${appId}">Text Left</h2>
-                                    <p style="float: left; width: 50%; text-align: right;">  <button type="button" class="btn btn-sm btn-light" onclick="javascript:removeApplication('${appId}')">	&#10006;</button> </p>
-                                </div>
+                        $("#accountScopesTD").append(`
+                                    <input type=hidden id="userapp-key-${appId}">
+                                    <div class="card" style="max-width: 80%; text-align: left;">
+                                        <div class="card-header d-flex justify-content-between align-items-center">
+                                            <h5 class="mb-0" id="userapp-title-${appId}">Text Left</h5>
+                                            <button type="button" class="btn btn-sm btn-secondary"
+                                                onclick="javascript:removeAccountFromApplication('${appId}')">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </button>
+                                        </div>
 
-                                <div class="card-body">
-                                    <table width=100% style=" border-spacing: 10px;   border-collapse: separate;"><tr><td align=right>
-                                    <select class="form-select" aria-label="Default select example" id="applicationsScopesLeft-${appId}" style="min-width: 300px;">
-                                    </select><br>
-                                    <button type="button" class="btn btn-sm btn-success" onclick="javascript:addApplicationScope('${appId}')">Add Application Scope</button>
-                                    </td></tr>
-                                    </table>
+                                        <div class="card-body">
+                                            <div class="text-end">
+                                                <select class="form-select" aria-label="Default select example" id="applicationsScopesLeft-${appId}"
+                                                    style="min-width: 300px;">
+                                                </select><br>
+                                                <button type="button" class="btn btn-sm btn-success"
+                                                    onclick="javascript:addApplicationScopeToAccount('${appId}')">Add Scope</button>
+                                            </div>
+                                            <br>
+                                            <p class="card-text">
+                                            <table class="table table-hover">
+                                                <thead class="thead-light">
+                                                    <tr bgcolor=grey>
+                                                        <th scope="col">Scope Name</th>
+                                                        <th scope="col">Description</th>
+                                                        <th scope="col" style="text-align: right;">Controls</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="applicationsDirectScopes-${appId}">
+                                                </tbody>
+                                            </table>
+                                            </p>
 
-                                <br>
-                                <p class="card-text">
-                                    <table class="table table-hover">
-                                        <thead class="thead-light">
-                                        <tr bgcolor=grey>
-                                            <th scope="col">Scope Name</th>
-                                            <th scope="col">Description</th>
-                                            <th scope="col" style="text-align: right;">Controls</th>
-                                        </tr>
-                                        </thead>
-                                        <tbody id="applicationsDirectScopes-${appId}">
-                                        </tbody>
-                                    </table>
-                                </p>
-
-                                </div>
-                                </div>
-                                <br>
+                                        </div>
+                                    </div>
+                                    <br>
                                 `
                         );
                         $(`#userapp-title-${appId}`).text(application["name"] + ': ' + application["description"]);
                         $(`#userapp-key-${appId}`).val(application["name"]);
 
                         if (application["directScopesLeft"] != null) {
-                            for (let permissionLeft of application["directScopesLeft"]) {
+                            for (let scopeLeft of application["directScopesLeft"]) {
                                 var sel = document.getElementById(`applicationsScopesLeft-${appId}`);
                                 var opt = document.createElement('option');
-                                opt.appendChild(document.createTextNode(permissionLeft["name"] + ': ' + permissionLeft["description"]));
-                                opt.value = permissionLeft["name"];
+                                opt.appendChild(document.createTextNode('[' + scopeLeft["id"] + '] ' + scopeLeft["description"]));
+                                opt.value = scopeLeft["id"];
                                 sel.appendChild(opt);
                             }
                         }
 
                         if (application["directScopes"] != null) {
-                            let permissionId = 0;
+                            let scopeInternalId = 0;
 
-                            for (let directAttrib of application["directScopes"]) {
+                            for (let directScope of application["directScopes"]) {
 
                                 document.getElementById(`applicationsDirectScopes-${appId}`).innerHTML += `
                                     <tr> 
-                                    <th scope="row" id=ulist-permissionName-${appId}-${permissionId} width=20%></th>
-                                    <td id=ulist-permissionDescription-${appId}-${permissionId}></td>
+                                    <th scope="row" id=ulist-scopeId-${appId}-${scopeInternalId} width=20%></th>
+                                    <td id=ulist-scopeDescription-${appId}-${scopeInternalId}></td>
                                     <td style="text-align: right;">
-                                        <input type=hidden id="ulist-permissionNameById-${appId}-${permissionId}">
-                                        <button type="button" class="btn btn-light btn-sm" onclick="javascript:permissionRemove(${appId},${permissionId});">&#10006;</button>
+                                        <input type=hidden id="ulist-scopeIdByInternalId-${appId}-${scopeInternalId}">
+                                        <button type="button" class="btn btn-light btn-sm" onclick="javascript:removeApplicationScopeFromAccount(${appId},${scopeInternalId});">&#10006;</button>
                                     </td>
                                     </tr>`;
 
-                                document.getElementById(`ulist-permissionNameById-${appId}-${permissionId}`).value = directAttrib["name"];
-                                $(`#ulist-permissionName-${appId}-${permissionId}`).text(directAttrib["name"]);
-                                $(`#ulist-permissionDescription-${appId}-${permissionId}`).text(directAttrib["description"]);
-                                permissionId++;
+                                document.getElementById(`ulist-scopeIdByInternalId-${appId}-${scopeInternalId}`).value = directScope["id"];
+                                $(`#ulist-scopeId-${appId}-${scopeInternalId}`).text(directScope["id"]);
+                                $(`#ulist-scopeDescription-${appId}-${scopeInternalId}`).text(directScope["description"]);
+                                scopeInternalId++;
                             }
                         }
                         appId++;
@@ -137,86 +139,89 @@
         });
     }
 
-    function scopeRemove(appId, scopeId) {
+    function removeApplicationScopeFromAccount(appId, scopeId) {
         $.ajax({
-            url: '/api/v1/scopeAccountRemove',
-            type: 'POST',
+            url: '/api/v1/removeApplicationScopeFromAccount',
+            type: 'DELETE',
             contentType: 'application/json',
             data: JSON.stringify({
                 appName: document.getElementById(`userapp-key-${appId}`).value,
-                scopeName: document.getElementById(`ulist-scopeNameById-${appId}-${scopeId}`).value,
-                accountName: $(`#accountName`).val()
+                scopeId: document.getElementById(`ulist-scopeIdByInternalId-${appId}-${scopeId}`).value,
+                accountName: currentAccount
             }),
             success: function (response) {
-                populateAccount();
+                populateAccountApplications();
             },
             error: commonFunctionError
         });
 
     }
 
-    function addApplicationScope(appId) {
+    function addApplicationScopeToAccount(appId) {
         var appItems = document.getElementById(`applicationsScopesLeft-${appId}`);
         var selItem = appItems.selectedIndex;
         if (selItem == -1) {
-            alert('Please select an scope');
+            showToastError('Please select an scope');
             document.getElementById(`applicationsScopesLeft-${appId}`).focus();
             return;
         }
 
         $.ajax({
-            url: '/api/v1/scopeAccountAdd',
+            url: '/api/v1/addApplicationScopeToAccount',
             type: 'POST',
             contentType: 'application/json',
             data: JSON.stringify({
                 appName: $(`#userapp-key-${appId}`).val(),
-                scopeName: appItems.value,
-                accountName: $(`#accountName`).val()
+                scopeId: appItems.value,
+                accountName: currentAccount
             }),
             success: function (response) {
-                populateAccount();
+                populateAccountApplications();
             },
             error: commonFunctionError
         });
     }
 
-    function removeApplication(appId) {
+    function removeAccountFromApplication(appId) {
         var appName = document.getElementById(`userapp-key-${appId}`).value;
-
-        $.ajax({
-            url: '/api/v1/applicationAccountRemove',
-            type: 'POST',
-            contentType: 'application/json',
-            data: JSON.stringify({
-                accountName: $("#accountName").val(),
-                appName: appName
-            }),
-            success: function (response) {
-                populateAccount();
-            },
-            error: commonFunctionError
+        showYesNoDialog("Do you really want to remove this application from the account?", function (result) {
+            if (result) {
+                $.ajax({
+                    url: '/api/v1/removeAccountFromApplication',
+                    type: 'DELETE',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        accountName: currentAccount,
+                        appName: appName
+                    }),
+                    success: function (response) {
+                        populateAccountApplications();
+                    },
+                    error: commonFunctionError
+                });
+            }
         });
     }
 
-    function addApplication() {
+    function addAccountToApplication() {
         var appItems = document.getElementById("applicationsLeft");
         var selItem = appItems.selectedIndex;
         if (selItem == -1) {
-            alert('Please select an application');
+            showToastError('Please select an application');
             document.getElementById("applicationsLeft").focus();
             return;
         }
 
         $.ajax({
-            url: '/api/v1/applicationAccountAdd',
+            url: '/api/v1/addAccountToApplication',
             type: 'POST',
             contentType: 'application/json',
             data: JSON.stringify({
-                accountName: $("#accountName").val(),
+                accountName: currentAccount,
                 appName: appItems.value
             }),
             success: function (response) {
-                populateAccount();
+                populateAccountApplications();
             },
             error: commonFunctionError
         });
