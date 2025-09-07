@@ -38,7 +38,7 @@
             success: function (response, textStatus, xhr) {
                 $('#modalCreateApplication').modal('hide');
                 // Refresh the DataTable after successful user creation
-                var table = new DataTable('#ApplicationsTable');
+                var table = new DataTable('#applicationsTable');
                 table.ajax.reload();
 
                 showToastSuccess("Application created successfully.");

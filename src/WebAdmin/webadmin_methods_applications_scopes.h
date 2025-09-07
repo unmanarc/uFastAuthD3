@@ -18,9 +18,11 @@ protected:
     static void addApplicationScopeToAccount(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
     static void removeApplicationScopeFromAccount(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
 
-/*
     static void addApplicationScope(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
     static void removeApplicationScope(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
+
+
+/*
     static void addApplicationScopeToRole(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
     static void removeApplicationScopeFromRole(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
     static void updateApplicationScopeDescription(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);

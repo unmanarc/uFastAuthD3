@@ -23,3 +23,29 @@
 
     </table>
 </div>
+
+<script>
+    function removeApplication()
+    {
+        showYesNoDialog("Do you really want to remove this application?", function (result) {
+            if (result) {
+                $.ajax({
+                    url: '/api/v1/removeApplication',
+                    type: 'DELETE',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        appName: currentApplication
+                    }),
+                    success: function (response) {
+                        showToastSuccess("Application " + currentApplication + " successfully removed.");
+                        // Refresh the DataTable after successful user deletion
+                        var table = new DataTable('#applicationsTable');
+                        table.ajax.reload();
+                        $('#modalEditApplication').modal('hide');
+                },
+                    error: commonFunctionError
+                });
+            }
+        });
+    }
+</script>

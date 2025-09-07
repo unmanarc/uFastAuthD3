@@ -17,7 +17,7 @@
   </div>
   <hr>
 
-  <table id="ApplicationsTable" class="display">
+  <table id="applicationsTable" class="display">
     <thead>
       <tr>
         <th scope="col">Application Name</th>
@@ -44,7 +44,7 @@
     document.getElementById(id).value = proposedKey;
   }
 
-  new DataTable('#ApplicationsTable', {
+  new DataTable('#applicationsTable', {
     ajax: {
       "url": "/api/v1/searchApplications",
       "type": 'GET',

@@ -36,40 +36,28 @@
 </div>
 
 <script>
-    function removeAccount() {
-        var r = confirm("Do you really want to completly remove this account?\nConsider disabling it instead.");
-        if (r == true) {
+    function removeAccount() 
+    {
+        showYesNoDialog("Do you really want to remove this account?", function (result) {
+            if (result) {
+                $.ajax({
+                    url: '/api/v1/removeAccount',
+                    type: 'DELETE',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        accountName: currentAccount
+                    }),
+                    success: function (response) {
+                        showToastSuccess("Account " + currentAccount + " successfully removed.");
+                        // Refresh the DataTable after successful user deletion
+                        var table = new DataTable('#accountsTable');
+                        table.ajax.reload();
+                        $('#modalEditAccount').modal('hide');
 
-            $.ajax({
-                url: '/api/v1/removeAccount',
-                type: 'DELETE',
-                contentType: 'application/json',
-                data: JSON.stringify({
-                    accountName: currentAccount
-                }),
-                success: function (response, textStatus, xhr) {
-                    showToastSuccess("Account " + currentAccount + " successfully removed.");
-                    $('#editAccountModal').modal('hide');
                 },
-                error: function (xhr, status, error) {
-                    if (xhr.responseJSON && xhr.responseJSON.error && xhr.responseJSON.message) {
-                        showToastError("Error: " + xhr.responseJSON.error + " - " + xhr.responseJSON.message);
-                    } else {
-                        showToastError("Error " + xhr.status);
-                    }
-                }
-            });
-        } else {
-            showToastError("Remove Operation Aborted!");
-        }
+                    error: commonFunctionError
+                });
+            }
+        });
     }
-
-
-
-
-
-
-
-
-
 </script>

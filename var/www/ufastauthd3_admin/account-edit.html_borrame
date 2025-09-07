@@ -211,7 +211,6 @@
 <script>
   document.getElementById("apptitle").innerHTML = "Accounts &#9658; Edit Account";
 
-
   function moveToUsedGroup() {
     var leftlist = document.getElementById("groupsLeft");
     while (true) {

@@ -19,6 +19,7 @@ protected:
     static void addAccount(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
     static void doesAccountExist(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
     static void searchAccounts(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
+    static void removeAccount(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
 
     // Fields:
     static void searchFields(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
@@ -40,7 +41,6 @@ protected:
 
     /*
     static void changeCredential(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
-    static void removeAccount(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
     static void disableAccount(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
     static void confirmAccount(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
     static void updateAccountInfo(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);

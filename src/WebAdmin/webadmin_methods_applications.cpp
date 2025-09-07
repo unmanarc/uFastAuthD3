@@ -60,6 +60,13 @@ void WebAdminMethods_Applications::removeApplication(void *context, APIReturn &r
         return;
     }
 
+    // Validate input data
+    if (appName.empty())
+    {
+        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Application name is required");
+        return;
+    }
+
     if (!Globals::getIdentityManager()->applications->removeApplication(appName))
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Internal Error");

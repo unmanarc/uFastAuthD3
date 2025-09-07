@@ -159,6 +159,10 @@
                         showToastSuccess("Account details updated successfully.");
                         // Reload everything.
                         discardAccountDetails();
+                        // Refresh the DataTable after attribs change
+                        var table = new DataTable('#accountsTable');
+                        table.ajax.reload();
+
                     },
                     error: commonFunctionError
                 });
