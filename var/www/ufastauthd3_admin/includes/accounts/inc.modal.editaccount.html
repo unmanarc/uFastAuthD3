@@ -76,8 +76,8 @@
             success: function (response) 
             {
                 document.getElementById("editAccountName").value = currentAccount;
-                populateAccountDetails(currentAccount);
-                populateAccountApplications(currentAccount);
+                populateAccountDetails();
+                populateAccountApplications();
             },
             error: commonFunctionError
         });

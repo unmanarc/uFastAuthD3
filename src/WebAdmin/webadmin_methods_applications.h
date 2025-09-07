@@ -36,8 +36,6 @@ protected:
     static void listApplicationOwners(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
     static void listApplicationAccounts(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
     static void listAccountApplications(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
-    static void addAccountToApplication(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
-    static void removeAccountFromApplication(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
     static void addApplicationOwner(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
     static void addWebLoginRedirectURIToApplication(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
     static void removeWebLoginRedirectURIToApplication(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);

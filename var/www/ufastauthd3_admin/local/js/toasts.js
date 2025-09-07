@@ -1,6 +1,4 @@
 function showToast(htmlMessage, type) {
-
-
     // Sanitize htmlMessage to prevent XSS
     const sanitizedMessage = htmlMessage
         .replace(/&/g, '&amp;')
@@ -37,4 +35,42 @@ function showToastSuccess(htmlMessage) {
 
 function showToastError(htmlMessage) {
     showToast(htmlMessage, 'error');
+}
+
+
+
+function showYesNoDialog(message, callback) {
+    const dialog = $(`
+        <div class="modal fade" id="yesNoDialog" tabindex="-1" aria-labelledby="yesNoLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="yesNoLabel">Confirm Action</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        ${message}
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">No</button>
+                        <button type="button" class="btn btn-success" id="confirmYes">Yes</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `);
+
+    $('body').append(dialog);
+
+    dialog.on('click', '#confirmYes', function() {
+        callback(true);
+        dialog.modal('hide');
+    });
+
+    dialog.on('hidden.bs.modal', function () {
+        $(this).remove();
+    });
+
+    const bsDialog = new bootstrap.Modal(dialog[0]);
+    bsDialog.show();
 }

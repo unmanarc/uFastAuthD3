@@ -25,31 +25,43 @@ std::map<std::string, std::string> WebAdminMethods_Accounts::jsonToMap(const jso
     return r;
 }
 
-
 void WebAdminMethods_Accounts::addMethods_Accounts(std::shared_ptr<MethodsHandler> methods)
 {
     using SecurityOptions = Mantids30::API::RESTful::MethodsHandler::SecurityOptions;
 
+    // Accounts:
     methods->addResource(MethodsHandler::POST, "addAccount", &addAccount, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"});
     methods->addResource(MethodsHandler::GET, "doesAccountExist", &doesAccountExist, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_READ"});
     methods->addResource(MethodsHandler::GET, "searchAccounts", &searchAccounts, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_READ"});
-    methods->addResource(MethodsHandler::GET, "getAccountDetailFieldsValues", &getAccountDetailFieldsValues, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_READ"});
-    methods->addResource(MethodsHandler::GET, "getAccountApplications", &getAccountApplications, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_READ"});
-
-    methods->addResource(MethodsHandler::PUT, "updateAccountDetailFieldsValues", &updateAccountDetailFieldsValues, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"});
-
+    methods->addResource(MethodsHandler::GET, "getAccountDetailFieldsValues", &getAccountDetailFieldsValues, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH,
+                         {"ACCOUNT_READ"});
+    methods->addResource(MethodsHandler::PUT, "updateAccountDetailFieldsValues", &updateAccountDetailFieldsValues, nullptr,
+                         SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"});
     methods->addResource(MethodsHandler::GET, "getAccountFlags", &getAccountFlags, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_READ"});
-    methods->addResource(MethodsHandler::PATCH, "changeAccountFlags", &changeAccountFlags, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"});
+    methods->addResource(MethodsHandler::PATCH, "changeAccountFlags", &changeAccountFlags, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH,
+                         {"ACCOUNT_MODIFY"});
 
-    methods->addResource(MethodsHandler::GET,   "searchFields", &searchFields, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"CONFIG_READ"});
-    methods->addResource(MethodsHandler::POST,  "addAccountDetailField", &addAccountDetailField, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"CONFIG_WRITE"});
-    methods->addResource(MethodsHandler::DELETE,"removeAccountDetailField", &removeAccountDetailField, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"CONFIG_WRITE"});
-    methods->addResource(MethodsHandler::GET,   "getAccountDetailField", &getAccountDetailField, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"CONFIG_READ"});
 
+    //Accounts-Applications:
+    methods->addResource(MethodsHandler::GET, "getAccountApplications", &getAccountApplications, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH,
+                         {"ACCOUNT_READ"});
+    methods->addResource(MethodsHandler::POST, "addAccountToApplication", &addAccountToApplication, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH,
+                         {"ACCOUNT_MODIFY"});
+    methods->addResource(MethodsHandler::DELETE, "removeAccountFromApplication", &removeAccountFromApplication, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH,
+                         {"ACCOUNT_MODIFY"});
+
+    // Fields
+    methods->addResource(MethodsHandler::GET, "searchFields", &searchFields, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"CONFIG_READ"});
+    methods->addResource(MethodsHandler::POST, "addAccountDetailField", &addAccountDetailField, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH,
+                         {"CONFIG_WRITE"});
+    methods->addResource(MethodsHandler::DELETE, "removeAccountDetailField", &removeAccountDetailField, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH,
+                         {"CONFIG_WRITE"});
+    methods->addResource(MethodsHandler::GET, "getAccountDetailField", &getAccountDetailField, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH,
+                         {"CONFIG_READ"});
 
 
     // Accounts
-   /* methods->addResource(MethodsHandler::POST, "addAccount", &addAccount, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"});
+    /* methods->addResource(MethodsHandler::POST, "addAccount", &addAccount, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"});
     methods->addResource(MethodsHandler::POST, "changeAccountExpiration", &changeAccountExpiration, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"});
     methods->addResource(MethodsHandler::POST, "changeCredential", &changeCredential, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_PWDDCHANGE"});
     methods->addResource(MethodsHandler::POST, "confirmAccount", &confirmAccount, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"});
@@ -106,7 +118,8 @@ void WebAdminMethods_Accounts::addAccount(void *context, APIReturn &response, co
     accountFlags.fromJSON(request.inputJSON);
 
     // Add the new account to the system with specified expiration and flags
-    if (!Globals::getIdentityManager()->accounts->addAccount(accountName, JSON_ASUINT64(*request.inputJSON, "expirationDate", 0), accountFlags, request.jwtToken->getSubject()))
+    if (!Globals::getIdentityManager()->accounts->addAccount(accountName, JSON_ASUINT64(*request.inputJSON, "expirationDate", 0), accountFlags,
+                                                             request.jwtToken->getSubject()))
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to add the new account. Check if user already exists");
         return;
@@ -150,10 +163,7 @@ void WebAdminMethods_Accounts::addAccount(void *context, APIReturn &response, co
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to change the credential on the new user.");
         return;
     }
-
-
 }
-
 
 void WebAdminMethods_Accounts::getAccountFlags(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
 {
@@ -187,16 +197,15 @@ void WebAdminMethods_Accounts::changeAccountFlags(void *context, APIReturn &resp
     AccountFlags flags;
     flags.fromJSON((*request.inputJSON)["flags"]);
 
-    bool changed = Globals::getIdentityManager()->accounts->changeAccountFlags(accountName,flags);
-    
+    bool changed = Globals::getIdentityManager()->accounts->changeAccountFlags(accountName, flags);
+
     if (!changed)
     {
-        response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "The account flags could not be updated. It may be that no other admin exists or there was a database issue.");
+        response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error",
+                          "The account flags could not be updated. It may be that no other admin exists or there was a database issue.");
         return;
     }
-
 }
-
 
 void WebAdminMethods_Accounts::doesAccountExist(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
 {
@@ -214,7 +223,6 @@ void WebAdminMethods_Accounts::doesAccountExist(void *context, APIReturn &respon
         return;
     }
 }
-
 
 void WebAdminMethods_Accounts::searchAccounts(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
 {
@@ -243,8 +251,8 @@ void WebAdminMethods_Accounts::getAccountApplications(void *context, APIReturn &
             if (directApplicationScope.appName == applicationName)
             {
                 (*response.responseJSON())["applications"][i]["directScopes"][j]["id"] = directApplicationScope.id;
-                (*response.responseJSON())["applications"][i]["directScopes"][j]["description"] = Globals::getIdentityManager()->authController->getApplicationScopeDescription(
-                    directApplicationScope);
+                (*response.responseJSON())["applications"][i]["directScopes"][j]["description"]
+                    = Globals::getIdentityManager()->authController->getApplicationScopeDescription(directApplicationScope);
                 j++;
             }
         }
@@ -255,8 +263,8 @@ void WebAdminMethods_Accounts::getAccountApplications(void *context, APIReturn &
             if (directScopes.find(scope) == directScopes.end())
             {
                 (*response.responseJSON())["applications"][i]["directScopesLeft"][j]["id"] = scope.id;
-                (*response.responseJSON())["applications"][i]["directScopesLeft"][j]["description"] = Globals::getIdentityManager()->authController->getApplicationScopeDescription(
-                    scope);
+                (*response.responseJSON())["applications"][i]["directScopesLeft"][j]["description"]
+                    = Globals::getIdentityManager()->authController->getApplicationScopeDescription(scope);
                 j++;
             }
         }
@@ -267,8 +275,8 @@ void WebAdminMethods_Accounts::getAccountApplications(void *context, APIReturn &
             if (usableScope.appName == applicationName)
             {
                 (*response.responseJSON())["applications"][i]["usableScopes"][j]["id"] = usableScope.id;
-                (*response.responseJSON())["applications"][i]["usableScopes"][j]["description"] = Globals::getIdentityManager()->authController->getApplicationScopeDescription(
-                    usableScope);
+                (*response.responseJSON())["applications"][i]["usableScopes"][j]["description"]
+                    = Globals::getIdentityManager()->authController->getApplicationScopeDescription(usableScope);
                 j++;
             }
         }
@@ -282,23 +290,71 @@ void WebAdminMethods_Accounts::getAccountApplications(void *context, APIReturn &
         if (listAccountApplications.find(applicationName) == listAccountApplications.end())
         {
             (*response.responseJSON())["applicationsLeft"][i]["name"] = applicationName;
-            (*response.responseJSON())["applicationsLeft"][i]["description"] = Globals::getIdentityManager()->applications->getApplicationDescription(applicationName);
+            (*response.responseJSON())["applicationsLeft"][i]["description"] = Globals::getIdentityManager()->applications->getApplicationDescription(
+                applicationName);
             i++;
         }
+    }
+}
+
+void WebAdminMethods_Accounts::addAccountToApplication(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
+{
+    std::string accountName = JSON_ASSTRING(*request.inputJSON, "accountName", "");
+    std::string appName = JSON_ASSTRING(*request.inputJSON, "appName", "");
+
+    if (accountName.empty())
+    {
+        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Account name is required");
+        return;
+    }
+
+    if (appName.empty())
+    {
+        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Application name is required");
+        return;
+    }
+
+    if (!Globals::getIdentityManager()->applications->addAccountToApplication(appName, accountName))
+    {
+        response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to add the account to the application.");
+        return;
+    }
+}
+
+void WebAdminMethods_Accounts::removeAccountFromApplication(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
+{
+    std::string accountName = JSON_ASSTRING(*request.inputJSON, "accountName", "");
+    std::string appName = JSON_ASSTRING(*request.inputJSON, "appName", "");
+
+    if (accountName.empty())
+    {
+        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Account name is required");
+        return;
+    }
+
+    if (appName.empty())
+    {
+        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Application name is required");
+        return;
+    }
+
+    if (!Globals::getIdentityManager()->applications->removeAccountFromApplication(appName, accountName))
+    {
+        response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to remove the account from the application.");
+        return;
     }
 }
 
 void WebAdminMethods_Accounts::searchFields(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     (*response.responseJSON()) = Globals::getIdentityManager()->accounts->searchFields(*request.inputJSON);
-
 }
 
 void WebAdminMethods_Accounts::addAccountDetailField(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     AccountDetailField fieldDetails;
     fieldDetails.fromJSON(*request.inputJSON);
-    std::string fieldName = JSON_ASSTRING((*request.inputJSON),"fieldName","");
+    std::string fieldName = JSON_ASSTRING((*request.inputJSON), "fieldName", "");
     if (fieldName.empty())
     {
         response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Field Name is Empty");
@@ -312,7 +368,7 @@ void WebAdminMethods_Accounts::addAccountDetailField(void *context, APIReturn &r
 
 void WebAdminMethods_Accounts::removeAccountDetailField(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
 {
-    std::string fieldName = JSON_ASSTRING((*request.inputJSON),"fieldName","");
+    std::string fieldName = JSON_ASSTRING((*request.inputJSON), "fieldName", "");
     if (fieldName.empty())
     {
         response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Field Name is Empty");
@@ -326,7 +382,7 @@ void WebAdminMethods_Accounts::removeAccountDetailField(void *context, APIReturn
 
 void WebAdminMethods_Accounts::getAccountDetailField(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
 {
-    std::string fieldName = JSON_ASSTRING((*request.inputJSON),"fieldName","");
+    std::string fieldName = JSON_ASSTRING((*request.inputJSON), "fieldName", "");
     if (fieldName.empty())
     {
         response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Field Name is Empty");
@@ -341,16 +397,18 @@ void WebAdminMethods_Accounts::getAccountDetailField(void *context, APIReturn &r
     (*response.responseJSON()) = field.value().toJSON();
 }
 
-void WebAdminMethods_Accounts::getAccountDetailFieldsValues(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
+void WebAdminMethods_Accounts::getAccountDetailFieldsValues(void *context, APIReturn &response, const RequestParameters &request,
+                                                            ClientDetails &authClientDetails)
 {
-    std::string accountName = JSON_ASSTRING((*request.inputJSON),"accountName","");
+    std::string accountName = JSON_ASSTRING((*request.inputJSON), "accountName", "");
     if (accountName.empty())
     {
         response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Account Name is Empty");
         return;
     }
 
-    std::list<IdentityManager::Accounts::AccountDetailFieldValue> fieldValues = Globals::getIdentityManager()->accounts->getAccountDetailFieldValues(accountName);
+    std::list<IdentityManager::Accounts::AccountDetailFieldValue> fieldValues = Globals::getIdentityManager()->accounts->getAccountDetailFieldValues(
+        accountName);
 
     Json::Value result(Json::arrayValue);
     for (const auto &fieldValue : fieldValues)
@@ -360,10 +418,10 @@ void WebAdminMethods_Accounts::getAccountDetailFieldsValues(void *context, APIRe
     (*response.responseJSON()) = result;
 }
 
-void WebAdminMethods_Accounts::updateAccountDetailFieldsValues(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
+void WebAdminMethods_Accounts::updateAccountDetailFieldsValues(void *context, APIReturn &response, const RequestParameters &request,
+                                                               ClientDetails &authClientDetails)
 {
-
-    std::string accountName = JSON_ASSTRING((*request.inputJSON),"accountName","");
+    std::string accountName = JSON_ASSTRING((*request.inputJSON), "accountName", "");
     if (accountName.empty())
     {
         response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Account Name is Empty");
@@ -482,7 +540,6 @@ void WebAdminMethods_Accounts::blockAccountUsingToken(void *context, APIReturn &
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Internal Error");
     }
 }*/
-
 
 /*
 void WebAdminMethods_Accounts::changeAccountExpiration(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)

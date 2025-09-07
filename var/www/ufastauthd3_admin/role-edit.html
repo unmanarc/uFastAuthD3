@@ -29,7 +29,7 @@
 </table>
 <div class="tab-content" id="myTabContent">
 
-  <div class="tab-pane fade show active" id="details" role="tabpanel" aria-labelledby="details-tab" style="min-height: 500px;">
+  <div class="tab-pane show active" id="details" role="tabpanel" aria-labelledby="details-tab" style="min-height: 500px;">
       <table width=100% style=" border-spacing: 10px;   border-collapse: separate;">
         <tr><td colspan="2" align="">          <h5>&nbsp;Role Info</h5>      <hr>      </td> </tr>
 
@@ -41,7 +41,7 @@
       </table>
   </div>
 
-  <div class="tab-pane fade" id="accounts" role="tabpanel" aria-labelledby="accounts-tab" style="min-height: 500px;">
+  <div class="tab-pane" id="accounts" role="tabpanel" aria-labelledby="accounts-tab" style="min-height: 500px;">
     <table width=100% style=" border-spacing: 10px;   border-collapse: separate;">
 
       <tr>
@@ -64,7 +64,7 @@
     </table>
   </div>
 
-  <div class="tab-pane fade" id="applications" role="tabpanel" aria-labelledby="applications-tab"
+  <div class="tab-pane" id="applications" role="tabpanel" aria-labelledby="applications-tab"
     style="min-height: 500px;">
 
     <table width=100% style=" border-spacing: 10px;   border-collapse: separate;">
@@ -92,7 +92,7 @@
     </table>
   </div>
 
-  <div class="tab-pane fade" id="advanced" role="tabpanel" aria-labelledby="advanced-tab"
+  <div class="tab-pane" id="advanced" role="tabpanel" aria-labelledby="advanced-tab"
     style="min-height: 500px;">
 
     <table width=100% style=" border-spacing: 10px;   border-collapse: separate;">
@@ -149,7 +149,7 @@
           populateRole();
         }
         else {
-          alert("Internal error removing scope from role.");
+          showToastError("Internal error removing scope from role.");
         }
       },
       error: commonFunctionError
@@ -176,7 +176,7 @@
           populateRole();
         }
         else {
-          alert("Internal error adding scope to role.");
+          showToastError("Internal error adding scope to role.");
         }
       },
       error: commonFunctionError
@@ -233,7 +233,7 @@
           populateRole();
         }
         else {
-          alert("Internal error removing account from role.");
+          showToastError("Internal error removing account from role.");
         }
       },
       error: commonFunctionError
@@ -255,10 +255,10 @@
       type: 'POST',
       success: function (response) {
         if (response["retCode"] == true) {
-          alert("Role Information Modified!");
+          showToastSuccess("Role Information Modified!");
         }
         else {
-          alert("Internal error modifying the role.");
+          showToastError("Internal error modifying the role.");
         }
       },
       error: commonFunctionError
@@ -275,17 +275,17 @@
         type: 'POST',
         success: function (response) {
           if (response["retCode"] == true) {
-            alert("Role Removed!");
+            showToastSuccess("Role Removed!");
           }
           else {
-            alert("Internal error removing the role.");
+            showToastError("Internal error removing the role.");
           }
           window.location = "/roles";
         },
         error: commonFunctionError
       });
     } else {
-      alert("Remove Operation Aborted!");
+      showToastError("Remove Operation Aborted!");
     }
   }
 
