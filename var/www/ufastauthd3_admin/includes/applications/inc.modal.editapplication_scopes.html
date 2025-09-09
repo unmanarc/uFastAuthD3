@@ -47,7 +47,7 @@
                 let removeButton = '';
                 if (modifiable === true) {
                     document.getElementById("addModifyScope").style.display = "block";
-                    removeButton = `<button type="button" class="btn btn-light btn-sm" onclick="javascript:removeApplicationScope(${scopeId});">&#10006;</button>`;
+                    removeButton = `<button type="button" class="btn btn-light btn-sm" onclick="javascript:removeApplicationScope(${scopeId});"><i class="fas fa-trash"></i></button>`;
                 }
                 else {
                     document.getElementById("addModifyScope").style.display = "none";
