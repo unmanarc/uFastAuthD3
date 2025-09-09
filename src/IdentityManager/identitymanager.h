@@ -72,8 +72,8 @@ public:
         virtual bool changeAccountFlags(const std::string &accountName, const AccountFlags &accountFlags) = 0;
 
         // Account role set:
-        virtual bool updateAccountRoles(const std::string &accountName, const std::set<std::string> &roleSet) = 0;
-        virtual std::set<std::string> getAccountRoles(const std::string &accountName, bool lock = true) = 0;
+        virtual bool updateAccountRoles(const std::string &appName, const std::string &accountName, const std::set<std::string> &roleSet) = 0;
+        virtual std::set<std::string> getAccountRoles(const std::string &appName,const std::string &accountName, bool lock = true) = 0;
 
         // Account block using token:
         virtual std::string getAccountBlockToken(const std::string &accountName) = 0;
@@ -140,23 +140,23 @@ public:
     private:
         IdentityManager *m_parent;
     };
-    class Roles
+    class ApplicationRoles
     {
     public:
-        virtual ~Roles() {}
+        virtual ~ApplicationRoles() {}
         /////////////////////////////////////////////////////////////////////////////////
         // role:
-        virtual bool addRole(const std::string &roleName, const std::string &roleDescription) = 0;
-        virtual bool removeRole(const std::string &roleName) = 0;
-        virtual bool doesRoleExist(const std::string &roleName) = 0;
-        virtual bool addAccountToRole(const std::string &roleName, const std::string &accountName) = 0;
-        virtual bool removeAccountFromRole(const std::string &roleName, const std::string &accountName, bool lock = true) = 0;
-        virtual bool updateRoleDescription(const std::string &roleName, const std::string &roleDescription) = 0;
+        virtual bool addRole(const std::string &appName,const std::string &roleName, const std::string &roleDescription) = 0;
+        virtual bool removeRole(const std::string &appName,const std::string &roleName) = 0;
+        virtual bool doesRoleExist(const std::string &appName,const std::string &roleName) = 0;
+        virtual bool addAccountToRole(const std::string &appName,const std::string &roleName, const std::string &accountName) = 0;
+        virtual bool removeAccountFromRole(const std::string &appName,const std::string &roleName, const std::string &accountName, bool lock = true) = 0;
+        virtual bool updateRoleDescription(const std::string &appName,const std::string &roleName, const std::string &roleDescription) = 0;
 
-        virtual std::string getRoleDescription(const std::string &roleName) = 0;
-        virtual std::set<std::string> getRolesList() = 0;
-        virtual std::set<std::string> getRoleAccounts(const std::string &roleName, bool lock = true) = 0;
-        virtual std::list<RoleDetails> searchRoles(std::string sSearchWords, size_t limit = 0, size_t offset = 0) = 0;
+        virtual std::string getRoleDescription(const std::string &appName,const std::string &roleName) = 0;
+        virtual std::set<std::string> getRolesList(const std::string &appName) = 0;
+        virtual std::set<std::string> getRoleAccounts(const std::string &appName, const std::string &roleName, bool lock = true) = 0;
+        virtual Json::Value searchRoles(const json &dataTablesFilters) = 0;
     };
     class AuthController : public CredentialValidator
     {
@@ -186,10 +186,10 @@ public:
 
         virtual bool validateAccountApplicationScope(const std::string &accountName, const ApplicationScope &applicationScope) override;
 
-        std::set<ApplicationScope> getAccountUsableApplicationScopes(const std::string &accountName);
+        std::set<ApplicationScope> getAccountUsableApplicationScopes(const std::string &appName, const std::string &accountName);
 
         virtual bool validateApplicationScopeOnRole(const std::string &roleName, const ApplicationScope &applicationScope, bool lock = true) = 0;
-        virtual std::set<ApplicationScope> getRoleApplicationScopes(const std::string &roleName, bool lock = true) = 0;
+        virtual std::set<ApplicationScope> getRoleApplicationScopes(const std::string &appName, const std::string &roleName, bool lock = true) = 0;
 
         /////////////////////////////////////////////////////////////////////////////////
         // scopes:
@@ -203,7 +203,7 @@ public:
         virtual bool updateApplicationScopeDescription(const ApplicationScope &applicationScope, const std::string &description) = 0;
         virtual std::string getApplicationScopeDescription(const ApplicationScope &applicationScope) = 0;
         virtual std::set<ApplicationScope> listApplicationScopes(const std::string &applicationName = "") = 0;
-        virtual std::set<std::string> getApplicationScopesForRole(const ApplicationScope &applicationScope, bool lock = true) = 0;
+        virtual std::set<std::string> getApplicationRolesForScope(const ApplicationScope &applicationScope, bool lock = true) = 0;
         virtual std::set<std::string> listAccountsOnApplicationScope(const ApplicationScope &applicationScope, bool lock = true) = 0;
         virtual std::list<ApplicationScopeDetails> searchApplicationScopes(const std::string &appName, std::string sSearchWords, size_t limit = 0, size_t offset = 0) = 0;
         virtual bool validateAccountDirectApplicationScope(const std::string &accountName, const ApplicationScope &applicationScope) = 0;
@@ -423,7 +423,7 @@ public:
     };
 
     Accounts *accounts = nullptr;
-    Roles *roles = nullptr;
+    ApplicationRoles *applicationRoles = nullptr;
     Applications *applications = nullptr;
     AuthController *authController = nullptr;
 

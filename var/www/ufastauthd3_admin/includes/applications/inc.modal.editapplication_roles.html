@@ -1,0 +1,112 @@
+<div class="tab-pane" id="roles" role="tabpanel" aria-labelledby="roles-tab" style="min-height: 500px;">
+
+    <div class="container-fluid">
+
+
+        <script>
+            function createRoleOpen() {
+                $("#modalEditApplication").modal('hide');
+                createRoleClearParameters();
+                $("#modalCreateRole").modal('show');
+            }
+            function removeRoleFromApplication(roleNameB64) {
+                showYesNoDialog("Are you sure you want to remove this role?", function (result) {
+                    let roleName = window.atob(roleNameB64);
+                    $.ajax({
+                        url: "/api/v1/removeRole",
+                        type: "DELETE",
+                        data: JSON.stringify({
+                            appName: currentApplication,
+                            roleName: roleName
+                        }),
+                        contentType: "application/json; charset=utf-8",
+                        success: function (response) {
+                            var table = new DataTable('#rolesTable');
+                            table.ajax.reload();
+                            showToastSuccess("Role removed successfully.");
+                        },
+                        error: commonFunctionError
+                    });
+                });
+            }
+
+        </script>
+
+
+        <div class="d-flex justify-content-end mb-3">
+            <button id="createRoleButton" type="button" class="btn btn-success" onclick="createRoleOpen()">
+                Add Role
+            </button>
+        </div>
+
+        <hr>
+
+        <table id="rolesTable" class="display">
+            <thead>
+                <tr>
+                    <th scope="col">Role Name</th>
+                    <th scope="col">Description</th>
+                    <th scope="col" style="text-align: right;">Controls&nbsp;</th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+    </div>
+</div>
+<script>
+
+    new DataTable('#rolesTable', {
+        ajax: {
+            "url": "/api/v1/searchRoles",
+            "type": 'GET',
+            "data": function (d) {
+                d.appName = currentApplication;
+                return JSON.stringify(d);
+            }
+        },
+        processing: true,
+        serverSide: true,
+        language: {
+            emptyTable: "No roles found for this application"
+        },
+        columns: [
+            {
+                data: "roleName",
+                title: "Role Name",
+                render: function (data, type, row) {
+                    return '<i class="fas fa-user-group"></i> &nbsp;&nbsp;' + data;
+                }
+            },
+            {
+                data: "roleDescription",
+                title: "Description",
+                searchable: false
+            },
+            {
+                data: null,
+                orderable: false,
+                searchable: false,
+                render: function (data, type, row) {
+                    let b64RoleName = window.btoa(row.roleName);
+                    return `<div class="d-flex flex-wrap gap-1 justify-content-end">
+                          <button type="button" class="btn btn-dark btn-sm" onclick="loadAndEditRole('${b64RoleName}')">
+                            Edit
+                          </button>
+                          <button type="button" class="btn btn-sm btn-secondary" onclick="javascript:removeRoleFromApplication('${b64RoleName}')">
+                                <i class="fas fa-trash"></i>
+                          </button>
+                        </div>`;
+                    //data-bs-toggle="modal" data-bs-target="#modalEditRole"
+                }
+            }
+        ]
+    });
+
+
+    function populateApplicationRoles() {
+        var table = new DataTable('#rolesTable');
+        table.ajax.reload();
+    }
+
+</script>

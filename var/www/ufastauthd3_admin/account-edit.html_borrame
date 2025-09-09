@@ -269,60 +269,6 @@
     });
   }
 
-  function populateAccount() {
-
-    var accountName = $("#accountName").val();
-    $.ajax({
-      url: '/japi_exec?method=accountBasicInfo',
-      headers: { "CSRFToken": csrfToken },
-      data: { payload: JSON.stringify({ accountName: $("#accountName").val() }) },
-      type: 'POST',
-      success: function (response) {
-
-        document.getElementById("givenName").value = response["givenName"];
-        document.getElementById("lastName").value = response["lastName"];
-        document.getElementById("description").value = response["description"];
-        document.getElementById("email").value = response["email"];
-        document.getElementById("extraData").value = response["extraData"];
-
-        document.getElementById("isEnabled").checked = response["enabled"] == true;
-        document.getElementById("isConfirmed").checked = response["confirmed"] == true;
-        document.getElementById("isAdmin").checked = response["superuser"] == true;
-
-        document.getElementById('groupsRight').innerHTML = "";
-        document.getElementById('groupsLeft').innerHTML = "";
-
-        if (response["groups"] != null) {
-          for (let group of response["groups"]) {
-            var sel = document.getElementById('groupsRight');
-            var opt = document.createElement('option');
-            opt.appendChild(document.createTextNode("[" + group['name'] + "] " + group['description']));
-            opt.value = group['name'];
-            sel.appendChild(opt);
-          }
-        }
-        if (response["groupsLeft"] != null) {
-          for (let groupLeft of response["groupsLeft"]) {
-            var sel = document.getElementById('groupsLeft');
-            var opt = document.createElement('option');
-            opt.appendChild(document.createTextNode("[" + groupLeft['name'] + "] " + groupLeft['description']));
-            opt.value = groupLeft['name'];
-            sel.appendChild(opt);
-          }
-        }
-
-
-     
-
-
-
-        //superUserToggled();
-
-      },
-      error: commonFunctionError
-    });
-  }
-
   function ajaxValidateAndPopulateAccount() {
     var accountName = window.atob(location.search.substr(1));
     $.ajax({
@@ -348,17 +294,6 @@
     }
 
   }
-
-  /* var select1 = document.getElementById("groupsLeft");
-   var selected1 = [];
-   for (var i = 0; i < select1.length; i++) {
-       if (select1.options[i].selected)
-       {
-
-        // selected1.push(select1.options[i].value);
-       }
-   }
-   console.log(selected1);*/
 
 </script>
 

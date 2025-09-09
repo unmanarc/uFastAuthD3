@@ -1,0 +1,62 @@
+<script>
+    function displayUpdateFunction() {
+        document.getElementById('modifyButtons').style.display = 'block';
+    }
+</script>
+
+<div class="tab-pane show active" id="roleEditDetails" role="tabpanel" aria-labelledby="roleEditDetails-tab" style="min-height: 500px;">
+    <table width=100% style=" border-spacing: 10px;   border-collapse: separate;">
+        <tr>
+            <td align="right">Description: </td>
+            <td><input id="roleDescription" class="form-control" placeholder="Description" oninput="displayUpdateFunction()"
+                    onchange="displayUpdateFunction()"></td>
+        </tr>
+    </table>
+    <table width=100% style=" border-spacing: 10px;   border-collapse: separate;">
+        <tr>
+            <td colspan="2" align="right" id="modifyButtons" style="display:none;">
+
+                <button type="button" class="btn btn-dark" onclick="javascript:discardRoleDetails()">Discard
+                    Changes</button>
+                <button type="button" class="btn btn-warning" onclick="javascript:modifyRoleDetails()">Update
+                    Role
+                    Details</button>
+            </td>
+        </tr>
+    </table>
+</div>
+
+<script>
+    function populateRoleDetails(details) {
+        document.getElementById("roleDescription").value = details["description"];
+    }
+
+    function discardRoleDetails() {
+        document.getElementById('modifyButtons').style.display = 'none';
+        populateRole();
+    }
+
+    function modifyRoleDetails() {
+        var description = document.getElementById("roleDescription").value;
+
+        // Update description via PATCH
+        $.ajax({
+            url: '/api/v1/updateRoleDescription',
+            type: 'PATCH',
+            contentType: 'application/json',
+            data: JSON.stringify({
+                roleName: currentRole,
+                roleDescription: description
+            }),
+            success: function (response, textStatus, xhr) {
+                    showToastSuccess("Role details updated successfully.");
+                    discardRoleDetails();
+            },
+            error: commonFunctionError
+        });
+
+    }
+
+
+
+</script>

@@ -11,8 +11,8 @@ IdentityManager::~IdentityManager()
 {
     if (accounts)
         delete accounts;
-    if (roles)
-        delete roles;
+    if (applicationRoles)
+        delete applicationRoles;
     if (applications)
         delete applications;
     if (authController)

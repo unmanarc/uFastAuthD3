@@ -237,10 +237,11 @@ void WebAdminMethods_Accounts::getAccountApplications(void *context, APIReturn &
 
     std::set<std::string> listAccountApplications = Globals::getIdentityManager()->applications->listAccountApplications(accountName);
     std::set<ApplicationScope> directScopes = Globals::getIdentityManager()->authController->getAccountDirectApplicationScopes(accountName);
-    std::set<ApplicationScope> usableScopes = Globals::getIdentityManager()->authController->getAccountUsableApplicationScopes(accountName);
 
     for (const auto &applicationName : listAccountApplications)
     {
+        std::set<ApplicationScope> usableScopes = Globals::getIdentityManager()->authController->getAccountUsableApplicationScopes(applicationName,accountName);
+
         (*response.responseJSON())["applications"][i]["name"] = applicationName;
         // TODO: optimize:
         (*response.responseJSON())["applications"][i]["description"] = Globals::getIdentityManager()->applications->getApplicationDescription(applicationName);
@@ -250,9 +251,7 @@ void WebAdminMethods_Accounts::getAccountApplications(void *context, APIReturn &
         {
             if (directApplicationScope.appName == applicationName)
             {
-                (*response.responseJSON())["applications"][i]["directScopes"][j]["id"] = directApplicationScope.id;
-                (*response.responseJSON())["applications"][i]["directScopes"][j]["description"]
-                    = Globals::getIdentityManager()->authController->getApplicationScopeDescription(directApplicationScope);
+                (*response.responseJSON())["applications"][i]["directScopes"][j] = directApplicationScope.toJSON();
                 j++;
             }
         }
@@ -262,9 +261,7 @@ void WebAdminMethods_Accounts::getAccountApplications(void *context, APIReturn &
         {
             if (directScopes.find(scope) == directScopes.end())
             {
-                (*response.responseJSON())["applications"][i]["directScopesLeft"][j]["id"] = scope.id;
-                (*response.responseJSON())["applications"][i]["directScopesLeft"][j]["description"]
-                    = Globals::getIdentityManager()->authController->getApplicationScopeDescription(scope);
+                (*response.responseJSON())["applications"][i]["directScopesLeft"][j] = scope.toJSON();
                 j++;
             }
         }
@@ -272,13 +269,8 @@ void WebAdminMethods_Accounts::getAccountApplications(void *context, APIReturn &
         j = 0;
         for (const auto &usableScope : usableScopes)
         {
-            if (usableScope.appName == applicationName)
-            {
-                (*response.responseJSON())["applications"][i]["usableScopes"][j]["id"] = usableScope.id;
-                (*response.responseJSON())["applications"][i]["usableScopes"][j]["description"]
-                    = Globals::getIdentityManager()->authController->getApplicationScopeDescription(usableScope);
-                j++;
-            }
+            (*response.responseJSON())["applications"][i]["usableScopes"][j] = usableScope.toJSON();
+            j++;
         }
         i++;
     }

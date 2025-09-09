@@ -1,0 +1,130 @@
+<div class="tab-pane" id="roleEditScopes" role="tabpanel" aria-labelledby="roleEditScopes-tab"
+  style="min-height: 500px;">
+
+  <table width=100% style=" border-spacing: 10px;   border-collapse: separate;">
+    <tr>
+      <td align="center">
+        <h5 style="text-align: left;">Available Scopes:</h5>
+        <hr>
+      </td>
+    </tr>
+    <tr>
+      <td align="right">
+        <select class="form-select" aria-label="Default select example" id="applicationScopes"
+          style="min-width: 300px;">
+        </select><br>
+        <button type="button" class="btn btn-sm btn-success" onclick="javascript:addApplicationScopeToRole()">Add Application
+          Scope</button>
+      </td>
+    </tr>
+
+    <tr>
+      <td align="center">
+        <h5 style="text-align: left;">Current Scopes:</h5>
+        <hr>
+      </td>
+    </tr>
+
+    <tr>
+      <td align="center" id="roleScopesTD">
+        <div class="table-responsive">
+          <table class="table table-hover">
+            <thead class="thead-light">
+              <tr class="bg-secondary text-white">
+                <th scope="col">ID</th>
+                <th scope="col">Description</th>
+                <th scope="col" style="text-align: right;"></th>
+              </tr>
+            </thead>
+            <tbody id="tbody-role-scopes">
+            </tbody>
+          </table>
+        </div>
+      </td>
+    </tr>
+
+  </table>
+</div>
+
+<script>
+  function addApplicationScopeToRole() {
+    $.ajax({
+      url: '/api/v1/addApplicationScopeToRole',
+      type: 'PUT',
+      contentType: 'application/json',
+      data: JSON.stringify({
+        appName: currentApplication,
+        roleId: currentRole,
+        scopeId: $("#applicationScopes").val().toUpperCase()
+      }),
+      success: function (response) {
+        populateRole();
+      },
+      error: commonFunctionError
+    });
+  }
+
+  function removeRoleScope(scopeId) {
+    let scopeName = document.getElementById(`ulist-editrole-scopeNameById-${scopeId}`).value;
+
+    $.ajax({
+      url: '/api/v1/removeApplicationScopeFromRole',
+      type: 'DELETE',
+      contentType: 'application/json',
+      data: JSON.stringify({
+        appName: currentApplication,
+        roleId: currentRole,
+        scopeId: scopeName
+      }),
+      success: function (response) {
+        populateRole();
+      },
+      error: commonFunctionError
+    });
+  }
+  
+  function populateRoleScopes(scopes) {
+    document.getElementById("tbody-role-scopes").innerHTML = "";
+
+
+    let unusedScopes = scopes["unusedScopes"];
+    let select = document.getElementById("applicationScopes");
+    select.innerHTML = "";
+
+    if (unusedScopes != null) {
+      for (let scope of unusedScopes) {
+        let option = document.createElement("option");
+        option.value = scope["id"];
+        option.text = scope["id"] + " - " + scope["description"];
+        select.appendChild(option);
+      }
+    }
+    if (scopes["usedScopes"] != null) {
+      let scopeId = 0;
+
+      for (let scope of scopes["usedScopes"]) {
+
+        $("#tbody-role-scopes").append(
+          `<tr> 
+                <th scope="row" id=ulist-editrole-scopeName-${scopeId} width=20%></th>
+                <td id=ulist-editrole-scopeDescription-${scopeId}></td>
+                <td style="text-align: right;">
+                <input type=hidden id="ulist-editrole-scopeNameById-${scopeId}">
+                <button type="button" class="btn btn-light btn-sm" onclick="javascript:removeRoleScope(${scopeId});">&#10006;</button>
+                </td>
+            </tr>`
+        );
+
+        document.getElementById(`ulist-editrole-scopeNameById-${scopeId}`).value = scope["id"];
+        $(`#ulist-editrole-scopeName-${scopeId}`).text(scope["id"]);
+        $(`#ulist-editrole-scopeDescription-${scopeId}`).text(scope["description"]);
+
+        console.log(scope);
+        scopeId++;
+      }
+    }
+
+
+
+  }
+</script>

@@ -131,17 +131,27 @@ AccountFlags IdentityManager_DB::Accounts_DB::getAccountFlags(const std::string 
     return r;
 }
 
-bool IdentityManager_DB::Accounts_DB::updateAccountRoles(const std::string &accountName, const std::set<std::string> &roleSet)
+bool IdentityManager_DB::Accounts_DB::updateAccountRoles(const std::string &appName, const std::string &accountName, const std::set<std::string> &roleSet)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
 
-    if (!_parent->m_sqlConnector->execute("DELETE FROM iam.rolesAccounts WHERE `f_accountName`=:accountName;", {{":accountName", MAKE_VAR(STRING, accountName)}}))
+    if (!_parent->m_sqlConnector->execute("DELETE FROM iam.applicationRolesAccounts WHERE `f_accountName`=:accountName AND `f_appName`=:appName;",
+                                          {
+                                              {":accountName", MAKE_VAR(STRING, accountName)},
+                                              {":appName", MAKE_VAR(STRING, appName)}
+                                          }
+                                          ))
         return false;
 
     for (const auto &role : roleSet)
     {
-        if (!_parent->m_sqlConnector->execute("INSERT INTO iam.rolesAccounts (`f_roleName`,`f_accountName`) VALUES(:roleName,:accountName);",
-                                              {{":roleName", MAKE_VAR(STRING, role)}, {":accountName", MAKE_VAR(STRING, accountName)}}))
+        if (!_parent->m_sqlConnector->execute("INSERT INTO iam.applicationRolesAccounts (`f_roleName`,`f_accountName`,`f_appName`) VALUES(:roleName,:accountName,:appName);",
+                                              {
+                                                    {":roleName", MAKE_VAR(STRING, role)},
+                                                    {":accountName", MAKE_VAR(STRING, accountName)},
+                                                    {":appName", MAKE_VAR(STRING, appName)}
+                                              }
+                                              ))
             return false;
     }
     return true;
@@ -479,15 +489,20 @@ std::set<std::string> IdentityManager_DB::Accounts_DB::listAccounts()
     return ret;
 }
 
-std::set<std::string> IdentityManager_DB::Accounts_DB::getAccountRoles(const std::string &accountName, bool lock)
+std::set<std::string> IdentityManager_DB::Accounts_DB::getAccountRoles(const std::string &appName, const std::string &accountName, bool lock)
 {
     std::set<std::string> ret;
     if (lock)
         _parent->m_mutex.lockShared();
 
     Abstract::STRING role;
-    SQLConnector::QueryInstance i = _parent->m_sqlConnector->qSelect("SELECT `f_roleName` FROM iam.rolesAccounts WHERE `f_accountName`=:accountName;",
-                                                                     {{":accountName", MAKE_VAR(STRING, accountName)}}, {&role});
+    SQLConnector::QueryInstance i = _parent->m_sqlConnector->qSelect("SELECT `f_roleName` FROM iam.applicationRolesAccounts WHERE `f_accountName`=:accountName AND `f_appName` = :appName;",
+                                                                     {
+                                                                      {":accountName", MAKE_VAR(STRING, accountName)},
+                                                                      {":appName", MAKE_VAR(STRING, appName)}
+                                                                     }
+                                                                     , {&role}
+                                                                     );
     while (i.getResultsOK() && i.query->step())
     {
         ret.insert(role.getValue());
