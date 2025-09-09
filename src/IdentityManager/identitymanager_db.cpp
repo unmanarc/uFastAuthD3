@@ -8,7 +8,7 @@ IdentityManager_DB::IdentityManager_DB(Mantids30::Database::SQLConnector *_SQLDi
 {
     applications = new Applications_DB(this);
     accounts = new Accounts_DB(this);
-    roles = new Roles_DB(this);
+    applicationRoles = new Roles_DB(this);
     authController = new AuthController_DB(this);
 
     m_sqlConnector = _SQLDirConnection;
@@ -207,28 +207,32 @@ bool IdentityManager_DB::initializeDatabase()
                                              FOREIGN KEY(`f_accountName`)        REFERENCES accounts(`accountName`) ON DELETE CASCADE
                                                                         );
                                     )",
-        R"(CREATE TABLE IF NOT EXISTS `iam`.`roles` (
-                                             `roleName`             VARCHAR(256) NOT NULL,
+        R"(CREATE TABLE IF NOT EXISTS `iam`.`applicationRoles` (
+                                             `f_appName`                 VARCHAR(256) NOT NULL,
+                                             `roleName`                  VARCHAR(256) NOT NULL,
                                              `roleDescription`           VARCHAR(4096),
-                                             PRIMARY KEY(`roleName`)
+                                             FOREIGN KEY(`f_appName`) REFERENCES applications(`appName`) ON DELETE CASCADE,
+                                             PRIMARY KEY(`roleName`,`f_appName`)
                                                                         );
                                     )",
-        R"(CREATE TABLE IF NOT EXISTS `iam`.`rolesAccounts` (
+        R"(CREATE TABLE IF NOT EXISTS `iam`.`applicationRolesAccounts` (
+                                             `f_appName`                VARCHAR(256) NOT NULL,
                                              `f_roleName`               VARCHAR(256) NOT NULL,
                                              `f_accountName`            VARCHAR(256) NOT NULL,
-                                             FOREIGN KEY(`f_roleName`)        REFERENCES roles(`roleName`) ON DELETE CASCADE,
+                                             FOREIGN KEY(`f_roleName`,`f_appName`)      REFERENCES applicationRoles(`roleName`,`f_appName`) ON DELETE CASCADE,
                                              FOREIGN KEY(`f_accountName`)     REFERENCES accounts(`accountName`) ON DELETE CASCADE,
-                                             UNIQUE (`f_roleName`, `f_accountName`)
+                                             UNIQUE (`f_roleName`, `f_appName`, `f_accountName`)
                                                                         );
                                     )",
-        R"(CREATE TABLE IF NOT EXISTS `iam`.`applicationScopeRoles` (
-                                             `f_appName`            VARCHAR(256) NOT NULL,
-                                             `f_scopeId`       VARCHAR(256) NOT NULL,
+        R"(CREATE TABLE IF NOT EXISTS `iam`.`applicationRolesScopes` (
+                                             `f_scopeId`            VARCHAR(256) NOT NULL,
+                                             `f_appName`                VARCHAR(256) NOT NULL,
                                              `f_roleName`           VARCHAR(256) NOT NULL,
                                              FOREIGN KEY(`f_appName`,`f_scopeId`) REFERENCES applicationScopes(`f_appName`,`scopeId`) ON DELETE CASCADE,
-                                             FOREIGN KEY(`f_roleName`)              REFERENCES roles(`roleName`) ON DELETE CASCADE,
+                                             FOREIGN KEY(`f_roleName`,`f_appName`)      REFERENCES applicationRoles(`roleName`,`f_appName`) ON DELETE CASCADE,
                                              UNIQUE (`f_appName`, `f_scopeId`, `f_roleName`) );
-                                    )",       
+                                    )",
+
         R"(CREATE TABLE IF NOT EXISTS `iam`.`applicationScopeAccounts` (
                                               `f_appName`                VARCHAR(256) NOT NULL,
                                               `f_scopeId`           VARCHAR(256) NOT NULL,

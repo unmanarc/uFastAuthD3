@@ -314,8 +314,6 @@ Json::Value IdentityManager_DB::Applications_DB::searchApplications(const json &
 
     {
         Abstract::STRING appName, appCreator, appDescription;
-        Abstract::DATETIME creation, expiration, lastLogin, lastChange;
-        Abstract::BOOL isAdmin, isEnabled, isBlocked, isAccountConfirmed;
         SQLConnector::QueryInstance i = _parent->m_sqlConnector->qSelectWithFilters(sqlQueryStr,
                                                                                     whereFilters,
                                                                                     {{":SEARCHWORDS", MAKE_VAR(STRING, searchValue)} },

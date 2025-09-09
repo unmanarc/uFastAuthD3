@@ -27,7 +27,7 @@ json WebAdmin_Methods::scopeListToJSON(const std::set<ApplicationScope> &scopes)
 std::set<ApplicationScope> WebAdmin_Methods::iScopesLeftListForRole(const std::string &appName, const std::string &roleName)
 {
     auto scopesLeft = Globals::getIdentityManager()->authController->listApplicationScopes(appName);
-    auto roleScopes = Globals::getIdentityManager()->authController->getRoleApplicationScopes(roleName);
+    auto roleScopes = Globals::getIdentityManager()->authController->getRoleApplicationScopes(appName,roleName);
 
     for (const auto &roleScope : roleScopes)
     {

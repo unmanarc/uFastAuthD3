@@ -1,0 +1,97 @@
+<script>
+    let currentRole = "";
+
+    function closeEditRoleModal() {
+        $('#modalEditRole').modal('hide');
+        $("#modalEditApplication").modal('show');
+    }
+
+</script>
+
+<div class="modal fade" id="modalEditRole" data-bs-backdrop="static" data-bs-keyboard="true" tabindex="-1"
+    aria-labelledby="modalEditRoleLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-scrollable modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalEditRoleLabel">Edit Role</h5>
+                <button type="button" class="btn-close" aria-label="Close" onclick="javascript:closeEditRoleModal()"></button>
+            </div>
+            <div class="modal-body">
+
+                <table width=100% style=" border-spacing: 10px;   border-collapse: separate;">
+                    <tr>
+                        <td align="right" width=15%>Editing Role: </td>
+                        <td><input type="username" id="roleName" class="form-control" placeholder="Role Name" readonly>
+                        </td>
+                    </tr>
+                </table>
+
+                <table width=100% style=" border-spacing: 10px;   border-collapse: separate;">
+                    <tr>
+                        <td>
+                            <ul class="nav nav-tabs" id="myTab" role="tablist">
+                                <li class="nav-item">
+                                    <button class="nav-link active" id="roleEditDetails-tab" data-bs-toggle="tab"
+                                        data-bs-target="#roleEditDetails" type="button" role="tab" aria-controls="roleEditDetails"
+                                        aria-selected="true">Details</button>
+                                </li>
+                                <li class="nav-item">
+                                    <button class="nav-link" id="roleEditScopes-tab" data-bs-toggle="tab"
+                                        data-bs-target="#roleEditScopes" type="button" role="tab"
+                                        aria-controls="roleEditScopes" aria-selected="false">Scopes</button>
+                                </li>
+                                <li class="nav-item">
+                                    <button class="nav-link" id="roleEditAccounts-tab" data-bs-toggle="tab"
+                                        data-bs-target="#roleEditAccounts" type="button" role="tab" aria-controls="roleEditAccounts"
+                                        aria-selected="false">Accounts</button>
+                                </li>
+                            </ul>
+                        </td>
+                    </tr>
+                </table>
+
+                <div class="tab-content" id="myTabContent">
+                    <!--<%include:/includes/application-roles/inc.modal.editrole_details.html%>-->
+                    <!--<%include:/includes/application-roles/inc.modal.editrole_scopes.html%>-->
+                    <!--<%include:/includes/application-roles/inc.modal.editrole_accounts.html%>-->
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function populateRole() {
+        $.ajax({
+            url: '/api/v1/getRoleInfo',
+            type: 'GET',
+            contentType: 'application/json',
+            data: JSON.stringify(
+                { 
+                    appName: currentApplication,
+                    roleName: currentRole 
+                }),
+            success: function (response) {
+                document.getElementById("roleName").value = currentRole;
+                populateRoleDetails(response["details"]);
+                populateRoleScopes(response["scopes"]);
+                /*           
+                populateRoleScopes(response["scopes"],response["advanced"]["scopesModifiable"]);
+                populateRoleAccounts(response["accounts"]);
+                */
+            },
+            error: commonFunctionError
+        });
+    }
+
+
+    function loadAndEditRole(b64RoleName) {
+        // Decode Base64 to plain text
+        currentRole = atob(b64RoleName);
+        populateRole();
+
+        $("#modalEditApplication").modal('hide');
+        $('#modalEditRole').modal('show');
+    }
+</script>

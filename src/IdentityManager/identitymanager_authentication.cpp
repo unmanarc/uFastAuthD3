@@ -268,7 +268,7 @@ bool IdentityManager::AuthController::validateAccountApplicationScope(const std:
     {
         return true;
     }
-    for (const std::string &roleName : m_parent->accounts->getAccountRoles(accountName, false))
+    for (const std::string &roleName : m_parent->accounts->getAccountRoles(applicationScope.appName, accountName, false))
     {
         if (validateApplicationScopeOnRole(roleName, applicationScope, false))
         {
@@ -278,7 +278,7 @@ bool IdentityManager::AuthController::validateAccountApplicationScope(const std:
     return false;
 }
 
-std::set<ApplicationScope> IdentityManager::AuthController::getAccountUsableApplicationScopes(const std::string &accountName)
+std::set<ApplicationScope> IdentityManager::AuthController::getAccountUsableApplicationScopes(const std::string &appName,const std::string &accountName)
 {
     std::set<ApplicationScope> x;
     Threads::Sync::Lock_RD lock(m_parent->m_mutex);
@@ -287,9 +287,9 @@ std::set<ApplicationScope> IdentityManager::AuthController::getAccountUsableAppl
         x.insert(scope);
 
     // Take the scope from the belonging roles
-    for (const std::string &roleName : m_parent->accounts->getAccountRoles(accountName, false))
+    for (const std::string &roleName : m_parent->accounts->getAccountRoles(appName,accountName, false))
     {
-        for (const ApplicationScope &scope : getRoleApplicationScopes(roleName, false))
+        for (const ApplicationScope &scope : getRoleApplicationScopes(appName, roleName, false))
             x.insert(scope);
     }
     return x;

@@ -29,7 +29,7 @@
                                 <li class="nav-item">
                                     <button class="nav-link active" id="details-tab" data-bs-toggle="tab"
                                         data-bs-target="#details" type="button" role="tab" aria-controls="details"
-                                        aria-selected="true">Application Details</button>
+                                        aria-selected="true">Details</button>
                                 </li>
 
                                 <li class="nav-item">
@@ -41,12 +41,19 @@
                                 <li class="nav-item">
                                     <button class="nav-link" id="scopes-tab" data-bs-toggle="tab"
                                         data-bs-target="#scopes" type="button" role="tab" aria-controls="scopes"
-                                        aria-selected="false">Application Scopes</button>
+                                        aria-selected="false">Scopes</button>
                                 </li>
+
+                                <li class="nav-item">
+                                    <button class="nav-link" id="roles-tab" data-bs-toggle="tab"
+                                        data-bs-target="#roles" type="button" role="tab" aria-controls="roles"
+                                        aria-selected="false">Roles</button>
+                                </li>
+                                
                                 <li class="nav-item">
                                     <button class="nav-link" id="accounts-tab" data-bs-toggle="tab"
                                         data-bs-target="#accounts" type="button" role="tab" aria-controls="accounts"
-                                        aria-selected="false">Associated Accounts</button>
+                                        aria-selected="false">Accounts</button>
                                 </li>
                                 <li class="nav-item">
                                     <button class="nav-link" id="advanced-tab" data-bs-toggle="tab"
@@ -62,6 +69,7 @@
                     <!--<%include:/includes/applications/inc.modal.editapplication_details.html%>-->
                     <!--<%include:/includes/applications/inc.modal.editapplication_scopes.html%>-->
                     <!--<%include:/includes/applications/inc.modal.editapplication_tokens.html%>-->
+                    <!--<%include:/includes/applications/inc.modal.editapplication_roles.html%>-->
                     <!--<%include:/includes/applications/inc.modal.editapplication_accounts.html%>-->
                     <!--<%include:/includes/applications/inc.modal.editapplication_advanced.html%>-->
                 </div>
@@ -83,6 +91,7 @@
                 populateApplicationDetails(response["details"]);
                 populateApplicationScopes(response["scopes"],response["advanced"]["scopesModifiable"]);
                 populateApplicationAccounts(response["accounts"]);
+                populateApplicationRoles();
             },
             error: commonFunctionError
         });

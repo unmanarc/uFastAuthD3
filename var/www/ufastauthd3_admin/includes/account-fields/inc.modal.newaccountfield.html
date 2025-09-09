@@ -11,20 +11,20 @@
         document.getElementById("fieldType").selectedIndex = 0;
 
         // Reset checkbox states to their original defaults
-/*        document.getElementById("isOptionalField").checked = true;
-        document.getElementById("isOptionalField").disabled = false;
-        document.getElementById("isOptionalField").readOnly = false;
-
-        document.getElementById("includeInSearch").checked = false;
-        document.getElementById("includeInColumnView").checked = false;*/
+        /*        document.getElementById("isOptionalField").checked = true;
+                document.getElementById("isOptionalField").disabled = false;
+                document.getElementById("isOptionalField").readOnly = false;
         
+                document.getElementById("includeInSearch").checked = false;
+                document.getElementById("includeInColumnView").checked = false;*/
+
         document.getElementById("includeInToken").checked = false;
 
         document.getElementById("isUnique").checked = false;
         document.getElementById("isUnique").disabled = false;
         document.getElementById("isUnique").readOnly = false;
 
-                document.getElementById("canUserEdit").checked = false;
+        document.getElementById("canUserEdit").checked = false;
         document.getElementById("canUserEdit").disabled = false;
         document.getElementById("canUserEdit").readOnly = false;
 
@@ -80,13 +80,13 @@
                 }
 
                 // Set checkbox states
-/*                document.getElementById("isOptionalField").checked = response.isOptionalField || false;
-                // Disable the checkbox to prevent modification
-                document.getElementById("isOptionalField").disabled = true;
-                document.getElementById("isOptionalField").readOnly = true;
-                document.getElementById("includeInSearch").checked = response.includeInSearch || false;
-                document.getElementById("includeInColumnView").checked = response.includeInColumnView || false;
-                */
+                /*                document.getElementById("isOptionalField").checked = response.isOptionalField || false;
+                                // Disable the checkbox to prevent modification
+                                document.getElementById("isOptionalField").disabled = true;
+                                document.getElementById("isOptionalField").readOnly = true;
+                                document.getElementById("includeInSearch").checked = response.includeInSearch || false;
+                                document.getElementById("includeInColumnView").checked = response.includeInColumnView || false;
+                                */
                 document.getElementById("includeInToken").checked = response.includeInToken || false;
                 document.getElementById("canUserEdit").checked = response.canUserEdit || false;
                 document.getElementById("isUnique").checked = response.isUnique || false;
@@ -133,9 +133,9 @@
                 description: $("#fieldDescription").val(),
                 regexpValidator: $("#fieldRegexpValidator").val(),
                 fieldType: $("#fieldType").val(),
-/*                isOptionalField: $("#isOptionalField:checked").length > 0,
-                includeInSearch: $("#includeInSearch:checked").length > 0,
-                includeInColumnView: $("#includeInColumnView:checked").length > 0,*/
+                /*                isOptionalField: $("#isOptionalField:checked").length > 0,
+                                includeInSearch: $("#includeInSearch:checked").length > 0,
+                                includeInColumnView: $("#includeInColumnView:checked").length > 0,*/
                 includeInToken: $("#includeInToken:checked").length > 0,
                 isUnique: $("#isUnique:checked").length > 0,
                 canUserEdit: $("#canUserEdit:checked").length > 0,
@@ -210,7 +210,7 @@
                             <hr>
                         </td>
                     </tr>
-           <!--         <tr>
+                    <!--         <tr>
                         <td align="right">Is Optional Field:</td>
                         <td><input type="checkbox" id="isOptionalField" checked></td>
                     </tr>

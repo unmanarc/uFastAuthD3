@@ -1,0 +1,105 @@
+<script>
+
+    function createRoleClearParameters() {
+        $("#roleNameCreate").val('');
+        $("#roleDescriptionCreate").val('');
+        // TODO:
+       // $('.nav-tabs a:first').tab('show');
+    }
+
+
+    function ajaxCreateRole() {
+
+        var roleName = $("#roleNameCreate").val().trim();
+        var roleDescription = $("#roleDescriptionCreate").val().trim();
+
+        if (roleName === '') {
+            $("#roleNameCreate").focus();
+            return false;
+        }
+
+        if (roleDescription === '') {
+            $("#roleDescriptionCreate").focus();
+            return false;
+        }
+
+        $.ajax({
+            url: '/api/v1/addRole',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({
+                appName: currentApplication,
+                roleName: $("#roleNameCreate").val(),
+                roleDescription: $("#roleDescriptionCreate").val()
+            }),
+            success: function (response, textStatus, xhr) {
+                $('#modalCreateRole').modal('hide');
+                // Refresh the DataTable after successful user creation
+                var table = new DataTable('#rolesTable');
+                table.ajax.reload();
+                showToastSuccess("Role created successfully.");
+                closeCreateRoleModal();
+            },
+            error: commonFunctionError
+        });
+    }
+
+    function closeCreateRoleModal() {
+        $('#modalCreateRole').modal('hide');
+        $("#modalEditApplication").modal('show');
+    }
+
+</script>
+<div class="modal fade" id="modalCreateRole" data-bs-backdrop="static" data-bs-keyboard="true" tabindex="-1"
+    aria-labelledby="modalCreateRoleLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-scrollable modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalCreateRoleLabel">Create New Role</h5>
+                <button type="button" class="btn-close" aria-label="Close" onclick="javascript:closeCreateRoleModal()"></button>
+            </div>
+            <div class="modal-body">
+
+                <table width=100% style=" border-spacing: 10px;   border-collapse: separate;">
+                    <tr>
+                        <td>
+                            <ul class="nav nav-tabs" id="myTabCreate" role="tablist">
+                                <li class="nav-item">
+                                    <button class="nav-link active" id="details-tab-create" data-bs-toggle="tab"
+                                        data-bs-target="#detailsCreate" type="button" role="tab"
+                                        aria-controls="detailsCreate" aria-selected="true">Role Details</button>
+                                </li>
+                            </ul>
+                        </td>
+                    </tr>
+                </table>
+
+                <div class="tab-content" id="myTabContentCreate">
+
+                    <div class="tab-pane show active" id="detailsCreate" role="tabpanel"
+                        aria-labelledby="details-tab-create">
+                        <table width=100% style=" border-spacing: 10px;   border-collapse: separate;">
+                            <tr>
+                                <td align="right">Role Name: </td>
+                                <td><input type="text" name="roleName" id="roleNameCreate" class="form-control"
+                                        placeholder="Role Name" style="text-transform: uppercase"
+                                        oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9_-]/g, '')">
+                                </td>
+                            </tr>
+                            <tr>
+                                <td align="right">Description: </td>
+                                <td><input id="roleDescriptionCreate" class="form-control" placeholder="Description">
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="javascript:closeCreateRoleModal()">Close</button>
+                <button type="button" class="btn btn-success" onclick="javascript:ajaxCreateRole()">Create
+                    Role</button>
+            </div>
+        </div>
+    </div>
+</div>

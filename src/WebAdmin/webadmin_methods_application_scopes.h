@@ -20,14 +20,14 @@ protected:
 
     static void addApplicationScope(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
     static void removeApplicationScope(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
+    static void addApplicationScopeToRole(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
+    static void removeApplicationScopeFromRole(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
 
 
 /*
-    static void addApplicationScopeToRole(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
-    static void removeApplicationScopeFromRole(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
     static void updateApplicationScopeDescription(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
     static void listApplicationScopes(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
-    static void getApplicationScopesForRole(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
+    static void getApplicationRolesForScope(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
     static void listAccountsOnApplicationScope(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
     static void searchApplicationScopes(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
     static void scopesLeftListForRole(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);

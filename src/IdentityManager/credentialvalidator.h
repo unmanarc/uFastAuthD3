@@ -38,7 +38,17 @@ struct ApplicationScope
         else
             return false;
     }
+
+    json toJSON() const
+    {
+        json r;
+        r["id"] = id;
+        r["description"] = description;
+        return r;
+    }
+
     std::string appName, id;
+    std::string description;
 };
 
 struct AppAuthExtras

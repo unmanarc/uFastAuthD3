@@ -46,7 +46,6 @@ public:
         bool confirmAccount(const std::string &accountName, const std::string &confirmationToken) override;
         bool changeAccountExpiration(const std::string &accountName, time_t expiration = 0) override;
         AccountFlags getAccountFlags(const std::string &accountName) override;
-        bool updateAccountRoles(const std::string &accountName, const std::set<std::string> &roleSet) override;
         bool changeAccountFlags(const std::string &accountName, const AccountFlags &accountFlags) override;
         AccountDetails getAccountDetails(const std::string &accountName) override;
         time_t getAccountExpirationTime(const std::string &accountName) override;
@@ -54,7 +53,9 @@ public:
 
         Json::Value searchAccounts(const json & dataTablesFilters) override;
         std::set<std::string> listAccounts() override;
-        std::set<std::string> getAccountRoles(const std::string &accountName, bool lock = true) override;
+
+        bool updateAccountRoles(const std::string &appName, const std::string &accountName, const std::set<std::string> &roleSet) override;
+        std::set<std::string> getAccountRoles(const std::string &appName, const std::string &accountName, bool lock = true) override;
 
         bool hasAdminAccount() override;
 
@@ -82,11 +83,11 @@ public:
         bool isThereAnotherAdmin(const std::string &accountName);
         IdentityManager_DB *_parent;
     };
-    class Roles_DB : public Roles
+    class Roles_DB : public ApplicationRoles
     {
     public:
         Roles_DB(IdentityManager_DB *parent)
-            : Roles()
+            : ApplicationRoles()
         {
             _parent = parent;
         }
@@ -94,16 +95,16 @@ public:
 
         /////////////////////////////////////////////////////////////////////////////////
         // role:
-        bool addRole(const std::string &roleName, const std::string &roleDescription) override;
-        bool removeRole(const std::string &roleName) override;
-        bool doesRoleExist(const std::string &roleName) override;
-        bool addAccountToRole(const std::string &roleName, const std::string &accountName) override;
-        bool removeAccountFromRole(const std::string &roleName, const std::string &accountName, bool lock = true) override;
-        bool updateRoleDescription(const std::string &roleName, const std::string &roleDescription) override;
-        std::string getRoleDescription(const std::string &roleName) override;
-        std::set<std::string> getRolesList() override;
-        std::set<std::string> getRoleAccounts(const std::string &roleName, bool lock = true) override;
-        std::list<RoleDetails> searchRoles(std::string sSearchWords, size_t limit = 0, size_t offset = 0) override;
+        bool addRole(const std::string &appName,const std::string &roleName, const std::string &roleDescription) override;
+        bool removeRole(const std::string &appName,const std::string &roleName) override;
+        bool doesRoleExist(const std::string &appName,const std::string &roleName) override;
+        bool addAccountToRole(const std::string &appName, const std::string &roleName, const std::string &accountName) override;
+        bool removeAccountFromRole(const std::string &appName, const std::string &roleName, const std::string &accountName, bool lock = true) override;
+        bool updateRoleDescription(const std::string &appName, const std::string &roleName, const std::string &roleDescription) override;
+        std::string getRoleDescription(const std::string &appName, const std::string &roleName) override;
+        std::set<std::string> getRolesList(const std::string &appName) override;
+        std::set<std::string> getRoleAccounts(const std::string &appName,const std::string &roleName, bool lock = true) override;
+        Json::Value searchRoles(const json &dataTablesFilters) override;
 
     private:
         IdentityManager_DB *_parent;
@@ -126,7 +127,7 @@ public:
         std::set<ApplicationScope> getAccountDirectApplicationScopes(const std::string &accountName, bool lock = true) override;
 
         bool validateApplicationScopeOnRole(const std::string &roleName, const ApplicationScope &scope, bool lock = true) override;
-        std::set<ApplicationScope> getRoleApplicationScopes(const std::string &roleName, bool lock = true) override;
+        std::set<ApplicationScope> getRoleApplicationScopes(const std::string &appName, const std::string &roleName, bool lock = true) override;
 
         /////////////////////////////////////////////////////////////////////////////////
         // application scope:
@@ -140,7 +141,7 @@ public:
         bool updateApplicationScopeDescription(const ApplicationScope &applicationScope, const std::string &description) override;
         std::string getApplicationScopeDescription(const ApplicationScope &applicationScope) override;
         std::set<ApplicationScope> listApplicationScopes(const std::string &applicationName = "") override;
-        std::set<std::string> getApplicationScopesForRole(const ApplicationScope &applicationScope, bool lock = true) override;
+        std::set<std::string> getApplicationRolesForScope(const ApplicationScope &applicationScope, bool lock = true) override;
         std::set<std::string> listAccountsOnApplicationScope(const ApplicationScope &applicationScope, bool lock = true) override;
         std::list<ApplicationScopeDetails> searchApplicationScopes(const std::string &appName, std::string sSearchWords, size_t limit = 0, size_t offset = 0) override;
         bool validateAccountDirectApplicationScope(const std::string &accountName, const ApplicationScope &applicationScope) override;
