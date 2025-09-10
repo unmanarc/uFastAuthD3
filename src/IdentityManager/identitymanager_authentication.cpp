@@ -268,9 +268,9 @@ bool IdentityManager::AuthController::validateAccountApplicationScope(const std:
     {
         return true;
     }
-    for (const std::string &roleName : m_parent->accounts->getAccountRoles(applicationScope.appName, accountName, false))
+    for (const auto &role : m_parent->accounts->getAccountRoles(applicationScope.appName, accountName, false))
     {
-        if (validateApplicationScopeOnRole(roleName, applicationScope, false))
+        if (validateApplicationScopeOnRole(role.id, applicationScope, false))
         {
             return true;
         }
@@ -287,9 +287,9 @@ std::set<ApplicationScope> IdentityManager::AuthController::getAccountUsableAppl
         x.insert(scope);
 
     // Take the scope from the belonging roles
-    for (const std::string &roleName : m_parent->accounts->getAccountRoles(appName,accountName, false))
+    for (const auto &role : m_parent->accounts->getAccountRoles(appName,accountName, false))
     {
-        for (const ApplicationScope &scope : getRoleApplicationScopes(appName, roleName, false))
+        for (const ApplicationScope &scope : getRoleApplicationScopes(appName, role.id, false))
             x.insert(scope);
     }
     return x;

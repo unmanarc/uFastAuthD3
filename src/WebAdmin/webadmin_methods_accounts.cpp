@@ -246,6 +246,31 @@ void WebAdminMethods_Accounts::getAccountApplications(void *context, APIReturn &
         // TODO: optimize:
         (*response.responseJSON())["applications"][i]["description"] = Globals::getIdentityManager()->applications->getApplicationDescription(applicationName);
 
+        std::set<ApplicationRole> allAppRoles = Globals::getIdentityManager()->applicationRoles->getRolesList(applicationName);
+        std::set<ApplicationRole> usedAppRoles = Globals::getIdentityManager()->accounts->getAccountRoles(applicationName,accountName);
+
+        // Add used roles
+        for (const auto &role : usedAppRoles)
+        {
+            (*response.responseJSON())["applications"][i]["usedRoles"].append(role.toJSON());
+        }
+
+        // Add available roles (roles that can be added)
+        std::set<ApplicationRole> availableRoles;
+        for (const auto &role : allAppRoles)
+        {
+            if (usedAppRoles.find(role) == usedAppRoles.end())
+            {
+                availableRoles.insert(role);
+            }
+        }
+
+        for (const auto &role : availableRoles)
+        {
+            (*response.responseJSON())["applications"][i]["availableRoles"].append(role.toJSON());
+        }
+
+
         int j = 0;
         for (const auto &directApplicationScope : directScopes)
         {

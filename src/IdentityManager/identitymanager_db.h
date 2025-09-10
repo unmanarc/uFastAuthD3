@@ -1,5 +1,6 @@
 #pragma once
 
+#include "IdentityManager/credentialvalidator.h"
 #include "identitymanager.h"
 #include <Mantids30/DB/sqlconnector.h>
 
@@ -55,7 +56,7 @@ public:
         std::set<std::string> listAccounts() override;
 
         bool updateAccountRoles(const std::string &appName, const std::string &accountName, const std::set<std::string> &roleSet) override;
-        std::set<std::string> getAccountRoles(const std::string &appName, const std::string &accountName, bool lock = true) override;
+        std::set<ApplicationRole> getAccountRoles(const std::string &appName, const std::string &accountName, bool lock = true) override;
 
         bool hasAdminAccount() override;
 
@@ -71,7 +72,6 @@ public:
         std::map<std::string, AccountDetailField> listAccountDetailFields() override;
         std::optional<AccountDetailField> getAccountDetailField(const std::string & fieldName) override;
         Json::Value searchFields(const json & dataTablesFilters) override;
-
 
         bool changeAccountDetails(const std::string &accountName, const std::map<std::string, std::string> &fieldsValues, bool resetAllValues = false) override;
         bool removeAccountDetail(const std::string &accountName, const std::string &fieldName) override;
@@ -102,7 +102,7 @@ public:
         bool removeAccountFromRole(const std::string &appName, const std::string &roleName, const std::string &accountName, bool lock = true) override;
         bool updateRoleDescription(const std::string &appName, const std::string &roleName, const std::string &roleDescription) override;
         std::string getRoleDescription(const std::string &appName, const std::string &roleName) override;
-        std::set<std::string> getRolesList(const std::string &appName) override;
+        std::set<ApplicationRole> getRolesList(const std::string &appName) override;
         std::set<std::string> getRoleAccounts(const std::string &appName,const std::string &roleName, bool lock = true) override;
         Json::Value searchRoles(const json &dataTablesFilters) override;
 

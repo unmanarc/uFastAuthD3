@@ -73,7 +73,7 @@ public:
 
         // Account role set:
         virtual bool updateAccountRoles(const std::string &appName, const std::string &accountName, const std::set<std::string> &roleSet) = 0;
-        virtual std::set<std::string> getAccountRoles(const std::string &appName,const std::string &accountName, bool lock = true) = 0;
+        virtual std::set<ApplicationRole> getAccountRoles(const std::string &appName,const std::string &accountName, bool lock = true) = 0;
 
         // Account block using token:
         virtual std::string getAccountBlockToken(const std::string &accountName) = 0;
@@ -154,7 +154,7 @@ public:
         virtual bool updateRoleDescription(const std::string &appName,const std::string &roleName, const std::string &roleDescription) = 0;
 
         virtual std::string getRoleDescription(const std::string &appName,const std::string &roleName) = 0;
-        virtual std::set<std::string> getRolesList(const std::string &appName) = 0;
+        virtual std::set<ApplicationRole> getRolesList(const std::string &appName) = 0;
         virtual std::set<std::string> getRoleAccounts(const std::string &appName, const std::string &roleName, bool lock = true) = 0;
         virtual Json::Value searchRoles(const json &dataTablesFilters) = 0;
     };

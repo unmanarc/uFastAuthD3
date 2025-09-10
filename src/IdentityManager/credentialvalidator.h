@@ -27,6 +27,31 @@ struct hash<TokenCacheKey>
 };
 } // namespace std
 
+struct ApplicationRole
+{
+    bool operator<(const ApplicationRole &x) const
+    {
+        if (x.appName < appName)
+            return true;
+        else if (x.appName == appName && x.id < id)
+            return true;
+        else
+            return false;
+    }
+
+    json toJSON() const
+    {
+        json r;
+        r["id"] = id;
+        r["description"] = description;
+        return r;
+    }
+
+    std::string appName;
+    std::string id;
+    std::string description;
+};
+
 struct ApplicationScope
 {
     bool operator<(const ApplicationScope &x) const
