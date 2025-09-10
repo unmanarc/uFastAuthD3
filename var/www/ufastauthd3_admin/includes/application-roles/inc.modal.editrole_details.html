@@ -1,6 +1,6 @@
 <script>
-    function displayUpdateFunction() {
-        document.getElementById('modifyButtons').style.display = 'block';
+    function displayUpdateRoleDetailFunction() {
+        document.getElementById('modifyRoleDetailsButtons').style.display = 'block';
     }
 </script>
 
@@ -8,13 +8,13 @@
     <table width=100% style=" border-spacing: 10px;   border-collapse: separate;">
         <tr>
             <td align="right">Description: </td>
-            <td><input id="roleDescription" class="form-control" placeholder="Description" oninput="displayUpdateFunction()"
-                    onchange="displayUpdateFunction()"></td>
+            <td><input id="roleDescription" class="form-control" placeholder="Description" oninput="displayUpdateRoleDetailFunction()"
+                    onchange="displayUpdateRoleDetailFunction()"></td>
         </tr>
     </table>
     <table width=100% style=" border-spacing: 10px;   border-collapse: separate;">
         <tr>
-            <td colspan="2" align="right" id="modifyButtons" style="display:none;">
+            <td colspan="2" align="right" id="modifyRoleDetailsButtons" style="display:none;">
 
                 <button type="button" class="btn btn-dark" onclick="javascript:discardRoleDetails()">Discard
                     Changes</button>
@@ -32,7 +32,7 @@
     }
 
     function discardRoleDetails() {
-        document.getElementById('modifyButtons').style.display = 'none';
+        document.getElementById('modifyRoleDetailsButtons').style.display = 'none';
         populateRole();
     }
 
@@ -45,6 +45,7 @@
             type: 'PATCH',
             contentType: 'application/json',
             data: JSON.stringify({
+                appName: currentApplication,
                 roleName: currentRole,
                 roleDescription: description
             }),

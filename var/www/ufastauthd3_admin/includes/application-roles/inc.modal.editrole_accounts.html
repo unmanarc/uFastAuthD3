@@ -1,20 +1,63 @@
-<div class="tab-pane" id="roleEditAccounts" role="tabpanel" aria-labelledby="roleEditAccounts-tab" style="min-height: 500px;">
-    <table width=100% style=" border-spacing: 10px;   border-collapse: separate;">
+<div class="tab-pane" id="roleEditAccounts" role="tabpanel" aria-labelledby="roleEditAccounts-tab"
+  style="min-height: 500px;">
+  <table width=100% style=" border-spacing: 10px;   border-collapse: separate;">
 
-      <tr>
-        <td>
-      <table class="table table-hover">
-        <thead class="thead-light">
-          <tr bgcolor=grey>
-            <th scope="col">Username</th>
-            <th scope="col" style="text-align: right;">Controls</th>
-          </tr>
-        </thead>
-        <tbody id="roleAccounts">
-        </tbody>
-      </table>
-    </td>
+    <tr>
+      <td>
+        <table class="table table-hover">
+          <thead class="thead-light">
+            <tr bgcolor=grey>
+              <th scope="col">Account Name</th>
+              <th scope="col" style="text-align: right;">Controls</th>
+            </tr>
+          </thead>
+          <tbody id="roleAccounts">
+          </tbody>
+        </table>
+      </td>
     </tr>
 
-    </table>
-  </div>
+  </table>
+</div>
+
+<script>
+  function populateRoleAccounts(users) {
+    if (users != null) {
+      let accountInternalId = 0;
+      for (let user of users) {
+        document.getElementById("roleAccounts").innerHTML += `
+                                    <tr> 
+                                    <th scope="row" id=ulist-account-${accountInternalId} width=20%></th>
+                                    <td style="text-align: right;">
+                                        <input type=hidden id="ulist-accountInternalId-${accountInternalId}">
+                                        <button type="button" class="btn btn-light btn-sm" onclick="javascript:removeAccountFromRole(${accountInternalId});"><i class="fas fa-trash"></i></button>
+                                    </td>
+                                    </tr>`;
+
+        document.getElementById(`ulist-accountInternalId-${accountInternalId}`).value = user;
+        $(`#ulist-account-${accountInternalId}`).text(user);
+        accountInternalId++;
+      }
+    }
+  }
+
+  function removeAccountFromRole(accountInternalId) {
+    showYesNoDialog("Do you really want to remove this account from the role?", function (result) {
+      $.ajax({
+        url: '/api/v1/removeAccountFromRole',
+        type: 'DELETE',
+        contentType: 'application/json',
+        data: JSON.stringify({
+          userName: document.getElementById(`ulist-account-${accountInternalId}`).value,
+          roleName: currentRole,
+          accountName: currentAccount
+        }),
+        success: function (response) {
+          populateRole();
+        },
+        error: commonFunctionError
+      });
+    });
+  }
+
+</script>

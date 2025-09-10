@@ -116,9 +116,9 @@ AccountFlags IdentityManager_DB::Accounts_DB::getAccountFlags(const std::string 
 {
     AccountFlags r;
 
-    Abstract::BOOL enabled, confirmed, admin,blocked;
+    Abstract::BOOL enabled, confirmed, admin, blocked;
     SQLConnector::QueryInstance i = _parent->m_sqlConnector->qSelect("SELECT `isEnabled`,`isAccountConfirmed`,`isAdmin`,`isBlocked` FROM iam.accounts WHERE `accountName`=:accountName LIMIT 1;",
-                                                                     {{":accountName", MAKE_VAR(STRING, accountName)}}, {&enabled, &confirmed, &admin,&blocked});
+                                                                     {{":accountName", MAKE_VAR(STRING, accountName)}}, {&enabled, &confirmed, &admin, &blocked});
 
     if (i.getResultsOK() && i.query->step())
     {
@@ -136,22 +136,13 @@ bool IdentityManager_DB::Accounts_DB::updateAccountRoles(const std::string &appN
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
 
     if (!_parent->m_sqlConnector->execute("DELETE FROM iam.applicationRolesAccounts WHERE `f_accountName`=:accountName AND `f_appName`=:appName;",
-                                          {
-                                              {":accountName", MAKE_VAR(STRING, accountName)},
-                                              {":appName", MAKE_VAR(STRING, appName)}
-                                          }
-                                          ))
+                                          {{":accountName", MAKE_VAR(STRING, accountName)}, {":appName", MAKE_VAR(STRING, appName)}}))
         return false;
 
     for (const auto &role : roleSet)
     {
         if (!_parent->m_sqlConnector->execute("INSERT INTO iam.applicationRolesAccounts (`f_roleName`,`f_accountName`,`f_appName`) VALUES(:roleName,:accountName,:appName);",
-                                              {
-                                                    {":roleName", MAKE_VAR(STRING, role)},
-                                                    {":accountName", MAKE_VAR(STRING, accountName)},
-                                                    {":appName", MAKE_VAR(STRING, appName)}
-                                              }
-                                              ))
+                                              {{":roleName", MAKE_VAR(STRING, role)}, {":accountName", MAKE_VAR(STRING, accountName)}, {":appName", MAKE_VAR(STRING, appName)}}))
             return false;
     }
     return true;
@@ -489,27 +480,30 @@ std::set<std::string> IdentityManager_DB::Accounts_DB::listAccounts()
     return ret;
 }
 
-std::set<std::string> IdentityManager_DB::Accounts_DB::getAccountRoles(const std::string &appName, const std::string &accountName, bool lock)
+std::set<ApplicationRole> IdentityManager_DB::Accounts_DB::getAccountRoles(const std::string &appName, const std::string &accountName, bool lock)
 {
-    std::set<std::string> ret;
+    std::set<ApplicationRole> ret;
     if (lock)
         _parent->m_mutex.lockShared();
 
-    Abstract::STRING role;
-    SQLConnector::QueryInstance i = _parent->m_sqlConnector->qSelect("SELECT `f_roleName` FROM iam.applicationRolesAccounts WHERE `f_accountName`=:accountName AND `f_appName` = :appName;",
-                                                                     {
-                                                                      {":accountName", MAKE_VAR(STRING, accountName)},
-                                                                      {":appName", MAKE_VAR(STRING, appName)}
-                                                                     }
-                                                                     , {&role}
-                                                                     );
-    while (i.getResultsOK() && i.query->step())
     {
-        ret.insert(role.getValue());
+        Abstract::STRING role;
+        Abstract::STRING roleDescription;
+        SQLConnector::QueryInstance i = _parent->m_sqlConnector->qSelect("SELECT ar.f_roleName, r.roleDescription FROM iam.applicationRolesAccounts ar LEFT JOIN iam.applicationRoles r ON ar.f_roleName = r.roleName AND ar.f_appName = r.f_appName WHERE ar.f_accountName=:accountName AND ar.f_appName = :appName;",
+                                                                         {{":accountName", MAKE_VAR(STRING, accountName)}, {":appName", MAKE_VAR(STRING, appName)}}, {&role, &roleDescription});
+        while (i.getResultsOK() && i.query->step())
+        {
+            ApplicationRole appRole;
+            appRole.id = role.getValue();
+            appRole.appName = appName;
+            appRole.description = roleDescription.getValue();
+            ret.insert(appRole);
+        }
     }
 
     if (lock)
         _parent->m_mutex.unlockShared();
+
     return ret;
 }
 
@@ -794,10 +788,9 @@ bool IdentityManager_DB::Accounts_DB::updateAccountDetailFieldValues(const std::
     // Primero borramos todos los datos de campos para ese usuario
     _parent->m_sqlConnector->execute("DELETE FROM iam.accountDetailValues WHERE `f_accountName` = :accountName;", {{":accountName", MAKE_VAR(STRING, accountName)}});
 
-
     for (const auto &fieldValue : fieldValues)
     {
-        if (fields.find(fieldValue.name)!=fields.end() && fieldValue.value.has_value())
+        if (fields.find(fieldValue.name) != fields.end() && fieldValue.value.has_value())
         {
             std::string regexpValidator = fields[fieldValue.name].regexpValidator;
             std::string value = fieldValue.value.value();
@@ -809,7 +802,7 @@ bool IdentityManager_DB::Accounts_DB::updateAccountDetailFieldValues(const std::
                     return false;
                 }
             }
-            catch (const boost::regex_error&)
+            catch (const boost::regex_error &)
             {
                 // if not possible, continue with the rest.
             }

@@ -318,11 +318,6 @@ bool AuthStorageImpl::configureApplication(IdentityManager_DB *identityManager, 
                                                                                {{DB_APPNAME, "ACCOUNT_DISABLE"}, "Disable/lock accounts"},
                                                                                {{DB_APPNAME, "ACCOUNT_ENABLE"}, "Enable/unlock accounts"},
 
-                                                                               {{DB_APPNAME, "ROLE_CREATE"}, "Create roles on the IAM system"},
-                                                                               {{DB_APPNAME, "ROLE_READ"}, "Read roles from the IAM system"},
-                                                                               {{DB_APPNAME, "ROLE_DELETE"}, "Remove roles from the IAM system"},
-                                                                               {{DB_APPNAME, "ROLE_MODIFY"}, "Modify roles and their associated scopes"},
-
                                                                                {{DB_APPNAME, "APP_CREATE"}, "Create applications on the IAM"},
                                                                                {{DB_APPNAME, "APP_DELETE"}, "Delete application's from the IAM"},
                                                                                {{DB_APPNAME, "APP_MODIFY"}, "Modify application data on the IAM"},

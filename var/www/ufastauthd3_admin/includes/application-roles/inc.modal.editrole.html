@@ -76,10 +76,7 @@
                 document.getElementById("roleName").value = currentRole;
                 populateRoleDetails(response["details"]);
                 populateRoleScopes(response["scopes"]);
-                /*           
-                populateRoleScopes(response["scopes"],response["advanced"]["scopesModifiable"]);
                 populateRoleAccounts(response["accounts"]);
-                */
             },
             error: commonFunctionError
         });

@@ -70,16 +70,22 @@ std::string IdentityManager_DB::Roles_DB::getRoleDescription(const std::string &
     return "";
 }
 
-std::set<std::string> IdentityManager_DB::Roles_DB::getRolesList(const std::string &appName)
+std::set<ApplicationRole> IdentityManager_DB::Roles_DB::getRolesList(const std::string &appName)
 {
-    std::set<std::string> ret;
+    std::set<ApplicationRole> ret;
     Threads::Sync::Lock_RD lock(_parent->m_mutex);
 
-    Abstract::STRING roleName;
-    SQLConnector::QueryInstance i = _parent->m_sqlConnector->qSelect("SELECT `roleName` FROM iam.applicationRoles;", {{":appName", MAKE_VAR(STRING, appName)}}, {&roleName});
+    Abstract::STRING roleId, description;
+    SQLConnector::QueryInstance i = _parent->m_sqlConnector->qSelect("SELECT `roleName`,`roleDescription` FROM iam.applicationRoles WHERE `f_appName`=:appName;", {{":appName", MAKE_VAR(STRING, appName)}}, {&roleId,&description});
     while (i.getResultsOK() && i.query->step())
     {
-        ret.insert(roleName.getValue());
+        ApplicationRole r;
+
+        r.appName = appName;
+        r.description = description.getValue();
+        r.id = roleId.getValue();
+
+        ret.insert(r);
     }
     return ret;
 }

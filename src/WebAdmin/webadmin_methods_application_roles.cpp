@@ -13,22 +13,25 @@ using namespace Mantids30::Network::Protocols;
 void WebAdminMethods_ApplicationRoles::addMethods_Roles(std::shared_ptr<MethodsHandler> methods)
 {
     using SecurityOptions = Mantids30::API::RESTful::MethodsHandler::SecurityOptions;
-    methods->addResource(MethodsHandler::GET, "searchRoles", &searchRoles, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ROLE_READ"});
-    methods->addResource(MethodsHandler::POST, "addRole", &addRole, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ROLE_CREATE"});
-    methods->addResource(MethodsHandler::GET, "getRoleInfo", &getRoleInfo, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ROLE_READ"});
-    methods->addResource(MethodsHandler::PATCH, "updateRoleDescription", &updateRoleDescription, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ROLE_MODIFY"});
-    methods->addResource(MethodsHandler::DELETE, "removeRole", &removeRole, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ROLE_DELETE"});
+    methods->addResource(MethodsHandler::GET, "searchRoles", &searchRoles, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
+    methods->addResource(MethodsHandler::POST, "addRole", &addRole, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"});
+    methods->addResource(MethodsHandler::GET, "getRoleInfo", &getRoleInfo, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
+    methods->addResource(MethodsHandler::PATCH, "updateRoleDescription", &updateRoleDescription, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"});
+    methods->addResource(MethodsHandler::DELETE, "removeRole", &removeRole, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"});
+
+    // Accounts roles:
+    methods->addResource(MethodsHandler::POST, "addApplicationRoleToAccount", &addApplicationRoleToAccount, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"});
+    methods->addResource(MethodsHandler::DELETE, "removeApplicationRoleFromAccount", &removeApplicationRoleFromAccount, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"});
+
 
     // Roles
     /*
-    methods->addResource(MethodsHandler::POST, "addAccountToRole", &addAccountToRole, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ROLE_MODIFY"});
-    methods->addResource(MethodsHandler::DELETE, "removeAccountFromRole", &removeAccountFromRole, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ROLE_MODIFY"});
-    methods->addResource(MethodsHandler::GET, "doesRoleExist", &doesRoleExist, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ROLE_READ"});
-    methods->addResource(MethodsHandler::GET, "validateApplicationScopeOnRole", &validateApplicationScopeOnRole, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ROLE_READ"});
-    methods->addResource(MethodsHandler::GET, "getRoleDescription", &getRoleDescription, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ROLE_READ"});
-    methods->addResource(MethodsHandler::GET, "getRolesList", &getRolesList, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ROLE_READ"});
-    methods->addResource(MethodsHandler::GET, "getRoleApplicationScopes", &getRoleApplicationScopes, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ROLE_READ"});
-    methods->addResource(MethodsHandler::GET, "getRoleAccounts", &getRoleAccounts, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ROLE_READ"});
+    methods->addResource(MethodsHandler::GET, "doesRoleExist", &doesRoleExist, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
+    methods->addResource(MethodsHandler::GET, "validateApplicationScopeOnRole", &validateApplicationScopeOnRole, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
+    methods->addResource(MethodsHandler::GET, "getRoleDescription", &getRoleDescription, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
+    methods->addResource(MethodsHandler::GET, "getRolesList", &getRolesList, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
+    methods->addResource(MethodsHandler::GET, "getRoleApplicationScopes", &getRoleApplicationScopes, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
+    methods->addResource(MethodsHandler::GET, "getRoleAccounts", &getRoleAccounts, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
     */
 }
 
@@ -102,7 +105,6 @@ void WebAdminMethods_ApplicationRoles::addRole(void *context, APIReturn &respons
 
 void WebAdminMethods_ApplicationRoles::getRoleInfo(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
 {
-    // TODO: optimize:
     json payloadOut;
     std::string appName = JSON_ASSTRING(*request.inputJSON, "appName", "");
     std::string roleName = JSON_ASSTRING(*request.inputJSON, "roleName", "");
@@ -122,11 +124,10 @@ void WebAdminMethods_ApplicationRoles::getRoleInfo(void *context, APIReturn &res
     payloadOut["details"]["description"] = Globals::getIdentityManager()->applicationRoles->getRoleDescription(appName,roleName);
 
     int i = 0;
-    auto roleAccounts = Globals::getIdentityManager()->applicationRoles->getRoleAccounts(appName,roleName);
-    for (const auto &accountName : roleAccounts)
+    std::set<std::string> roleAccounts = Globals::getIdentityManager()->applicationRoles->getRoleAccounts(appName,roleName);
+    for (const std::string &accountName : roleAccounts)
     {
-        auto getAccountDetails = Globals::getIdentityManager()->accounts->getAccountDetails(accountName);
-        payloadOut["accounts"][i]["name"] = accountName;
+        payloadOut["accounts"][i] = accountName;
         i++;
     }
 
@@ -159,12 +160,83 @@ void WebAdminMethods_ApplicationRoles::removeRole(void *context, APIReturn &resp
     const std::string roleName = JSON_ASSTRING(*request.inputJSON, "roleName", "");
     const std::string appName = JSON_ASSTRING(*request.inputJSON, "appName", "");
 
+    if (appName.empty())
+    {
+        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Application name is required");
+        return;
+    }
+
+    if (roleName.empty())
+    {
+        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Role ID is required");
+        return;
+    }
+
     if (!Globals::getIdentityManager()->applicationRoles->removeRole(appName,roleName))
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to remove the role");
     }
 }
 
+void WebAdminMethods_ApplicationRoles::addApplicationRoleToAccount(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
+{
+    std::string appName = JSON_ASSTRING(*request.inputJSON, "appName", "");
+    std::string roleName = JSON_ASSTRING(*request.inputJSON, "roleId", "");
+    std::string accountName = JSON_ASSTRING(*request.inputJSON, "accountName", "");
+
+    if (appName.empty())
+    {
+        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Application name is required");
+        return;
+    }
+
+    if (roleName.empty())
+    {
+        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Role ID is required");
+        return;
+    }
+
+    if (accountName.empty())
+    {
+        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Account name is required");
+        return;
+    }
+
+    if (!Globals::getIdentityManager()->applicationRoles->addAccountToRole(appName, roleName, accountName))
+    {
+        response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to assign the role to the account.");
+    }
+}
+
+void WebAdminMethods_ApplicationRoles::removeApplicationRoleFromAccount(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
+{
+    std::string appName = JSON_ASSTRING(*request.inputJSON, "appName", "");
+    std::string roleName = JSON_ASSTRING(*request.inputJSON, "roleId", "");
+    std::string accountName = JSON_ASSTRING(*request.inputJSON, "accountName", "");
+
+    if (appName.empty())
+    {
+        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Application name is required");
+        return;
+    }
+
+    if (roleName.empty())
+    {
+        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Role ID is required");
+        return;
+    }
+
+    if (accountName.empty())
+    {
+        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Account name is required");
+        return;
+    }
+
+    if (!Globals::getIdentityManager()->applicationRoles->removeAccountFromRole(appName, roleName, accountName))
+    {
+        response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to remove the role from the account.");
+    }
+}
 
 /*
 
@@ -174,21 +246,7 @@ void WebAdminMethods_ApplicationRoles::doesRoleExist(void *context, APIReturn &r
     (*response.responseJSON()) = Globals::getIdentityManager()->roles->doesRoleExist(JSON_ASSTRING(*request.inputJSON, "roleName", ""));
 }
 
-void WebAdminMethods_ApplicationRoles::addAccountToRole(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
-{
-    if (!Globals::getIdentityManager()->roles->addAccountToRole(JSON_ASSTRING(*request.inputJSON, "roleName", ""), JSON_ASSTRING(*request.inputJSON, "accountName", "")))
-    {
-        response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Internal Error");
-    }
-}
 
-void WebAdminMethods_ApplicationRoles::removeAccountFromRole(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
-{
-    if (!Globals::getIdentityManager()->roles->removeAccountFromRole(JSON_ASSTRING(*request.inputJSON, "roleName", ""), JSON_ASSTRING(*request.inputJSON, "accountName", "")))
-    {
-        response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Internal Error");
-    }
-}
 
 
 
