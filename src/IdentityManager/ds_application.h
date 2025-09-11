@@ -74,6 +74,15 @@ struct ApplicationTokenProperties
 struct ApplicationScopeDetails
 {
     ApplicationScopeDetails() {}
+
+    json toJSON() const
+    {
+        json r;
+        r["id"] = id;
+        r["description"] = description;
+        return r;
+    }
+
     std::string id;
     std::string description;
 };

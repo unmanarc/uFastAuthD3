@@ -1,0 +1,127 @@
+<script>
+    let appModifiable = true;
+</script>
+<div class="tab-pane" id="scopes" scope="tabpanel" aria-labelledby="scopes-tab" style="min-height: 500px;">
+    <div class="container-fluid">
+        <script>
+            function createScopeOpen() {
+                $("#modalEditApplication").modal('hide');
+                createScopeClearParameters();
+                $("#modalCreateScope").modal('show');
+            }
+            function removeScopeFromApplication(scopeIdB64) {
+                showYesNoDialog("Are you sure you want to remove this scope?", function (result) {
+                    let scopeId = window.atob(scopeIdB64);
+                    $.ajax({
+                        url: "/api/v1/removeApplicationScope",
+                        type: "DELETE",
+                        data: JSON.stringify({
+                            appName: currentApplication,
+                            scopeId: scopeId
+                        }),
+                        contentType: "application/json; charset=utf-8",
+                        success: function (response) {
+                            var table = new DataTable('#scopesTable');
+                            table.ajax.reload();
+                            showToastSuccess("Scope removed successfully.");
+                        },
+                        error: commonFunctionError
+                    });
+                });
+            }
+
+        </script>
+
+        <div class="d-flex justify-content-end mb-3">
+            <div id="createScopeDiv" style="width: 100%;">
+                <div class="d-flex justify-content-end">
+                    <button id="createScopeButton" type="button" class="btn btn-success" onclick="createScopeOpen()">
+                        Add Scope
+                    </button>
+                </div>
+                <hr>
+            </div>
+        </div>
+
+
+        <table id="scopesTable" class="display">
+            <thead>
+                <tr>
+                    <th scope="col">Scope Name</th>
+                    <th scope="col">Description</th>
+                    <th scope="col" style="text-align: right;">Controls&nbsp;</th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+    </div>
+</div>
+<script>
+
+    new DataTable('#scopesTable', {
+        ajax: {
+            "url": "/api/v1/searchApplicationScopes",
+            "type": 'GET',
+            "data": function (d) {
+                d.appName = currentApplication;
+                return JSON.stringify(d);
+            }
+        },
+        processing: true,
+        serverSide: true,
+        language: {
+            emptyTable: "No scopes found for this application"
+        },
+        columns: [
+            {
+                data: "scopeId",
+                title: "Scope Name",
+                render: function (data, type, row) {
+                    return '<i class="fas fa-key"></i> &nbsp;&nbsp;' + data;
+                }
+            },
+            {
+                data: "description",
+                title: "Description",
+                searchable: false
+            },
+            {
+                data: null,
+                orderable: false,
+                searchable: false,
+                render: function (data, type, row) {
+                    let b64ScopeName = window.btoa(row.scopeId);
+
+                    if (appModifiable) {
+                        return `<div class="d-flex flex-wrap gap-1 justify-content-end">
+                              <button type="button" class="btn btn-sm btn-secondary" onclick="javascript:removeScopeFromApplication('${b64ScopeName}')">
+                                    <i class="fas fa-trash"></i>
+                              </button>
+                            </div>`;
+                    } else {
+                        return `<div class="d-flex flex-wrap gap-1 justify-content-end"></div>`;
+                    }
+
+                    //data-bs-toggle="modal" data-bs-target="#modalEditScope"
+                }
+            }
+        ]
+    });
+
+
+    function populateApplicationScopes(areScopesModifiable) {
+        appModifiable = areScopesModifiable;
+
+        console.log(appModifiable);
+        if (appModifiable) {
+            document.getElementById('createScopeDiv').style.display = 'block';
+        } else {
+            document.getElementById('createScopeDiv').style.display = 'none';
+        }
+
+        var table = new DataTable('#scopesTable');
+        table.ajax.reload();
+    }
+
+</script>

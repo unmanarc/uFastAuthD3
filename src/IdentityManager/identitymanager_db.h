@@ -83,15 +83,15 @@ public:
         bool isThereAnotherAdmin(const std::string &accountName);
         IdentityManager_DB *_parent;
     };
-    class Roles_DB : public ApplicationRoles
+    class ApplicationRoles_DB : public ApplicationRoles
     {
     public:
-        Roles_DB(IdentityManager_DB *parent)
+        ApplicationRoles_DB(IdentityManager_DB *parent)
             : ApplicationRoles()
         {
             _parent = parent;
         }
-        virtual ~Roles_DB() {}
+        virtual ~ApplicationRoles_DB() {}
 
         /////////////////////////////////////////////////////////////////////////////////
         // role:
@@ -143,7 +143,7 @@ public:
         std::set<ApplicationScope> listApplicationScopes(const std::string &applicationName = "") override;
         std::set<std::string> getApplicationRolesForScope(const ApplicationScope &applicationScope, bool lock = true) override;
         std::set<std::string> listAccountsOnApplicationScope(const ApplicationScope &applicationScope, bool lock = true) override;
-        std::list<ApplicationScopeDetails> searchApplicationScopes(const std::string &appName, std::string sSearchWords, size_t limit = 0, size_t offset = 0) override;
+        Json::Value searchApplicationScopes(const json &dataTablesFilters) override;
         bool validateAccountDirectApplicationScope(const std::string &accountName, const ApplicationScope &applicationScope) override;
 
         // Account bad attempts for pass slot id...

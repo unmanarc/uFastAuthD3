@@ -16,8 +16,9 @@
                 <table width=100% style=" border-spacing: 10px;   border-collapse: separate;">
                     <tr>
                         <td align="right" width=15%>Application ID: </td>
-                        <td><input type="username" name="editApplicationName" id="editApplicationName" class="form-control"
-                                placeholder="Application Name" readonly style="background-color: #e9ecef;"></td>
+                        <td><input type="username" name="editApplicationName" id="editApplicationName"
+                                class="form-control" placeholder="Application Name" readonly
+                                style="background-color: #e9ecef;"></td>
                     </tr>
                 </table>
 
@@ -39,22 +40,35 @@
                                 </li>
 
                                 <li class="nav-item">
+                                    <button class="nav-link" id="loginflow-tab" data-bs-toggle="tab"
+                                        data-bs-target="#loginflow" type="button" role="tab" aria-controls="loginflow"
+                                        aria-selected="false">Login Flow Configuration</button>
+                                </li>
+
+                                <li class="nav-item">
                                     <button class="nav-link" id="scopes-tab" data-bs-toggle="tab"
                                         data-bs-target="#scopes" type="button" role="tab" aria-controls="scopes"
                                         aria-selected="false">Scopes</button>
                                 </li>
 
                                 <li class="nav-item">
-                                    <button class="nav-link" id="roles-tab" data-bs-toggle="tab"
-                                        data-bs-target="#roles" type="button" role="tab" aria-controls="roles"
+                                    <button class="nav-link" id="roles-tab" data-bs-toggle="tab" data-bs-target="#roles"
+                                        type="button" role="tab" aria-controls="roles"
                                         aria-selected="false">Roles</button>
                                 </li>
-                                
+
                                 <li class="nav-item">
                                     <button class="nav-link" id="accounts-tab" data-bs-toggle="tab"
                                         data-bs-target="#accounts" type="button" role="tab" aria-controls="accounts"
                                         aria-selected="false">Accounts</button>
                                 </li>
+
+                                <li class="nav-item">
+                                    <button class="nav-link" id="activities-tab" data-bs-toggle="tab"
+                                        data-bs-target="#activities" type="button" role="tab" aria-controls="activities"
+                                        aria-selected="false">Activities and Authentication Schemes</button>
+                                </li>
+
                                 <li class="nav-item">
                                     <button class="nav-link" id="advanced-tab" data-bs-toggle="tab"
                                         data-bs-target="#advanced" type="button" role="tab" aria-controls="advanced"
@@ -66,12 +80,14 @@
                 </table>
 
                 <div class="tab-content" id="myTabContent">
-                    <!--<%include:/includes/applications/inc.modal.editapplication_details.html%>-->
-                    <!--<%include:/includes/applications/inc.modal.editapplication_scopes.html%>-->
-                    <!--<%include:/includes/applications/inc.modal.editapplication_tokens.html%>-->
-                    <!--<%include:/includes/applications/inc.modal.editapplication_roles.html%>-->
-                    <!--<%include:/includes/applications/inc.modal.editapplication_accounts.html%>-->
-                    <!--<%include:/includes/applications/inc.modal.editapplication_advanced.html%>-->
+                    <!--<%include:/includes/applications/edit/inc.modal.editapplication_details.html%>-->
+                    <!--<%include:/includes/applications/edit/inc.modal.editapplication_scopes.html%>-->
+                    <!--<%include:/includes/applications/edit/inc.modal.editapplication_tokens.html%>-->
+                    <!--<%include:/includes/applications/edit/inc.modal.editapplication_loginflow.html%>-->
+                    <!--<%include:/includes/applications/edit/inc.modal.editapplication_activities.html%>-->
+                    <!--<%include:/includes/applications/edit/inc.modal.editapplication_roles.html%>-->
+                    <!--<%include:/includes/applications/edit/inc.modal.editapplication_accounts.html%>-->
+                    <!--<%include:/includes/applications/edit/inc.modal.editapplication_advanced.html%>-->
                 </div>
             </div>
         </div>
@@ -89,8 +105,9 @@
             success: function (response) {
                 populateApplicationTokensConfig(response["tokenConfig"]);
                 populateApplicationDetails(response["details"]);
-                populateApplicationScopes(response["scopes"],response["advanced"]["scopesModifiable"]);
+                populateApplicationScopes(response["advanced"]["scopesModifiable"]);
                 populateApplicationAccounts(response["accounts"]);
+                populateApplicationLoginFlow(response["loginFlow"]);
                 populateApplicationRoles();
             },
             error: commonFunctionError

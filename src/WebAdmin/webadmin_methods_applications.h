@@ -23,7 +23,16 @@ protected:
     static void updateApplicationDescription(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
     static void updateApplicationAPIKey(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
     static void updateWebLoginJWTConfigForApplication(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
+    static void updateApplicationLoginCallbackURI(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
 
+    static void addApplicationLoginOrigin(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
+    static void removeApplicationLoginOrigin(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
+
+    static void addApplicationLoginRedirectURI(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
+    static void removeApplicationLoginRedirectURI(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
+
+private:
+    static json getLoginFlowDetails(const std::string & appName);
 /*
     static void removeApplicationOwner(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
     static void getApplicationDescription(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
@@ -37,11 +46,7 @@ protected:
     static void listApplicationAccounts(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
     static void listAccountApplications(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
     static void addApplicationOwner(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
-    static void addWebLoginRedirectURIToApplication(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
-    static void removeWebLoginRedirectURIToApplication(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
     static void listWebLoginRedirectURIsFromApplication(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
-    static void addWebLoginOriginURLToApplication(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
-    static void removeWebLoginOriginURLToApplication(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
     static void listWebLoginOriginUrlsFromApplication(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
     static void getWebLoginJWTConfigFromApplication(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
     static void setWebLoginJWTSigningKeyForApplication(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
