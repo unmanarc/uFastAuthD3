@@ -20,7 +20,7 @@ void WebAdminMethods_ApplicationsScopes::addMethods_Scopes(std::shared_ptr<Metho
     methods->addResource(MethodsHandler::DELETE, "removeApplicationScope", &removeApplicationScope, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"});
     methods->addResource(MethodsHandler::PUT, "addApplicationScopeToRole", &addApplicationScopeToRole, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"});
     methods->addResource(MethodsHandler::DELETE, "removeApplicationScopeFromRole", &removeApplicationScopeFromRole, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"});
-
+    methods->addResource(MethodsHandler::GET, "searchApplicationScopes", &searchApplicationScopes, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
 
     // Application Scopes
 /*
@@ -29,7 +29,6 @@ void WebAdminMethods_ApplicationsScopes::addMethods_Scopes(std::shared_ptr<Metho
     methods->addResource(MethodsHandler::GET, "listApplicationScopes", &listApplicationScopes, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
     methods->addResource(MethodsHandler::GET, "getApplicationRolesForScope", &getApplicationRolesForScope, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
     methods->addResource(MethodsHandler::GET, "listAccountsOnApplicationScope", &listAccountsOnApplicationScope, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
-    methods->addResource(MethodsHandler::GET, "searchApplicationScopes", &searchApplicationScopes, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
     methods->addResource(MethodsHandler::GET, "scopesLeftListForRole", &scopesLeftListForRole, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
     methods->addResource(MethodsHandler::POST, "addApplicationScope", &addApplicationScope, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"});
     methods->addResource(MethodsHandler::DELETE, "removeApplicationScope", &removeApplicationScope, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"});
@@ -87,7 +86,7 @@ void WebAdminMethods_ApplicationsScopes::addApplicationScope(void *context, APIR
 {
     std::string appName = JSON_ASSTRING(*request.inputJSON, "appName", "");
     std::string scopeId = JSON_ASSTRING(*request.inputJSON, "scopeId", "");
-    std::string description = JSON_ASSTRING(*request.inputJSON, "description", "");
+    std::string scopeDescription = JSON_ASSTRING(*request.inputJSON, "scopeDescription", "");
 
     // Validate input parameters
     if (appName.empty())
@@ -117,7 +116,7 @@ void WebAdminMethods_ApplicationsScopes::addApplicationScope(void *context, APIR
         return;
     }
 
-    if (!Globals::getIdentityManager()->authController->addApplicationScope({appName, scopeId}, description))
+    if (!Globals::getIdentityManager()->authController->addApplicationScope({appName, scopeId}, scopeDescription))
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "The application scope may already exist.");
     }
@@ -172,6 +171,11 @@ void WebAdminMethods_ApplicationsScopes::removeApplicationScopeFromRole(void *co
 }
 
 
+void WebAdminMethods_ApplicationsScopes::searchApplicationScopes(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
+{
+    (*response.responseJSON()) = Globals::getIdentityManager()->authController->searchApplicationScopes(*request.inputJSON);
+}
+
 /*
 
 
@@ -215,22 +219,6 @@ void WebAdminMethods_ApplicationsScopes::getApplicationScopeDescription(void *co
 {
     (*response.responseJSON()) = Globals::getIdentityManager()->authController->getApplicationScopeDescription(
         {JSON_ASSTRING(*request.inputJSON, "appName", ""), JSON_ASSTRING(*request.inputJSON, "id", "")});
-}
-
-void WebAdminMethods_ApplicationsScopes::searchApplicationScopes(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
-{
-    json payloadOut;
-
-    int i = 0;
-    for (const auto &scope :
-         Globals::getIdentityManager()->authController->searchApplicationScopes(JSON_ASSTRING(*request.inputJSON, "appName", ""), JSON_ASSTRING(*request.inputJSON, "searchWords", ""),
-                                                                                     JSON_ASUINT64(*request.inputJSON, "limit", 0), JSON_ASUINT64(*request.inputJSON, "offset", 0)))
-    {
-        payloadOut[i]["id"] = scope.id;
-        payloadOut[i]["description"] = scope.description;
-        i++;
-    }
-    (*response.responseJSON()) = payloadOut;
 }
 
 void WebAdminMethods_ApplicationsScopes::scopesLeftListForRole(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)

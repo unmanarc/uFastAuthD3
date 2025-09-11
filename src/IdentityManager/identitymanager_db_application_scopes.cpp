@@ -150,40 +150,88 @@ std::set<std::string> IdentityManager_DB::AuthController_DB::listAccountsOnAppli
     return ret;
 }
 
-std::list<ApplicationScopeDetails> IdentityManager_DB::AuthController_DB::searchApplicationScopes(const std::string &appName, std::string sSearchWords, size_t limit, size_t offset)
+Json::Value IdentityManager_DB::AuthController_DB::searchApplicationScopes(const json &dataTablesFilters)
 {
-    std::list<ApplicationScopeDetails> ret;
+    Json::Value ret;
     Threads::Sync::Lock_RD lock(_parent->m_mutex);
 
-    Abstract::STRING scopeId, description;
+    // DataTables:
+    ret["draw"] = dataTablesFilters["draw"];
 
-    std::string sSqlQuery = "SELECT `scopeId`,`description` FROM iam.applications WHERE `f_appName`=:APPNAME";
+    std::string appName = JSON_ASSTRING(dataTablesFilters,"appName","");
 
-    if (!sSearchWords.empty())
+    uint64_t offset = JSON_ASUINT64(dataTablesFilters,"start",0);
+    uint64_t limit = JSON_ASUINT64(dataTablesFilters,"length",0);
+
+    std::string orderByStatement;
+
+    // Manejo de ordenamiento (order)
+    const Json::Value& orderArray = dataTablesFilters["order"];
+    if (JSON_ISARRAY_D(orderArray) && orderArray.size()>0)
     {
-        sSearchWords = '%' + sSearchWords + '%';
-        sSqlQuery += " AND (`applicationName` LIKE :SEARCHWORDS OR `appDescription` LIKE :SEARCHWORDS)";
+        const Json::Value& orderArrayElement = orderArray[0];
+        std::string columnName = getColumnNameFromColumnPos(dataTablesFilters,JSON_ASUINT(orderArrayElement,"column",0));
+        std::string dir = JSON_ASSTRING(orderArrayElement,"dir","desc");
+
+        auto isValidField = [](const std::string& c) -> bool {
+            static const std::vector<std::string> validFields = {
+                "scopeId", "description"
+            };
+            return std::find(validFields.begin(), validFields.end(), c) != validFields.end();
+        };
+
+        if (isValidField(columnName))
+        {
+            orderByStatement = "`" + columnName + "` ";
+            orderByStatement += (dir == "desc") ? "DESC" : "ASC";
+        }
     }
 
-    if (limit)
-        sSqlQuery += " LIMIT :LIMIT OFFSET :OFFSET";
+    // Extract the search value from dataTablesFilters
+    std::string searchValue = JSON_ASSTRING(dataTablesFilters["search"],"value","");
+    std::string whereFilters = "";
 
-    sSqlQuery += ";";
+    // Build the SQL query with WHERE clause for DataTables search
+    std::string sqlQueryStr = R"(
+        SELECT `scopeId`,`description` FROM iam.applicationScopes WHERE `f_appName` = :APPNAME
+        )";
 
-    SQLConnector::QueryInstance i = _parent->m_sqlConnector->qSelect(sSqlQuery,
-                                                                                      {{":APPNAME", MAKE_VAR(STRING, appName)},
-                                                                                       {":SEARCHWORDS", MAKE_VAR(STRING, sSearchWords)},
-                                                                                       {":LIMIT", MAKE_VAR(UINT64, limit)},
-                                                                                       {":OFFSET", MAKE_VAR(UINT64, offset)}},
-                                                                                      {&scopeId, &description});
-    while (i.getResultsOK() && i.query->step())
+
+    // Add WHERE clause for search term if provided
+    if (!searchValue.empty())
     {
-        ApplicationScopeDetails rDetail;
+        searchValue = "%" + searchValue + "%";
+        whereFilters += "`scopeId` LIKE :SEARCHWORDS OR `description` LIKE :SEARCHWORDS";
+    }
 
-        rDetail.description = description.getValue();
-        rDetail.id = scopeId.getValue();
+    {
+        Abstract::STRING scopeId, description;
+        SQLConnector::QueryInstance i = _parent->m_sqlConnector->qSelectWithFilters(sqlQueryStr,
+                                                                                    whereFilters,
+                                                                                    {
+                                                                                        {":SEARCHWORDS", MAKE_VAR(STRING, searchValue)},
+                                                                                        {":APPNAME", MAKE_VAR(STRING, appName)}
+                                                                                    },
+                                                                                    {&scopeId, &description},
+                                                                                    orderByStatement, // Order by
+                                                                                    limit, // LIMIT
+                                                                                    offset // OFFSET
+                                                                                    );
 
-        ret.push_back(rDetail);
+        while (i.getResultsOK() && i.query->step())
+        {
+            Json::Value row;
+
+            // scopeId
+            row["scopeId"] = scopeId.toJSON();
+            // description
+            row["description"] = description.toJSON();
+
+            ret["data"].append(row);
+        }
+
+        ret["recordsTotal"] = i.query->getTotalRecordsCount();
+        ret["recordsFiltered"] = i.query->getFilteredRecordsCount();
     }
 
     return ret;

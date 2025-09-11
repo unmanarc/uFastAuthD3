@@ -205,7 +205,7 @@ public:
         virtual std::set<ApplicationScope> listApplicationScopes(const std::string &applicationName = "") = 0;
         virtual std::set<std::string> getApplicationRolesForScope(const ApplicationScope &applicationScope, bool lock = true) = 0;
         virtual std::set<std::string> listAccountsOnApplicationScope(const ApplicationScope &applicationScope, bool lock = true) = 0;
-        virtual std::list<ApplicationScopeDetails> searchApplicationScopes(const std::string &appName, std::string sSearchWords, size_t limit = 0, size_t offset = 0) = 0;
+        virtual Json::Value searchApplicationScopes(const json &dataTablesFilters) = 0;
         virtual bool validateAccountDirectApplicationScope(const std::string &accountName, const ApplicationScope &applicationScope) = 0;
 
         // Account bad attempts for pass slot id...

@@ -1,0 +1,325 @@
+<div class="tab-pane" id="loginflow" role="tabpanel" aria-labelledby="loginflow-tab" style="min-height: 500px;">
+
+    <script>
+        let currentLoginFlowDetails = "";
+
+        function displayUpdateFunctionForLoginCallbackURI() {
+            document.getElementById('modifyButtonsForCallbackURI').style.display = 'block';
+        }
+
+        function populateWebLoginOrigins(origins) {
+            document.getElementById("tbody-webloginOrigins").innerHTML = "";
+            if (origins != null) {
+                let internalId = 0;
+
+                for (let account of origins) {
+
+                    $("#tbody-webloginOrigins").append(
+                        `<tr> 
+                        <th scope="row" id=ulist-webLoginOrigins-${internalId}></th>
+                        <td style="text-align: right;">
+                            <input type=hidden id="ulist-webLoginOriginsById-${internalId}">
+                            <button type="button" class="btn btn-light btn-sm" onclick="javascript:removeWebLoginOriginFromApp(${internalId})"><i class="fas fa-trash"></i></button>
+                        </td>
+                    </tr>`
+                    );
+                    document.getElementById(`ulist-webLoginOriginsById-${internalId}`).value = account;
+                    $(`#ulist-webLoginOrigins-${internalId}`).text(account);
+                    internalId++;
+                }
+            }
+        }
+
+
+        function populateWebLoginRedirectURIs(redirectURIs) {
+            document.getElementById("tbody-webloginRedirectURIs").innerHTML = "";
+            if (redirectURIs != null) {
+                let internalId = 0;
+
+                for (let account of redirectURIs) {
+
+                    $("#tbody-webloginRedirectURIs").append(
+                        `<tr> 
+                        <th scope="row" id=ulist-webLoginRedirectURIs-${internalId}></th>
+                        <td style="text-align: right;">
+                            <input type=hidden id="ulist-webLoginRedirectURIsById-${internalId}">
+                            <button type="button" class="btn btn-light btn-sm" onclick="javascript:removeWebLoginRedirectURIFromApp(${internalId})"><i class="fas fa-trash"></i></button>
+                        </td>
+                    </tr>`
+                    );
+                    document.getElementById(`ulist-webLoginRedirectURIsById-${internalId}`).value = account;
+                    $(`#ulist-webLoginRedirectURIs-${internalId}`).text(account);
+                    internalId++;
+                }
+            }
+        }
+
+        function addWebLoginRedirectURItoApp() {
+            var newRedirectURI = document.getElementById("newWebLoginRedirectURI").value;
+
+            // Validate if redirect URI is not empty
+            if (newRedirectURI.trim() === "") {
+                showToastError("Redirect URI cannot be empty.");
+                return;
+            }
+
+            // Validate if redirect URI is a valid URL
+            try {
+                newURL = new URL(newRedirectURI);
+            } catch (e) {
+                showToastError("Invalid URL format for redirect URI.");
+                return;
+            }
+
+            // Validate if redirect URI starts with https
+            if (!newRedirectURI.toLowerCase().startsWith("https://")) {
+                showToastError("Redirect URI must start with 'https://' for security reasons.");
+                return;
+            }
+            
+            // Update description via PATCH
+            $.ajax({
+                url: '/api/v1/addApplicationLoginRedirectURI',
+                type: 'PUT',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    appName: currentApplication,
+                    redirectURI: newRedirectURI
+                }),
+                success: function (response, textStatus, xhr) {
+                    showToastSuccess("Application redirect URI added successfully.");
+                    document.getElementById("newWebLoginRedirectURI").value = "";
+                    populateApplicationLoginFlow(response);
+                },
+                error: commonFunctionError
+            });
+        }
+       
+
+        function addWebLoginOriginToApp() {
+            var newOrigin = document.getElementById("newWebLoginOrigin").value;
+
+            newOrigin = newOrigin.trim();
+
+            // Validate if origin is not empty
+            if (newOrigin.trim() === "") {
+                showToastError("Origin cannot be empty.");
+                return;
+            }
+
+            // Validate if origin is a valid URL
+            try {
+                newURL = new URL(newOrigin);
+            } catch (e) {
+                showToastError("Invalid URL format for origin.");
+                return;
+            }
+
+            // Validate if origin has no path
+            if (newURL.pathname !== "/" || newURL.search !== "" || newURL.hash !== "") {
+                showToastError("Origin must not contain a path, query string, or fragment.");
+                return;
+            }
+
+            // Validate that the last byte of newOrigin is not "/"
+            if (newOrigin.endsWith("/")) {
+                showToastError("Origin must not end with '/'.");
+                return;
+            }
+
+
+
+            
+
+            // Validate if origin starts with https
+            if (!newOrigin.toLowerCase().startsWith("https://")) {
+                showToastError("Origin must start with 'https://' for security reasons.");
+                return;
+            }
+            
+            // Update description via PATCH
+            $.ajax({
+                url: '/api/v1/addApplicationLoginOrigin',
+                type: 'PUT',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    appName: currentApplication,
+                    loginOrigin: newOrigin
+                }),
+                success: function (response, textStatus, xhr) {
+                    showToastSuccess("Application origin added successfully.");
+                    document.getElementById("newWebLoginOrigin").value = "";
+                    populateApplicationLoginFlow(response);
+                },
+                error: commonFunctionError
+            });
+        }
+
+        function removeWebLoginOriginFromApp(internalId) {
+            var originToRemove = document.getElementById(`ulist-webLoginOriginsById-${internalId}`).value;
+
+            // Update description via PATCH
+            $.ajax({
+                url: '/api/v1/removeApplicationLoginOrigin',
+                type: 'DELETE',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    appName: currentApplication,
+                    loginOrigin: originToRemove
+                }),
+                success: function (response, textStatus, xhr) {
+                    showToastSuccess("Application origin removed successfully.");
+                    populateApplicationLoginFlow(response);
+                },
+                error: commonFunctionError
+            });
+        }
+
+        function removeWebLoginRedirectURIFromApp(internalId) {
+            var redirectURIToRemove = document.getElementById(`ulist-webLoginRedirectURIsById-${internalId}`).value;
+
+            // Update description via PATCH
+            $.ajax({
+                url: '/api/v1/removeApplicationLoginRedirectURI',
+                type: 'DELETE',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    appName: currentApplication,
+                    redirectURI: redirectURIToRemove
+                }),
+                success: function (response, textStatus, xhr) {
+                    showToastSuccess("Application redirect URI removed successfully.");
+                    populateApplicationLoginFlow(response);
+                },
+                error: commonFunctionError
+            });
+        }
+
+
+
+        function populateApplicationLoginFlow(details) {
+            currentLoginFlowDetails = details;
+            document.getElementById("callbackURI").value = details["callbackURI"];
+            populateWebLoginOrigins(details["loginOrigins"]);
+            populateWebLoginRedirectURIs(details["redirectURIs"]);
+        }
+
+        function discardLoginCallbackURIDetails() {
+            document.getElementById('modifyButtonsForCallbackURI').style.display = 'none';
+            populateApplicationLoginFlow(currentLoginFlowDetails);
+        }
+
+        function modifyLoginCallbackURIDetails() {
+            var callbackURI = document.getElementById("callbackURI").value;
+
+
+            // Validate if callbackURI is a valid URL
+            try {
+                new URL(callbackURI);
+            } catch (e) {
+                showToastError("Invalid URL format for callback URI.");
+                return;
+            }
+
+            // Validate if callbackURI starts with https
+            if (!callbackURI.toLowerCase().startsWith("https://")) {
+                showToastError("Callback URI must start with 'https://' for security reasons.");
+                return;
+            }
+
+
+            // Update description via PATCH
+            $.ajax({
+                url: '/api/v1/updateApplicationLoginCallbackURI',
+                type: 'PATCH',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    appName: currentApplication,
+                    callbackURI: callbackURI
+                }),
+                success: function (response, textStatus, xhr) {
+                    showToastSuccess("Application callback URI updated successfully.");
+                    discardLoginCallbackURIDetails();
+                    populateApplicationLoginFlow(response);
+                },
+                error: commonFunctionError
+            });
+        }
+    </script>
+
+    <div class="card mb-3">
+        <div class="card-header" style="text-align: center;"><b>Login Callback URI (Outgoing JWT Injection)</b></div>
+        <div class="card-body">
+            <input type="text" class="form-control" id="callbackURI" placeholder="Enter callback URI"
+                oninput="displayUpdateFunctionForLoginCallbackURI()"
+                onchange="displayUpdateFunctionForLoginCallbackURI()">
+        </div>
+
+        <table width=100% style=" border-spacing: 10px;   border-collapse: separate;">
+            <tr>
+                <td colspan="2" align="right" id="modifyButtonsForCallbackURI" style="display:none;">
+                    <button type="button" class="btn btn-dark"
+                        onclick="javascript:discardLoginCallbackURIDetails()">Discard
+                        Changes</button>
+                    <button type="button" class="btn btn-warning"
+                        onclick="javascript:modifyLoginCallbackURIDetails()">Update
+                        Login CallBack URI</button>
+                </td>
+            </tr>
+        </table>
+
+    </div>
+
+    <div class="card mb-3">
+        <div class="card-header" style="text-align: center;"><b>WebLogin Origins (Incomming Traffic)</b></div>
+        <div class="card-body">
+
+        <div class="input-group mb-3">
+            <input type="text" class="form-control" id="newWebLoginOrigin" placeholder="Enter new origin">
+            &nbsp;&nbsp;
+            <div class="input-group-append">
+                <button class="btn btn-outline-success" type="button" onclick="addWebLoginOriginToApp()"><i class="fas fa-plus"></i> Add Origin</button>
+            </div>
+        </div>
+
+            <table class="table table-hover">
+                <thead class="thead-light">
+                    <tr bgcolor=grey>
+                        <th scope="col">Origin</th>
+                        <th scope="col" style="text-align: right;"></th>
+                    </tr>
+                </thead>
+                <tbody id="tbody-webloginOrigins">
+                </tbody>
+            </table>
+
+        </div>
+    </div>
+
+    <div class="card mb-3">
+        <div class="card-header" style="text-align: center;"><b>WebLogin Redirect URI's (Outgoing Redirections)</b></div>
+        <div class="card-body">
+
+        <div class="input-group mb-3">
+            <input type="text" class="form-control" id="newWebLoginRedirectURI" placeholder="Enter new redirect URI">
+            &nbsp;&nbsp;
+            <div class="input-group-append">
+                <button class="btn btn-outline-success" type="button" onclick="addWebLoginRedirectURItoApp()"><i class="fas fa-plus"></i> Add Redirect URI</button>
+            </div>
+        </div>
+
+            <table class="table table-hover">
+                <thead class="thead-light">
+                    <tr bgcolor=grey>
+                        <th scope="col">Redirect URI</th>
+                        <th scope="col" style="text-align: right;"></th>
+                    </tr>
+                </thead>
+                <tbody id="tbody-webloginRedirectURIs">
+                </tbody>
+            </table>
+
+        </div>
+    </div>
+
+</div>
