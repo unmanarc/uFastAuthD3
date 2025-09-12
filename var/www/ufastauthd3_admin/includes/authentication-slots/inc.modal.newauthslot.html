@@ -1,0 +1,136 @@
+<script>
+
+    function createAuthSlotClearParameters() {
+        $("#createSlotId").val('');
+        $("#createDescription").val('');
+        $("#createFunction").val('1');
+        $("#createDefaultExpiration").val('31536000');
+        $("#createTotp2FAStepsToleranceWindow").val('0');
+        $("#createStrengthJSONValidator").val('');
+        // TODO:
+        $('.nav-tabs a:first').tab('show')
+    }
+
+
+    function ajaxCreateAuthSlot() {
+
+    }
+
+</script>
+
+<div class="modal fade" id="modalCreateAuthSlot" data-bs-backdrop="static" data-bs-keyboard="true" tabindex="-1"
+    aria-labelledby="modalCreateAuthSlotLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalCreateAuthSlotLabel">Create New Authentication Slot</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+
+
+                <table width=100% style=" border-spacing: 10px;   border-collapse: separate;">
+                    <tr>
+                        <td>
+                            <ul class="nav nav-tabs" id="myTabCreate" role="tablist">
+                                <li class="nav-item">
+                                    <button class="nav-link active" id="details-tab-create" data-bs-toggle="tab"
+                                        data-bs-target="#detailsCreate" type="button" role="tab"
+                                        aria-controls="detailsCreate" aria-selected="true">AuthSlot Details</button>
+                                </li>
+
+                                <li class="nav-item">
+                                    <button class="nav-link" id="totp-tab-create" data-bs-toggle="tab"
+                                        data-bs-target="#totpCreate" type="button" role="tab"
+                                        aria-controls="totpCreate" aria-selected="false">TOTP (2FA)</button>
+                                </li>
+
+                                <li class="nav-item">
+                                    <button class="nav-link" id="advanced-tab-create" data-bs-toggle="tab"
+                                        data-bs-target="#advancedCreate" type="button" role="tab"
+                                        aria-controls="advancedCreate" aria-selected="false">Advanced Controls</button>
+                                </li>
+                            </ul>
+                        </td>
+                    </tr>
+                </table>
+
+                <div class="tab-content" id="myTabContentCreate">
+
+                    <div class="tab-pane show active" id="detailsCreate" role="tabpanel"
+                        aria-labelledby="details-tab-create" style="min-height: 500px;">
+                        <table width=100% style=" border-spacing: 10px;   border-collapse: separate;">
+                            <tr>
+                                <td align="right">AuthSlot ID: </td>
+                                <td><input type="number" id="createSlotId" class="form-control"
+                                        placeholder="AuthSlot ID">
+                                </td>
+                            </tr>
+                            <tr>
+                                <td align="right">Description: </td>
+                                <td><input id="createDescription" class="form-control" placeholder="Description">
+                                </td>
+                            </tr>
+                            <tr>
+                                <td align="right">Function: </td>
+                                <td>
+                                    <select id="createFunction" class="form-control">
+                                        <option value="0">Plain Text</option>
+                                        <option value="1">SHA256</option>
+                                        <option value="2">SHA512</option>
+                                        <option value="3">SSHA256</option>
+                                        <option value="4">SSHA512</option>
+                                        <option value="5">TOTP</option>
+
+                                    </select>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td align="right">Default Expiration (seconds): </td>
+                                <td><input type="number" id="createDefaultExpiration" class="form-control"
+                                        placeholder="Default Expiration (seconds)" value="31536000">
+                                    <div class="form-text">Enter 0 for no expiration</div>
+                                </td>
+                            </tr>
+
+
+
+                        </table>
+                    </div>
+
+                    <div class="tab-pane" id="totpCreate" role="tabpanel" aria-labelledby="totp-tab-create"
+                        style="min-height: 500px;">
+                        <table width=100% style=" border-spacing: 10px;   border-collapse: separate;">
+                            <tr>
+                                <td align="right">TOTP 2FA Steps Tolerance Window: </td>
+                                <td><input type="number" id="createTotp2FAStepsToleranceWindow" class="form-control"
+                                        placeholder="TOTP 2FA Steps Tolerance Window" value="0">
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <div class="tab-pane" id="advancedCreate" role="tabpanel" aria-labelledby="advanced-tab-create"
+                        style="min-height: 500px;">
+                        <table width=100% style=" border-spacing: 10px;   border-collapse: separate;">
+                            <tr>
+                                <td align="right">Strength JSON Validator: </td>
+                                <td><textarea id="createStrengthJSONValidator" class="form-control"
+                                        placeholder="Strength JSON Validator" rows="3"></textarea>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+
+                </div>
+
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-success" onclick="javascript:ajaxCreateAuthSlot()">Create
+                    Authentication Slot</button>
+            </div>
+        </div>
+    </div>
+</div>

@@ -87,7 +87,13 @@
                                 </button>
                             </div>
                         </div>
-                        <button type="button" class="btn btn-danger" onclick="javascript:modifyHSKey()">Modify HS Key</button>
+
+
+                        <div class="d-flex justify-content-end" style="width: 100%;">
+                            <button type="button" class="btn btn-outline-danger"
+                                onclick="javascript:modifyHSKey()">Modify HS Key</button>
+                        </div>
+
 
                         <script>
                             document.getElementById('toggleHSKeyCreate').addEventListener('click', function () {
@@ -115,8 +121,10 @@
                             <label for="signingKeyFile" class="form-label">Signing Key File (Private Key)</label>
                             <input type="file" class="form-control" id="signingKeyFile" accept=".pem,.key">
                         </div>
-                        <button type="button" class="btn btn-danger" onclick="javascript:uploadRSKeys()">Upload RS
-                            Keys</button>
+                        <div class="d-flex justify-content-end" style="width: 100%;">
+                            <button type="button" class="btn btn-outline-danger"
+                                onclick="javascript:uploadRSKeys()">Upload RS Keys</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -163,8 +171,10 @@
 
         <div class="row mt-3" id="modifyTokenButtons" style="display:none;">
             <div class="col-12 d-flex justify-content-end">
-                <button type="button" class="btn btn-dark me-2" onclick="javascript:discardApplicationTokenConfig()">Discard Changes</button>
-                <button type="button" class="btn btn-warning" onclick="modifyApplicationTokenConfig()">Update Application Details</button>
+                <button type="button" class="btn btn-dark me-2"
+                    onclick="javascript:discardApplicationTokenConfig()">Discard Changes</button>
+                <button type="button" class="btn btn-warning" onclick="modifyApplicationTokenConfig()">Update
+                    Application Details</button>
             </div>
         </div>
 
@@ -229,7 +239,7 @@
         document.getElementById('signingKeyFile').value = '';
 
 
-        
+
         if (tokensConfig != null) {
             // Main configuration
             document.getElementById('tempMFATokenTimeout').value = tokensConfig.tempMFATokenTimeout || '';
