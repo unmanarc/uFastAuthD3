@@ -1,0 +1,114 @@
+<!--<%include:/includes/inc.main.header.html%>-->
+
+<script>
+    document.getElementById("apptitle").innerHTML = "Authentication &#9658; Authentication Slots";
+</script>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-8 mx-auto">
+            <div class="mb-3 d-flex justify-content-end" style="width: 100%;">
+                <button type="button" class="btn btn-success" onclick="createAuthSlotClearParameters()" data-bs-toggle="modal" data-bs-target="#modalCreateAuthSlot">
+                    Add New Authentication Slot
+                </button>
+            </div>
+            <table class="table table-hover">
+                <thead class="thead-light">
+                    <tr bgcolor=grey>
+                        <th scope="col">Slot ID</th>
+                        <th scope="col">Description</th>
+                        <th scope="col">Hash Function</th>
+                        <th scope="col" style="text-align: right;">Controls</th>
+                    </tr>
+                </thead>
+                <tbody id="tbody-authSlots">
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    function intFunctionToString(func) {
+        switch (func) {
+            case 0:
+                return "Plain";
+            case 1:
+                return "SHA256";
+            case 2:
+                return "SHA512";
+            case 3:
+                return "SSHA256";
+            case 4:
+                return "SSHA512";
+            case 5:
+                return "TOTP";
+            default:
+                return "Unknown";
+        }
+    }
+
+    function populateTable() {
+        $.ajax({
+            url: '/api/v1/listAuthenticationSlots',
+            type: 'GET',
+            contentType: 'application/json',
+            data: JSON.stringify(
+                {
+
+                }),
+            success: function (response) {
+                $("#tbody-authSlots").empty();
+
+                for (let slot of response) {
+                    let slotId = parseInt(slot["id"]);
+                    
+                    $("#tbody-authSlots").append(
+                        `<tr> 
+                            <th scope="row">${slotId}</th>
+                            <td id="ulist-authSlotDescription-${slotId}"></td>
+                            <td id="ulist-authSlotFunction-${slotId}"></td>
+                            <td style="text-align: right;">
+                                <button type="button" class="btn btn-light btn-sm" onclick="javascript:editAuthSlot(${slotId});"><i class="fas fa-edit"></i></button>
+                                <button type="button" class="btn btn-light btn-sm" onclick="javascript:deleteAuthSlot(${slotId});"><i class="fas fa-trash"></i></button>
+                            </td>
+                        </tr>`
+                    );
+
+                    $(`#ulist-authSlotDescription-${slotId}`).text(slot["description"]);
+                    $(`#ulist-authSlotFunction-${slotId}`).text(intFunctionToString(slot["passwordFunction"]));
+                }
+
+            },
+            error: commonFunctionError
+        });
+    }
+
+    populateTable();
+    console.log("meh");
+</script>
+
+<!--
+        jRet["description"] = description; // string
+        jRet["defaultExpirationSeconds"] = defaultExpirationSeconds; // integer
+        jRet["strengthJSONValidator"] = strengthJSONValidator; (string with a json)
+        jRet["passwordFunction"] = (int) passwordFunction; < integer (check bellow)
+        jRet["totp2FAStepsToleranceWindow"] = totp2FAStepsToleranceWindow; < integer
+                rSlot["id"] < integer
+CREATE TABLE `authenticationSlots` (
+                                             `slotId`                        INTEGER PRIMARY KEY AUTOINCREMENT,
+                                             `description`                   VARCHAR(4096) NOT NULL,
+                                             `function`                      INTEGER       DEFAULT 0,
+                                             `defaultExpirationSeconds`      INTEGER       DEFAULT 0,
+                                             `strengthJSONValidator`         TEXT          NOT NULL,
+                                             `totp2FAStepsToleranceWindow`  INTEGER         DEFAULT 0
+                                                                        )
+
+                                                                        enum HashFunction
+-->
+
+
+<!--<%include:/includes/authentication-slots/inc.modal.editauthslot.html%>-->
+<!--<%include:/includes/authentication-slots/inc.modal.newauthslot.html%>-->
+
+<!--<%include:/includes/inc.main.footer.html%>-->
