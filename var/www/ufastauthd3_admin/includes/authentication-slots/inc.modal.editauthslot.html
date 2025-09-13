@@ -10,6 +10,8 @@
         $("#editTotp2FAStepsToleranceWindow").val(slot['totp2FAStepsToleranceWindow']);
         $("#editStrengthJSONValidator").val(slot['strengthJSONValidator']);
 
+        updatePrettyTime('editDefaultExpiration', 'editDefaultExpirationPretty');
+
         if (slot['passwordFunction'] == '5') { // TOTP
             $('#totp-tab-edit').show();
             $('#advanced-tab-edit').hide();
@@ -90,42 +92,62 @@
 
                     <div class="tab-pane show active" id="detailsEdit" role="tabpanel"
                         aria-labelledby="details-tab-edit" style="min-height: 500px;">
-                        <table width=100% style=" border-spacing: 10px;   border-collapse: separate;">
-                            <tr>
-                                <td align="right">Slot ID: </td>
-                                <td><input id="editSlotID" type="number" class="form-control" placeholder="" disabled>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td align="right">Description: </td>
-                                <td><input id="editDescription" class="form-control" placeholder="Description">
-                                </td>
-                            </tr>
-                            <tr>
-                                <td align="right">Function: </td>
-                                <td>
+
+
+
+                        <div class="container-fluid">
+
+
+                            <div class="row mb-3 align-items-center">
+                                <div class="col-md-4 text-end">
+                                    <label for="editSlotID" class="form-label mb-0">Slot ID:</label>
+                                </div>
+                                <div class="col-md-8">
+                                    <input id="editSlotID" type="number" class="form-control" placeholder="" disabled>
+                                </div>
+                            </div>
+
+                            <div class="row mb-3 align-items-center">
+                                <div class="col-md-4 text-end">
+                                    <label for="editFunction" class="form-label mb-0">Function:</label>
+                                </div>
+                                <div class="col-md-8">
                                     <select id="editFunction" class="form-control" disabled>
                                         <option value="0">Plain Text</option>
                                         <option value="1">SHA256</option>
                                         <option value="2">SHA512</option>
-                                        <option value="3">SSHA256</option>
-                                        <option value="4">SSHA512</option>
-                                        <option value="5">TOTP</option>
-
+                                        <option value="3">SSHA256 (Salted SHA-256)</option>
+                                        <option value="4">SSHA512 (Salted SHA-512)</option>
+                                        <option value="5">TOTP (Time Based OTP)</option>
                                     </select>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td align="right">Default Expiration (seconds): </td>
-                                <td><input type="number" id="editDefaultExpiration" class="form-control"
-                                        placeholder="Default Expiration (seconds)" value="31536000">
-                                    <div class="form-text">Enter 0 for no expiration</div>
-                                </td>
-                            </tr>
+                                </div>
+                            </div>
+                            
 
+                            <div class="row mb-3 align-items-center">
+                                <div class="col-md-4 text-end">
+                                    <label for="editDescription" class="form-label mb-0">Description:</label>
+                                </div>
+                                <div class="col-md-8">
+                                    <input id="editDescription" class="form-control" placeholder="Description">
+                                </div>
+                            </div>
+                            
+                            <div class="row mb-3 align-items-start">
+                                <div class="col-md-4 text-end">
+                                    <label for="editDefaultExpiration" class="form-label mb-0 pt-2">
+                                        Default Expiration (seconds):
+                                    </label>
+                                </div>
+                                <div class="col-md-8">
+                                    <input type="number" id="editDefaultExpiration" class="form-control"
+                                        placeholder="Default Expiration (seconds)" value="31536000"
+                                           oninput="updatePrettyTime('editDefaultExpiration', 'editDefaultExpirationPretty')">
+                                    <small id="editDefaultExpirationPretty" class="form-text text-muted mt-1"></small>
+                                </div>
+                            </div>
+                        </div>
 
-
-                        </table>
                     </div>
 
                     <div class="tab-pane" id="totpEdit" role="tabpanel" aria-labelledby="totp-tab-edit"

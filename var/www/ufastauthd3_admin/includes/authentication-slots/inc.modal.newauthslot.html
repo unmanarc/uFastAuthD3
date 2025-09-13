@@ -7,17 +7,25 @@
         $("#createTotp2FAStepsToleranceWindow").val('0');
         $("#createStrengthJSONValidator").val('');
 
+        updatePrettyTime('createDefaultExpiration', 'createDefaultExpirationPretty');
+
         $('#totp-tab-create').hide();
 
         $('#createFunction').change(function() {
             if ($(this).val() == '5') { // TOTP
                 $('#totp-tab-create').show();
                 $('#advanced-tab-create').hide();
-                //$('#totpCreate').show();
+
+                if ($("#createDescription").val() == 'Password Slot')
+                    $("#createDescription").val('TOTP Slot');
+
             } else {
                 $('#totp-tab-create').hide();
                 $('#advanced-tab-create').show();
-              //  $('#totpCreate').hide();
+
+                if ($("#createDescription").val() == 'TOTP Slot')
+                    $("#createDescription").val('Password Slot');
+
             }
         });
 
@@ -55,7 +63,7 @@
     <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="modalCreateAuthSlotLabel">Create New Authentication Slot</h5>
+                <h5 class="modal-title" id="modalCreateAuthSlotLabel">Add New Authentication Slot</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
@@ -91,37 +99,52 @@
 
                     <div class="tab-pane show active" id="detailsCreate" role="tabpanel"
                         aria-labelledby="details-tab-create" style="min-height: 500px;">
-                        <table width=100% style=" border-spacing: 10px;   border-collapse: separate;">
-                            <tr>
-                                <td align="right">Description: </td>
-                                <td><input id="createDescription" class="form-control" placeholder="Description">
-                                </td>
-                            </tr>
-                            <tr>
-                                <td align="right">Function: </td>
-                                <td>
-                                    <select id="createFunction" class="form-control">
+                       
+
+                        <div class="container-fluid">
+                            <div class="row mb-3 align-items-center">
+                                <div class="col-md-4 text-end">
+                                    <label for="createDescription" class="form-label mb-0">Description:</label>
+                                </div>
+                                <div class="col-md-8">
+                                    <input id="createDescription" class="form-control" placeholder="Description">
+                                </div>
+                            </div>
+                            
+                            <div class="row mb-3 align-items-center">
+                                <div class="col-md-4 text-end">
+                                    <label for="createFunction" class="form-label mb-0">Function:</label>
+                                </div>
+                                <div class="col-md-8">
+                                    <select id="createFunction" class="form-select">
                                         <option value="0">Plain Text</option>
                                         <option value="1">SHA256</option>
                                         <option value="2">SHA512</option>
-                                        <option value="3">SSHA256</option>
-                                        <option value="4">SSHA512</option>
-                                        <option value="5">TOTP</option>
-
+                                        <option value="3">SSHA256 (Salted SHA-256)</option>
+                                        <option value="4">SSHA512 (Salted SHA-512)</option>
+                                        <option value="5">TOTP (Time Based OTP)</option>
                                     </select>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td align="right">Default Expiration (seconds): </td>
-                                <td><input type="number" id="createDefaultExpiration" class="form-control"
-                                        placeholder="Default Expiration (seconds)" value="31536000">
-                                    <div class="form-text">Enter 0 for no expiration</div>
-                                </td>
-                            </tr>
+                                </div>
+                            </div>
+                            
+                            <div class="row mb-3 align-items-start">
+                                <div class="col-md-4 text-end">
+                                    <label for="createDefaultExpiration" class="form-label mb-0 pt-2">
+                                        Default Expiration (seconds):
+                                    </label>
+                                </div>
+                                <div class="col-md-8">
+                                    <input type="number" 
+                                           id="createDefaultExpiration" 
+                                           class="form-control"
+                                           placeholder="Default Expiration (seconds)" 
+                                           value="31536000"
+                                           oninput="updatePrettyTime('createDefaultExpiration', 'createDefaultExpirationPretty')">
+                                    <small id="createDefaultExpirationPretty" class="form-text text-muted mt-1"></small>
+                                </div>
+                            </div>
+                        </div>
 
-
-
-                        </table>
                     </div>
 
                     <div class="tab-pane" id="totpCreate" role="tabpanel" aria-labelledby="totp-tab-create"
