@@ -1,0 +1,166 @@
+<script>
+
+    function editAuthSlot(slotId) {
+        let slot = authSlots[slotId];
+        
+        $("#editSlotID").val(slotId);
+        $("#editDescription").val(slot['description']);
+        $("#editFunction").val(slot['passwordFunction']);
+        $("#editDefaultExpiration").val(slot['defaultExpirationSeconds']);
+        $("#editTotp2FAStepsToleranceWindow").val(slot['totp2FAStepsToleranceWindow']);
+        $("#editStrengthJSONValidator").val(slot['strengthJSONValidator']);
+
+        if (slot['passwordFunction'] == '5') { // TOTP
+            $('#totp-tab-edit').show();
+            $('#advanced-tab-edit').hide();
+            //$('#totpEdit').show();
+        } else {
+            $('#totp-tab-edit').hide();
+            $('#advanced-tab-edit').show();
+            //  $('#totpEdit').hide();
+        }
+      
+        // TODO:
+        $('.nav-tabs a:first').tab('show')
+    }
+
+    function ajaxEditAuthSlot() {
+
+        $.ajax({
+            url: '/api/v1/updateAuthenticationSlot',
+            type: 'PATCH',
+            contentType: 'application/json',
+            data: JSON.stringify({
+                slotId: parseInt($("#editSlotID").val()),
+                description: $("#editDescription").val(),
+                defaultExpirationSeconds: parseInt($("#editDefaultExpiration").val()),
+                strengthJSONValidator: $("#editStrengthJSONValidator").val(),
+                totp2FAStepsToleranceWindow: parseInt($("#editTotp2FAStepsToleranceWindow").val())
+            }),
+            success: function (response, textStatus, xhr) {
+                $('#modalEditAuthSlot').modal('hide');
+                populateTable();
+                showToastSuccess("Slot editd successfully.");
+            },
+            error: commonFunctionError
+        });
+
+    }
+
+</script>
+
+<div class="modal fade" id="modalEditAuthSlot" data-bs-backdrop="static" data-bs-keyboard="true" tabindex="-1"
+    aria-labelledby="modalEditAuthSlotLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalEditAuthSlotLabel">Edit New Authentication Slot</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+
+
+                <table width=100% style=" border-spacing: 10px;   border-collapse: separate;">
+                    <tr>
+                        <td>
+                            <ul class="nav nav-tabs" id="myTabEdit" role="tablist">
+                                <li class="nav-item">
+                                    <button class="nav-link active" id="details-tab-edit" data-bs-toggle="tab"
+                                        data-bs-target="#detailsEdit" type="button" role="tab"
+                                        aria-controls="detailsEdit" aria-selected="true">Slot Details</button>
+                                </li>
+
+                                <li class="nav-item">
+                                    <button class="nav-link" id="totp-tab-edit" data-bs-toggle="tab"
+                                        data-bs-target="#totpEdit" type="button" role="tab" aria-controls="totpEdit"
+                                        aria-selected="false">TOTP (2FA)</button>
+                                </li>
+
+                                <li class="nav-item">
+                                    <button class="nav-link" id="advanced-tab-edit" data-bs-toggle="tab"
+                                        data-bs-target="#advancedEdit" type="button" role="tab"
+                                        aria-controls="advancedEdit" aria-selected="false">Advanced Controls</button>
+                                </li>
+                            </ul>
+                        </td>
+                    </tr>
+                </table>
+
+                <div class="tab-content" id="myTabContentEdit">
+
+                    <div class="tab-pane show active" id="detailsEdit" role="tabpanel"
+                        aria-labelledby="details-tab-edit" style="min-height: 500px;">
+                        <table width=100% style=" border-spacing: 10px;   border-collapse: separate;">
+                            <tr>
+                                <td align="right">Slot ID: </td>
+                                <td><input id="editSlotID" type="number" class="form-control" placeholder="" disabled>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td align="right">Description: </td>
+                                <td><input id="editDescription" class="form-control" placeholder="Description">
+                                </td>
+                            </tr>
+                            <tr>
+                                <td align="right">Function: </td>
+                                <td>
+                                    <select id="editFunction" class="form-control" disabled>
+                                        <option value="0">Plain Text</option>
+                                        <option value="1">SHA256</option>
+                                        <option value="2">SHA512</option>
+                                        <option value="3">SSHA256</option>
+                                        <option value="4">SSHA512</option>
+                                        <option value="5">TOTP</option>
+
+                                    </select>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td align="right">Default Expiration (seconds): </td>
+                                <td><input type="number" id="editDefaultExpiration" class="form-control"
+                                        placeholder="Default Expiration (seconds)" value="31536000">
+                                    <div class="form-text">Enter 0 for no expiration</div>
+                                </td>
+                            </tr>
+
+
+
+                        </table>
+                    </div>
+
+                    <div class="tab-pane" id="totpEdit" role="tabpanel" aria-labelledby="totp-tab-edit"
+                        style="min-height: 500px;">
+                        <table width=100% style=" border-spacing: 10px;   border-collapse: separate;">
+                            <tr>
+                                <td align="right">TOTP 2FA Steps Tolerance Window: </td>
+                                <td><input type="number" id="editTotp2FAStepsToleranceWindow" class="form-control"
+                                        placeholder="TOTP 2FA Steps Tolerance Window" value="0">
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <div class="tab-pane" id="advancedEdit" role="tabpanel" aria-labelledby="advanced-tab-edit"
+                        style="min-height: 500px;">
+                        <table width=100% style=" border-spacing: 10px;   border-collapse: separate;">
+                            <tr>
+                                <td align="right">Strength JSON Validator: </td>
+                                <td><textarea id="editStrengthJSONValidator" class="form-control"
+                                        placeholder="Strength JSON Validator" rows="3"></textarea>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+
+                </div>
+
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-success" onclick="javascript:ajaxEditAuthSlot()">Update
+                    Authentication Slot</button>
+            </div>
+        </div>
+    </div>
+</div>

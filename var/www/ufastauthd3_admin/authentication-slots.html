@@ -2,13 +2,15 @@
 
 <script>
     document.getElementById("apptitle").innerHTML = "Authentication &#9658; Authentication Slots";
+    let authSlots = [];
 </script>
 
 <div class="container-fluid">
     <div class="row">
         <div class="col-8 mx-auto">
             <div class="mb-3 d-flex justify-content-end" style="width: 100%;">
-                <button type="button" class="btn btn-success" onclick="createAuthSlotClearParameters()" data-bs-toggle="modal" data-bs-target="#modalCreateAuthSlot">
+                <button type="button" class="btn btn-success" onclick="createAuthSlotClearParameters()"
+                    data-bs-toggle="modal" data-bs-target="#modalCreateAuthSlot">
                     Add New Authentication Slot
                 </button>
             </div>
@@ -48,7 +50,30 @@
         }
     }
 
+
+    function deleteAuthSlot(slotId) {
+
+        showYesNoDialog("<b>WARNING:</b> Removing this slot will <u>permanently delete</u> your entire password database and authentication data. This action is <i>irreversible</i> and cannot be undone.", function (result) {
+            $.ajax({
+                url: '/api/v1/deleteAuthenticationSlot',
+                type: 'DELETE',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    slotId: slotId
+                }),
+                success: function (response, textStatus, xhr) {
+                    populateTable();
+                    showToastSuccess("Slot removed successfully.");
+                },
+                error: commonFunctionError
+            });
+        });
+
+    }
+
+
     function populateTable() {
+        authSlots = [];
         $.ajax({
             url: '/api/v1/listAuthenticationSlots',
             type: 'GET',
@@ -62,14 +87,16 @@
 
                 for (let slot of response) {
                     let slotId = parseInt(slot["id"]);
-                    
+
+                    authSlots[slotId] = slot;
+
                     $("#tbody-authSlots").append(
                         `<tr> 
                             <th scope="row">${slotId}</th>
                             <td id="ulist-authSlotDescription-${slotId}"></td>
                             <td id="ulist-authSlotFunction-${slotId}"></td>
                             <td style="text-align: right;">
-                                <button type="button" class="btn btn-light btn-sm" onclick="javascript:editAuthSlot(${slotId});"><i class="fas fa-edit"></i></button>
+                                <button type="button" class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#modalEditAuthSlot" onclick="javascript:editAuthSlot(${slotId});"><i class="fas fa-edit"></i></button>
                                 <button type="button" class="btn btn-light btn-sm" onclick="javascript:deleteAuthSlot(${slotId});"><i class="fas fa-trash"></i></button>
                             </td>
                         </tr>`
@@ -85,28 +112,7 @@
     }
 
     populateTable();
-    console.log("meh");
 </script>
-
-<!--
-        jRet["description"] = description; // string
-        jRet["defaultExpirationSeconds"] = defaultExpirationSeconds; // integer
-        jRet["strengthJSONValidator"] = strengthJSONValidator; (string with a json)
-        jRet["passwordFunction"] = (int) passwordFunction; < integer (check bellow)
-        jRet["totp2FAStepsToleranceWindow"] = totp2FAStepsToleranceWindow; < integer
-                rSlot["id"] < integer
-CREATE TABLE `authenticationSlots` (
-                                             `slotId`                        INTEGER PRIMARY KEY AUTOINCREMENT,
-                                             `description`                   VARCHAR(4096) NOT NULL,
-                                             `function`                      INTEGER       DEFAULT 0,
-                                             `defaultExpirationSeconds`      INTEGER       DEFAULT 0,
-                                             `strengthJSONValidator`         TEXT          NOT NULL,
-                                             `totp2FAStepsToleranceWindow`  INTEGER         DEFAULT 0
-                                                                        )
-
-                                                                        enum HashFunction
--->
-
 
 <!--<%include:/includes/authentication-slots/inc.modal.editauthslot.html%>-->
 <!--<%include:/includes/authentication-slots/inc.modal.newauthslot.html%>-->

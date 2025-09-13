@@ -255,8 +255,8 @@ uint32_t IdentityManager_DB::AuthController_DB::addNewAuthenticationSlot(const A
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
 
-    auto i = _parent->m_sqlConnector->qExecute("INSERT INTO iam.authenticationSlots (`description`,`function`,`defaultExpirationSeconds`,`strengthJSONValidator`) "
-                                               "VALUES(:description,:function,:defaultExpirationSeconds,:strengthJSONValidator);",
+    auto i = _parent->m_sqlConnector->qExecute("INSERT INTO iam.authenticationSlots (`description`,`function`,`defaultExpirationSeconds`,`strengthJSONValidator`,`totp2FAStepsToleranceWindow`) "
+                                               "VALUES(:description,:function,:defaultExpirationSeconds,:strengthJSONValidator,:totp2FAStepsToleranceWindow);",
                                                {{":description", MAKE_VAR(STRING, details.description)},
                                                 {":function", MAKE_VAR(UINT32, details.passwordFunction)},
                                                 {":defaultExpirationSeconds", MAKE_VAR(UINT32, details.defaultExpirationSeconds)},
@@ -281,14 +281,12 @@ bool IdentityManager_DB::AuthController_DB::updateAuthenticationSlotDetails(cons
     // Update...
     return _parent->m_sqlConnector->execute("UPDATE iam.authenticationSlots SET "
                                             "`description` = :description, "
-                                            "`function` = :function, "
                                             "`defaultExpirationSeconds` = :defaultExpirationSeconds, "
                                             "`totp2FAStepsToleranceWindow` = :totp2FAStepsToleranceWindow, "
                                             "`strengthJSONValidator` = :strengthJSONValidator "
                                             "WHERE `slotId` = :slotId;",
                                             {{":slotId", MAKE_VAR(UINT32, slotId)},
                                              {":description", MAKE_VAR(STRING, details.description)},
-                                             {":function", MAKE_VAR(UINT32, details.passwordFunction)},
                                              {":defaultExpirationSeconds", MAKE_VAR(UINT32, details.defaultExpirationSeconds)},
                                              {":totp2FAStepsToleranceWindow", MAKE_VAR(UINT32, details.totp2FAStepsToleranceWindow)},
                                              {":strengthJSONValidator", MAKE_VAR(STRING, details.strengthJSONValidator)}});

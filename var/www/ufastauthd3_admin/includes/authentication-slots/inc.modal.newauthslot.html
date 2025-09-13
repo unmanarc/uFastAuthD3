@@ -1,18 +1,50 @@
 <script>
 
     function createAuthSlotClearParameters() {
-        $("#createSlotId").val('');
-        $("#createDescription").val('');
+        $("#createDescription").val('Password Slot');
         $("#createFunction").val('1');
         $("#createDefaultExpiration").val('31536000');
         $("#createTotp2FAStepsToleranceWindow").val('0');
         $("#createStrengthJSONValidator").val('');
+
+        $('#totp-tab-create').hide();
+
+        $('#createFunction').change(function() {
+            if ($(this).val() == '5') { // TOTP
+                $('#totp-tab-create').show();
+                $('#advanced-tab-create').hide();
+                //$('#totpCreate').show();
+            } else {
+                $('#totp-tab-create').hide();
+                $('#advanced-tab-create').show();
+              //  $('#totpCreate').hide();
+            }
+        });
+
         // TODO:
         $('.nav-tabs a:first').tab('show')
     }
 
-
     function ajaxCreateAuthSlot() {
+
+        $.ajax({
+            url: '/api/v1/addNewAuthenticationSlot',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({
+                passwordFunction: parseInt($("#createFunction").val()),
+                description: $("#createDescription").val(),
+                defaultExpirationSeconds: parseInt($("#createDefaultExpiration").val()),
+                strengthJSONValidator: $("#createStrengthJSONValidator").val(),
+                totp2FAStepsToleranceWindow: parseInt($("#createTotp2FAStepsToleranceWindow").val())
+            }),
+            success: function (response, textStatus, xhr) {
+                $('#modalCreateAuthSlot').modal('hide');
+                populateTable();
+                showToastSuccess("Slot created successfully.");
+            },
+            error: commonFunctionError
+        });
 
     }
 
@@ -36,7 +68,7 @@
                                 <li class="nav-item">
                                     <button class="nav-link active" id="details-tab-create" data-bs-toggle="tab"
                                         data-bs-target="#detailsCreate" type="button" role="tab"
-                                        aria-controls="detailsCreate" aria-selected="true">AuthSlot Details</button>
+                                        aria-controls="detailsCreate" aria-selected="true">Slot Details</button>
                                 </li>
 
                                 <li class="nav-item">
@@ -60,12 +92,6 @@
                     <div class="tab-pane show active" id="detailsCreate" role="tabpanel"
                         aria-labelledby="details-tab-create" style="min-height: 500px;">
                         <table width=100% style=" border-spacing: 10px;   border-collapse: separate;">
-                            <tr>
-                                <td align="right">AuthSlot ID: </td>
-                                <td><input type="number" id="createSlotId" class="form-control"
-                                        placeholder="AuthSlot ID">
-                                </td>
-                            </tr>
                             <tr>
                                 <td align="right">Description: </td>
                                 <td><input id="createDescription" class="form-control" placeholder="Description">

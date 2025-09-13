@@ -16,5 +16,9 @@ protected:
     static void addMethods_AuthController(std::shared_ptr<MethodsHandler> methods);
 
     static void listAuthenticationSlots(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
+    static void addNewAuthenticationSlot(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
+    static void deleteAuthenticationSlot(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
+    static void updateAuthenticationSlot(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
+
 
 };
