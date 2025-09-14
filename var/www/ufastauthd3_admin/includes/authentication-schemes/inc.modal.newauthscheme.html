@@ -1,0 +1,88 @@
+<script>
+
+    function createAuthSchemeClearParameters() {
+        $("#createDescription").val('Password Authentication Scheme');
+
+        // TODO:
+        $('.nav-tabs a:first').tab('show')
+    }
+
+    function ajaxCreateAuthScheme() {
+
+        $.ajax({
+            url: '/api/v1/addNewAuthenticationScheme',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({
+                description: $("#createDescription").val()
+            }),
+            success: function (response, textStatus, xhr) {
+                $('#modalCreateAuthScheme').modal('hide');
+                populateTable();
+                showToastSuccess("Scheme created successfully.");
+            },
+            error: commonFunctionError
+        });
+
+    }
+</script>
+
+<div class="modal fade" id="modalCreateAuthScheme" data-bs-backdrop="static" data-bs-keyboard="true" tabindex="-1"
+    aria-labelledby="modalCreateAuthSchemeLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalCreateAuthSchemeLabel">Add New Authentication Scheme</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+
+                <table width=100% style=" border-spacing: 10px;   border-collapse: separate;">
+                    <tr>
+                        <td>
+                            <ul class="nav nav-tabs" id="myTabCreate" role="tablist">
+                                <li class="nav-item">
+                                    <button class="nav-link active" id="details-tab-create" data-bs-toggle="tab"
+                                        data-bs-target="#detailsCreate" type="button" role="tab"
+                                        aria-controls="detailsCreate" aria-selected="true">Scheme Details</button>
+                                </li>
+
+                            </ul>
+                        </td>
+                    </tr>
+                </table>
+
+                <div class="tab-content" id="myTabContentCreate">
+
+                    <div class="tab-pane show active" id="detailsCreate" role="tabpanel"
+                        aria-labelledby="details-tab-create" style="min-height: 300px;">
+                       
+
+                        <div class="container-fluid">
+                            <div class="row mb-3 align-items-center">
+                                <div class="col-md-4 text-end">
+                                    <label for="createDescription" class="form-label mb-0">Description:</label>
+                                </div>
+                                <div class="col-md-8">
+                                    <input id="createDescription" class="form-control" placeholder="Description">
+                                </div>
+                            </div>
+                            
+                           
+                        </div>
+
+                    </div>
+                  
+
+                </div>
+
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-success" onclick="javascript:ajaxCreateAuthScheme()">Create
+                    Authentication Scheme</button>
+            </div>
+        </div>
+    </div>
+</div>

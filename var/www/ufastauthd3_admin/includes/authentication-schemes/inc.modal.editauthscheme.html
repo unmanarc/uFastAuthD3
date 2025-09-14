@@ -1,0 +1,205 @@
+<script>
+    let authSchemeSlots = [];
+
+    function editAuthScheme(schemeId) {
+        let scheme = authSchemes[schemeId];
+
+        $("#editSchemeID").val(schemeId);
+        $("#editDescription").val(scheme['description']);
+
+        displayAuthSchemeSlots(schemeId);
+        // TODO:
+        $('.nav-tabs a:first').tab('show')
+    }
+
+    function displayAuthSchemeSlots(schemeId) 
+    {
+        authSchemeSlots = [];
+        $.ajax({
+            url: '/api/v1/listAuthenticationSlotsUsedByScheme',
+            type: 'GET',
+            contentType: 'application/json',
+            data: JSON.stringify(
+                {
+                    schemeId: schemeId
+                }),
+            success: function (response) {
+                $("#tbody-authSchemesSlots").empty();
+
+                authSchemeSlots = response["usedSlots"];
+                for (let slot of authSchemeSlots) {
+                    let slotId = parseInt(slot["slotId"]);
+                    let slotDescription = slot["details"]["description"];
+
+                    $("#tbody-authSchemesSlots").append(
+                        `<tr> 
+                            <td id="ulist-slotIdAndDescription-${slotId}"></td>
+                            </td>
+                            <td>
+                                <button type="button" class="btn btn-light btn-sm" onclick="javascript:moveAuthSlot(${slotId}, -1);"><i class="fas fa-arrow-up"></i></button>
+                                <button type="button" class="btn btn-light btn-sm" onclick="javascript:moveAuthSlot(${slotId}, 1);"><i class="fas fa-arrow-down"></i></button>
+                            </td>
+                            <td>
+                                <input type="checkbox" id="slotOptional-${slotId}"  ${slot["optional"] ? 'checked' : ''}>
+                            </td>
+                            <td style="text-align: right;">
+                                <button type="button" class="btn btn-light btn-sm" onclick="javascript:deleteAuthSlot(${slotId});"><i class="fas fa-trash"></i></button>
+                            </td>
+                        </tr>`
+                    );
+
+                    $(`#ulist-slotIdAndDescription-${slotId}`).text(slotId + ": " + slotDescription);
+                }
+
+                // los leftSlots vienen en el mismo formato que los usedSlots. Quiero llenar el select selectAddSlot con esos datos en el formato ID: Description
+                let leftSlots = response["leftSlots"];
+                let selectAddSlot = $("#selectAddSlot");
+                selectAddSlot.empty();
+
+                for (let i = 0; i < leftSlots.length; i++) {
+                    let slot = leftSlots[i];
+                    let slotId = parseInt(slot["slotId"]);
+                    selectAddSlot.append(`<option value="${slotId}"></option>`);
+                }
+
+                // Populate descriptions after rendering options
+                for (let i = 0; i < leftSlots.length; i++) {
+                    let slot = leftSlots[i];
+                    let slotId = parseInt(slot["slotId"]);
+                    let slotDescription = slot["details"]["description"];
+                    $(`#selectAddSlot option[value="${slotId}"]`).text(`${slotId}: ${slotDescription}`);
+                }
+            },
+            error: commonFunctionError
+        });
+    }
+
+    function displayUpdateFunction() {
+        document.getElementById('modifyButtons').style.display = 'block';
+    }
+
+    function discardAccountDetails() {
+        document.getElementById('modifyButtons').style.display = 'none';
+        editAuthScheme($('#editSchemeID').val());
+    }
+
+    function ajaxEditAuthScheme() {
+
+        $.ajax({
+            url: '/api/v1/updateAuthenticationScheme',
+            type: 'PATCH',
+            contentType: 'application/json',
+            data: JSON.stringify({
+                schemeId: parseInt($("#editSchemeID").val()),
+                description: $("#editDescription").val(),
+            }),
+            success: function (response, textStatus, xhr) {
+                populateTable();
+                showToastSuccess("Scheme updated successfully.");
+                document.getElementById('modifyButtons').style.display = 'none';
+            },
+            error: commonFunctionError
+        });
+    }
+
+</script>
+
+<div class="modal fade" id="modalEditAuthScheme" data-bs-backdrop="static" data-bs-keyboard="true" tabindex="-1"
+    aria-labelledby="modalEditAuthSchemeLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalEditAuthSchemeLabel">Edit New Authentication Scheme</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+
+
+                <table width=100% style=" border-spacing: 10px;   border-collapse: separate;">
+                    <tr>
+                        <td>
+                            <ul class="nav nav-tabs" id="myTabEdit" role="tablist">
+                                <li class="nav-item">
+                                    <button class="nav-link active" id="details-tab-edit" data-bs-toggle="tab"
+                                        data-bs-target="#detailsEdit" type="button" role="tab"
+                                        aria-controls="detailsEdit" aria-selected="true">Scheme Details</button>
+                                </li>
+
+                                <li class="nav-item">
+                                    <button class="nav-link" id="advanced-tab-edit" data-bs-toggle="tab"
+                                        data-bs-target="#advancedEdit" type="button" role="tab"
+                                        aria-controls="advancedEdit" aria-selected="false">Scheme Slots</button>
+                                </li>
+                            </ul>
+                        </td>
+                    </tr>
+                </table>
+
+                <div class="tab-content" id="myTabContentEdit">
+                    <div class="tab-pane show active" id="detailsEdit" role="tabpanel"
+                        aria-labelledby="details-tab-edit" style="min-height: 500px;">
+                        <div class="container-fluid">
+                            <div class="row mb-3 align-items-center">
+                                <div class="col-md-4 text-end">
+                                    <label for="editSchemeID" class="form-label mb-0">Scheme ID:</label>
+                                </div>
+                                <div class="col-md-8">
+                                    <input id="editSchemeID" type="number" class="form-control" placeholder="" disabled>
+                                </div>
+                            </div>
+                            <div class="row mb-3 align-items-center">
+                                <div class="col-md-4 text-end">
+                                    <label for="editDescription" class="form-label mb-0">Description:</label>
+                                </div>
+                                <div class="col-md-8">
+                                    <input id="editDescription" class="form-control" placeholder="Description"
+                                        oninput="displayUpdateFunction();" onchange="displayUpdateFunction();">
+                                </div>
+                            </div>
+                            <div class="d-flex justify-content-end mt-4">
+                                <div id="modifyButtons" style="display:none;">
+                                    <button type="button" class="btn btn-dark  me-2"
+                                        onclick="javascript:discardAccountDetails()">Discard
+                                        Changes</button>
+                                    <button type="button" class="btn btn-warning"
+                                        onclick="javascript:ajaxEditAuthScheme()">Update Account
+                                        Details</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tab-pane" id="advancedEdit" role="tabpanel" aria-labelledby="advanced-tab-edit"
+                        style="min-height: 500px;">
+
+                        <div class="row">
+                            <div class="col-10 mx-auto">
+                                <div class="mb-3 d-flex justify-content-end align-items-center">
+                                    <div class="d-flex flex-nowrap" style="width: auto;">
+                                        <select class="form-select me-2" id="selectAddSlot" aria-label="Default select example" style="min-width: 200px;">
+                                        </select>
+                                        <button type="button" class="btn btn-outline-success flex-shrink-0"
+                                            onclick="javascript:addAuthSlot();">Add Slot</button>
+                                    </div>
+                                </div>
+                                <table class="table table-hover">
+                                    <thead class="thead-light">
+                                        <tr bgcolor=grey>
+                                            <th scope="col">Slot ID + Description</th>
+                                            <th scope="col">Priority</th>
+                                            <th scope="col">Is Optional?</th>
+                                            <th scope="col" style="text-align: right;">Controls</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tbody-authSchemesSlots">
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
