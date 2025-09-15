@@ -23,6 +23,7 @@ void WebAdmin_Methods_AuthController::addMethods_AuthController(std::shared_ptr<
     methods->addResource(MethodsHandler::PATCH, "updateAuthenticationScheme", &updateAuthenticationScheme, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"AUTH_DELETE"});
 
     methods->addResource(MethodsHandler::GET, "listAuthenticationSlotsUsedByScheme", &listAuthenticationSlotsUsedByScheme, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"AUTH_READ"});
+    methods->addResource(MethodsHandler::PATCH, "updateAuthenticationSlotsUsedByScheme", &updateAuthenticationSlotsUsedByScheme, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"AUTH_MODIFY"});
 }
 
 void WebAdmin_Methods_AuthController::addNewAuthenticationScheme(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
@@ -104,6 +105,25 @@ void WebAdmin_Methods_AuthController::listAuthenticationSlotsUsedByScheme(void *
     }
 
     (*response.responseJSON()) = r;
+}
+
+void WebAdmin_Methods_AuthController::updateAuthenticationSlotsUsedByScheme(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
+{
+    uint32_t schemeId = JSON_ASUINT(*request.inputJSON, "schemeId", 0);
+
+    std::list<AuthenticationSchemeUsedSlot> slotsUsedByScheme;
+
+    for ( const json & jSlot : (*request.inputJSON)["authSchemeSlots"] )
+    {
+        AuthenticationSchemeUsedSlot slot(0,0,false);
+        slot.fromJSON(jSlot);
+        slotsUsedByScheme.push_back(slot);
+    }
+
+    if (!Globals::getIdentityManager()->authController->updateAuthenticationSlotUsedByScheme(schemeId,slotsUsedByScheme))
+    {
+        response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to update the authentication scheme slots");
+    }
 }
 
 void WebAdmin_Methods_AuthController::listAuthenticationSlots(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)

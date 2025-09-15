@@ -1,5 +1,6 @@
 <script>
     let authSchemeSlots = [];
+    let leftSlots = [];
 
     function editAuthScheme(schemeId) {
         let scheme = authSchemes[schemeId];
@@ -10,6 +11,126 @@
         displayAuthSchemeSlots(schemeId);
         // TODO:
         $('.nav-tabs a:first').tab('show')
+    }
+
+    function updateAuthSchemeFromLocalVar()
+    {
+        let schemeId = parseInt($("#editSchemeID").val());
+
+        // Validar que al menos un slot sea opcional false
+        const hasNonOptionalSlot = authSchemeSlots.some(slot => slot.optional === false);
+        if (!hasNonOptionalSlot) {
+            showToastError("At least one slot must be marked as non-optional (not optional).");
+            displayAuthSchemeSlots(schemeId);
+            return;
+        }
+        
+        $.ajax({
+            url: '/api/v1/updateAuthenticationSlotsUsedByScheme',
+            type: 'PATCH',
+            contentType: 'application/json',
+            data: JSON.stringify({
+                schemeId: schemeId,
+                authSchemeSlots: authSchemeSlots
+            }),
+            success: function (response) {
+                showToastSuccess("Slots updated successfully.");
+                displayAuthSchemeSlots(schemeId);
+            },
+            error: function (xhr, status, error) {
+                // Aqui vas a llamar a displayAuthSchemeSlots (para hacer un refresh)
+                displayAuthSchemeSlots(schemeId);
+                commonFunctionError(xhr, status, error);
+            } 
+        });
+    }
+
+    function handleOptionalChange(slotId, isChecked)
+    {
+        // Find the slot in authSchemeSlots by slotId
+        let slot = authSchemeSlots.find(s => s.slotId === slotId);
+        if (!slot) return;
+
+        // Update the optional status
+        slot.optional = isChecked;
+
+        // Validate that at least one slot is non-optional (optional = false)
+        const hasNonOptionalSlot = authSchemeSlots.some(s => s.optional === false);
+        if (!hasNonOptionalSlot) {
+            // If all slots are optional, revert the change and show error
+            slot.optional = false;
+            showToastError("At least one slot must be marked as non-optional (not optional).");
+            // Update the checkbox to unchecked
+            $(`#slotOptional-${slotId}`).prop('checked', false);
+            return;
+        }
+
+        // Update the local variable and send to backend
+        updateAuthSchemeFromLocalVar();
+    }
+
+    function deleteAuthSlotFromScheme(slotId)
+    {
+        // Find the slot to remove from authSchemeSlots
+        let index = authSchemeSlots.findIndex(slot => slot.slotId === slotId);
+        if (index === -1) {
+            showToastError("Slot not found in the scheme.");
+            return;
+        }
+
+        // Remove the slot from authSchemeSlots
+        authSchemeSlots.splice(index, 1)[0];
+        updateAuthSchemeFromLocalVar();
+    }
+
+    function addAuthSlotToAuthScheme()
+    {
+        let selectedSlotId = parseInt($("#selectAddSlot").val());
+       
+        if (isNaN(selectedSlotId)) {
+            showToastError("Please select a valid slot to add.");
+            return;
+        }
+
+        let slot = leftSlots.find(function(s) {
+            return s.slotId === selectedSlotId;
+        });
+
+        if (slot) {
+            slot["optional"] = false;
+            slot["orderPriority"] = authSchemeSlots.length;
+            authSchemeSlots.push(slot);
+            leftSlots = leftSlots.filter(function(s) {
+                return s.slotId !== selectedSlotId;
+            });
+        }
+        updateAuthSchemeFromLocalVar();
+    }
+
+
+    function moveAuthSlot(slotId, direction)
+    {
+        // Find the index of the slot in authSchemeSlots
+        let index = authSchemeSlots.findIndex(slot => slot.slotId === slotId);
+        if (index === -1 || (index === 0 && direction === -1) || (index === authSchemeSlots.length - 1 && direction === 1)) {
+            // Cannot move if at the edge
+            return;
+        }
+
+        // Calculate new index after moving
+        let newIndex = index + direction;
+
+        // Swap the slots in the array
+        let temp = authSchemeSlots[index];
+        authSchemeSlots[index] = authSchemeSlots[newIndex];
+        authSchemeSlots[newIndex] = temp;
+
+        // Update the orderPriority for both slots
+        authSchemeSlots[index].orderPriority = index;
+        authSchemeSlots[newIndex].orderPriority = newIndex;
+
+        // Update the display
+        updateAuthSchemeFromLocalVar();
     }
 
     function displayAuthSchemeSlots(schemeId) 
@@ -34,25 +155,25 @@
                     $("#tbody-authSchemesSlots").append(
                         `<tr> 
                             <td id="ulist-slotIdAndDescription-${slotId}"></td>
+                            <td>
+                                ${slot.orderPriority === 0 ? '<button type="button" class="btn btn-light btn-sm" disabled><i class="fas fa-arrow-up"></i></button>' : `<button type="button" class="btn btn-light btn-sm" onclick="javascript:moveAuthSlot(${slotId}, -1);"><i class="fas fa-arrow-up"></i></button>`}
+                                ${slot.orderPriority === authSchemeSlots.length - 1 ? '<button type="button" class="btn btn-light btn-sm" disabled><i class="fas fa-arrow-down"></i></button>' : `<button type="button" class="btn btn-light btn-sm" onclick="javascript:moveAuthSlot(${slotId}, 1);"><i class="fas fa-arrow-down"></i></button>`}
                             </td>
                             <td>
-                                <button type="button" class="btn btn-light btn-sm" onclick="javascript:moveAuthSlot(${slotId}, -1);"><i class="fas fa-arrow-up"></i></button>
-                                <button type="button" class="btn btn-light btn-sm" onclick="javascript:moveAuthSlot(${slotId}, 1);"><i class="fas fa-arrow-down"></i></button>
-                            </td>
-                            <td>
-                                <input type="checkbox" id="slotOptional-${slotId}"  ${slot["optional"] ? 'checked' : ''}>
+                                <input type="checkbox" id="slotOptional-${slotId}"  ${slot["optional"] ? 'checked' : ''} onchange="javascript:handleOptionalChange(${slotId}, this.checked);">
                             </td>
                             <td style="text-align: right;">
-                                <button type="button" class="btn btn-light btn-sm" onclick="javascript:deleteAuthSlot(${slotId});"><i class="fas fa-trash"></i></button>
+                                <button type="button" class="btn btn-light btn-sm" onclick="javascript:deleteAuthSlotFromScheme(${slotId});"><i class="fas fa-trash"></i></button>
                             </td>
                         </tr>`
                     );
+
 
                     $(`#ulist-slotIdAndDescription-${slotId}`).text(slotId + ": " + slotDescription);
                 }
 
                 // los leftSlots vienen en el mismo formato que los usedSlots. Quiero llenar el select selectAddSlot con esos datos en el formato ID: Description
-                let leftSlots = response["leftSlots"];
+                leftSlots = response["leftSlots"];
                 let selectAddSlot = $("#selectAddSlot");
                 selectAddSlot.empty();
 
@@ -179,7 +300,7 @@
                                         <select class="form-select me-2" id="selectAddSlot" aria-label="Default select example" style="min-width: 200px;">
                                         </select>
                                         <button type="button" class="btn btn-outline-success flex-shrink-0"
-                                            onclick="javascript:addAuthSlot();">Add Slot</button>
+                                            onclick="javascript:addAuthSlotToAuthScheme();">Add Slot</button>
                                     </div>
                                 </div>
                                 <table class="table table-hover">
