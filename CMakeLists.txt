@@ -5,7 +5,7 @@ set(APP_NAME "uFastAuthD3")
 set(SVERSION 3.0.0)
 
 project(${APP_NAME})
-project(${PROJECT_NAME} VERSION ${SVERSION} DESCRIPTION "Unmanarc's Fast Authentication Daemon 2")
+project(${PROJECT_NAME} VERSION ${SVERSION} DESCRIPTION "Unmanarc's Fast Authentication Daemon 3")
 
 set(CXX_STANDARD 20)
 
