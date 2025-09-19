@@ -1,0 +1,102 @@
+<script>
+
+    function createActivityClearParameters() {
+        $("#activityNameCreate").val('');
+        $("#activityDescriptionCreate").val('');
+        // TODO:
+       // $('.nav-tabs a:first').tab('show');
+    }
+
+    function ajaxCreateActivity() {
+
+        var activityName = $("#activityNameCreate").val().trim();
+        var activityDescription = $("#activityDescriptionCreate").val().trim();
+
+        if (activityName === '') {
+            $("#activityNameCreate").focus();
+            return false;
+        }
+
+        if (activityDescription === '') {
+            $("#activityDescriptionCreate").focus();
+            return false;
+        }
+
+        $.ajax({
+            url: '/api/v1/addApplicationActivity',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({
+                appName: currentApplication,
+                activityName: $("#activityNameCreate").val(),
+                activityDescription: $("#activityDescriptionCreate").val()
+            }),
+            success: function (response, textStatus, xhr) {
+                $('#modalCreateActivity').modal('hide');
+                refreshActivities();
+                showToastSuccess("Activity created successfully.");
+                closeCreateActivityModal();
+            },
+            error: commonFunctionError
+        });
+    }
+
+    function closeCreateActivityModal() {
+        $('#modalCreateActivity').modal('hide');
+        $("#modalEditApplication").modal('show');
+    }
+
+</script>
+<div class="modal fade" id="modalCreateActivity" data-bs-backdrop="static" data-bs-keyboard="true" tabindex="-1"
+    aria-labelledby="modalCreateActivityLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-scrollable modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalCreateActivityLabel">Create New Activity</h5>
+                <button type="button" class="btn-close" aria-label="Close" onclick="javascript:closeCreateActivityModal()"></button>
+            </div>
+            <div class="modal-body">
+
+                <table width=100% style=" border-spacing: 10px;   border-collapse: separate;">
+                    <tr>
+                        <td>
+                            <ul class="nav nav-tabs" id="myTabCreate" activity="tablist">
+                                <li class="nav-item">
+                                    <button class="nav-link active" id="details-tab-create" data-bs-toggle="tab"
+                                        data-bs-target="#detailsCreate" type="button" activity="tab"
+                                        aria-controls="detailsCreate" aria-selected="true">Activity Details</button>
+                                </li>
+                            </ul>
+                        </td>
+                    </tr>
+                </table>
+
+                <div class="tab-content" id="myTabContentCreate">
+
+                    <div class="tab-pane show active" id="detailsCreate" activity="tabpanel"
+                        aria-labelledby="details-tab-create">
+                        <table width=100% style=" border-spacing: 10px;   border-collapse: separate;">
+                            <tr>
+                                <td align="right">Activity Name: </td>
+                                <td><input type="text" name="activityName" id="activityNameCreate" class="form-control"
+                                        placeholder="Activity Name" style="text-transform: uppercase"
+                                        oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9_-]/g, '')">
+                                </td>
+                            </tr>
+                            <tr>
+                                <td align="right">Description: </td>
+                                <td><input id="activityDescriptionCreate" class="form-control" placeholder="Description">
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="javascript:closeCreateActivityModal()">Close</button>
+                <button type="button" class="btn btn-success" onclick="javascript:ajaxCreateActivity()">Create
+                    Activity</button>
+            </div>
+        </div>
+    </div>
+</div>

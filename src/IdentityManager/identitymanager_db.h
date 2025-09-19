@@ -242,6 +242,8 @@ public:
         bool setWebLoginJWTValidationKeyForApplication(const std::string &appName, const std::string &validationKey) override;
         std::string getWebLoginJWTValidationKeyForApplication(const std::string &appName) override;
 
+        bool addApplicationActivity(const std::string &appName, const std::string &activityName, const std::string &activityDescription) override;
+        bool removeApplicationActivity(const std::string &appName, const std::string &activityName) override;
         bool setApplicationActivities(const std::string &appName, const std::map<std::string, ActivityData> &activities) override;
         bool removeApplicationActivities(const std::string &appName) override;
         std::map<std::string, ActivityData> listApplicationActivities(const std::string &appName) override;

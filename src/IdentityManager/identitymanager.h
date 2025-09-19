@@ -107,7 +107,7 @@ public:
             std::string fieldRegexpValidator;
             std::optional<std::string> value;
 
-            Json::Value getJSON() const
+            Json::Value toJSON() const
             {
                 Json::Value fieldJson;
                 fieldJson["name"] = name;
@@ -402,10 +402,31 @@ public:
 
         struct ActivityData
         {
+            json toJSON() const
+            {
+                json r;
+                r["description"] = description;
+                r["parentActivity"] = parentActivity;
+                r["defaultSchemeDescription"] = defaultSchemeDescription;
+                r["defaultSchemeID"] = defaultSchemeID;
+                return r;
+            }
+            void fromJSON(const json & r)
+            {
+                description = JSON_ASSTRING(r,"description","");
+                parentActivity = JSON_ASSTRING(r,"parentActivity","");
+                defaultSchemeDescription = JSON_ASSTRING(r,"defaultSchemeDescription","");
+                defaultSchemeID = JSON_ASUINT(r,"defaultSchemeID",-1);
+            }
+
             std::string description;
             std::string parentActivity;
+            std::string defaultSchemeDescription;
+            uint32_t defaultSchemeID;
         };
 
+        virtual bool addApplicationActivity(const std::string &appName, const std::string &activityName, const std::string &activityDescription) = 0;
+        virtual bool removeApplicationActivity(const std::string &appName, const std::string &activityName) = 0;
         virtual bool setApplicationActivities(const std::string &appName, const std::map<std::string, ActivityData> &activities) = 0;
         virtual bool removeApplicationActivities(const std::string &appName) = 0;
         virtual std::map<std::string, ActivityData> listApplicationActivities(const std::string &appName) = 0;

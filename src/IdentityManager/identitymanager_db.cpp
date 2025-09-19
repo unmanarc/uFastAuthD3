@@ -82,7 +82,7 @@ bool IdentityManager_DB::initializeDatabase()
         R"(CREATE TABLE IF NOT EXISTS `iam`.`applicationActivities` (
                                              `f_appName`             VARCHAR(256)  NOT NULL,
                                              `activityName`          VARCHAR(256)  NOT NULL,
-                                             `parentActivity`        VARCHAR(256)  NOT NULL,
+                                             `parentActivity`        VARCHAR(256)  DEFAULT NULL,
                                              `description`           VARCHAR(4096) NOT NULL,
                                              `defaultSchemeId` INTEGER DEFAULT NULL,
                                               FOREIGN KEY(`f_appName`)   REFERENCES applications(`appName`) ON DELETE CASCADE

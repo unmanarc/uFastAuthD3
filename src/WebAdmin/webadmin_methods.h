@@ -6,6 +6,7 @@
 #include "WebAdmin/webadmin_methods_applications.h"
 #include "WebAdmin/webadmin_methods_application_scopes.h"
 #include "WebAdmin/webadmin_methods_application_roles.h"
+#include "WebAdmin/webadmin_methods_application_activities.h"
 #include "WebAdmin/webadmin_methods_authcontroller.h"
 
 #include <json/json.h>
@@ -14,7 +15,7 @@
 #include <Mantids30/Helpers/json.h>
 #include <Mantids30/Protocol_HTTP/httpv1_base.h>
 
-class WebAdmin_Methods : private WebAdminMethods_Accounts, private WebAdminMethods_Applications, private WebAdminMethods_ApplicationsScopes, private WebAdminMethods_ApplicationRoles, private WebAdmin_Methods_AuthController
+class WebAdmin_Methods : private WebAdminMethods_Accounts, private WebAdminMethods_Applications, private WebAdminMethods_ApplicationsScopes, private WebAdminMethods_ApplicationRoles, private WebAdmin_Methods_AuthController, private WebAdminMethods_ApplicationActivities
 {
 public:
     using MethodsHandler = Mantids30::API::RESTful::MethodsHandler;

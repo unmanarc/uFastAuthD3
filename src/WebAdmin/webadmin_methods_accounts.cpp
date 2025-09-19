@@ -430,7 +430,7 @@ void WebAdminMethods_Accounts::getAccountDetailFieldsValues(void *context, APIRe
     Json::Value result(Json::arrayValue);
     for (const auto &fieldValue : fieldValues)
     {
-        result.append(fieldValue.getJSON());
+        result.append(fieldValue.toJSON());
     }
     (*response.responseJSON()) = result;
 }

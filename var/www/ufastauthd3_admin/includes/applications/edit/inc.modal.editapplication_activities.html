@@ -1,6 +1,99 @@
 <div class="tab-pane" id="activities" role="tabpanel" aria-labelledby="activities-tab" style="min-height: 500px;">
 
+    <div class="container-fluid">
 
-    
-    
+        <div class="d-flex justify-content-end mb-3">
+
+            <button type="button" class="btn btn-success" onclick="addApplicationActivity()" data-bs-toggle="modal"
+                data-bs-target="#modalCreateActivity">
+                Add New Activity
+            </button>
+
+        </div>
+
+        <hr>
+
+        <table class="table table-hover">
+            <thead class="thead-light">
+                <tr bgcolor=grey>
+                    <th scope="col">Activity ID</th>
+                    <th scope="col">Parent Activity ID</th>
+                    <th scope="col">Description</th>
+                    <th scope="col">Default Scheme ID</th>
+                    <th scope="col" style="text-align: right;">Controls</th>
+                </tr>
+            </thead>
+            <tbody id="tbody-applicationActivities">
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        function deleteActivityFromApplication(internalId) {
+            const activityName = $(`#ulist-activity-name-${internalId}`).text();
+            
+            showYesNoDialog(`Are you sure you want to delete the activity?`, function (result) {
+                $.ajax({
+                    url: '/api/v1/removeApplicationActivity',
+                    type: 'DELETE',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        appName: currentApplication,
+                        activityName: activityName
+                    }),
+                    success: function (response) {
+                        refreshActivities();
+                        showToastSuccess('Activity deleted successfully.');
+                    },
+                    error: commonFunctionError
+                });
+            });
+        }
+
+        function refreshActivities() {
+            $.ajax({
+                url: '/api/v1/listApplicationActivities',
+                type: 'GET',
+                contentType: 'application/json',
+                data: JSON.stringify(
+                    {
+                        appName: currentApplication
+                    }),
+                success: function (response) { 
+                    populateApplicationActivities(response);
+                },
+                error: commonFunctionError
+            });
+        }
+
+        function populateApplicationActivities(activities) {
+            $("#tbody-applicationActivities").empty();
+
+            let internalId = 0;
+
+            for (let activity of activities) {
+                //data-bs-toggle="modal" data-bs-target="#modalEditApplicationActivity"
+                $("#tbody-applicationActivities").append(
+                    `<tr> 
+                        <th id="ulist-activity-name-${internalId}"></th>
+                        <td id="ulist-activity-parent-${internalId}"></td>
+                        <td id="ulist-activity-description-${internalId}"></td>
+                        <td id="ulist-activity-defaultSchemeID-${internalId}"></td>
+                            <td style="text-align: right;">
+                                <button type="button" class="btn btn-light btn-sm" onclick="javascript:editApplicationActivity(${internalId});"><i class="fas fa-edit"></i></button>
+                                <button type="button" class="btn btn-light btn-sm" onclick="javascript:deleteActivityFromApplication(${internalId});"><i class="fas fa-trash"></i></button>
+                            </td>
+                    </tr>`
+                );
+
+                $(`#ulist-activity-name-${internalId}`).text(activity.name);
+                $(`#ulist-activity-parent-${internalId}`).text(activity.parentActivity);
+                $(`#ulist-activity-description-${internalId}`).text(activity.description);
+                $(`#ulist-activity-defaultSchemeID-${internalId}`).text(activity.defaultSchemeID === 0 && !activity.defaultSchemeDescription ? "not defined yet" : activity.defaultSchemeID + ": " + (activity.defaultSchemeDescription || ""));
+                internalId++;
+            }
+
+        }
+    </script>
+
 </div>

@@ -10,6 +10,7 @@ void WebAdmin_Methods::addMethods(std::shared_ptr<MethodsHandler> methods)
     addMethods_Applications(methods);
     addMethods_Roles(methods);
     addMethods_AuthController(methods);
+    addMethods_Activities(methods);
 }
 
 json WebAdmin_Methods::scopeListToJSON(const std::set<ApplicationScope> &scopes)

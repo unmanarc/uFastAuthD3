@@ -2,6 +2,7 @@
 
 #include "../globals.h"
 #include "defs.h"
+#include "json/value.h"
 #include <Mantids30/Program_Logs/applog.h>
 
 using namespace Mantids30::Program;
@@ -174,6 +175,7 @@ void WebAdminMethods_Applications::getApplicationInfo(void *context, APIReturn &
     payloadOut["details"]["description"] = Globals::getIdentityManager()->applications->getApplicationDescription(appName);
 
     // Get associated scope...
+    payloadOut["scopes"] = Json::arrayValue;
     std::set<ApplicationScope> attrList = Globals::getIdentityManager()->authController->listApplicationScopes(appName);
     int i = 0;
     for (const auto &scope : attrList)
@@ -183,12 +185,24 @@ void WebAdminMethods_Applications::getApplicationInfo(void *context, APIReturn &
     }
 
     // Get associated direct accounts...
-    auto acctList = Globals::getIdentityManager()->applications->listApplicationAccounts(appName);
+    std::set<std::string> acctList = Globals::getIdentityManager()->applications->listApplicationAccounts(appName);
     i = 0;
+    payloadOut["accounts"] = Json::arrayValue;
     for (const auto &acct : acctList)
     {
         auto getAccountDetails = Globals::getIdentityManager()->accounts->getAccountDetails(acct);
         payloadOut["accounts"][i]["name"] = acct;
+        i++;
+    }
+
+
+    std::map<std::string, IdentityManager::Applications::ActivityData> activities = Globals::getIdentityManager()->applications->listApplicationActivities(appName);
+    i=0;
+    payloadOut["activities"] = Json::arrayValue;
+    for ( const auto & activity : activities )
+    {
+        payloadOut["activities"][i] = activity.second.toJSON();
+        payloadOut["activities"][i]["name"] = activity.first;
         i++;
     }
 

@@ -16,32 +16,29 @@ using namespace Mantids30::Database;
 using namespace Mantids30::Helpers;
 using namespace Mantids30;
 
-bool IdentityManager_DB::Applications_DB::addApplication(const std::string &appName, const std::string &applicationDescription, const std::string &apiKey, const std::string &sOwnerAccountName, bool canUserModifyScope)
+bool IdentityManager_DB::Applications_DB::addApplication(const std::string &appName, const std::string &applicationDescription, const std::string &apiKey, const std::string &sOwnerAccountName,
+                                                         bool canUserModifyScope)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
 
     // Insert into iam.applications.
-    bool appInsertSuccess = _parent->m_sqlConnector
-                                ->execute("INSERT INTO iam.applications (`appName`, `f_appCreator`, `appDescription`, `apiKey`, `canManualModifyScope`) VALUES (:appName, :appCreator, :description, :apiKey, :canManualModifyScope);",
-                                        {
-                                            {":appName", MAKE_VAR(STRING, appName)},
-                                            {":appCreator", MAKE_VAR(STRING, sOwnerAccountName)},
-                                            {":description", MAKE_VAR(STRING, applicationDescription)},
-                                            {":apiKey", MAKE_VAR(STRING, Encoders::encodeToBase64Obf(apiKey))},
-                                            {":canManualModifyScope", MAKE_VAR(BOOL, canUserModifyScope)}
-                                        });
+    bool appInsertSuccess = _parent->m_sqlConnector->execute(
+        "INSERT INTO iam.applications (`appName`, `f_appCreator`, `appDescription`, `apiKey`, `canManualModifyScope`) VALUES (:appName, :appCreator, :description, :apiKey, :canManualModifyScope);",
+        {{":appName", MAKE_VAR(STRING, appName)},
+         {":appCreator", MAKE_VAR(STRING, sOwnerAccountName)},
+         {":description", MAKE_VAR(STRING, applicationDescription)},
+         {":apiKey", MAKE_VAR(STRING, Encoders::encodeToBase64Obf(apiKey))},
+         {":canManualModifyScope", MAKE_VAR(BOOL, canUserModifyScope)}});
 
     // If the insertion is successful, insert another row default values into iam.applicationsJWTTokenConfig.
     if (appInsertSuccess)
     {
         std::string randomSecret = Mantids30::Helpers::Random::createRandomString(64);
         bool tokenInsertSuccess = _parent->m_sqlConnector->execute("INSERT INTO iam.applicationsJWTTokenConfig (`f_appName`, `accessTokenSigningKey`, `accessTokenValidationKey`) "
-                                                                 "VALUES (:appName, :signingKey, :validationKey);",
-                                                                 {
-                                                                  {":appName", MAKE_VAR(STRING, appName)},
-                                                                  {":signingKey", MAKE_VAR(STRING, Helpers::Encoders::encodeToBase64Obf(randomSecret, 0x8A376C54D999F187))},
-                                                                  {":validationKey", MAKE_VAR(STRING, Helpers::Encoders::encodeToBase64Obf(randomSecret, 0x8A376C54D999F187))}
-                                                                 });
+                                                                   "VALUES (:appName, :signingKey, :validationKey);",
+                                                                   {{":appName", MAKE_VAR(STRING, appName)},
+                                                                    {":signingKey", MAKE_VAR(STRING, Helpers::Encoders::encodeToBase64Obf(randomSecret, 0x8A376C54D999F187))},
+                                                                    {":validationKey", MAKE_VAR(STRING, Helpers::Encoders::encodeToBase64Obf(randomSecret, 0x8A376C54D999F187))}});
         return tokenInsertSuccess;
     }
     else
@@ -61,8 +58,7 @@ bool IdentityManager_DB::Applications_DB::doesApplicationExist(const std::string
     bool ret = false;
     Threads::Sync::Lock_RD lock(_parent->m_mutex);
 
-    SQLConnector::QueryInstance i = _parent->m_sqlConnector->qSelect("SELECT `appDescription` FROM iam.applications WHERE `appName`=:appName LIMIT 1;",
-                                                                                      {{":appName", MAKE_VAR(STRING, appName)}}, {});
+    SQLConnector::QueryInstance i = _parent->m_sqlConnector->qSelect("SELECT `appDescription` FROM iam.applications WHERE `appName`=:appName LIMIT 1;", {{":appName", MAKE_VAR(STRING, appName)}}, {});
     if (i.getResultsOK() && i.query->step())
     {
         ret = true;
@@ -75,8 +71,8 @@ std::optional<bool> IdentityManager_DB::Applications_DB::canManuallyModifyApplic
     Threads::Sync::Lock_RD lock(_parent->m_mutex);
 
     Abstract::BOOL r;
-    SQLConnector::QueryInstance i = _parent->m_sqlConnector->qSelect("SELECT `canManualModifyScope` FROM iam.applications WHERE `appName`=:appName LIMIT 1;",
-                                                                     {{":appName", MAKE_VAR(STRING, appName)}}, {&r});
+    SQLConnector::QueryInstance i = _parent->m_sqlConnector->qSelect("SELECT `canManualModifyScope` FROM iam.applications WHERE `appName`=:appName LIMIT 1;", {{":appName", MAKE_VAR(STRING, appName)}},
+                                                                     {&r});
     if (i.getResultsOK() && i.query->step())
     {
         return r.getValue();
@@ -91,8 +87,8 @@ std::string IdentityManager_DB::Applications_DB::getApplicationDescription(const
     Threads::Sync::Lock_RD lock(_parent->m_mutex);
 
     Abstract::STRING description;
-    SQLConnector::QueryInstance i = _parent->m_sqlConnector->qSelect("SELECT `appDescription` FROM iam.applications WHERE `appName`=:appName LIMIT 1;",
-                                                                                      {{":appName", MAKE_VAR(STRING, appName)}}, {&description});
+    SQLConnector::QueryInstance i = _parent->m_sqlConnector->qSelect("SELECT `appDescription` FROM iam.applications WHERE `appName`=:appName LIMIT 1;", {{":appName", MAKE_VAR(STRING, appName)}},
+                                                                     {&description});
     if (i.getResultsOK() && i.query->step())
     {
         return description.getValue();
@@ -106,8 +102,7 @@ std::string IdentityManager_DB::Applications_DB::getApplicationAPIKey(const std:
     Threads::Sync::Lock_RD lock(_parent->m_mutex);
 
     Abstract::STRING apiKey;
-    SQLConnector::QueryInstance i = _parent->m_sqlConnector->qSelect("SELECT `apiKey` FROM iam.applications WHERE `appName`=:appName LIMIT 1;",
-                                                                                      {{":appName", MAKE_VAR(STRING, appName)}}, {&apiKey});
+    SQLConnector::QueryInstance i = _parent->m_sqlConnector->qSelect("SELECT `apiKey` FROM iam.applications WHERE `appName`=:appName LIMIT 1;", {{":appName", MAKE_VAR(STRING, appName)}}, {&apiKey});
     if (i.getResultsOK() && i.query->step())
     {
         return Encoders::decodeFromBase64Obf(apiKey.getValue());
@@ -119,14 +114,14 @@ bool IdentityManager_DB::Applications_DB::updateApplicationAPIKey(const std::str
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
     return _parent->m_sqlConnector->execute("UPDATE iam.applications SET `apiKey`=:apiKey WHERE `appName`=:appName;",
-                                          {{":appName", MAKE_VAR(STRING, appName)}, {":apiKey", MAKE_VAR(STRING, Encoders::encodeToBase64Obf(apiKey))}});
+                                            {{":appName", MAKE_VAR(STRING, appName)}, {":apiKey", MAKE_VAR(STRING, Encoders::encodeToBase64Obf(apiKey))}});
 }
 
 bool IdentityManager_DB::Applications_DB::updateApplicationDescription(const std::string &appName, const std::string &applicationDescription)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
     return _parent->m_sqlConnector->execute("UPDATE iam.applications SET `appDescription`=:description WHERE `appName`=:appName;",
-                                          {{":appName", MAKE_VAR(STRING, appName)}, {":description", MAKE_VAR(STRING, applicationDescription)}});
+                                            {{":appName", MAKE_VAR(STRING, appName)}, {":description", MAKE_VAR(STRING, applicationDescription)}});
 }
 
 std::string IdentityManager_DB::Applications_DB::getApplicationNameByAPIKey(const std::string &apiKey)
@@ -134,10 +129,10 @@ std::string IdentityManager_DB::Applications_DB::getApplicationNameByAPIKey(cons
     Threads::Sync::Lock_RD lock(_parent->m_mutex);
     Abstract::STRING appName;
     SQLConnector::QueryInstance queryResult = _parent->m_sqlConnector->qSelect("SELECT `appName` FROM iam.applications WHERE `apiKey` = :encodedApiKey LIMIT 1;",
-                                                                                                {
-                                                                                                    {":encodedApiKey", MAKE_VAR(STRING, Encoders::encodeToBase64Obf(apiKey))},
-                                                                                                },
-                                                                                                {&appName});
+                                                                               {
+                                                                                   {":encodedApiKey", MAKE_VAR(STRING, Encoders::encodeToBase64Obf(apiKey))},
+                                                                               },
+                                                                               {&appName});
     if (queryResult.getResultsOK() && queryResult.query->step())
     {
         return appName.getValue();
@@ -163,9 +158,9 @@ bool IdentityManager_DB::Applications_DB::validateApplicationOwner(const std::st
 {
     Threads::Sync::Lock_RD lock(_parent->m_mutex);
 
-    SQLConnector::QueryInstance i
-        = _parent->m_sqlConnector->qSelect("SELECT `f_applicationManaged` FROM iam.applicationManagers WHERE `f_accountNameManager`=:accountName AND `f_applicationManaged`=:appName;",
-                                           {{":appName", MAKE_VAR(STRING, appName)}, {":accountName", MAKE_VAR(STRING, accountName)}}, {});
+    SQLConnector::QueryInstance i = _parent->m_sqlConnector
+                                        ->qSelect("SELECT `f_applicationManaged` FROM iam.applicationManagers WHERE `f_accountNameManager`=:accountName AND `f_applicationManaged`=:appName;",
+                                                  {{":appName", MAKE_VAR(STRING, appName)}, {":accountName", MAKE_VAR(STRING, accountName)}}, {});
     return (i.getResultsOK() && i.query->step());
 }
 
@@ -174,7 +169,7 @@ bool IdentityManager_DB::Applications_DB::validateApplicationAccount(const std::
     Threads::Sync::Lock_RD lock(_parent->m_mutex);
 
     SQLConnector::QueryInstance i = _parent->m_sqlConnector->qSelect("SELECT `f_appName` FROM iam.applicationAccounts WHERE `f_accountName`=:accountName AND `f_appName`=:appName;",
-                                                                                      {{":appName", MAKE_VAR(STRING, appName)}, {":accountName", MAKE_VAR(STRING, accountName)}}, {});
+                                                                     {{":appName", MAKE_VAR(STRING, appName)}, {":accountName", MAKE_VAR(STRING, accountName)}}, {});
     return (i.getResultsOK() && i.query->step());
 }
 
@@ -185,7 +180,7 @@ std::set<std::string> IdentityManager_DB::Applications_DB::listApplicationOwners
 
     Abstract::STRING accountName;
     SQLConnector::QueryInstance i = _parent->m_sqlConnector->qSelect("SELECT `f_accountNameManager` FROM iam.applicationManagers WHERE `f_applicationManaged`=:appName;",
-                                                                                      {{":appName", MAKE_VAR(STRING, appName)}}, {&accountName});
+                                                                     {{":appName", MAKE_VAR(STRING, appName)}}, {&accountName});
     while (i.getResultsOK() && i.query->step())
     {
         ret.insert(accountName.getValue());
@@ -200,8 +195,8 @@ std::set<std::string> IdentityManager_DB::Applications_DB::listApplicationAccoun
     Threads::Sync::Lock_RD lock(_parent->m_mutex);
 
     Abstract::STRING accountName;
-    SQLConnector::QueryInstance i = _parent->m_sqlConnector->qSelect("SELECT `f_accountName` FROM iam.applicationAccounts WHERE `f_appName`=:appName;",
-                                                                                      {{":appName", MAKE_VAR(STRING, appName)}}, {&accountName});
+    SQLConnector::QueryInstance i = _parent->m_sqlConnector->qSelect("SELECT `f_accountName` FROM iam.applicationAccounts WHERE `f_appName`=:appName;", {{":appName", MAKE_VAR(STRING, appName)}},
+                                                                     {&accountName});
     while (i.getResultsOK() && i.query->step())
     {
         ret.insert(accountName.getValue());
@@ -217,7 +212,7 @@ std::set<std::string> IdentityManager_DB::Applications_DB::listAccountApplicatio
 
     Abstract::STRING applicationName;
     SQLConnector::QueryInstance i = _parent->m_sqlConnector->qSelect("SELECT `f_appName` FROM iam.applicationAccounts WHERE `f_accountName`=:accountName;",
-                                                                                      {{":accountName", MAKE_VAR(STRING, accountName)}}, {&applicationName});
+                                                                     {{":accountName", MAKE_VAR(STRING, accountName)}}, {&applicationName});
     while (i.getResultsOK() && i.query->step())
     {
         ret.insert(applicationName.getValue());
@@ -230,7 +225,7 @@ bool IdentityManager_DB::Applications_DB::addAccountToApplication(const std::str
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
     return _parent->m_sqlConnector->execute("INSERT INTO iam.applicationAccounts (`f_accountName`,`f_appName`) VALUES(:accountName,:appName);",
-                                          {{":appName", MAKE_VAR(STRING, appName)}, {":accountName", MAKE_VAR(STRING, accountName)}});
+                                            {{":appName", MAKE_VAR(STRING, appName)}, {":accountName", MAKE_VAR(STRING, accountName)}});
 }
 
 bool IdentityManager_DB::Applications_DB::removeAccountFromApplication(const std::string &appName, const std::string &accountName)
@@ -239,7 +234,7 @@ bool IdentityManager_DB::Applications_DB::removeAccountFromApplication(const std
 
     bool ret = false;
     ret = _parent->m_sqlConnector->execute("DELETE FROM iam.applicationAccounts WHERE `f_appName`=:appName AND `f_accountName`=:accountName;",
-                                         {{":appName", MAKE_VAR(STRING, appName)}, {":accountName", MAKE_VAR(STRING, accountName)}});
+                                           {{":appName", MAKE_VAR(STRING, appName)}, {":accountName", MAKE_VAR(STRING, accountName)}});
     return ret;
 }
 
@@ -247,7 +242,7 @@ bool IdentityManager_DB::Applications_DB::addApplicationOwner(const std::string 
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
     return _parent->m_sqlConnector->execute("INSERT INTO iam.applicationManagers (`f_accountNameManager`,`f_applicationManaged`) VALUES(:accountName,:appName);",
-                                          {{":appName", MAKE_VAR(STRING, appName)}, {":accountName", MAKE_VAR(STRING, accountName)}});
+                                            {{":appName", MAKE_VAR(STRING, appName)}, {":accountName", MAKE_VAR(STRING, accountName)}});
 }
 
 bool IdentityManager_DB::Applications_DB::removeApplicationOwner(const std::string &appName, const std::string &accountName)
@@ -256,7 +251,7 @@ bool IdentityManager_DB::Applications_DB::removeApplicationOwner(const std::stri
 
     bool ret = false;
     ret = _parent->m_sqlConnector->execute("DELETE FROM iam.applicationManagers WHERE `f_applicationManaged`=:appName AND `f_accountNameManager`=:accountName;",
-                                         {{":appName", MAKE_VAR(STRING, appName)}, {":accountName", MAKE_VAR(STRING, accountName)}});
+                                           {{":appName", MAKE_VAR(STRING, appName)}, {":accountName", MAKE_VAR(STRING, accountName)}});
     return ret;
 }
 
@@ -268,23 +263,22 @@ Json::Value IdentityManager_DB::Applications_DB::searchApplications(const json &
     // DataTables:
     ret["draw"] = dataTablesFilters["draw"];
 
-    uint64_t offset = JSON_ASUINT64(dataTablesFilters,"start",0);
-    uint64_t limit = JSON_ASUINT64(dataTablesFilters,"length",0);
+    uint64_t offset = JSON_ASUINT64(dataTablesFilters, "start", 0);
+    uint64_t limit = JSON_ASUINT64(dataTablesFilters, "length", 0);
 
     std::string orderByStatement;
 
     // Manejo de ordenamiento (order)
-    const Json::Value& orderArray = dataTablesFilters["order"];
-    if (JSON_ISARRAY_D(orderArray) && orderArray.size()>0)
+    const Json::Value &orderArray = dataTablesFilters["order"];
+    if (JSON_ISARRAY_D(orderArray) && orderArray.size() > 0)
     {
-        const Json::Value& orderArrayElement = orderArray[0];
-        std::string columnName = getColumnNameFromColumnPos(dataTablesFilters,JSON_ASUINT(orderArrayElement,"column",0));
-        std::string dir = JSON_ASSTRING(orderArrayElement,"dir","desc");
+        const Json::Value &orderArrayElement = orderArray[0];
+        std::string columnName = getColumnNameFromColumnPos(dataTablesFilters, JSON_ASUINT(orderArrayElement, "column", 0));
+        std::string dir = JSON_ASSTRING(orderArrayElement, "dir", "desc");
 
-        auto isValidField = [](const std::string& c) -> bool {
-            static const std::vector<std::string> validFields = {
-                "appName", "appDescription", "f_appCreator"
-            };
+        auto isValidField = [](const std::string &c) -> bool
+        {
+            static const std::vector<std::string> validFields = {"appName", "appDescription", "f_appCreator"};
             return std::find(validFields.begin(), validFields.end(), c) != validFields.end();
         };
 
@@ -295,9 +289,8 @@ Json::Value IdentityManager_DB::Applications_DB::searchApplications(const json &
         }
     }
 
-
     // Extract the search value from dataTablesFilters
-    std::string searchValue = JSON_ASSTRING(dataTablesFilters["search"],"value","");
+    std::string searchValue = JSON_ASSTRING(dataTablesFilters["search"], "value", "");
     std::string whereFilters;
 
     // Build the SQL query with WHERE clause for DataTables search
@@ -314,15 +307,12 @@ Json::Value IdentityManager_DB::Applications_DB::searchApplications(const json &
 
     {
         Abstract::STRING appName, appCreator, appDescription;
-        SQLConnector::QueryInstance i = _parent->m_sqlConnector->qSelectWithFilters(sqlQueryStr,
-                                                                                    whereFilters,
-                                                                                    {{":SEARCHWORDS", MAKE_VAR(STRING, searchValue)} },
+        SQLConnector::QueryInstance i = _parent->m_sqlConnector->qSelectWithFilters(sqlQueryStr, whereFilters, {{":SEARCHWORDS", MAKE_VAR(STRING, searchValue)}},
                                                                                     {&appName, &appCreator, &appDescription},
                                                                                     orderByStatement, // Order by
-                                                                                    limit, // LIMIT
-                                                                                    offset // OFFSET
-                                                                                    );
-
+                                                                                    limit,            // LIMIT
+                                                                                    offset            // OFFSET
+        );
 
         while (i.getResultsOK() && i.query->step())
         {
@@ -334,7 +324,7 @@ Json::Value IdentityManager_DB::Applications_DB::searchApplications(const json &
             row["appCreator"] = appCreator.toJSON();
             // appDescription
             row["appDescription"] = appDescription.toJSON();
-            
+
             ret["data"].append(row);
         }
 
@@ -388,14 +378,14 @@ bool IdentityManager_DB::Applications_DB::addWebLoginRedirectURIToApplication(co
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
     return _parent->m_sqlConnector->execute("INSERT INTO iam.applicationsWebloginRedirectURIs (`f_appName`, `loginRedirectURI`) VALUES (:appName, :loginRedirectURI);",
-                                          {{":appName", MAKE_VAR(STRING, appName)}, {":loginRedirectURI", MAKE_VAR(STRING, loginRedirectURI)}});
+                                            {{":appName", MAKE_VAR(STRING, appName)}, {":loginRedirectURI", MAKE_VAR(STRING, loginRedirectURI)}});
 }
 
 bool IdentityManager_DB::Applications_DB::removeWebLoginRedirectURIToApplication(const std::string &appName, const std::string &loginRedirectURI)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
     return _parent->m_sqlConnector->execute("DELETE FROM iam.applicationsWebloginRedirectURIs WHERE `f_appName`=:appName AND `loginRedirectURI`=:loginRedirectURI;",
-                                          {{":appName", MAKE_VAR(STRING, appName)}, {":loginRedirectURI", MAKE_VAR(STRING, loginRedirectURI)}});
+                                            {{":appName", MAKE_VAR(STRING, appName)}, {":loginRedirectURI", MAKE_VAR(STRING, loginRedirectURI)}});
 }
 
 std::list<std::string> IdentityManager_DB::Applications_DB::listWebLoginRedirectURIsFromApplication(const std::string &appName)
@@ -406,7 +396,7 @@ std::list<std::string> IdentityManager_DB::Applications_DB::listWebLoginRedirect
     std::list<std::string> redirectURIs;
 
     SQLConnector::QueryInstance i = _parent->m_sqlConnector->qSelect("SELECT `loginRedirectURI` FROM iam.applicationsWebloginRedirectURIs WHERE `f_appName`=:appName;",
-                                                                                      {{":appName", MAKE_VAR(STRING, appName)}}, {&loginRedirectURI});
+                                                                     {{":appName", MAKE_VAR(STRING, appName)}}, {&loginRedirectURI});
     while (i.getResultsOK() && i.query->step())
     {
         redirectURIs.push_back(loginRedirectURI.getValue());
@@ -425,7 +415,7 @@ bool IdentityManager_DB::Applications_DB::setApplicationWebLoginCallbackURI(cons
 
     // Insert new callback URI
     ret = _parent->m_sqlConnector->execute("INSERT INTO iam.applicationsLoginCallbackURI (`f_appName`, `callbackURI`) VALUES (:appName, :callbackURI);",
-                                         {{":appName", MAKE_VAR(STRING, appName)}, {":callbackURI", MAKE_VAR(STRING, callbackURI)}});
+                                           {{":appName", MAKE_VAR(STRING, appName)}, {":callbackURI", MAKE_VAR(STRING, callbackURI)}});
 
     return ret;
 }
@@ -436,7 +426,7 @@ std::string IdentityManager_DB::Applications_DB::getApplicationCallbackURI(const
     Abstract::STRING callbackURI;
 
     SQLConnector::QueryInstance i = _parent->m_sqlConnector->qSelect("SELECT `callbackURI` FROM iam.applicationsLoginCallbackURI WHERE `f_appName`=:appName LIMIT 1;",
-                                                                                      {{":appName", MAKE_VAR(STRING, appName)}}, {&callbackURI});
+                                                                     {{":appName", MAKE_VAR(STRING, appName)}}, {&callbackURI});
     if (i.getResultsOK() && i.query->step())
     {
         return callbackURI.getValue();
@@ -450,14 +440,14 @@ bool IdentityManager_DB::Applications_DB::addWebLoginOriginURLToApplication(cons
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
     return _parent->m_sqlConnector->execute("INSERT INTO iam.applicationsWebloginOrigins (`f_appName`, `originUrl`) VALUES (:appName, :originUrl);",
-                                          {{":appName", MAKE_VAR(STRING, appName)}, {":originUrl", MAKE_VAR(STRING, originUrl)}});
+                                            {{":appName", MAKE_VAR(STRING, appName)}, {":originUrl", MAKE_VAR(STRING, originUrl)}});
 }
 
 bool IdentityManager_DB::Applications_DB::removeWebLoginOriginURLToApplication(const std::string &appName, const std::string &originUrl)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
     return _parent->m_sqlConnector->execute("DELETE FROM iam.applicationsWebloginOrigins WHERE `f_appName`=:appName AND `originUrl`=:originUrl;",
-                                          {{":appName", MAKE_VAR(STRING, appName)}, {":originUrl", MAKE_VAR(STRING, originUrl)}});
+                                            {{":appName", MAKE_VAR(STRING, appName)}, {":originUrl", MAKE_VAR(STRING, originUrl)}});
 }
 
 std::list<std::string> IdentityManager_DB::Applications_DB::listWebLoginOriginUrlsFromApplication(const std::string &appName)
@@ -467,8 +457,8 @@ std::list<std::string> IdentityManager_DB::Applications_DB::listWebLoginOriginUr
     Abstract::STRING originUrl;
     std::list<std::string> originUrls;
 
-    SQLConnector::QueryInstance i = _parent->m_sqlConnector->qSelect("SELECT `originUrl` FROM iam.applicationsWebloginOrigins WHERE `f_appName`=:appName;",
-                                                                                      {{":appName", MAKE_VAR(STRING, appName)}}, {&originUrl});
+    SQLConnector::QueryInstance i = _parent->m_sqlConnector->qSelect("SELECT `originUrl` FROM iam.applicationsWebloginOrigins WHERE `f_appName`=:appName;", {{":appName", MAKE_VAR(STRING, appName)}},
+                                                                     {&originUrl});
     while (i.getResultsOK() && i.query->step())
     {
         originUrls.push_back(originUrl.getValue());
@@ -480,21 +470,21 @@ bool IdentityManager_DB::Applications_DB::updateWebLoginJWTConfigForApplication(
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
     return _parent->m_sqlConnector->execute("UPDATE iam.applicationsJWTTokenConfig SET "
-                                          "tempMFATokenTimeout=:tempMFATokenTimeout, sessionInactivityTimeout=:sessionInactivityTimeout, "
-                                          "tokenType=:tokenType, includeApplicationScopes=:includeApplicationScopes, "
-                                          "includeBasicAccountInfo=:includeBasicAccountInfo, allowRefreshTokenRenovation=:allowRefreshTokenRenovation, "
-                                          "tokensConfigJSON=:tokensConfigJSON, "
-                                          "maintainRevocationAndLogoutInfo=:maintainRevocationAndLogoutInfo WHERE f_appName=:appName;",
-                                          {{":appName", MAKE_VAR(STRING, tokenInfo.appName)},
-                                           {":tempMFATokenTimeout", MAKE_VAR(UINT32, tokenInfo.tempMFATokenTimeout)},
-                                           {":sessionInactivityTimeout", MAKE_VAR(UINT32, tokenInfo.sessionInactivityTimeout)},
-                                           {":tokenType", MAKE_VAR(STRING, tokenInfo.tokenType)},
-                                           {":includeApplicationScopes", MAKE_VAR(BOOL, tokenInfo.includeApplicationScopes)},
-                                           {":includeBasicAccountInfo", MAKE_VAR(BOOL, tokenInfo.includeBasicAccountInfo)},
-                                           {":allowRefreshTokenRenovation", MAKE_VAR(BOOL, tokenInfo.allowRefreshTokenRenovation)},
-                                           {":allowRefreshTokenRenovation", MAKE_VAR(BOOL, tokenInfo.allowRefreshTokenRenovation)},
-                                           {":tokensConfigJSON", MAKE_VAR(STRING, tokenInfo.tokensConfiguration.toStyledString())},
-                                           {":maintainRevocationAndLogoutInfo", MAKE_VAR(BOOL, tokenInfo.maintainRevocationAndLogoutInfo)}});
+                                            "tempMFATokenTimeout=:tempMFATokenTimeout, sessionInactivityTimeout=:sessionInactivityTimeout, "
+                                            "tokenType=:tokenType, includeApplicationScopes=:includeApplicationScopes, "
+                                            "includeBasicAccountInfo=:includeBasicAccountInfo, allowRefreshTokenRenovation=:allowRefreshTokenRenovation, "
+                                            "tokensConfigJSON=:tokensConfigJSON, "
+                                            "maintainRevocationAndLogoutInfo=:maintainRevocationAndLogoutInfo WHERE f_appName=:appName;",
+                                            {{":appName", MAKE_VAR(STRING, tokenInfo.appName)},
+                                             {":tempMFATokenTimeout", MAKE_VAR(UINT32, tokenInfo.tempMFATokenTimeout)},
+                                             {":sessionInactivityTimeout", MAKE_VAR(UINT32, tokenInfo.sessionInactivityTimeout)},
+                                             {":tokenType", MAKE_VAR(STRING, tokenInfo.tokenType)},
+                                             {":includeApplicationScopes", MAKE_VAR(BOOL, tokenInfo.includeApplicationScopes)},
+                                             {":includeBasicAccountInfo", MAKE_VAR(BOOL, tokenInfo.includeBasicAccountInfo)},
+                                             {":allowRefreshTokenRenovation", MAKE_VAR(BOOL, tokenInfo.allowRefreshTokenRenovation)},
+                                             {":allowRefreshTokenRenovation", MAKE_VAR(BOOL, tokenInfo.allowRefreshTokenRenovation)},
+                                             {":tokensConfigJSON", MAKE_VAR(STRING, tokenInfo.tokensConfiguration.toStyledString())},
+                                             {":maintainRevocationAndLogoutInfo", MAKE_VAR(BOOL, tokenInfo.maintainRevocationAndLogoutInfo)}});
 }
 
 ApplicationTokenProperties IdentityManager_DB::Applications_DB::getWebLoginJWTConfigFromApplication(const std::string &appName)
@@ -506,17 +496,16 @@ ApplicationTokenProperties IdentityManager_DB::Applications_DB::getWebLoginJWTCo
 
     // Define las variables para capturar los valores de la base de datos.
     Abstract::UINT32 tempMFATokenTimeout, sessionInactivityTimeout;
-    Abstract::STRING tokenType,tokensConfigJSON;
+    Abstract::STRING tokenType, tokensConfigJSON;
     Abstract::BOOL includeApplicationScopes, includeBasicAccountInfo, maintainRevocationAndLogoutInfo, allowRefreshTokenRenovation;
 
-    SQLConnector::QueryInstance i
-        = _parent->m_sqlConnector->qSelect("SELECT allowRefreshTokenRenovation,tempMFATokenTimeout, sessionInactivityTimeout, tokenType, "
-                                           "includeApplicationScopes, includeBasicAccountInfo, maintainRevocationAndLogoutInfo, tokensConfigJSON "
-                                           "FROM iam.applicationsJWTTokenConfig "
-                                           "WHERE f_appName=:appName;",
-                                           {{":appName", MAKE_VAR(STRING, appName)}},
-                                           {&allowRefreshTokenRenovation, &tempMFATokenTimeout, &sessionInactivityTimeout, &tokenType,
-                                            &includeApplicationScopes, &includeBasicAccountInfo, &maintainRevocationAndLogoutInfo,&tokensConfigJSON });
+    SQLConnector::QueryInstance i = _parent->m_sqlConnector->qSelect("SELECT allowRefreshTokenRenovation,tempMFATokenTimeout, sessionInactivityTimeout, tokenType, "
+                                                                     "includeApplicationScopes, includeBasicAccountInfo, maintainRevocationAndLogoutInfo, tokensConfigJSON "
+                                                                     "FROM iam.applicationsJWTTokenConfig "
+                                                                     "WHERE f_appName=:appName;",
+                                                                     {{":appName", MAKE_VAR(STRING, appName)}},
+                                                                     {&allowRefreshTokenRenovation, &tempMFATokenTimeout, &sessionInactivityTimeout, &tokenType, &includeApplicationScopes,
+                                                                      &includeBasicAccountInfo, &maintainRevocationAndLogoutInfo, &tokensConfigJSON});
     if (i.getResultsOK() && i.query->step())
     {
         tokenInfo.tempMFATokenTimeout = tempMFATokenTimeout.getValue();
@@ -527,7 +516,7 @@ ApplicationTokenProperties IdentityManager_DB::Applications_DB::getWebLoginJWTCo
         tokenInfo.maintainRevocationAndLogoutInfo = maintainRevocationAndLogoutInfo.getValue();
         tokenInfo.allowRefreshTokenRenovation = allowRefreshTokenRenovation.getValue();
         Mantids30::Helpers::JSONReader2 reader;
-        reader.parse( tokensConfigJSON.getValue(), tokenInfo.tokensConfiguration );
+        reader.parse(tokensConfigJSON.getValue(), tokenInfo.tokensConfiguration);
     }
     return tokenInfo;
 }
@@ -536,7 +525,7 @@ bool IdentityManager_DB::Applications_DB::setWebLoginJWTSigningKeyForApplication
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
     return _parent->m_sqlConnector->execute("UPDATE iam.applicationsJWTTokenConfig SET accessTokenSigningKey=:signingKey WHERE f_appName=:appName;",
-                                          {{":appName", MAKE_VAR(STRING, appName)}, {":signingKey", MAKE_VAR(STRING, Helpers::Encoders::encodeToBase64Obf(signingKey, 0x8A376C54D999F187))}});
+                                            {{":appName", MAKE_VAR(STRING, appName)}, {":signingKey", MAKE_VAR(STRING, Helpers::Encoders::encodeToBase64Obf(signingKey, 0x8A376C54D999F187))}});
 }
 
 std::string IdentityManager_DB::Applications_DB::getWebLoginJWTSigningKeyForApplication(const std::string &appName)
@@ -545,7 +534,7 @@ std::string IdentityManager_DB::Applications_DB::getWebLoginJWTSigningKeyForAppl
     Abstract::STRING signingKey;
 
     SQLConnector::QueryInstance i = _parent->m_sqlConnector->qSelect("SELECT accessTokenSigningKey FROM iam.applicationsJWTTokenConfig WHERE f_appName=:appName;",
-                                                                                      {{":appName", MAKE_VAR(STRING, appName)}}, {&signingKey});
+                                                                     {{":appName", MAKE_VAR(STRING, appName)}}, {&signingKey});
     if (i.getResultsOK() && i.query->step())
     {
         // SBO... -.- (protect your .db file)
@@ -558,7 +547,7 @@ bool IdentityManager_DB::Applications_DB::setWebLoginJWTValidationKeyForApplicat
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
     return _parent->m_sqlConnector->execute("UPDATE iam.applicationsJWTTokenConfig SET accessTokenValidationKey=:validationKey WHERE f_appName=:appName;",
-                                          {{":appName", MAKE_VAR(STRING, appName)}, {":validationKey", MAKE_VAR(STRING, Helpers::Encoders::encodeToBase64Obf(validationKey, 0x8A376C54D999F187))}});
+                                            {{":appName", MAKE_VAR(STRING, appName)}, {":validationKey", MAKE_VAR(STRING, Helpers::Encoders::encodeToBase64Obf(validationKey, 0x8A376C54D999F187))}});
 }
 
 std::string IdentityManager_DB::Applications_DB::getWebLoginJWTValidationKeyForApplication(const std::string &appName)
@@ -567,12 +556,42 @@ std::string IdentityManager_DB::Applications_DB::getWebLoginJWTValidationKeyForA
     Abstract::STRING validationKey;
 
     SQLConnector::QueryInstance i = _parent->m_sqlConnector->qSelect("SELECT accessTokenValidationKey FROM iam.applicationsJWTTokenConfig WHERE f_appName=:appName;",
-                                                                                      {{":appName", MAKE_VAR(STRING, appName)}}, {&validationKey});
+                                                                     {{":appName", MAKE_VAR(STRING, appName)}}, {&validationKey});
     if (i.getResultsOK() && i.query->step())
     {
         return Helpers::Encoders::decodeFromBase64Obf(validationKey.getValue(), 0x8A376C54D999F187);
     }
     return "";
+}
+
+bool IdentityManager_DB::Applications_DB::addApplicationActivity(const std::string &appName, const std::string &activityName, const std::string &activityDescription)
+{
+    Threads::Sync::Lock_RW lock(_parent->m_mutex);
+
+    if (!_parent->m_sqlConnector->execute("INSERT INTO iam.applicationActivities (f_appName, activityName, parentActivity, description) VALUES (:appName, :activityName, NULL, :description);",
+                                           {{":appName", MAKE_VAR(STRING, appName)},
+                                            {":activityName", MAKE_VAR(STRING, activityName)},
+                                            {":description", MAKE_VAR(STRING, activityDescription)}}))
+    {
+        return false;
+    }
+
+    return true;
+}
+
+bool IdentityManager_DB::Applications_DB::removeApplicationActivity(const std::string &appName, const std::string &activityName)
+{
+    Threads::Sync::Lock_RW lock(_parent->m_mutex);
+
+    if (!_parent->m_sqlConnector->execute("DELETE FROM iam.applicationActivities WHERE `f_appName` = :appName AND `activityName` = :activityName;",
+                                           {{":appName", MAKE_VAR(STRING, appName)},
+                                            {":activityName", MAKE_VAR(STRING, activityName)}}))
+    {
+        return false;
+    }
+
+    return true;
+
 }
 
 bool IdentityManager_DB::Applications_DB::setApplicationActivities(const std::string &appName, const std::map<std::string, ActivityData> &activities)
@@ -585,7 +604,7 @@ bool IdentityManager_DB::Applications_DB::setApplicationActivities(const std::st
 
     {
         SQLConnector::QueryInstance i = _parent->m_sqlConnector->qSelect("SELECT `activityName` FROM iam.applicationActivities WHERE `f_appName` = :appName;",
-                                                                                          {{":appName", MAKE_VAR(STRING, appName)}}, {&activityName});
+                                                                         {{":appName", MAKE_VAR(STRING, appName)}}, {&activityName});
 
         if (i.getResultsOK())
         {
@@ -606,7 +625,7 @@ bool IdentityManager_DB::Applications_DB::setApplicationActivities(const std::st
         if (activities.find(currentActivity) == activities.end())
         {
             if (!_parent->m_sqlConnector->execute("DELETE FROM iam.applicationActivities WHERE `f_appName` = :appName AND `activityName` = :activityName;",
-                                                {{":appName", MAKE_VAR(STRING, appName)}, {":activityName", MAKE_VAR(STRING, currentActivity)}}))
+                                                  {{":appName", MAKE_VAR(STRING, appName)}, {":activityName", MAKE_VAR(STRING, currentActivity)}}))
             {
                 return false;
             }
@@ -620,12 +639,12 @@ bool IdentityManager_DB::Applications_DB::setApplicationActivities(const std::st
         {
             // Update it (
             if (!_parent->m_sqlConnector->execute("UPDATE iam.applicationActivities "
-                                                "SET `description` = :description, `parentActivity` = :parentActivity "
-                                                "WHERE `f_appName` = :appName AND `activityName` = :activityName;",
-                                                {{":description", MAKE_VAR(STRING, activity.second.description)},
-                                                 {":parentActivity", MAKE_VAR(STRING, activity.second.parentActivity)},
-                                                 {":appName", MAKE_VAR(STRING, appName)},
-                                                 {":activityName", MAKE_VAR(STRING, activity.first)}}))
+                                                  "SET `description` = :description, `parentActivity` = :parentActivity "
+                                                  "WHERE `f_appName` = :appName AND `activityName` = :activityName;",
+                                                  {{":description", MAKE_VAR(STRING, activity.second.description)},
+                                                   {":parentActivity", MAKE_VAR(STRING, activity.second.parentActivity)},
+                                                   {":appName", MAKE_VAR(STRING, appName)},
+                                                   {":activityName", MAKE_VAR(STRING, activity.first)}}))
             {
                 return false;
             }
@@ -634,11 +653,11 @@ bool IdentityManager_DB::Applications_DB::setApplicationActivities(const std::st
         {
             // Insert the new activity
             if (!_parent->m_sqlConnector->execute("INSERT INTO iam.applicationActivities (`f_appName`, `activityName`, `parentActivity`, `description`) "
-                                                "VALUES(:appName, :activityName, :parentActivity, :description);",
-                                                {{":appName", MAKE_VAR(STRING, appName)},
-                                                 {":activityName", MAKE_VAR(STRING, activity.first)},
-                                                 {":parentActivity", MAKE_VAR(STRING, activity.second.parentActivity)},
-                                                 {":description", MAKE_VAR(STRING, activity.second.description)}}))
+                                                  "VALUES(:appName, :activityName, :parentActivity, :description);",
+                                                  {{":appName", MAKE_VAR(STRING, appName)},
+                                                   {":activityName", MAKE_VAR(STRING, activity.first)},
+                                                   {":parentActivity", MAKE_VAR(STRING, activity.second.parentActivity)},
+                                                   {":description", MAKE_VAR(STRING, activity.second.description)}}))
             {
                 return false;
             }
@@ -665,15 +684,25 @@ std::map<std::string, IdentityManager::Applications::ActivityData> IdentityManag
 {
     Threads::Sync::Lock_RD lock(_parent->m_mutex);
 
-    Abstract::STRING name, description, parentActivity;
+    Abstract::STRING name, description, parentActivity, defaultSchemeDescription;
+    Abstract::UINT32 defaultSchemeId;
     std::map<std::string, IdentityManager::Applications::ActivityData> activities;
 
     SQLConnector::QueryInstance i = _parent->m_sqlConnector
-                                                         ->qSelect("SELECT `activityName`, `parentActivity`, `description` FROM iam.applicationActivities WHERE `f_appName`=:appName;",
-                                                                   {{":appName", MAKE_VAR(STRING, appName)}}, {&name, &parentActivity, &description});
+                                        ->qSelect(
+                                            R"(SELECT
+                                                    `activityName`,
+                                                    `parentActivity`,
+                                                    `applicationActivities`.`description`,
+                                                    `defaultSchemeId`,
+                                                    `authenticationSchemes`.`description` as schemeDescription
+                                                FROM applicationActivities
+                                                LEFT JOIN authenticationSchemes ON `defaultSchemeId` = `schemeId`
+                                                WHERE `f_appName` = :appName;)",
+                                                  {{":appName", MAKE_VAR(STRING, appName)}}, {&name, &parentActivity, &description, &defaultSchemeId, &defaultSchemeDescription});
     while (i.getResultsOK() && i.query->step())
     {
-        activities[name.toString()] = {.description = description.toString(), .parentActivity = parentActivity.toString()};
+        activities[name.toString()] = {.description = description.toString(), .parentActivity = parentActivity.toString(), .defaultSchemeDescription = defaultSchemeDescription.toString(), .defaultSchemeID = defaultSchemeId.getValue() };
     }
     return activities;
 }
