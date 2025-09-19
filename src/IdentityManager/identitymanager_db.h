@@ -83,6 +83,8 @@ public:
         bool isThereAnotherAdmin(const std::string &accountName);
         IdentityManager_DB *_parent;
     };
+
+
     class ApplicationRoles_DB : public ApplicationRoles
     {
     public:
@@ -109,6 +111,29 @@ public:
     private:
         IdentityManager_DB *_parent;
     };
+
+
+    class ApplicationActivities_DB : public ApplicationActivities
+    {
+    public:
+        ApplicationActivities_DB(IdentityManager_DB *parent)
+            : ApplicationActivities()
+        {
+            _parent = parent;
+        }
+        virtual ~ApplicationActivities_DB() {}
+
+        /////////////////////////////////////////////////////////////////////////////////
+        bool addApplicationActivity(const std::string &appName, const std::string &activityName, const std::string &activityDescription) override;
+        bool removeApplicationActivity(const std::string &appName, const std::string &activityName) override;
+        bool setApplicationActivities(const std::string &appName, const std::map<std::string, ActivityData> &activities) override;
+        bool removeApplicationActivities(const std::string &appName) override;
+        std::map<std::string, ActivityData> listApplicationActivities(const std::string &appName) override;
+
+    private:
+        IdentityManager_DB *_parent;
+    };
+
     class AuthController_DB : public AuthController
     {
     protected:
@@ -241,12 +266,6 @@ public:
         std::string getWebLoginJWTSigningKeyForApplication(const std::string &appName) override;
         bool setWebLoginJWTValidationKeyForApplication(const std::string &appName, const std::string &validationKey) override;
         std::string getWebLoginJWTValidationKeyForApplication(const std::string &appName) override;
-
-        bool addApplicationActivity(const std::string &appName, const std::string &activityName, const std::string &activityDescription) override;
-        bool removeApplicationActivity(const std::string &appName, const std::string &activityName) override;
-        bool setApplicationActivities(const std::string &appName, const std::map<std::string, ActivityData> &activities) override;
-        bool removeApplicationActivities(const std::string &appName) override;
-        std::map<std::string, ActivityData> listApplicationActivities(const std::string &appName) override;
 
     private:
         IdentityManager_DB *_parent;

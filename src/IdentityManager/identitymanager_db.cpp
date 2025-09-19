@@ -9,6 +9,7 @@ IdentityManager_DB::IdentityManager_DB(Mantids30::Database::SQLConnector *_SQLDi
     applications = new Applications_DB(this);
     accounts = new Accounts_DB(this);
     applicationRoles = new ApplicationRoles_DB(this);
+    applicationActivities = new ApplicationActivities_DB(this);
     authController = new AuthController_DB(this);
 
     m_sqlConnector = _SQLDirConnection;

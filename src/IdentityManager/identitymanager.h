@@ -158,6 +158,48 @@ public:
         virtual std::set<std::string> getRoleAccounts(const std::string &appName, const std::string &roleName, bool lock = true) = 0;
         virtual Json::Value searchRoles(const json &dataTablesFilters) = 0;
     };
+
+    class ApplicationActivities
+    {
+    public:
+
+        struct ActivityData
+        {
+            json toJSON() const
+            {
+                json r;
+                r["description"] = description;
+                r["parentActivity"] = parentActivity;
+                r["defaultSchemeDescription"] = defaultSchemeDescription;
+                r["defaultSchemeID"] = defaultSchemeID;
+                return r;
+            }
+            void fromJSON(const json & r)
+            {
+                description = JSON_ASSTRING(r,"description","");
+                parentActivity = JSON_ASSTRING(r,"parentActivity","");
+                defaultSchemeDescription = JSON_ASSTRING(r,"defaultSchemeDescription","");
+                defaultSchemeID = JSON_ASUINT(r,"defaultSchemeID",-1);
+            }
+
+            std::string description;
+            std::string parentActivity;
+            std::string defaultSchemeDescription;
+            uint32_t defaultSchemeID;
+        };
+
+
+        virtual ~ApplicationActivities() {}
+        /////////////////////////////////////////////////////////////////////////////////
+        virtual bool addApplicationActivity(const std::string &appName, const std::string &activityName, const std::string &activityDescription) = 0;
+        virtual bool removeApplicationActivity(const std::string &appName, const std::string &activityName) = 0;
+        virtual bool setApplicationActivities(const std::string &appName, const std::map<std::string, ActivityData> &activities) = 0;
+        virtual bool removeApplicationActivities(const std::string &appName) = 0;
+        virtual std::map<std::string, ActivityData> listApplicationActivities(const std::string &appName) = 0;
+    };
+
+
+
     class AuthController : public CredentialValidator
     {
     private:
@@ -400,36 +442,6 @@ public:
         // by example, some (special) activities can be: transfer_money, edit_details, and so...
         // Activities can be defined here:
 
-        struct ActivityData
-        {
-            json toJSON() const
-            {
-                json r;
-                r["description"] = description;
-                r["parentActivity"] = parentActivity;
-                r["defaultSchemeDescription"] = defaultSchemeDescription;
-                r["defaultSchemeID"] = defaultSchemeID;
-                return r;
-            }
-            void fromJSON(const json & r)
-            {
-                description = JSON_ASSTRING(r,"description","");
-                parentActivity = JSON_ASSTRING(r,"parentActivity","");
-                defaultSchemeDescription = JSON_ASSTRING(r,"defaultSchemeDescription","");
-                defaultSchemeID = JSON_ASUINT(r,"defaultSchemeID",-1);
-            }
-
-            std::string description;
-            std::string parentActivity;
-            std::string defaultSchemeDescription;
-            uint32_t defaultSchemeID;
-        };
-
-        virtual bool addApplicationActivity(const std::string &appName, const std::string &activityName, const std::string &activityDescription) = 0;
-        virtual bool removeApplicationActivity(const std::string &appName, const std::string &activityName) = 0;
-        virtual bool setApplicationActivities(const std::string &appName, const std::map<std::string, ActivityData> &activities) = 0;
-        virtual bool removeApplicationActivities(const std::string &appName) = 0;
-        virtual std::map<std::string, ActivityData> listApplicationActivities(const std::string &appName) = 0;
 
         // Tokens:
         virtual bool updateWebLoginJWTConfigForApplication(const ApplicationTokenProperties &tokenInfo) = 0;
@@ -445,6 +457,7 @@ public:
 
     Accounts *accounts = nullptr;
     ApplicationRoles *applicationRoles = nullptr;
+    ApplicationActivities *applicationActivities = nullptr;
     Applications *applications = nullptr;
     AuthController *authController = nullptr;
 

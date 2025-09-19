@@ -28,7 +28,7 @@ void WebAdminMethods_ApplicationActivities::listApplicationActivities(void *cont
         return;
     }
 
-    std::map<std::string, IdentityManager::Applications::ActivityData> activities = Globals::getIdentityManager()->applications->listApplicationActivities(appName);
+    std::map<std::string, IdentityManager::ApplicationActivities::ActivityData> activities = Globals::getIdentityManager()->applicationActivities->listApplicationActivities(appName);
 
     int i=0;
     (*response.responseJSON()) = Json::arrayValue;
@@ -64,7 +64,7 @@ void WebAdminMethods_ApplicationActivities::addApplicationActivity(void *context
         return;
     }
 
-    if (!Globals::getIdentityManager()->applications->addApplicationActivity(appName, activityName, activityDescription))
+    if (!Globals::getIdentityManager()->applicationActivities->addApplicationActivity(appName, activityName, activityDescription))
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to create the new activity.\nThe activity ID may already exist.");
     }
@@ -87,7 +87,7 @@ void WebAdminMethods_ApplicationActivities::removeApplicationActivity(void *cont
         return;
     }
 
-    if (!Globals::getIdentityManager()->applications->removeApplicationActivity(appName, activityName))
+    if (!Globals::getIdentityManager()->applicationActivities->removeApplicationActivity(appName, activityName))
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to remove the activity.");
     }

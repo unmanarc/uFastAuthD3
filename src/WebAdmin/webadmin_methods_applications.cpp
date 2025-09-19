@@ -196,7 +196,7 @@ void WebAdminMethods_Applications::getApplicationInfo(void *context, APIReturn &
     }
 
 
-    std::map<std::string, IdentityManager::Applications::ActivityData> activities = Globals::getIdentityManager()->applications->listApplicationActivities(appName);
+    std::map<std::string, IdentityManager::ApplicationActivities::ActivityData> activities = Globals::getIdentityManager()->applicationActivities->listApplicationActivities(appName);
     i=0;
     payloadOut["activities"] = Json::arrayValue;
     for ( const auto & activity : activities )
