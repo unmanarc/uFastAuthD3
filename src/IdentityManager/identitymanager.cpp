@@ -17,6 +17,8 @@ IdentityManager::~IdentityManager()
         delete applications;
     if (authController)
         delete authController;
+    if (applicationActivities)
+        delete applicationActivities;
 }
 
 bool IdentityManager::validateAccountForNewAccess(const std::string &accountName, const std::string &appName, Reason &reason, bool checkValidAppAccount)
@@ -79,8 +81,8 @@ bool IdentityManager::initializeApplicationWithScheme(const std::string &appName
         r = r && applications->addWebLoginRedirectURIToApplication(appName, "https://iamadmin.localhost:9443/");                   // Allowed redirects.
         r = r && applications->addWebLoginOriginURLToApplication(appName, "https://iamadmin.localhost:9443");                      // Origin (eg. retokenization)
         r = r && applicationActivities->setApplicationActivities(appName, {{"LOGIN", {.description = "Main Login", .parentActivity = ""}}});
-        r = r && authController->addAuthenticationSchemesToApplicationActivity(appName, "LOGIN", schemeId);
-        r = r && authController->setApplicationActivityDefaultScheme(appName, "LOGIN", schemeId);
+        r = r && applicationActivities->addAuthenticationSchemeToApplicationActivity(appName, "LOGIN", schemeId);
+        r = r && applicationActivities->setApplicationActivityDefaultScheme(appName, "LOGIN", schemeId);
         *alreadyExist = false;
     }
     else

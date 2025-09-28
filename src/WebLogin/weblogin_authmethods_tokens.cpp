@@ -97,7 +97,7 @@ bool WebLogin_AuthMethods::token_validateAuthenticationScheme(IdentityManager *i
     std::set<uint32_t> authenticatedSlotIdsSet = Mantids30::Helpers::jsonToUInt32Set(jwtToken->getClaim("slotIds"));
     std::set<std::string> authenticatedAppsSet = Mantids30::Helpers::jsonToStringSet(jwtToken->getClaim("apps"));
 
-    std::set<uint32_t> schemesInActivity = identityManager->authController->listAuthenticationSchemesForApplicationActivity(app, activity);
+    std::set<uint32_t> schemesInActivity = identityManager->applicationActivities->listAuthenticationSchemesForApplicationActivity(app, activity);
     if (schemesInActivity.find(schemeId) == schemesInActivity.end())
     {
         LOG_APP->log2(__func__, user, ipAddress, Logs::LEVEL_SECURITY_ALERT,

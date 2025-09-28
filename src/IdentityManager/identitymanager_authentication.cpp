@@ -420,16 +420,16 @@ json IdentityManager::AuthController::getApplicableAuthenticationSchemesForAccou
     if (!m_parent->applications->validateApplicationAccount(app, accountName))
     {
         // If the user is invalid or not associated, return only the default scheme (reducing risk of user enumeration)
-        uint32_t defaultSchemeId = getApplicationActivityDefaultScheme(app, activity);
-        if (defaultSchemeId != UINT32_MAX)
+        std::optional<uint32_t> defaultSchemeId = m_parent->applicationActivities->getApplicationActivityDefaultScheme(app, activity);
+        if (defaultSchemeId.has_value())
         {
-            std::vector<AuthenticationSchemeUsedSlot> slots = listAuthenticationSlotsUsedByScheme(defaultSchemeId);
+            std::vector<AuthenticationSchemeUsedSlot> slots = listAuthenticationSlotsUsedByScheme(*defaultSchemeId);
             int i = 0;
-            r["defaultScheme"] = defaultSchemeId;
-            r["availableSchemes"][defaultSchemeId]["description"] = allSchemes[defaultSchemeId];
+            r["defaultScheme"] = *defaultSchemeId;
+            r["availableSchemes"][*defaultSchemeId]["description"] = allSchemes[*defaultSchemeId];
             for (const AuthenticationSchemeUsedSlot &slot : slots)
             {
-                r["availableSchemes"][defaultSchemeId]["slots"][i++] = slot.toJSON();
+                r["availableSchemes"][*defaultSchemeId]["slots"][i++] = slot.toJSON();
             }
             // Add default scheme's slots as empty
         }
@@ -437,9 +437,9 @@ json IdentityManager::AuthController::getApplicableAuthenticationSchemesForAccou
     }
 
     // Fetch necessary data
-    std::set<uint32_t> availableSchemes = listAuthenticationSchemesForApplicationActivity(app, activity);
+    std::set<uint32_t> availableSchemes = m_parent->applicationActivities->listAuthenticationSchemesForApplicationActivity(app, activity);
     std::set<uint32_t> accountUsedAuthSlots = listUsedAuthenticationSlotsOnAccount(accountName);
-    uint32_t defaultScheme = getApplicationActivityDefaultScheme(app, activity);
+    std::optional<uint32_t> defaultScheme = m_parent->applicationActivities->getApplicationActivityDefaultScheme(app, activity);
 
     // Iterate through available schemes
     for (const uint32_t &schemeId : availableSchemes)
@@ -466,7 +466,7 @@ json IdentityManager::AuthController::getApplicableAuthenticationSchemesForAccou
                 r["availableSchemes"][schemeId]["slots"][i++] = slot.toJSON();
             }
 
-            if (schemeId == defaultScheme)
+            if (defaultScheme.has_value() && schemeId == *defaultScheme)
             {
                 r["defaultScheme"] = schemeId;
             }

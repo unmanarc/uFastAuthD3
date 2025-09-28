@@ -1,0 +1,106 @@
+<script>
+    function displayUpdateActivityDetailFunction() {
+        document.getElementById('modifyActivityDetailsButtons').style.display = 'block';
+    }
+</script>
+
+<div class="tab-pane show active" id="activityEditDetails" activity="tabpanel" aria-labelledby="activityEditDetails-tab"
+    style="min-height: 500px;">
+    <table width=100% style=" border-spacing: 10px;   border-collapse: separate;">
+
+        <tr>
+            <td align="right">Parent Activity: </td>
+            <td>
+                <select id="parentActivity" class="form-control" oninput="displayUpdateActivityDetailFunction()"
+                    onchange="displayUpdateActivityDetailFunction()">
+                    <option value="">None</option>
+                </select>
+            </td>
+        </tr>
+
+        <tr>
+            <td align="right">Description: </td>
+            <td><input id="activityDescription" class="form-control" placeholder="Description"
+                    oninput="displayUpdateActivityDetailFunction()" onchange="displayUpdateActivityDetailFunction()">
+            </td>
+        </tr>
+    </table>
+    <table width=100% style=" border-spacing: 10px;   border-collapse: separate;">
+        <tr>
+            <td colspan="2" align="right" id="modifyActivityDetailsButtons" style="display:none;">
+
+                <button type="button" class="btn btn-dark" onclick="javascript:discardActivityDetails()">Discard
+                    Changes</button>
+                <button type="button" class="btn btn-warning" onclick="javascript:modifyActivityDetails()">Update
+                    Activity
+                    Details</button>
+            </td>
+        </tr>
+    </table>
+</div>
+
+<script>
+    function populateActivityDetails(details, allActivities) {
+        document.getElementById("activityDescription").value = details["description"];
+
+        const select = document.getElementById('parentActivity');
+        // Clear existing options except the default "None" option
+        select.innerHTML = '<option value="">None</option>';
+
+        // Populate with activities
+        allActivities.forEach(function (activity) {
+            const option = document.createElement('option');
+            option.value = activity.name;
+            option.textContent = activity.name;
+            if (activity.name != currentActivity)
+                select.appendChild(option);
+        });
+
+        document.getElementById('parentActivity').value = details.parentActivity || '';
+    }
+
+    function discardActivityDetails() {
+        document.getElementById('modifyActivityDetailsButtons').style.display = 'none';
+        populateActivity();
+    }
+
+    function modifyActivityDetails() {
+        var description = document.getElementById("activityDescription").value;
+        var parentActivity = document.getElementById("parentActivity").value;
+
+        // Update description via PATCH
+        $.ajax({
+            url: '/api/v1/updateActivityDescription',
+            type: 'PATCH',
+            contentType: 'application/json',
+            data: JSON.stringify({
+                appName: currentApplication,
+                activityName: currentActivity,
+                activityDescription: description
+            }),
+            success: function (response, textStatus, xhr) {
+                // Now update parent activity via PATCH
+                $.ajax({
+                    url: '/api/v1/updateActivityParentActivity',
+                    type: 'PATCH',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        appName: currentApplication,
+                        activityName: currentActivity,
+                        parentActivityName: parentActivity
+                    }),
+                    success: function (response, textStatus, xhr) {
+                        showToastSuccess("Activity details updated successfully.");
+                        // Refresh the activity details.
+                        discardActivityDetails();
+                        // Refresh Activities List (in the parent dialog)
+                        refreshActivities();
+                    },
+                    error: commonFunctionError
+                });
+            },
+            error: commonFunctionError
+        });
+    }
+
+</script>

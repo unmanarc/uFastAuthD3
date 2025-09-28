@@ -15,8 +15,18 @@ public:
 protected:
     static void addMethods_Activities(std::shared_ptr<MethodsHandler> methods);
 
+    static void getActivityInfo(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
     static void listApplicationActivities(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
     static void addApplicationActivity(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
     static void removeApplicationActivity(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
+
+    static void updateActivityParentActivity(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
+    static void updateActivityDescription(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
+
+    static void addSchemeToApplicationActivity(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
+    static void removeSchemeFromApplicationActivity(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
+
+    static void updateDefaultSchemeOnApplicationActivity(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
+
 
 };

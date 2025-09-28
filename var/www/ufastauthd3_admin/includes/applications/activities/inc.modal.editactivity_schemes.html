@@ -1,0 +1,179 @@
+<div class="tab-pane py-4" id="activityEditSchemes" role="tabpanel" aria-labelledby="activityEditSchemes-tab"
+    style="min-height: 500px;">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+
+                <div class="row g-3 align-items-center mb-4">
+                    <div class="col-auto">
+                        <label for="schemeSelect" class="col-form-label mb-0">Scheme:</label>
+                    </div>
+                    <div class="col">
+                        <select class="form-select" id="schemeSelect">
+                            <option value="">Select a scheme</option>
+                        </select>
+                    </div>
+                    <div class="col-auto">
+                        <button type="button" class="btn btn-outline-success" id="addSchemeButton"
+                            onclick="addSchemeToApplicationActivity()">
+                            Add Scheme
+                        </button>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th scope="col">Scheme ID + Name</th>
+                                <th scope="col">Default</th>
+                                <th scope="col" class="text-end">Controls</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody-applicationActivitiesSchemes">
+                            <!-- rows will be injected here -->
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+
+    function updateDefaultSchemeOnApplicationActivity()
+    {
+
+        const selectedRadio = document.querySelector('input[name="defaultScheme"]:checked');
+        if (selectedRadio) {
+            const schemeId = parseInt(selectedRadio.value);
+            $.ajax({
+                url: '/api/v1/updateDefaultSchemeOnApplicationActivity',
+                type: 'PATCH',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    appName: currentApplication,
+                    activityName: currentActivity,
+                    schemeId: schemeId
+                }),
+                success: function (response, textStatus, xhr) {
+                    // Now update parent activity via PATCH
+                    showToastSuccess("Default scheme updated successfully.");
+                    // Refresh the activity details.
+                    discardActivityDetails();
+                    // Refresh Activities List (in the parent dialog)
+                    refreshActivities();
+                },
+                error: commonFunctionError
+            });
+        }
+        else {
+            showToastError("Please select a default scheme.");
+        }
+    
+
+    }
+
+    function addSchemeToApplicationActivity() {
+        const schemeSelect = document.getElementById('schemeSelect');
+        const selectedSchemeId = schemeSelect.value;
+        if (selectedSchemeId) {
+            $.ajax({
+                url: '/api/v1/addSchemeToApplicationActivity',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    appName: currentApplication,
+                    activityName: currentActivity,
+                    schemeId: parseInt(selectedSchemeId)
+                }),
+                success: function (response, textStatus, xhr) {
+                    // Now update parent activity via PATCH
+                    showToastSuccess("Scheme added successfully.");
+                    // Refresh the activity details.
+                    discardActivityDetails();
+                    // Refresh Activities List (in the parent dialog)
+                    refreshActivities();
+                },
+                error: commonFunctionError
+            });
+        }
+        else {
+            showToastError("Please select a scheme.");
+        }
+    }
+
+    function removeSchemeFromApplicationActivity(internalId) {
+        const schemeId = document.getElementById(`ulist-applicationActivitiesSchemesById-${internalId}`).value;
+        $.ajax({
+            url: '/api/v1/removeSchemeFromApplicationActivity',
+            type: 'DELETE',
+            contentType: 'application/json',
+            data: JSON.stringify({
+                appName: currentApplication,
+                activityName: currentActivity,
+                schemeId: parseInt(schemeId)
+            }),
+            success: function (response, textStatus, xhr) {
+                // Now update parent activity via PATCH
+                showToastSuccess("Scheme removed successfully.");
+                // Refresh the activity details.
+                discardActivityDetails();
+                // Refresh Activities List (in the parent dialog)
+                refreshActivities();
+            },
+            error: commonFunctionError
+        });
+    }
+
+
+    function populateActivitySchemes(schemes, leftSchemes, defaultScheme) {
+        const schemeSelect = document.getElementById('schemeSelect');
+        schemeSelect.innerHTML = '<option value="">No More Schemes Available</option>';
+
+        if (leftSchemes.length > 0) {
+            schemeSelect.innerHTML = '';
+        }
+
+        leftSchemes.forEach(scheme => {
+            const option = document.createElement('option');
+            option.value = scheme.id;
+            option.textContent = `${scheme.id} - ${scheme.name}`;
+            schemeSelect.appendChild(option);
+        });
+
+        let internalId = 0;
+
+        // Populate the table with leftSchemes
+        const tbody = document.getElementById('tbody-applicationActivitiesSchemes');
+        tbody.innerHTML = '';
+
+        schemes.forEach(scheme => {
+            $("#tbody-applicationActivitiesSchemes").append(
+                `<tr> 
+                        <td scope="row" id=ulist-applicationActivitiesSchemes-${internalId}></td>
+
+                        <td><input type="radio" name="defaultScheme" id="defaultSchemeRadio-${internalId}" onclick="updateDefaultSchemeOnApplicationActivity();"></td>
+
+                        <td style="text-align: right;">
+                            <input type=hidden id="ulist-applicationActivitiesSchemesById-${internalId}">
+                            <button type="button" class="btn btn-light btn-sm" onclick="javascript:removeSchemeFromApplicationActivity(${internalId})"><i class="fas fa-trash"></i></button>
+                        </td>
+                    </tr>`
+            );
+            //value="${internalId}"
+            document.getElementById(`ulist-applicationActivitiesSchemesById-${internalId}`).value = scheme.id;
+            $(`#ulist-applicationActivitiesSchemes-${internalId}`).text(scheme.id + ' - ' + scheme.name);
+            document.getElementById(`defaultSchemeRadio-${internalId}`).value = scheme.id;
+            if (scheme.id === defaultScheme) {
+                document.getElementById(`defaultSchemeRadio-${internalId}`).setAttribute('checked', 'checked');
+            }
+            internalId++;
+        });
+
+
+
+    }
+</script>

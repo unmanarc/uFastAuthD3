@@ -1,6 +1,7 @@
 #include "weblogin_authmethods.h"
 
 #include "../globals.h"
+#include <optional>
 
 using namespace Mantids30;
 using namespace Program;
@@ -80,12 +81,12 @@ void WebLogin_AuthMethods::registerAccount(void *context, APIReturn &response, c
     if (!newPass.empty() && success)
     {
         bool r = false;
-        uint32_t applicationRoleDefaultSSOLogin = identityManager->authController->getApplicationActivityDefaultScheme("IAM", "LOGIN");
+        std::optional<uint32_t> applicationRoleDefaultSSOLogin = identityManager->applicationActivities->getApplicationActivityDefaultScheme("IAM", "LOGIN");
 
         // Not any scheme to the default
-        if (applicationRoleDefaultSSOLogin != UINT32_MAX)
+        if (applicationRoleDefaultSSOLogin.has_value())
         {
-            auto authSlots = identityManager->authController->listAuthenticationSlotsUsedByScheme(applicationRoleDefaultSSOLogin);
+            auto authSlots = identityManager->authController->listAuthenticationSlotsUsedByScheme(*applicationRoleDefaultSSOLogin);
             if (!authSlots.empty())
             {
                 // not a password...

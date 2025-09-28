@@ -3,6 +3,7 @@
 #include "IdentityManager/credentialvalidator.h"
 #include "identitymanager.h"
 #include <Mantids30/DB/sqlconnector.h>
+#include <optional>
 
 class IdentityManager_DB : public IdentityManager
 {
@@ -129,6 +130,20 @@ public:
         bool setApplicationActivities(const std::string &appName, const std::map<std::string, ActivityData> &activities) override;
         bool removeApplicationActivities(const std::string &appName) override;
         std::map<std::string, ActivityData> listApplicationActivities(const std::string &appName) override;
+        std::optional<ActivityData> getApplicationActivityInfo(const std::string &appName, const std::string &activityName) override;
+
+
+        bool setApplicationActivityParentActivity(const std::string &appName, const std::string &activityName, const std::string &parentActivityName) override;
+        bool setApplicationActivityDescription(const std::string &appName, const std::string &activityName, const std::string &description) override;
+
+        std::optional<uint32_t> getApplicationActivityDefaultScheme(const std::string &appName, const std::string &activityName) override;
+        bool setApplicationActivityDefaultScheme(const std::string &appName, const std::string &activityName, const uint32_t &schemeId) override;
+
+        std::set<uint32_t> listAuthenticationSchemesForApplicationActivity(const std::string &appName, const std::string &activityName) override;
+        bool addAuthenticationSchemeToApplicationActivity(const std::string &appName, const std::string &roleName, const uint32_t &schemeId) override;
+        bool removeAuthenticationSchemeFromApplicationActivity(const std::string &appName, const std::string &roleName, const uint32_t &schemeId) override;
+
+
 
     private:
         IdentityManager_DB *_parent;
@@ -193,13 +208,6 @@ public:
         bool updateAuthenticationScheme(const uint32_t &schemeId, const std::string &description) override;
         bool removeAuthenticationScheme(const uint32_t &schemeId) override;
         std::map<uint32_t, std::string> listAuthenticationSchemes() override;
-
-        uint32_t getApplicationActivityDefaultScheme(const std::string &appName, const std::string &activityName) override;
-        bool setApplicationActivityDefaultScheme(const std::string &appName, const std::string &activityName, const uint32_t &schemeId) override;
-
-        std::set<uint32_t> listAuthenticationSchemesForApplicationActivity(const std::string &appName, const std::string &activityName) override;
-        bool addAuthenticationSchemesToApplicationActivity(const std::string &appName, const std::string &roleName, const uint32_t &schemeId) override;
-        bool removeAuthenticationSchemeFromApplicationActivity(const std::string &appName, const std::string &roleName, const uint32_t &schemeId) override;
 
         std::vector<AuthenticationSchemeUsedSlot> listAuthenticationSlotsUsedByScheme(const uint32_t &schemeId) override;
         bool updateAuthenticationSlotUsedByScheme(const uint32_t &schemeId, const std::list<AuthenticationSchemeUsedSlot> &slotsUsedByScheme) override;

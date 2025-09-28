@@ -4,6 +4,7 @@
 #include <list>
 #include <map>
 #include <memory>
+#include <optional>
 #include <set>
 
 #include "ds_account.h"
@@ -185,7 +186,7 @@ public:
             std::string description;
             std::string parentActivity;
             std::string defaultSchemeDescription;
-            uint32_t defaultSchemeID;
+            uint32_t defaultSchemeID = -1;
         };
 
 
@@ -196,6 +197,41 @@ public:
         virtual bool setApplicationActivities(const std::string &appName, const std::map<std::string, ActivityData> &activities) = 0;
         virtual bool removeApplicationActivities(const std::string &appName) = 0;
         virtual std::map<std::string, ActivityData> listApplicationActivities(const std::string &appName) = 0;
+        virtual std::optional<ActivityData> getApplicationActivityInfo(const std::string &appName, const std::string &activityName) = 0;
+        virtual bool setApplicationActivityParentActivity(const std::string &appName, const std::string &activityName, const std::string &parentActivityName) = 0;
+        virtual bool setApplicationActivityDescription(const std::string &appName, const std::string &activityName, const std::string &description) = 0;
+
+        /**
+         * @brief Retrieves the default authentication scheme ID for a specific application and activity.
+         *
+         * This function queries the database to fetch the `defaultSchemeId` for the given application (`appName`)
+         * and activity (`activityName`). If no default scheme is set, the function returns
+         * `UINT32_MAX` as an indicator.
+         *
+         * @param appName The name of the application.
+         * @param activityName The name of the activity within the application.
+         * @return uint32_t The ID of the default authentication scheme, or `UINT32_MAX` if not set.
+         *
+         * @note This function acquires a read lock (`Lock_RD`) to ensure thread safety while accessing shared resources.
+         */
+        virtual std::optional<uint32_t> getApplicationActivityDefaultScheme(const std::string &appName, const std::string &activityName) = 0;
+        /**
+         * @brief Sets or updates the default authentication scheme ID for a specific application and activity.
+         *
+         * This function updates the `defaultSchemeId` in the database for the given application (`appName`) and
+         * activity (`activityName`) to the specified `schemeId`.
+         *
+         * @param appName The name of the application.
+         * @param activityName The name of the activity within the application.
+         * @param schemeId The ID of the authentication scheme to set as the default.
+         * @return bool `true` if the operation succeeds, `false` otherwise.
+         *
+         * @note This function acquires a write lock (`Lock_RW`) to ensure thread safety while modifying the database.
+         */
+        virtual bool setApplicationActivityDefaultScheme(const std::string &appName, const std::string &activityName, const uint32_t &schemeId) = 0;
+        virtual std::set<uint32_t> listAuthenticationSchemesForApplicationActivity(const std::string &appName, const std::string &activityName) = 0;
+        virtual bool addAuthenticationSchemeToApplicationActivity(const std::string &appName, const std::string &activityName, const uint32_t &schemeId) = 0;
+        virtual bool removeAuthenticationSchemeFromApplicationActivity(const std::string &appName, const std::string &activityName, const uint32_t &schemeId) = 0;
     };
 
 
@@ -343,38 +379,7 @@ public:
         virtual bool removeAuthenticationScheme(const uint32_t &schemeId) = 0;
         virtual std::map<uint32_t, std::string> listAuthenticationSchemes() = 0;
 
-        /**
-         * @brief Retrieves the default authentication scheme ID for a specific application and activity.
-         *
-         * This function queries the database to fetch the `defaultSchemeId` for the given application (`appName`)
-         * and activity (`activityName`). If no default scheme is set, the function returns
-         * `UINT32_MAX` as an indicator.
-         *
-         * @param appName The name of the application.
-         * @param activityName The name of the activity within the application.
-         * @return uint32_t The ID of the default authentication scheme, or `UINT32_MAX` if not set.
-         *
-         * @note This function acquires a read lock (`Lock_RD`) to ensure thread safety while accessing shared resources.
-         */
-        virtual uint32_t getApplicationActivityDefaultScheme(const std::string &appName, const std::string &activityName) = 0;
-        /**
-         * @brief Sets or updates the default authentication scheme ID for a specific application and activity.
-         *
-         * This function updates the `defaultSchemeId` in the database for the given application (`appName`) and
-         * activity (`activityName`) to the specified `schemeId`.
-         *
-         * @param appName The name of the application.
-         * @param activityName The name of the activity within the application.
-         * @param schemeId The ID of the authentication scheme to set as the default.
-         * @return bool `true` if the operation succeeds, `false` otherwise.
-         *
-         * @note This function acquires a write lock (`Lock_RW`) to ensure thread safety while modifying the database.
-         */
-        virtual bool setApplicationActivityDefaultScheme(const std::string &appName, const std::string &activityName, const uint32_t &schemeId) = 0;
 
-        virtual std::set<uint32_t> listAuthenticationSchemesForApplicationActivity(const std::string &appName, const std::string &activityName) = 0;
-        virtual bool addAuthenticationSchemesToApplicationActivity(const std::string &appName, const std::string &activityName, const uint32_t &schemeId) = 0;
-        virtual bool removeAuthenticationSchemeFromApplicationActivity(const std::string &appName, const std::string &activityName, const uint32_t &schemeId) = 0;
 
         virtual std::vector<AuthenticationSchemeUsedSlot> listAuthenticationSlotsUsedByScheme(const uint32_t &schemeId) = 0;
         virtual bool updateAuthenticationSlotUsedByScheme(const uint32_t &schemeId, const std::list<AuthenticationSchemeUsedSlot> &slotsUsedByScheme) = 0;

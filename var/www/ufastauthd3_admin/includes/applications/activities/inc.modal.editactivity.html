@@ -1,0 +1,87 @@
+<script>
+    let currentActivity = "";
+
+    function closeEditActivityModal() {
+        $('#modalEditActivity').modal('hide');
+        $("#modalEditApplication").modal('show');
+    }
+
+</script>
+
+<div class="modal fade" id="modalEditActivity" data-bs-backdrop="static" data-bs-keyboard="true" tabindex="-1"
+    aria-labelledby="modalEditActivityLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-scrollable modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalEditActivityLabel">Edit Activity</h5>
+                <button type="button" class="btn-close" aria-label="Close" onclick="javascript:closeEditActivityModal()"></button>
+            </div>
+            <div class="modal-body">
+
+                <table width=100% style=" border-spacing: 10px;   border-collapse: separate;">
+                    <tr>
+                        <td align="right" width=15%>Editing Activity: </td>
+                        <td><input type="username" id="activityName" class="form-control" placeholder="Activity Name" readonly disabled>
+                        </td>
+                    </tr>
+                </table>
+
+                <table width=100% style=" border-spacing: 10px;   border-collapse: separate;">
+                    <tr>
+                        <td>
+                            <ul class="nav nav-tabs" id="myTab" activity="tablist">
+                                <li class="nav-item">
+                                    <button class="nav-link active" id="activityEditDetails-tab" data-bs-toggle="tab"
+                                        data-bs-target="#activityEditDetails" type="button" activity="tab" aria-controls="activityEditDetails"
+                                        aria-selected="true">Details</button>
+                                </li>
+                                <li class="nav-item">
+                                    <button class="nav-link" id="activityEditSchemes-tab" data-bs-toggle="tab"
+                                        data-bs-target="#activityEditSchemes" type="button" activity="tab"
+                                        aria-controls="activityEditSchemes" aria-selected="false">Schemes</button>
+                                </li>
+                            </ul>
+                        </td>
+                    </tr>
+                </table>
+
+                <div class="tab-content" id="myTabContent">
+                    <!--<%include:/includes/applications/activities/inc.modal.editactivity_details.html%>-->
+                    <!--<%include:/includes/applications/activities/inc.modal.editactivity_schemes.html%>-->
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function populateActivity() {
+        $.ajax({
+            url: '/api/v1/getActivityInfo',
+            type: 'GET',
+            contentType: 'application/json',
+            data: JSON.stringify(
+                { 
+                    appName: currentApplication,
+                    activityName: currentActivity 
+                }),
+            success: function (response) {
+                document.getElementById("activityName").value = currentActivity;
+                populateActivityDetails(response["details"],response["allActivities"]);
+                populateActivitySchemes(response["schemes"],response["leftSchemes"],response["defaultScheme"]);
+            },
+            error: commonFunctionError
+        });
+    }
+
+
+    function editApplicationActivity(internalId) {
+        currentActivity = $(`#ulist-activity-name-${internalId}`).text();
+
+        populateActivity();
+
+        $("#modalEditApplication").modal('hide');
+        $('#modalEditActivity').modal('show');
+    }
+</script>
