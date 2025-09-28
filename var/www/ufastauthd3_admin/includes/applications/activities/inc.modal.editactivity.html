@@ -13,18 +13,10 @@
     <div class="modal-dialog modal-dialog-scrollable modal-xl">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="modalEditActivityLabel">Edit Activity</h5>
+                <h5 class="modal-title" id="modalEditActivityLabel">Edit Activity - <b><span id="activityName"></span></b></h5>
                 <button type="button" class="btn-close" aria-label="Close" onclick="javascript:closeEditActivityModal()"></button>
             </div>
             <div class="modal-body">
-
-                <table width=100% style=" border-spacing: 10px;   border-collapse: separate;">
-                    <tr>
-                        <td align="right" width=15%>Editing Activity: </td>
-                        <td><input type="username" id="activityName" class="form-control" placeholder="Activity Name" readonly disabled>
-                        </td>
-                    </tr>
-                </table>
 
                 <table width=100% style=" border-spacing: 10px;   border-collapse: separate;">
                     <tr>
@@ -67,14 +59,13 @@
                     activityName: currentActivity 
                 }),
             success: function (response) {
-                document.getElementById("activityName").value = currentActivity;
+                $(`#activityName`).text(currentActivity);
                 populateActivityDetails(response["details"],response["allActivities"]);
                 populateActivitySchemes(response["schemes"],response["leftSchemes"],response["defaultScheme"]);
             },
             error: commonFunctionError
         });
     }
-
 
     function editApplicationActivity(internalId) {
         currentActivity = $(`#ulist-activity-name-${internalId}`).text();

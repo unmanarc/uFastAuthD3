@@ -7,20 +7,13 @@
     <div class="modal-dialog modal-dialog-scrollable modal-xl">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="modalEditApplicationLabel">Edit Application</h5>
+                <h5 class="modal-title" id="modalEditApplicationLabel">Edit Application - <b><span id="editApplicationName"></span></b></h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
 
 
-                <table width=100% style=" border-spacing: 10px;   border-collapse: separate;">
-                    <tr>
-                        <td align="right" width=15%>Application ID: </td>
-                        <td><input type="username" name="editApplicationName" id="editApplicationName"
-                                class="form-control" placeholder="Application Name" readonly
-                                style="background-color: #e9ecef;"></td>
-                    </tr>
-                </table>
+              
 
 
                 <table width=100% style=" border-spacing: 10px;   border-collapse: separate;">
@@ -122,7 +115,7 @@
             contentType: 'application/json',
             data: JSON.stringify({ appName: currentApplication }),
             success: function (response) {
-                document.getElementById("editApplicationName").value = currentApplication;
+                $(`#editApplicationName`).text(currentApplication);
                 populateApplication(currentApplication);
             },
             error: commonFunctionError

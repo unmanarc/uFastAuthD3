@@ -144,12 +144,10 @@
         render: function (data, type, row) {
           let b64FieldName = window.btoa(row.fieldName);
           return `<div style="text-align: right;">
-                      <!-- <button type="button" class="btn btn-dark btn-sm" data-bs-toggle="modal" data-bs-target="#modalEditField" onclick="editAccoundField('${b64FieldName}')">
+                      <!-- <button type="button" class="btn btn-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#modalEditField" onclick="editAccoundField('${b64FieldName}')">
                          Edit
                        </button>-->
-                      <button type="button" class="btn btn-danger btn-sm" onclick="deleteField('${b64FieldName}')">
-                        Remove
-                      </button>
+                      <button type="button" class="btn btn-secondary btn-sm" onclick="javascript:deleteField(${b64FieldName});"><i class="fas fa-trash"></i></button>
                   </div>`;
         }
       }

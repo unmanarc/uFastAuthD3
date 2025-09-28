@@ -74,8 +74,8 @@
         render: function (data, type, row) {
           let b64AppName = window.btoa(row.appName);
           return `<div class="d-flex flex-wrap gap-1 justify-content-end">
-                        <button type="button" class="btn btn-dark btn-sm" data-bs-toggle="modal" data-bs-target="#modalEditApplication" onclick="loadAndEditApplication('${b64AppName}')">
-                          Edit
+                        <button type="button" class="btn btn-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#modalEditApplication" onclick="loadAndEditApplication('${b64AppName}')">
+                          <i class="fas fa-edit"></i>
                         </button>
                       </div>`;
         }

@@ -155,8 +155,8 @@
         render: function (data, type, row) {
           let b64AccountName = window.btoa(row.accountName);
           return `<div style="text-align: right;">
-                      <button type="button" class="btn btn-dark btn-sm" data-bs-toggle="modal" data-bs-target="#modalEditAccount" onclick="loadAndEditAccount('${b64AccountName}')">
-                        Edit
+                      <button type="button" class="btn btn-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#modalEditAccount" onclick="loadAndEditAccount('${b64AccountName}')">
+                        <i class="fas fa-edit"></i>
                       </button>
                   </div>`;
         }

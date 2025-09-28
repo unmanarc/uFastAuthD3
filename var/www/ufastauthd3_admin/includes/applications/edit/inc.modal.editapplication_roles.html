@@ -90,10 +90,10 @@
                 render: function (data, type, row) {
                     let b64RoleName = window.btoa(row.roleName);
                     return `<div class="d-flex flex-wrap gap-1 justify-content-end">
-                          <button type="button" class="btn btn-dark btn-sm" onclick="loadAndEditRole('${b64RoleName}')">
-                            Edit
+                          <button type="button" class="btn btn-secondary btn-sm" onclick="loadAndEditRole('${b64RoleName}')">
+                            <i class="fas fa-edit"></i>
                           </button>
-                          <button type="button" class="btn btn-sm btn-secondary" onclick="javascript:removeRoleFromApplication('${b64RoleName}')">
+                          <button type="button" class="btn btn-secondary btn-sm" onclick="javascript:removeRoleFromApplication('${b64RoleName}')">
                                 <i class="fas fa-trash"></i>
                           </button>
                         </div>`;

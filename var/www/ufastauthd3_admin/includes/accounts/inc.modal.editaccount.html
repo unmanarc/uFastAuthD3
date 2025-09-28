@@ -7,17 +7,10 @@
     <div class="modal-dialog modal-dialog-scrollable modal-xl">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="modalEditAccountLabel">Edit User Account</h5>
+                <h5 class="modal-title" id="modalEditAccountLabel">Edit User Account - <b><span id="editAccountName"></span></b></h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <table width=100% style=" border-spacing: 10px;   border-collapse: separate;">
-                    <tr>
-                        <td align="right" width=15%>Editing Account: </td>
-                        <td><input type="text" name="username" id="editAccountName" class="form-control"
-                                placeholder="Account Name" readonly style="background-color: #e9ecef;"></td>
-                    </tr>
-                </table>
                 <table width=100% style=" border-spacing: 10px;   border-collapse: separate;">
                     <tr>
                         <td>
@@ -69,7 +62,7 @@
             data: JSON.stringify({ accountName: currentAccount }),
             success: function (response) 
             {
-                document.getElementById("editAccountName").value = currentAccount;
+                $(`#editAccountName`).text(currentAccount);
                 populateAccountDetails();
                 populateAccountApplications();
             },

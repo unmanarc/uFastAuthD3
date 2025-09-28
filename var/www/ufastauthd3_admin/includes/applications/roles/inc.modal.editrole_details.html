@@ -52,6 +52,7 @@
             success: function (response, textStatus, xhr) {
                     showToastSuccess("Role details updated successfully.");
                     discardRoleDetails();
+                    populateApplicationRoles();
             },
             error: commonFunctionError
         });

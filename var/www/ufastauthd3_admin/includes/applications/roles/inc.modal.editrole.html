@@ -13,19 +13,10 @@
     <div class="modal-dialog modal-dialog-scrollable modal-xl">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="modalEditRoleLabel">Edit Role</h5>
+                <h5 class="modal-title" id="modalEditRoleLabel">Edit Role - <b><span id="roleName"></span></b></h5>
                 <button type="button" class="btn-close" aria-label="Close" onclick="javascript:closeEditRoleModal()"></button>
             </div>
             <div class="modal-body">
-
-                <table width=100% style=" border-spacing: 10px;   border-collapse: separate;">
-                    <tr>
-                        <td align="right" width=15%>Editing Role: </td>
-                        <td><input type="username" id="roleName" class="form-control" placeholder="Role Name" readonly>
-                        </td>
-                    </tr>
-                </table>
-
                 <table width=100% style=" border-spacing: 10px;   border-collapse: separate;">
                     <tr>
                         <td>
@@ -73,7 +64,9 @@
                     roleName: currentRole 
                 }),
             success: function (response) {
-                document.getElementById("roleName").value = currentRole;
+
+                $(`#roleName`).text(currentRole);
+
                 populateRoleDetails(response["details"]);
                 populateRoleScopes(response["scopes"]);
                 populateRoleAccounts(response["accounts"]);
