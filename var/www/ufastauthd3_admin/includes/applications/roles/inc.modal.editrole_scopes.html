@@ -10,11 +10,24 @@
     </tr>
     <tr>
       <td align="right">
-        <select class="form-select" aria-label="Default select example" id="applicationScopes"
-          style="min-width: 300px;">
-        </select><br>
-        <button type="button" class="btn btn-sm btn-success" onclick="javascript:addApplicationScopeToRole()">Add Application
-          Scope</button>
+
+
+
+        <div class="row g-3 align-items-center mb-4">
+          <div class="col">
+            <select class="form-select" aria-label="Default select example" id="applicationScopes"
+              style="min-width: 300px;">
+            </select>
+          </div>
+          <div class="col-auto">
+            <button type="button" class="btn btn-outline-success" onclick="javascript:addApplicationScopeToRole()">Add
+              Application
+              Scope</button>
+          </div>
+        </div>
+
+
+
       </td>
     </tr>
 
@@ -82,7 +95,7 @@
       error: commonFunctionError
     });
   }
-  
+
   function populateRoleScopes(scopes) {
     document.getElementById("tbody-role-scopes").innerHTML = "";
 

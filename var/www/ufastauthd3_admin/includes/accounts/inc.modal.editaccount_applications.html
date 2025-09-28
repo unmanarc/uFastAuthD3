@@ -4,11 +4,22 @@
 
         <tr id="addApplicationTR">
             <td align="right">
-                <select class="form-select" aria-label="Default select example" id="applicationsLeft"
-                    style="min-width: 300px;">
-                </select><br>
-                <button type="button" class="btn btn-sm btn-success" onclick="javascript:addAccountToApplication()">Add
-                    Application</button>
+
+
+                <div class="row g-3 align-items-center mb-4">
+                    <div class="col">
+                        <select class="form-select" aria-label="Default select example" id="applicationsLeft"
+                            style="min-width: 300px;">
+                        </select>
+                    </div>
+                    <div class="col-auto">
+                        <button type="button" class="btn btn-outline-success"
+                            onclick="javascript:addAccountToApplication()">Add
+                            Application</button>
+                    </div>
+                </div>
+
+
             </td>
         </tr>
 
@@ -231,7 +242,7 @@
         });
     }
 
-    
+
     function addApplicationRoleToAccount(appId) {
         var appItems = document.getElementById(`applicationsRolesLeft-${appId}`);
         var selItem = appItems.selectedIndex;
@@ -275,7 +286,7 @@
         });
     }
 
-    
+
     function addApplicationScopeToAccount(appId) {
         var appItems = document.getElementById(`applicationsScopesLeft-${appId}`);
         var selItem = appItems.selectedIndex;
