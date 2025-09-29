@@ -19,8 +19,9 @@ using namespace Network::Protocols;
 
 */
 
-void WebLogin_AuthMethods::registerAccount(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &clientDetails)
+API::APIReturn WebLogin_AuthMethods::registerAccount(void *context, const RequestParameters &request, ClientDetails &clientDetails)
 {
+    API::APIReturn response;
     IdentityManager *identityManager = Globals::getIdentityManager();
 
     auto config = Globals::getConfig();
@@ -54,7 +55,7 @@ void WebLogin_AuthMethods::registerAccount(void *context, APIReturn &response, c
         else
         {
             response.setError(HTTP::Status::S_401_UNAUTHORIZED, "unauthorized", "Insufficient permissions");
-            return;
+            return response;
         }
     }
 
@@ -68,6 +69,7 @@ void WebLogin_AuthMethods::registerAccount(void *context, APIReturn &response, c
     if (!success)
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to create the account");
+        return response;
     }
 
     LOG_APP->log2(__func__, request.jwtToken->getSubject(), clientDetails.ipAddress, success ? Logs::LEVEL_SECURITY_ALERT : Logs::LEVEL_INFO,
@@ -101,6 +103,7 @@ void WebLogin_AuthMethods::registerAccount(void *context, APIReturn &response, c
         LOG_APP->log2(__func__, request.jwtToken->getSubject(), clientDetails.ipAddress, r ? Logs::LEVEL_SECURITY_ALERT : Logs::LEVEL_INFO,
                       !r ? "Failed to change initial password on account '%s'" : "Initial password for account '%s' changed.", accountToCreate.c_str());
     }
+    return response;
 }
 
 // TODO: llenar los details del user.

@@ -135,8 +135,10 @@ bool WebLogin_AuthMethods::token_validateAppAuthorization(IdentityManager* ident
 /*
     This will tranform the current authentication into an APP access...
 */
-void WebLogin_AuthMethods::token(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn WebLogin_AuthMethods::token(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
+    API::APIReturn response;
+
     IdentityManager *identityManager = Globals::getIdentityManager();
 
     std::string authenticatedUser = request.jwtToken->getSubject();
@@ -154,7 +156,7 @@ void WebLogin_AuthMethods::token(void *context, APIReturn &response, const Reque
     if (!token_validateJwtClaims(request.jwtToken, authenticatedUser, authClientDetails.ipAddress))
     {
         response.setError(HTTP::Status::S_403_FORBIDDEN, "AUTH_ERR_" + std::to_string(REASON_UNAUTHENTICATED), getReasonText(REASON_UNAUTHENTICATED));
-        return;
+        return response;
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////
@@ -164,14 +166,14 @@ void WebLogin_AuthMethods::token(void *context, APIReturn &response, const Reque
     if (!token_validateAuthenticationScheme(identityManager, request.jwtToken, app, activity, schemeId, authenticatedUser, authClientDetails.ipAddress))
     {
         response.setError(HTTP::Status::S_401_UNAUTHORIZED, "AUTH_ERR_" + std::to_string(REASON_UNAUTHENTICATED), getReasonText(REASON_UNAUTHENTICATED));
-        return;
+        return response;
     }
 
     // Validate app authorization
     if (!token_validateAppAuthorization(identityManager, request.jwtToken, app, authenticatedUser, authClientDetails.ipAddress))
     {
         response.setError(HTTP::Status::S_401_UNAUTHORIZED, "AUTH_ERR_" + std::to_string(REASON_ACCOUNT_NOT_IN_APP), getReasonText(REASON_ACCOUNT_NOT_IN_APP));
-        return;
+        return response;
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////
@@ -184,7 +186,7 @@ void WebLogin_AuthMethods::token(void *context, APIReturn &response, const Reque
         const char * reasonText = getReasonText(r);
         LOG_APP->log2(__func__, authenticatedUser, authClientDetails.ipAddress, Logs::LEVEL_SECURITY_ALERT, "Token request denied: User '%s' attempted to obtain an access token for app '%s', but the account is not valid or authorized for this application. Reason: %s.", authenticatedUser.c_str(), app.c_str(), reasonText);
         response.setError(HTTP::Status::S_401_UNAUTHORIZED, "AUTH_ERR_INVALID_ACCT", getReasonText(r));
-        return;
+        return response;
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////
@@ -193,7 +195,7 @@ void WebLogin_AuthMethods::token(void *context, APIReturn &response, const Reque
     if (!token_validateRedirectUri(identityManager, app, redirectURI, authenticatedUser, authClientDetails.ipAddress))
     {
         response.setError(HTTP::Status::S_406_NOT_ACCEPTABLE, "AUTH_ERR_" + std::to_string(REASON_BAD_PARAMETERS), "Invalid Redirect URI");
-        return;
+        return response;
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////
@@ -204,7 +206,7 @@ void WebLogin_AuthMethods::token(void *context, APIReturn &response, const Reque
     {
         // Failed to create the token...
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "AUTH_ERR_" + std::to_string(REASON_INTERNAL_ERROR), getReasonText(REASON_INTERNAL_ERROR));
-        return;
+        return response;
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////
@@ -213,8 +215,10 @@ void WebLogin_AuthMethods::token(void *context, APIReturn &response, const Reque
     if (JSON_ASBOOL_D(request.jwtToken->getClaim("keepAuthenticated"),false) == false)
     {
         // Discard access cookies upon first use. (Access tokens are short-lived, but should be discarded after the first usage)
-        logout(context, response, request, authClientDetails);
+        doLogoutInResponse(context, request, authClientDetails, &response);
     }
+
+    return response;
 }
 
 

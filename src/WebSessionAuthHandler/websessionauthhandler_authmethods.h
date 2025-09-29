@@ -25,10 +25,10 @@ public:
     static void addMethods(std::shared_ptr<MethodsHandler> methods);
 
     // Remote triggered:
-    static void refreshAccessToken(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
-    //static void refreshRefresherToken(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
-    static void appLogout(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
-    static void callback(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
+    static APIReturn refreshAccessToken(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
+    //static APIReturn refreshRefresherToken(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
+    static APIReturn appLogout(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
+    static APIReturn callback(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
 
 private:
     static bool validateAPIKey(const std::string &app, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);

@@ -44,18 +44,17 @@ private:
     ////////////////
     // EXPOSED FUNCTIONS:
 
-    static void preAuthorize(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
-    static void authorize(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &clientDetails);
+    static APIReturn preAuthorize(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
+    static APIReturn authorize(void *context, const RequestParameters &request, ClientDetails &clientDetails);
+    static APIReturn token(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
+    static APIReturn logout(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
+    static void doLogoutInResponse(void *context, const RequestParameters &, ClientDetails &, APIReturn * response);
 
-    static void token(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
+    static APIReturn changeCredential(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
+    static APIReturn listCredentials(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
+    static APIReturn accountCredentialPublicData(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
 
-    static void logout(void *, APIReturn &response, const RequestParameters &, ClientDetails &);
-
-    static void changeCredential(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
-    static void listCredentials(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
-    static void accountCredentialPublicData(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
-
-    static void registerAccount(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
+    static APIReturn registerAccount(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
 
     ////////////////
 

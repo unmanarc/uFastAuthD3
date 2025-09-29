@@ -1,6 +1,5 @@
 #include "webadmin_methods_authcontroller.h"
 #include "../globals.h"
-#include "defs.h"
 #include "json/value.h"
 #include <Mantids30/Program_Logs/applog.h>
 
@@ -26,18 +25,21 @@ void WebAdmin_Methods_AuthController::addMethods_AuthController(std::shared_ptr<
     methods->addResource(MethodsHandler::PATCH, "updateAuthenticationSlotsUsedByScheme", &updateAuthenticationSlotsUsedByScheme, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"AUTH_MODIFY"});
 }
 
-void WebAdmin_Methods_AuthController::addNewAuthenticationScheme(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn WebAdmin_Methods_AuthController::addNewAuthenticationScheme(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
-    uint32_t r = Globals::getIdentityManager()->authController->addAuthenticationScheme(JSON_ASSTRING(*request.inputJSON,"description",""));
-    if (r == UINT32_MAX)
+    API::APIReturn response;
+    std::optional<uint32_t> r = Globals::getIdentityManager()->authController->addAuthenticationScheme(JSON_ASSTRING(*request.inputJSON,"description",""));
+    if (!r.has_value())
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to add the new authentication scheme");
     }
-    (*response.responseJSON()) = r;
+    (*response.responseJSON()) = *r;
+    return response;
 }
 
-void WebAdmin_Methods_AuthController::listAuthenticationSchemes(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn WebAdmin_Methods_AuthController::listAuthenticationSchemes(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
+    API::APIReturn response;
     std::map<uint32_t, std::string> slots = Globals::getIdentityManager()->authController->listAuthenticationSchemes();
     json r;
     for (const auto & slot : slots)
@@ -48,33 +50,42 @@ void WebAdmin_Methods_AuthController::listAuthenticationSchemes(void *context, A
         r.append(rSlot);
     }
     (*response.responseJSON()) = r;
+    return response;
+
 }
 
-void WebAdmin_Methods_AuthController::deleteAuthenticationScheme(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn WebAdmin_Methods_AuthController::deleteAuthenticationScheme(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
+    API::APIReturn response;
     uint32_t schemeId = JSON_ASUINT(*request.inputJSON, "schemeId", 0);
 
     if (!Globals::getIdentityManager()->authController->removeAuthenticationScheme(schemeId))
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to remove the new slot.");
     }
+    return response;
+
 }
 
-void WebAdmin_Methods_AuthController::updateAuthenticationScheme(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn WebAdmin_Methods_AuthController::updateAuthenticationScheme(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
+    API::APIReturn response;
+
     uint32_t schemeId = JSON_ASUINT(*request.inputJSON, "schemeId", 0);
     std::string description = JSON_ASSTRING(*request.inputJSON, "description", "");
 
-    uint32_t r = Globals::getIdentityManager()->authController->updateAuthenticationScheme(schemeId,description);
-    if (r == UINT32_MAX)
+    if (!Globals::getIdentityManager()->authController->updateAuthenticationScheme(schemeId,description))
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to update the authentication scheme");
     }
-    (*response.responseJSON()) = r;
+
+    return response;
 }
 
-void WebAdmin_Methods_AuthController::listAuthenticationSlotsUsedByScheme(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn WebAdmin_Methods_AuthController::listAuthenticationSlotsUsedByScheme(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
+    API::APIReturn response;
+
     uint32_t schemeId = JSON_ASUINT(*request.inputJSON, "schemeId", 0);
     std::vector<AuthenticationSchemeUsedSlot> slots = Globals::getIdentityManager()->authController->listAuthenticationSlotsUsedByScheme(schemeId);
     json r;
@@ -105,10 +116,14 @@ void WebAdmin_Methods_AuthController::listAuthenticationSlotsUsedByScheme(void *
     }
 
     (*response.responseJSON()) = r;
+    return response;
+
 }
 
-void WebAdmin_Methods_AuthController::updateAuthenticationSlotsUsedByScheme(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn WebAdmin_Methods_AuthController::updateAuthenticationSlotsUsedByScheme(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
+    API::APIReturn response;
+
     uint32_t schemeId = JSON_ASUINT(*request.inputJSON, "schemeId", 0);
 
     std::list<AuthenticationSchemeUsedSlot> slotsUsedByScheme;
@@ -124,10 +139,14 @@ void WebAdmin_Methods_AuthController::updateAuthenticationSlotsUsedByScheme(void
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to update the authentication scheme slots");
     }
+    return response;
+
 }
 
-void WebAdmin_Methods_AuthController::listAuthenticationSlots(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn WebAdmin_Methods_AuthController::listAuthenticationSlots(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
+    API::APIReturn response;
+
     std::map<uint32_t, AuthenticationSlotDetails> slots = Globals::getIdentityManager()->authController->listAuthenticationSlots();
     json r;
     for (const auto & slot : slots)
@@ -138,43 +157,53 @@ void WebAdmin_Methods_AuthController::listAuthenticationSlots(void *context, API
         r.append(rSlot);
     }
     (*response.responseJSON()) = r;
+    return response;
 
 }
 
-void WebAdmin_Methods_AuthController::addNewAuthenticationSlot(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn WebAdmin_Methods_AuthController::addNewAuthenticationSlot(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
+    API::APIReturn response;
+
     AuthenticationSlotDetails slot;
     slot.fromJSON(*request.inputJSON);
-    uint32_t r = Globals::getIdentityManager()->authController->addNewAuthenticationSlot(slot);
-    if (r == UINT32_MAX)
+    std::optional<uint32_t> r = Globals::getIdentityManager()->authController->addNewAuthenticationSlot(slot);
+    if (!r.has_value())
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to add the new slot");
     }
-    (*response.responseJSON()) = r;
+    (*response.responseJSON()) = *r;
+    return response;
+
 }
 
-void WebAdmin_Methods_AuthController::deleteAuthenticationSlot(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn WebAdmin_Methods_AuthController::deleteAuthenticationSlot(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
+    API::APIReturn response;
+
     uint32_t slotId = JSON_ASUINT(*request.inputJSON, "slotId", 0);
 
     if (!Globals::getIdentityManager()->authController->removeAuthenticationSlot(slotId))
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to remove the new slot.");
     }
+    return response;
+
 
 }
 
-void WebAdmin_Methods_AuthController::updateAuthenticationSlot(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn WebAdmin_Methods_AuthController::updateAuthenticationSlot(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
+    API::APIReturn response;
+
     AuthenticationSlotDetails slotDetails;
     slotDetails.fromJSON(*request.inputJSON);
     uint32_t slotId = JSON_ASUINT(*request.inputJSON, "slotId", 0);
 
-    uint32_t r = Globals::getIdentityManager()->authController->updateAuthenticationSlotDetails(slotId,slotDetails);
-    if (r == UINT32_MAX)
+    if (!Globals::getIdentityManager()->authController->updateAuthenticationSlotDetails(slotId,slotDetails))
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to update the authentication slot");
     }
-    (*response.responseJSON()) = r;
 
+    return response;
 }

@@ -1,6 +1,5 @@
 #include "authstorageimpl.h"
 #include "Mantids30/Program_Logs/loglevels.h"
-#include "config.h"
 #include "globals.h"
 
 #include <sys/stat.h>
@@ -133,10 +132,11 @@ bool AuthStorageImpl::createAuth()
     bool r = true;
     bool appExisted, userExisted, defaultPasswordSchemesExisted;
 
-    uint32_t schemeId = r ? identityManager->authController->initializateDefaultPasswordSchemes(&defaultPasswordSchemesExisted) : UINT32_MAX;
+    std::optional<uint32_t> schemeId = identityManager->authController->initializateDefaultPasswordSchemes(&defaultPasswordSchemesExisted);
+
     if (defaultPasswordSchemesExisted)
     {
-        if (schemeId == UINT32_MAX)
+        if (!schemeId.has_value())
         {
             r = false;
             LOG_APP->log0(__func__, Logs::LEVEL_ERR, "Default password scheme for simple login does not exist anymore.");
@@ -148,7 +148,7 @@ bool AuthStorageImpl::createAuth()
     }
     else
     {
-        if (schemeId == UINT32_MAX)
+        if (!schemeId.has_value())
         {
             r = false;
             LOG_APP->log0(__func__, Logs::LEVEL_ERR, "Default password scheme for simple login can't be created.");
@@ -161,7 +161,7 @@ bool AuthStorageImpl::createAuth()
 
     if (r)
     {
-        r = r && identityManager->initializeAdminAccountWithPassword(sDefaultUser, &sInitPW, schemeId, &userExisted);
+        r = r && identityManager->initializeAdminAccountWithPassword(sDefaultUser, &sInitPW, *schemeId, &userExisted);
 
         if (userExisted)
         {
@@ -184,7 +184,7 @@ bool AuthStorageImpl::createAuth()
 
     if (r)
     {
-        r = r && identityManager->initializeApplicationWithScheme(DB_APPNAME, DB_APPDESCRIPTION, schemeId, sDefaultUser, &appExisted);
+        r = r && identityManager->initializeApplicationWithScheme(DB_APPNAME, DB_APPDESCRIPTION, *schemeId, sDefaultUser, &appExisted);
         if (appExisted)
         {
             // User exist, do nothing.
@@ -234,7 +234,7 @@ bool AuthStorageImpl::createAuth()
     {
         LOG_APP->log0(__func__, Logs::LEVEL_WARN, "Password marked to be reseted...");
         std::string sInitPW;
-        if (!identityManager->authController->setAccountPasswordOnScheme(sDefaultUser, &sInitPW, schemeId))
+        if (!schemeId.has_value() || !identityManager->authController->setAccountPasswordOnScheme(sDefaultUser, &sInitPW, *schemeId))
         {
             LOG_APP->log0(__func__, Logs::LEVEL_ERR, "Password not resetted (Maybe the account '%s' does not have admin privileges?)...", sDefaultUser.c_str());
             return false;

@@ -29,8 +29,9 @@ void WebAdminMethods_ApplicationActivities::addMethods_Activities(std::shared_pt
     methods->addResource(MethodsHandler::PATCH, "updateDefaultSchemeOnApplicationActivity", &updateDefaultSchemeOnApplicationActivity, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"});
 }
 
-void WebAdminMethods_ApplicationActivities::updateDefaultSchemeOnApplicationActivity(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn WebAdminMethods_ApplicationActivities::updateDefaultSchemeOnApplicationActivity(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
+    API::APIReturn response;
 
     std::string appName = JSON_ASSTRING(*request.inputJSON, "appName", "");
     std::string activityName = JSON_ASSTRING(*request.inputJSON, "activityName", "");
@@ -39,30 +40,33 @@ void WebAdminMethods_ApplicationActivities::updateDefaultSchemeOnApplicationActi
     if (appName.empty())
     {
         response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Application name is required");
-        return;
+        return response;
     }
 
     if (activityName.empty())
     {
         response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Activity name is required");
-        return;
+        return response;
     }
 
     if (schemeId == 0)
     {
         response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Scheme ID is required");
-        return;
+        return response;
     }
 
     if (!Globals::getIdentityManager()->applicationActivities->setApplicationActivityDefaultScheme(appName, activityName, schemeId))
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to set the default authentication scheme on the activity.");
     }
+    return response;
 }
 
 
-void WebAdminMethods_ApplicationActivities::addSchemeToApplicationActivity(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn WebAdminMethods_ApplicationActivities::addSchemeToApplicationActivity(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
+    API::APIReturn response;
+
     std::string appName = JSON_ASSTRING(*request.inputJSON, "appName", "");
     std::string activityName = JSON_ASSTRING(*request.inputJSON, "activityName", "");
     uint32_t schemeId = JSON_ASUINT(*request.inputJSON, "schemeId", 0);
@@ -70,29 +74,32 @@ void WebAdminMethods_ApplicationActivities::addSchemeToApplicationActivity(void 
     if (appName.empty())
     {
         response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Application name is required");
-        return;
+        return response;
     }
 
     if (activityName.empty())
     {
         response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Activity name is required");
-        return;
+        return response;
     }
 
     if (schemeId == 0)
     {
         response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Scheme ID is required");
-        return;
+        return response;
     }
 
     if (!Globals::getIdentityManager()->applicationActivities->addAuthenticationSchemeToApplicationActivity(appName, activityName, schemeId))
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to add the authentication scheme to the activity.");
     }
+    return response;
 }
 
-void WebAdminMethods_ApplicationActivities::removeSchemeFromApplicationActivity(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn WebAdminMethods_ApplicationActivities::removeSchemeFromApplicationActivity(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
+    API::APIReturn response;
+
     std::string appName = JSON_ASSTRING(*request.inputJSON, "appName", "");
     std::string activityName = JSON_ASSTRING(*request.inputJSON, "activityName", "");
     uint32_t schemeId = JSON_ASUINT(*request.inputJSON, "schemeId", 0);
@@ -100,30 +107,33 @@ void WebAdminMethods_ApplicationActivities::removeSchemeFromApplicationActivity(
     if (appName.empty())
     {
         response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Application name is required");
-        return;
+        return response;
     }
 
     if (activityName.empty())
     {
         response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Activity name is required");
-        return;
+        return response;
     }
 
     if (schemeId == 0)
     {
         response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Scheme ID is required");
-        return;
+        return response;
     }
 
     if (!Globals::getIdentityManager()->applicationActivities->removeAuthenticationSchemeFromApplicationActivity(appName, activityName, schemeId))
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to remove the authentication scheme from the activity.");
     }
+    return response;
 }
 
 
-void WebAdminMethods_ApplicationActivities::updateActivityDescription(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn WebAdminMethods_ApplicationActivities::updateActivityDescription(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
+    API::APIReturn response;
+
     std::string appName = JSON_ASSTRING(*request.inputJSON, "appName", "");
     std::string activityName = JSON_ASSTRING(*request.inputJSON, "activityName", "");
     std::string activityDescription = JSON_ASSTRING(*request.inputJSON, "activityDescription", "");
@@ -131,29 +141,32 @@ void WebAdminMethods_ApplicationActivities::updateActivityDescription(void *cont
     if (appName.empty())
     {
         response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Application name is required");
-        return;
+        return response;
     }
 
     if (activityName.empty())
     {
         response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Activity name is required");
-        return;
+        return response;
     }
 
     if (activityDescription.empty())
     {
         response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request","Activity description cannot be empty.");
-        return;
+        return response;
     }
 
     if (!Globals::getIdentityManager()->applicationActivities->setApplicationActivityDescription(appName, activityName, activityDescription))
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to update the activity description.");
     }
+    return response;
 }
 
-void WebAdminMethods_ApplicationActivities::updateActivityParentActivity(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn WebAdminMethods_ApplicationActivities::updateActivityParentActivity(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
+    API::APIReturn response;
+
     std::string appName = JSON_ASSTRING(*request.inputJSON, "appName", "");
     std::string activityName = JSON_ASSTRING(*request.inputJSON, "activityName", "");
     std::string parentActivityName = JSON_ASSTRING(*request.inputJSON, "parentActivityName", "");
@@ -161,40 +174,41 @@ void WebAdminMethods_ApplicationActivities::updateActivityParentActivity(void *c
     if (appName.empty())
     {
         response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Application name is required");
-        return;
+        return response;
     }
 
     if (activityName.empty())
     {
         response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Activity name is required");
-        return;
+        return response;
     }
 
     if (!Globals::getIdentityManager()->applicationActivities->setApplicationActivityParentActivity(appName, activityName, parentActivityName))
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to update the activity parent activity.");
     }
+    return response;
 }
 
 
 
-void WebAdminMethods_ApplicationActivities::getActivityInfo(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn WebAdminMethods_ApplicationActivities::getActivityInfo(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
+    API::APIReturn response;
     std::string appName = JSON_ASSTRING(*request.inputJSON, "appName", "");
     std::string activityName = JSON_ASSTRING(*request.inputJSON, "activityName", "");
 
     if (appName.empty())
     {
         response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Application name is required");
-        return;
+        return response;
     }
 
     if (activityName.empty())
     {
         response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Activitity name is required");
-        return;
+        return response;
     }
-
 
     // Details:
     std::map<std::string, IdentityManager::ApplicationActivities::ActivityData> activities = Globals::getIdentityManager()->applicationActivities->listApplicationActivities(appName);
@@ -202,7 +216,7 @@ void WebAdminMethods_ApplicationActivities::getActivityInfo(void *context, APIRe
     if (activities.find(activityName)== activities.end())
     {
         response.setError(HTTP::Status::S_404_NOT_FOUND, "not_found", "Activitity name not found in this application");
-        return;
+        return response;
     }
 
     (*response.responseJSON())["details"] = activities[activityName].toJSON();
@@ -248,16 +262,19 @@ void WebAdminMethods_ApplicationActivities::getActivityInfo(void *context, APIRe
     {
         (*response.responseJSON())["defaultScheme"] = Json::nullValue;
     }
+
+    return response;
 }
 
-void WebAdminMethods_ApplicationActivities::listApplicationActivities(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn WebAdminMethods_ApplicationActivities::listApplicationActivities(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
+    API::APIReturn response;
     std::string appName = JSON_ASSTRING(*request.inputJSON, "appName", "");
 
     if (appName.empty())
     {
         response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Application name is required");
-        return;
+        return response;
     }
 
     std::map<std::string, IdentityManager::ApplicationActivities::ActivityData> activities = Globals::getIdentityManager()->applicationActivities->listApplicationActivities(appName);
@@ -270,10 +287,13 @@ void WebAdminMethods_ApplicationActivities::listApplicationActivities(void *cont
         (*response.responseJSON())[i]["name"] = activity.first;
         i++;
     }
+    return response;
 }
 
-void WebAdminMethods_ApplicationActivities::addApplicationActivity(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn WebAdminMethods_ApplicationActivities::addApplicationActivity(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
+    API::APIReturn response;
+
     std::string appName = JSON_ASSTRING(*request.inputJSON, "appName", "");
     std::string activityName = JSON_ASSTRING(*request.inputJSON, "activityName", "");
     std::string activityDescription = JSON_ASSTRING(*request.inputJSON, "activityDescription", "");
@@ -281,46 +301,50 @@ void WebAdminMethods_ApplicationActivities::addApplicationActivity(void *context
     if (activityName.empty())
     {
         response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request","Activity name cannot be empty.");
-        return;
+        return response;
     }
 
     if (appName.empty())
     {
         response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Application name is required");
-        return;
+        return response;
     }
 
     if (activityDescription.empty())
     {
         response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request","Activity description cannot be empty.");
-        return;
+        return response;
     }
 
     if (!Globals::getIdentityManager()->applicationActivities->addApplicationActivity(appName, activityName, activityDescription))
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to create the new activity.\nThe activity ID may already exist.");
     }
+    return response;
 }
 
-void WebAdminMethods_ApplicationActivities::removeApplicationActivity(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn WebAdminMethods_ApplicationActivities::removeApplicationActivity(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
+    API::APIReturn response;
+
     std::string appName = JSON_ASSTRING(*request.inputJSON, "appName", "");
     std::string activityName = JSON_ASSTRING(*request.inputJSON, "activityName", "");
 
     if (appName.empty())
     {
         response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Application name is required");
-        return;
+        return response;
     }
 
     if (activityName.empty())
     {
         response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Activity name is required");
-        return;
+        return response;
     }
 
     if (!Globals::getIdentityManager()->applicationActivities->removeApplicationActivity(appName, activityName))
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to remove the activity.");
     }
+    return response;
 }

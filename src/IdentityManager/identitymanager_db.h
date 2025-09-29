@@ -199,12 +199,12 @@ public:
 
         /////////////////////////////////////////////////////////////////////////////////
         // AuthController Slot SlotIds:
-        uint32_t addNewAuthenticationSlot(const AuthenticationSlotDetails &details) override;
+        std::optional<uint32_t> addNewAuthenticationSlot(const AuthenticationSlotDetails &details) override;
         bool removeAuthenticationSlot(const uint32_t &slotId) override;
         bool updateAuthenticationSlotDetails(const uint32_t &slotId, const AuthenticationSlotDetails &details) override;
         std::map<uint32_t, AuthenticationSlotDetails> listAuthenticationSlots() override;
 
-        uint32_t addAuthenticationScheme(const std::string &description) override;
+        std::optional<uint32_t> addAuthenticationScheme(const std::string &description) override;
         bool updateAuthenticationScheme(const uint32_t &schemeId, const std::string &description) override;
         bool removeAuthenticationScheme(const uint32_t &schemeId) override;
         std::map<uint32_t, std::string> listAuthenticationSchemes() override;

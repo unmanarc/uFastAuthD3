@@ -34,7 +34,7 @@ bool WebAdmin_ServerImpl::createService()
     vars["APIKEY"] = Globals::getIdentityManager()->applications->getApplicationAPIKey(DB_APPNAME);
 
     RESTful::Engine *adminWebServer = Program::Config::RESTful_Engine::createRESTfulEngine(config, LOG_APP, LOG_RPC, "Admin", ADMINSERVER_WEBDIR,
-                                                                                           Program::Config::REST_ENGINE_NO_JWT | Program::Config::REST_ENGINE_MANDATORY_SSL, vars);
+                                                                                           Program::Config::REST_ENGINE_NOCONFIG_JWT | Program::Config::REST_ENGINE_MANDATORY_SSL, vars);
 
     if (!adminWebServer)
         return false;

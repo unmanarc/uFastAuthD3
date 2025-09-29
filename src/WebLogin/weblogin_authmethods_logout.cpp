@@ -7,19 +7,26 @@ using namespace Network::Protocols;
 
 // Get the application token...
 
-void WebLogin_AuthMethods::logout(void *, APIReturn &response, const RequestParameters &request, ClientDetails &)
+API::APIReturn WebLogin_AuthMethods::logout(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+{
+    API::APIReturn response;
+    doLogoutInResponse(context,request,authClientDetails,&response);
+    return response;
+}
+
+void WebLogin_AuthMethods::doLogoutInResponse(void *, const RequestParameters &request, ClientDetails &, APIReturn * response)
 {
     if ( request.clientRequest->headers.getOptionValueStringByName("X-Logout") != "1" )
     {
         return;
     }
 
-    response.cookiesMap["AccessToken"] = HTTP::Headers::Cookie();
-    response.cookiesMap["AccessToken"].setAsTransientCookie();
-    response.cookiesMap["AccessToken"].value = "";
+    response->cookiesMap["AccessToken"] = HTTP::Headers::Cookie();
+    response->cookiesMap["AccessToken"].setAsTransientCookie();
+    response->cookiesMap["AccessToken"].value = "";
 
-    response.cookiesMap["loggedIn"] = HTTP::Headers::Cookie();
-    response.cookiesMap["loggedIn"].setAsTransientCookie();
-    response.cookiesMap["loggedIn"].path = "/";
-    response.cookiesMap["loggedIn"].value = "";
+    response->cookiesMap["loggedIn"] = HTTP::Headers::Cookie();
+    response->cookiesMap["loggedIn"].setAsTransientCookie();
+    response->cookiesMap["loggedIn"].path = "/";
+    response->cookiesMap["loggedIn"].value = "";
 }

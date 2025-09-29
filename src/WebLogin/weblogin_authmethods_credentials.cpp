@@ -1,3 +1,4 @@
+#include "Mantids30/Protocol_HTTP/api_return.h"
 #include "weblogin_authmethods.h"
 
 #include "../globals.h"
@@ -9,8 +10,9 @@ using namespace Program;
 using namespace API::RESTful;
 using namespace Network::Protocols;
 
-void WebLogin_AuthMethods::accountCredentialPublicData(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn WebLogin_AuthMethods::accountCredentialPublicData(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
+    API::APIReturn response;
     IdentityManager *identityManager = Globals::getIdentityManager();
     auto accountName = request.jwtToken->getSubject();
     auto slotId = JSON_ASUINT(*request.inputJSON, "slotId", 0);
@@ -20,10 +22,12 @@ void WebLogin_AuthMethods::accountCredentialPublicData(void *context, APIReturn 
         auto v = identityManager->authController->getAccountCredentialPublicData(accountName, slotId);
         (*response.responseJSON()) = v.toJSON(identityManager->authController->getAuthenticationPolicy());
     }
+    return response;
 }
 
-void WebLogin_AuthMethods::listCredentials(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn WebLogin_AuthMethods::listCredentials(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
+    API::APIReturn response;
     IdentityManager *identityManager = Globals::getIdentityManager();
 
     // JWT INPUTS:
@@ -43,11 +47,13 @@ void WebLogin_AuthMethods::listCredentials(void *context, APIReturn &response, c
 
     if (r.empty())
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "no_credentials", "No detected credentials");
-    // RETURN...
+
+    return response;
 }
 
-void WebLogin_AuthMethods::changeCredential(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn WebLogin_AuthMethods::changeCredential(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
+    API::APIReturn response;
     IdentityManager *identityManager = Globals::getIdentityManager();
 
     // JWT INPUTS:
@@ -84,5 +90,5 @@ void WebLogin_AuthMethods::changeCredential(void *context, APIReturn &response, 
 
     LOG_APP->log2(__func__, request.jwtToken->getSubject(), authClientDetails.ipAddress, changed ? Logs::LEVEL_INFO : Logs::LEVEL_WARN, "Account Change Authentication Result: %" PRIu8,
                   changed ? 1 : 0);
-    // RETURN...
+    return response;
 }

@@ -14,19 +14,19 @@ public:
 
 protected:
     static void addMethods_Roles(std::shared_ptr<MethodsHandler> methods);
-    static void searchRoles(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
-    static void addRole(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
-    static void getRoleInfo(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
-    static void updateRoleDescription(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
-    static void removeRole(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
-    static void addApplicationRoleToAccount(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
-    static void removeApplicationRoleFromAccount(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
+    static APIReturn searchRoles(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
+    static APIReturn addRole(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
+    static APIReturn getRoleInfo(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
+    static APIReturn updateRoleDescription(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
+    static APIReturn removeRole(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
+    static APIReturn addApplicationRoleToAccount(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
+    static APIReturn removeApplicationRoleFromAccount(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
 
 /*
-    static void doesRoleExist(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
-    static void validateApplicationScopeOnRole(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
-    static void getRoleDescription(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
-    static void getRolesList(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
-    static void getRoleApplicationScopes(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
-    static void getRoleAccounts(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);*/
+    static APIReturn doesRoleExist(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
+    static APIReturn validateApplicationScopeOnRole(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
+    static APIReturn getRoleDescription(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
+    static APIReturn getRolesList(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
+    static APIReturn getRoleApplicationScopes(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
+    static APIReturn getRoleAccounts(void *context, const RequestParameters &request, ClientDetails &authClientDetails);*/
 };

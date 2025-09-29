@@ -120,8 +120,10 @@ void WebSessionAuthHandler_AuthMethods::setupMaxAgeCookie(APIReturn &response, c
     setupCookie(response, name, expirationTime, true, "/", false, std::to_string(expirationTime - time(nullptr)));
 }*/
 
-void WebSessionAuthHandler_AuthMethods::refreshAccessToken(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn WebSessionAuthHandler_AuthMethods::refreshAccessToken(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
+    API::APIReturn response;
+
     IdentityManager *identityManager = Globals::getIdentityManager();
 
     std::string refreshTokenStr = request.clientRequest->getCookies()->getSubVar("RefreshToken");
@@ -132,7 +134,7 @@ void WebSessionAuthHandler_AuthMethods::refreshAccessToken(void *context, APIRet
     {
         LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LEVEL_SECURITY_ALERT, "Refresh token cookie is missing or empty.");
         response.setError(HTTP::Status::S_401_UNAUTHORIZED, "invalid_refresher", "Invalid Refresh Token");
-        return;
+        return response;
     }
 
     // Validate the refresh token
@@ -142,7 +144,7 @@ void WebSessionAuthHandler_AuthMethods::refreshAccessToken(void *context, APIRet
     {
         LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LEVEL_SECURITY_ALERT, "Invalid JWT format detected in the provided access token.");
         response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_jwt", "The 'accessToken' must be a valid JWT string.");
-        return;
+        return response;
     }
 
     // Extract application from the refresh token
@@ -153,7 +155,7 @@ void WebSessionAuthHandler_AuthMethods::refreshAccessToken(void *context, APIRet
     {
         LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LEVEL_SECURITY_ALERT, "Refresh token contains invalid or missing claims.");
         response.setError(HTTP::Status::S_401_UNAUTHORIZED, "invalid_token", "Invalid Refresher Token");
-        return;
+        return response;
     }
 
     if (tokenProps.appName != refreshTokenApp)
@@ -162,13 +164,13 @@ void WebSessionAuthHandler_AuthMethods::refreshAccessToken(void *context, APIRet
         LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LEVEL_CRITICAL, "Configuration error: The application '%s' is configured with an unsupported or invalid signing algorithm.",
                       refreshTokenApp.c_str());
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "AUTH_ERR_" + std::to_string(REASON_INTERNAL_ERROR), getReasonText(REASON_INTERNAL_ERROR));
-        return;
+        return response;
     }
 
     // ----------   validate the header API Key    -----------
     if (!validateAPIKey(refreshTokenApp, response, request, authClientDetails))
     {
-        return;
+        return response;
     }
 
     // --------- validate the refresh token itself (that is signed with the application keys) --------
@@ -180,14 +182,14 @@ void WebSessionAuthHandler_AuthMethods::refreshAccessToken(void *context, APIRet
     {
         LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LEVEL_SECURITY_ALERT, "No JWT validator found for application '%s'.", refreshTokenApp.c_str());
         response.setError(HTTP::Status::S_401_UNAUTHORIZED, "invalid_app", "Application not configured");
-        return;
+        return response;
     }
 
     if (!validator->verify(refreshTokenStr, &refreshTokenVerified))
     {
         LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LEVEL_SECURITY_ALERT, "Failed to verify refresh token for application '%s'.", refreshTokenApp.c_str());
         response.setError(HTTP::Status::S_401_UNAUTHORIZED, "invalid_token", "Invalid Refresh Token");
-        return;
+        return response;
     }
 
     const std::string &refreshTokenUser = refreshTokenVerified.getSubject();
@@ -213,10 +215,12 @@ void WebSessionAuthHandler_AuthMethods::refreshAccessToken(void *context, APIRet
     setupAccessTokenCookies(response, newAccessToken, tokenProps);
 
     (*response.responseJSON())["maxAge"] = (time_t)(newAccessToken.getExpirationTime() - time(nullptr));
+    return response;
 }
 
-void WebSessionAuthHandler_AuthMethods::appLogout(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn WebSessionAuthHandler_AuthMethods::appLogout(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
+    API::APIReturn response;
     IdentityManager *identityManager = Globals::getIdentityManager();
     std::string xAPIKeyStr = request.clientRequest->getHeaderOption("x-api-key");
     std::string refreshTokenStr = request.clientRequest->getCookies()->getSubVar("RefreshToken");
@@ -230,7 +234,7 @@ void WebSessionAuthHandler_AuthMethods::appLogout(void *context, APIReturn &resp
         // app key not found...
         LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LEVEL_SECURITY_ALERT, "Invalid API key provided. Application not found.");
         response.setError(HTTP::Status::S_401_UNAUTHORIZED, "invalid_api_key", "The provided API key is invalid or unauthorized.");
-        return;
+        return response;
     }
 
     // ----------   prevent CSRF here. because this cookie is strict, won't exist on CSRF calls...   -----------
@@ -238,7 +242,7 @@ void WebSessionAuthHandler_AuthMethods::appLogout(void *context, APIReturn &resp
     {
         LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LEVEL_WARN, "Refresh token cookie is missing or empty during logout. Maybe not logged in?");
         response.setError(HTTP::Status::S_401_UNAUTHORIZED, "invalid_refresher", "Invalid Refresh Token");
-        return;
+        return response;
     }
 
     ApplicationTokenProperties tokenProps = identityManager->applications->getWebLoginJWTConfigFromApplication(appNameStr);
@@ -253,10 +257,13 @@ void WebSessionAuthHandler_AuthMethods::appLogout(void *context, APIReturn &resp
     response.cookiesMap["RefreshToken"].setAsTransientCookie();
     response.cookiesMap["RefreshToken"].value = "";
     response.cookiesMap["RefreshToken"].path = JSON_ASSTRING(tokenProps.tokensConfiguration["refreshToken"],"path","");
+
+    return response;
 }
 
-void WebSessionAuthHandler_AuthMethods::callback(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn WebSessionAuthHandler_AuthMethods::callback(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
+    API::APIReturn response;
     IdentityManager *identityManager = Globals::getIdentityManager();
 
     // HTTP CLIENT VARS:
@@ -274,7 +281,7 @@ void WebSessionAuthHandler_AuthMethods::callback(void *context, APIReturn &respo
         // app key not found...
         LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LEVEL_SECURITY_ALERT, "Invalid API key provided. Application not found.");
         response.setError(HTTP::Status::S_401_UNAUTHORIZED, "invalid_api_key", "The provided API key is invalid or unauthorized.");
-        return;
+        return response;
     }
 
     ApplicationTokenProperties tokenProps = identityManager->applications->getWebLoginJWTConfigFromApplication(appNameStr);
@@ -299,7 +306,7 @@ void WebSessionAuthHandler_AuthMethods::callback(void *context, APIReturn &respo
         }
         LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LEVEL_SECURITY_ALERT, logMessage.c_str());
         response.setError(HTTP::Status::S_401_UNAUTHORIZED, "invalid_token", "The provided access or refresh token is invalid.");
-        return;
+        return response;
     }
 
     // Verify the redirection... (VERY IMPORTANT)
@@ -309,7 +316,7 @@ void WebSessionAuthHandler_AuthMethods::callback(void *context, APIReturn &respo
     {
         LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LEVEL_SECURITY_ALERT, "Redirect URI '%s' is not allowed for application '%s'.", redirectURIStr.c_str(), appNameStr.c_str());
         response.setError(HTTP::Status::S_403_FORBIDDEN, "invalid_redirect_uri", "The requested redirect URI is not authorized.");
-        return;
+        return response;
     }
 
     setupAccessTokenCookies(response, accessToken, tokenProps);
@@ -317,12 +324,13 @@ void WebSessionAuthHandler_AuthMethods::callback(void *context, APIReturn &respo
 
     // Redirect:
     response.redirectURL = redirectURIStr;
+    return response;
 }
 
 
 
 /*
-void WebSessionAuthHandler_AuthMethods::refreshRefresherToken(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
+void WebSessionAuthHandler_AuthMethods::refreshRefresherToken(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     IdentityManager *identityManager = Globals::getIdentityManager();
 
@@ -334,7 +342,7 @@ void WebSessionAuthHandler_AuthMethods::refreshRefresherToken(void *context, API
     {
         LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LEVEL_SECURITY_ALERT, "Refresh token cookie is missing or empty.");
         response.setError(HTTP::Status::S_401_UNAUTHORIZED, "invalid_refresher", "Invalid Refresh Token");
-        return;
+        return response;
     }
 
     // Validate the refresh token
@@ -344,7 +352,7 @@ void WebSessionAuthHandler_AuthMethods::refreshRefresherToken(void *context, API
     {
         LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LEVEL_SECURITY_ALERT, "Invalid JWT format detected in the provided access token.");
         response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_jwt", "The 'accessToken' must be a valid JWT string.");
-        return;
+        return response;
     }
 
     // Extract application from the refresh token
@@ -355,7 +363,7 @@ void WebSessionAuthHandler_AuthMethods::refreshRefresherToken(void *context, API
     {
         LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LEVEL_SECURITY_ALERT, "Refresh token contains invalid or missing claims.");
         response.setError(HTTP::Status::S_401_UNAUTHORIZED, "invalid_token", "Invalid Refresher Token");
-        return;
+        return response;
     }
 
     if (tokenProps.appName != refreshTokenApp)
@@ -364,20 +372,20 @@ void WebSessionAuthHandler_AuthMethods::refreshRefresherToken(void *context, API
         LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LEVEL_CRITICAL, "Configuration error: The application '%s' is configured with an unsupported or invalid signing algorithm.",
                       refreshTokenApp.c_str());
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "AUTH_ERR_" + std::to_string(REASON_INTERNAL_ERROR), getReasonText(REASON_INTERNAL_ERROR));
-        return;
+        return response;
     }
 
     if (!tokenProps.allowRefreshTokenRenovation)
     {
         LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LEVEL_SECURITY_ALERT, "Refresh token renovation not allowed for application '%s'.", refreshTokenApp.c_str());
         response.setError(HTTP::Status::S_403_FORBIDDEN, "refresh_denied", "Renovation of refresh tokens is disabled");
-        return;
+        return response;
     }
 
     // ----------   validate the header API Key    -----------
     if (!validateAPIKey(refreshTokenApp, response, request, authClientDetails))
     {
-        return;
+        return response;
     }
 
     // --------- validate the refresh token itself (that is signed with the application keys) --------
@@ -389,14 +397,14 @@ void WebSessionAuthHandler_AuthMethods::refreshRefresherToken(void *context, API
     {
         LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LEVEL_SECURITY_ALERT, "No JWT validator found for application '%s'.", refreshTokenApp.c_str());
         response.setError(HTTP::Status::S_401_UNAUTHORIZED, "invalid_app", "Application not configured");
-        return;
+        return response;
     }
 
     if (!validator->verify(refreshTokenStr, &refreshTokenVerified))
     {
         LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LEVEL_SECURITY_ALERT, "Failed to verify refresh token for application '%s'.", refreshTokenApp.c_str());
         response.setError(HTTP::Status::S_401_UNAUTHORIZED, "invalid_token", "Invalid Refresh Token");
-        return;
+        return response;
     }
 
     // TODO: check if the refresh the refresh token is available by the app configuration
@@ -413,7 +421,7 @@ void WebSessionAuthHandler_AuthMethods::refreshRefresherToken(void *context, API
     {
         LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LEVEL_WARN, "Refresh token hast not past its half-life and cannot be refreshed.");
         response.setError(HTTP::Status::S_406_NOT_ACCEPTABLE, "unrefresheable_token", "The refresh token is not refresheable yet.");
-        return;
+        return response;
     }
 
     const auto &refreshTokenUser = refreshTokenVerified.getSubject();

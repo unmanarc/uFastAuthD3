@@ -10,6 +10,7 @@
 #include <Mantids30/Memory/a_uint32.h>
 #include <Mantids30/Memory/a_uint64.h>
 #include <Mantids30/Memory/a_var.h>
+#include <optional>
 
 using namespace Mantids30::Memory;
 using namespace Mantids30::Database;
@@ -251,7 +252,7 @@ std::set<uint32_t> IdentityManager_DB::AuthController_DB::listUsedAuthentication
     return r;
 }
 
-uint32_t IdentityManager_DB::AuthController_DB::addNewAuthenticationSlot(const AuthenticationSlotDetails &details)
+std::optional<uint32_t> IdentityManager_DB::AuthController_DB::addNewAuthenticationSlot(const AuthenticationSlotDetails &details)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
 
@@ -263,7 +264,7 @@ uint32_t IdentityManager_DB::AuthController_DB::addNewAuthenticationSlot(const A
                                                 {":totp2FAStepsToleranceWindow", MAKE_VAR(UINT32, details.totp2FAStepsToleranceWindow)},
                                                 {":strengthJSONValidator", MAKE_VAR(STRING, details.strengthJSONValidator)}});
     if (!i.getResultsOK())
-        return UINT32_MAX;
+        return std::nullopt;
 
     return i.query->getLastInsertRowID();
 }
@@ -321,13 +322,14 @@ std::map<uint32_t, AuthenticationSlotDetails> IdentityManager_DB::AuthController
     return ret;
 }
 
-uint32_t IdentityManager_DB::AuthController_DB::addAuthenticationScheme(const std::string &description)
+std::optional<uint32_t> IdentityManager_DB::AuthController_DB::addAuthenticationScheme(const std::string &description)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
 
     auto i = _parent->m_sqlConnector->qExecute("INSERT INTO iam.authenticationSchemes (`description`) VALUES(:description);", {{":description", MAKE_VAR(STRING, description)}});
+
     if (!i.getResultsOK())
-        return UINT32_MAX;
+        return std::nullopt;
 
     return i.query->getLastInsertRowID();
 }

@@ -15,18 +15,18 @@ public:
 protected:
     static void addMethods_Activities(std::shared_ptr<MethodsHandler> methods);
 
-    static void getActivityInfo(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
-    static void listApplicationActivities(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
-    static void addApplicationActivity(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
-    static void removeApplicationActivity(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
+    static APIReturn getActivityInfo(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
+    static APIReturn listApplicationActivities(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
+    static APIReturn addApplicationActivity(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
+    static APIReturn removeApplicationActivity(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
 
-    static void updateActivityParentActivity(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
-    static void updateActivityDescription(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
+    static APIReturn updateActivityParentActivity(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
+    static APIReturn updateActivityDescription(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
 
-    static void addSchemeToApplicationActivity(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
-    static void removeSchemeFromApplicationActivity(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
+    static APIReturn addSchemeToApplicationActivity(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
+    static APIReturn removeSchemeFromApplicationActivity(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
 
-    static void updateDefaultSchemeOnApplicationActivity(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
+    static APIReturn updateDefaultSchemeOnApplicationActivity(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
 
 
 };

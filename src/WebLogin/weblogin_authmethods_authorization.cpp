@@ -1,5 +1,6 @@
 #include "IdentityManager/ds_authentication.h"
 #include "Mantids30/Program_Logs/loglevels.h"
+#include "Mantids30/Protocol_HTTP/api_return.h"
 #include "Tokens/tokensmanager.h"
 #include "weblogin_authmethods.h"
 #include <Mantids30/Helpers/json.h>
@@ -19,8 +20,9 @@ using namespace Network::Protocols;
 using namespace Mantids30::DataFormat;
 
 // Validate user and get authorization flow:
-void WebLogin_AuthMethods::preAuthorize(void *context, APIReturn &response, const API::RESTful::RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn WebLogin_AuthMethods::preAuthorize(void *context, const API::RESTful::RequestParameters &request, ClientDetails &authClientDetails)
 {
+    API::APIReturn response;
     // Environment:
     JWT::Token token;
     IdentityManager *identityManager = Globals::getIdentityManager();
@@ -37,11 +39,12 @@ void WebLogin_AuthMethods::preAuthorize(void *context, APIReturn &response, cons
     if (!identityManager->applications->doesApplicationExist(app))
     {
         response.setError(HTTP::Status::S_404_NOT_FOUND, "not_found", "Invalid Application");
-        return;
+        return response;
     }
 
     (*response.responseJSON()) = identityManager->authController->getApplicableAuthenticationSchemesForAccount(app, activity, accountName);
     (*response.responseJSON())["loginAuthenticationTimeout"] = loginAuthenticationTimeout;
+    return response;
 }
 
 bool validateIAMAccessTokenCookieProperties(const RequestParameters &request, WebLogin_AuthMethods::APIReturn &response, JWT::Token *token, const std::string &accountName, const std::string &appName)
@@ -174,8 +177,10 @@ bool setupNewIntermediateAuthToken(const RequestParameters &request, Mantids30::
 }
 
 // Validate credential:
-void WebLogin_AuthMethods::authorize(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &clientDetails)
+API::APIReturn WebLogin_AuthMethods::authorize(void *context, const RequestParameters &request, ClientDetails &clientDetails)
 {
+    API::APIReturn response;
+
     // Get the identity manager from global settings to handle authentication.
     IdentityManager *identityManager = Globals::getIdentityManager();
     // Vector to store the authentication slots used by a particular scheme.
@@ -192,7 +197,7 @@ void WebLogin_AuthMethods::authorize(void *context, APIReturn &response, const R
     // Decode the bearer intermediate token...
     if (!validateAndDecodeBearerAccessTokenProperties(request, response, &oldIntermediateAuthToken, &accountName, &isFullyAuthenticated, authContext))
     {
-        return;
+        return response;
     }
 
     // Using the first slot where the intermediate token does not exist:
@@ -207,7 +212,7 @@ void WebLogin_AuthMethods::authorize(void *context, APIReturn &response, const R
     {
         // You don´t need to authorize anything else! it's already authenticated.
         response.setError(HTTP::Status::S_401_UNAUTHORIZED, "AUTH_ERR_" + std::to_string(REASON_BAD_PASSWORD), getReasonText(REASON_BAD_PASSWORD));
-        return;
+        return response;
     }
 
     authSlots = identityManager->authController->listAuthenticationSlotsUsedByScheme(authContext->schemeId);
@@ -248,4 +253,5 @@ void WebLogin_AuthMethods::authorize(void *context, APIReturn &response, const R
 
     LOG_APP->log2(__func__, accountName, clientDetails.ipAddress, response.getHTTPResponseCode() != HTTP::Status::S_200_OK ? Logs::LEVEL_SECURITY_ALERT : Logs::LEVEL_INFO, "R/%03" PRIu16 ": %s",
                   static_cast<uint16_t>(response.getHTTPResponseCode()), request.clientRequest->getURI().c_str());
+    return response;
 }

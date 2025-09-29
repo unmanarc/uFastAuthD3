@@ -9,7 +9,7 @@ project(${PROJECT_NAME} VERSION ${SVERSION} DESCRIPTION "Unmanarc's Fast Authent
 
 set(CXX_STANDARD 20)
 
-#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wconversion -Wreturn-type")
 
 configure_file(src/config.h.in ${${APP_NAME}_SOURCE_DIR}/src/config.h)
 

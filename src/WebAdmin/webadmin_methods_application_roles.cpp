@@ -36,13 +36,15 @@ void WebAdminMethods_ApplicationRoles::addMethods_Roles(std::shared_ptr<MethodsH
 }
 
 
-void WebAdminMethods_ApplicationRoles::searchRoles(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn WebAdminMethods_ApplicationRoles::searchRoles(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
-    (*response.responseJSON()) = Globals::getIdentityManager()->applicationRoles->searchRoles(*request.inputJSON);
+    return Globals::getIdentityManager()->applicationRoles->searchRoles(*request.inputJSON);
 }
 
-void WebAdminMethods_ApplicationRoles::updateRoleDescription(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn WebAdminMethods_ApplicationRoles::updateRoleDescription(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
+    API::APIReturn response;
+
     std::string appName = JSON_ASSTRING(*request.inputJSON, "appName", "");
     std::string roleName = JSON_ASSTRING(*request.inputJSON, "roleName", "");
     std::string roleDescription = JSON_ASSTRING(*request.inputJSON, "roleDescription", "");
@@ -50,30 +52,33 @@ void WebAdminMethods_ApplicationRoles::updateRoleDescription(void *context, APIR
     if (roleName.empty())
     {
         response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request","Role name cannot be empty.");
-        return;
+        return response;
     }
 
     if (appName.empty())
     {
         response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Application name is required");
-        return;
+        return response;
     }
 
     if (roleDescription.empty())
     {
         response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request","Role description cannot be empty.");
-        return;
+        return response;
     }
 
     if (!Globals::getIdentityManager()->applicationRoles->updateRoleDescription(appName, roleName, roleDescription))
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to update the role description.");
     }
+    return response;
 }
 
 
-void WebAdminMethods_ApplicationRoles::addRole(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn WebAdminMethods_ApplicationRoles::addRole(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
+    API::APIReturn response;
+
     std::string appName = JSON_ASSTRING(*request.inputJSON, "appName", "");
     std::string roleName = JSON_ASSTRING(*request.inputJSON, "roleName", "");
     std::string roleDescription = JSON_ASSTRING(*request.inputJSON, "roleDescription", "");
@@ -81,30 +86,34 @@ void WebAdminMethods_ApplicationRoles::addRole(void *context, APIReturn &respons
     if (roleName.empty())
     {
         response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request","Role name cannot be empty.");
-        return;
+        return response;
     }
 
     if (appName.empty())
     {
         response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Application name is required");
-        return;
+        return response;
     }
 
     if (roleDescription.empty())
     {
         response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request","Role description cannot be empty.");
-        return;
+        return response;
     }
 
     if (!Globals::getIdentityManager()->applicationRoles->addRole(appName, roleName, roleDescription))
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to create the new role.\nThe role ID may already exist.");
     }
+
+    return response;
 }
 
 
-void WebAdminMethods_ApplicationRoles::getRoleInfo(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn WebAdminMethods_ApplicationRoles::getRoleInfo(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
+    API::APIReturn response;
+
     json payloadOut;
     std::string appName = JSON_ASSTRING(*request.inputJSON, "appName", "");
     std::string roleName = JSON_ASSTRING(*request.inputJSON, "roleName", "");
@@ -112,13 +121,13 @@ void WebAdminMethods_ApplicationRoles::getRoleInfo(void *context, APIReturn &res
     if (roleName.empty())
     {
         response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request","Role name cannot be empty.");
-        return;
+        return response;
     }
 
     if (appName.empty())
     {
         response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Application name is required");
-        return;
+        return response;
     }
 
     payloadOut["details"]["description"] = Globals::getIdentityManager()->applicationRoles->getRoleDescription(appName,roleName);
@@ -152,34 +161,39 @@ void WebAdminMethods_ApplicationRoles::getRoleInfo(void *context, APIReturn &res
     }
 
     (*response.responseJSON()) = payloadOut;
+    return response;
 }
 
 
-void WebAdminMethods_ApplicationRoles::removeRole(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn WebAdminMethods_ApplicationRoles::removeRole(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
+    API::APIReturn response;
     const std::string roleName = JSON_ASSTRING(*request.inputJSON, "roleName", "");
     const std::string appName = JSON_ASSTRING(*request.inputJSON, "appName", "");
 
     if (appName.empty())
     {
         response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Application name is required");
-        return;
+        return response;
     }
 
     if (roleName.empty())
     {
         response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Role ID is required");
-        return;
+        return response;
     }
 
     if (!Globals::getIdentityManager()->applicationRoles->removeRole(appName,roleName))
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to remove the role");
     }
+    return response;
 }
 
-void WebAdminMethods_ApplicationRoles::addApplicationRoleToAccount(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn WebAdminMethods_ApplicationRoles::addApplicationRoleToAccount(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
+    API::APIReturn response;
+
     std::string appName = JSON_ASSTRING(*request.inputJSON, "appName", "");
     std::string roleName = JSON_ASSTRING(*request.inputJSON, "roleId", "");
     std::string accountName = JSON_ASSTRING(*request.inputJSON, "accountName", "");
@@ -187,29 +201,32 @@ void WebAdminMethods_ApplicationRoles::addApplicationRoleToAccount(void *context
     if (appName.empty())
     {
         response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Application name is required");
-        return;
+        return response;
     }
 
     if (roleName.empty())
     {
         response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Role ID is required");
-        return;
+        return response;
     }
 
     if (accountName.empty())
     {
         response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Account name is required");
-        return;
+        return response;
     }
 
     if (!Globals::getIdentityManager()->applicationRoles->addAccountToRole(appName, roleName, accountName))
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to assign the role to the account.");
     }
+    return response;
 }
 
-void WebAdminMethods_ApplicationRoles::removeApplicationRoleFromAccount(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn WebAdminMethods_ApplicationRoles::removeApplicationRoleFromAccount(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
+    API::APIReturn response;
+
     std::string appName = JSON_ASSTRING(*request.inputJSON, "appName", "");
     std::string roleName = JSON_ASSTRING(*request.inputJSON, "roleId", "");
     std::string accountName = JSON_ASSTRING(*request.inputJSON, "accountName", "");
@@ -217,31 +234,33 @@ void WebAdminMethods_ApplicationRoles::removeApplicationRoleFromAccount(void *co
     if (appName.empty())
     {
         response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Application name is required");
-        return;
+        return response;
     }
 
     if (roleName.empty())
     {
         response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Role ID is required");
-        return;
+        return response;
     }
 
     if (accountName.empty())
     {
         response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Account name is required");
-        return;
+        return response;
     }
 
     if (!Globals::getIdentityManager()->applicationRoles->removeAccountFromRole(appName, roleName, accountName))
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to remove the role from the account.");
     }
+
+    return response;
 }
 
 /*
 
 
-void WebAdminMethods_ApplicationRoles::doesRoleExist(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
+void WebAdminMethods_ApplicationRoles::doesRoleExist(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     (*response.responseJSON()) = Globals::getIdentityManager()->roles->doesRoleExist(JSON_ASSTRING(*request.inputJSON, "roleName", ""));
 }
@@ -250,34 +269,34 @@ void WebAdminMethods_ApplicationRoles::doesRoleExist(void *context, APIReturn &r
 
 
 
-void WebAdminMethods_ApplicationRoles::validateApplicationScopeOnRole(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
+void WebAdminMethods_ApplicationRoles::validateApplicationScopeOnRole(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     (*response.responseJSON()) = Globals::getIdentityManager()->authController->validateApplicationScopeOnRole(JSON_ASSTRING(*request.inputJSON, "roleName", ""),
                                                                                                                     {JSON_ASSTRING(*request.inputJSON, "appName", ""),
                                                                                                                      JSON_ASSTRING(*request.inputJSON, "id", "")});
 }
 
-void WebAdminMethods_ApplicationRoles::getRoleDescription(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
+void WebAdminMethods_ApplicationRoles::getRoleDescription(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     (*response.responseJSON()) = Globals::getIdentityManager()->roles->getRoleDescription(JSON_ASSTRING(*request.inputJSON, "roleName", ""));
 }
 
-void WebAdminMethods_ApplicationRoles::getRolesList(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
+void WebAdminMethods_ApplicationRoles::getRolesList(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     (*response.responseJSON()) = Helpers::setToJSON(Globals::getIdentityManager()->roles->getRolesList());
 }
 
-void WebAdminMethods_ApplicationRoles::getRoleApplicationScopes(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
+void WebAdminMethods_ApplicationRoles::getRoleApplicationScopes(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     (*response.responseJSON()) = WebAdmin_Methods::scopeListToJSON(Globals::getIdentityManager()->authController->getRoleApplicationScopes(JSON_ASSTRING(*request.inputJSON, "roleName", "")));
 }
 
-void WebAdminMethods_ApplicationRoles::getRoleAccounts(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
+void WebAdminMethods_ApplicationRoles::getRoleAccounts(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     (*response.responseJSON()) = Helpers::setToJSON(Globals::getIdentityManager()->roles->getRoleAccounts(JSON_ASSTRING(*request.inputJSON, "roleName", "")));
 }
 
-void WebAdminMethods_ApplicationRoles::searchRoles(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
+void WebAdminMethods_ApplicationRoles::searchRoles(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     json x;
     int i = 0;

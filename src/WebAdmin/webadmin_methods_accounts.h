@@ -16,54 +16,54 @@ protected:
     static void addMethods_Accounts(std::shared_ptr<MethodsHandler> methods);
 
     // Accounts:
-    static void addAccount(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
-    static void doesAccountExist(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
-    static void searchAccounts(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
-    static void removeAccount(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
+    static APIReturn addAccount(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
+    static APIReturn doesAccountExist(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
+    static APIReturn searchAccounts(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
+    static APIReturn removeAccount(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
 
     // Fields:
-    static void searchFields(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
-    static void addAccountDetailField(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
-    static void removeAccountDetailField(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
-    static void getAccountDetailField(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
-    static void getAccountDetailFieldsValues(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
-    static void updateAccountDetailFieldsValues(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
+    static APIReturn searchFields(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
+    static APIReturn addAccountDetailField(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
+    static APIReturn removeAccountDetailField(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
+    static APIReturn getAccountDetailField(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
+    static APIReturn getAccountDetailFieldsValues(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
+    static APIReturn updateAccountDetailFieldsValues(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
 
     // Flags:
-    static void getAccountFlags(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
-    static void changeAccountFlags(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
+    static APIReturn getAccountFlags(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
+    static APIReturn changeAccountFlags(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
 
     // Accounts-Applications
-    static void getAccountApplications(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
-    static void addAccountToApplication(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
-    static void removeAccountFromApplication(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
+    static APIReturn getAccountApplications(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
+    static APIReturn addAccountToApplication(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
+    static APIReturn removeAccountFromApplication(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
 
 
     /*
-    static void changeCredential(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
-    static void disableAccount(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
-    static void confirmAccount(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
-    static void updateAccountInfo(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
-    static void changeAccountDescription(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
-    static void changeAccoungGivenName(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
-    static void changeAccountLastName(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
-    static void changeAccountEmail(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
-    static void changeAccountExtraData(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
-    static void changeAccountExpiration(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
-    static void updateAccountRoles(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
-    static void getAccountInfo(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
-    static void getAccountDetails(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
-    static void getAccountLastAccess(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
-    static void resetBadAttemptsOnCredential(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
-    static void getAccountExpirationTime(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
-    static void isAccountExpired(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
-    static void validateAccountApplicationScope(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
-    static void getAccountBlockToken(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
-    static void blockAccountUsingToken(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
-    static void listAccounts(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
-    static void getAccountRoles(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
-    static void getAccountDirectApplicationScopes(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
-    static void getAccountUsableApplicationScopes(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
+    static APIReturn changeCredential(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
+    static APIReturn disableAccount(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
+    static APIReturn confirmAccount(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
+    static APIReturn updateAccountInfo(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
+    static APIReturn changeAccountDescription(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
+    static APIReturn changeAccoungGivenName(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
+    static APIReturn changeAccountLastName(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
+    static APIReturn changeAccountEmail(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
+    static APIReturn changeAccountExtraData(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
+    static APIReturn changeAccountExpiration(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
+    static APIReturn updateAccountRoles(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
+    static APIReturn getAccountInfo(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
+    static APIReturn getAccountDetails(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
+    static APIReturn getAccountLastAccess(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
+    static APIReturn resetBadAttemptsOnCredential(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
+    static APIReturn getAccountExpirationTime(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
+    static APIReturn isAccountExpired(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
+    static APIReturn validateAccountApplicationScope(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
+    static APIReturn getAccountBlockToken(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
+    static APIReturn blockAccountUsingToken(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
+    static APIReturn listAccounts(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
+    static APIReturn getAccountRoles(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
+    static APIReturn getAccountDirectApplicationScopes(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
+    static APIReturn getAccountUsableApplicationScopes(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
 */
 private:
     static std::map<std::string, std::string> jsonToMap(const json &jValue);

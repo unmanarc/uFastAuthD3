@@ -74,7 +74,7 @@ public:
 
         // Account role set:
         virtual bool updateAccountRoles(const std::string &appName, const std::string &accountName, const std::set<std::string> &roleSet) = 0;
-        virtual std::set<ApplicationRole> getAccountRoles(const std::string &appName,const std::string &accountName, bool lock = true) = 0;
+        virtual std::set<ApplicationRole> getAccountRoles(const std::string &appName, const std::string &accountName, bool lock = true) = 0;
 
         // Account block using token:
         virtual std::string getAccountBlockToken(const std::string &accountName) = 0;
@@ -132,11 +132,10 @@ public:
                 if (json.isMember("value") && !json["value"].isNull())
                     value = JSON_ASSTRING(json, "value", "");
             }
-
         };
 
         virtual std::list<AccountDetailFieldValue> getAccountDetailFieldValues(const std::string &accountName, const AccountDetailsToShow &detailsToShow = ACCOUNT_DETAILS_ALL) = 0;
-        virtual bool updateAccountDetailFieldValues(const std::string &accountName, const std::list<AccountDetailFieldValue> & fieldValues)=0;
+        virtual bool updateAccountDetailFieldValues(const std::string &accountName, const std::list<AccountDetailFieldValue> &fieldValues) = 0;
 
     private:
         IdentityManager *m_parent;
@@ -147,14 +146,14 @@ public:
         virtual ~ApplicationRoles() {}
         /////////////////////////////////////////////////////////////////////////////////
         // role:
-        virtual bool addRole(const std::string &appName,const std::string &roleName, const std::string &roleDescription) = 0;
-        virtual bool removeRole(const std::string &appName,const std::string &roleName) = 0;
-        virtual bool doesRoleExist(const std::string &appName,const std::string &roleName) = 0;
-        virtual bool addAccountToRole(const std::string &appName,const std::string &roleName, const std::string &accountName) = 0;
-        virtual bool removeAccountFromRole(const std::string &appName,const std::string &roleName, const std::string &accountName, bool lock = true) = 0;
-        virtual bool updateRoleDescription(const std::string &appName,const std::string &roleName, const std::string &roleDescription) = 0;
+        virtual bool addRole(const std::string &appName, const std::string &roleName, const std::string &roleDescription) = 0;
+        virtual bool removeRole(const std::string &appName, const std::string &roleName) = 0;
+        virtual bool doesRoleExist(const std::string &appName, const std::string &roleName) = 0;
+        virtual bool addAccountToRole(const std::string &appName, const std::string &roleName, const std::string &accountName) = 0;
+        virtual bool removeAccountFromRole(const std::string &appName, const std::string &roleName, const std::string &accountName, bool lock = true) = 0;
+        virtual bool updateRoleDescription(const std::string &appName, const std::string &roleName, const std::string &roleDescription) = 0;
 
-        virtual std::string getRoleDescription(const std::string &appName,const std::string &roleName) = 0;
+        virtual std::string getRoleDescription(const std::string &appName, const std::string &roleName) = 0;
         virtual std::set<ApplicationRole> getRolesList(const std::string &appName) = 0;
         virtual std::set<std::string> getRoleAccounts(const std::string &appName, const std::string &roleName, bool lock = true) = 0;
         virtual Json::Value searchRoles(const json &dataTablesFilters) = 0;
@@ -163,7 +162,6 @@ public:
     class ApplicationActivities
     {
     public:
-
         struct ActivityData
         {
             json toJSON() const
@@ -175,12 +173,12 @@ public:
                 r["defaultSchemeID"] = defaultSchemeID;
                 return r;
             }
-            void fromJSON(const json & r)
+            void fromJSON(const json &r)
             {
-                description = JSON_ASSTRING(r,"description","");
-                parentActivity = JSON_ASSTRING(r,"parentActivity","");
-                defaultSchemeDescription = JSON_ASSTRING(r,"defaultSchemeDescription","");
-                defaultSchemeID = JSON_ASUINT(r,"defaultSchemeID",-1);
+                description = JSON_ASSTRING(r, "description", "");
+                parentActivity = JSON_ASSTRING(r, "parentActivity", "");
+                defaultSchemeDescription = JSON_ASSTRING(r, "defaultSchemeDescription", "");
+                defaultSchemeID = JSON_ASUINT(r, "defaultSchemeID", -1);
             }
 
             std::string description;
@@ -188,7 +186,6 @@ public:
             std::string defaultSchemeDescription;
             uint32_t defaultSchemeID = -1;
         };
-
 
         virtual ~ApplicationActivities() {}
         /////////////////////////////////////////////////////////////////////////////////
@@ -205,12 +202,11 @@ public:
          * @brief Retrieves the default authentication scheme ID for a specific application and activity.
          *
          * This function queries the database to fetch the `defaultSchemeId` for the given application (`appName`)
-         * and activity (`activityName`). If no default scheme is set, the function returns
-         * `UINT32_MAX` as an indicator.
+         * and activity (`activityName`). If no default scheme is set, the function returns std::nullopt
          *
          * @param appName The name of the application.
          * @param activityName The name of the activity within the application.
-         * @return uint32_t The ID of the default authentication scheme, or `UINT32_MAX` if not set.
+         * @return uint32_t The ID of the default authentication scheme, std::nullopt if not set.
          *
          * @note This function acquires a read lock (`Lock_RD`) to ensure thread safety while accessing shared resources.
          */
@@ -234,8 +230,6 @@ public:
         virtual bool removeAuthenticationSchemeFromApplicationActivity(const std::string &appName, const std::string &activityName, const uint32_t &schemeId) = 0;
     };
 
-
-
     class AuthController : public CredentialValidator
     {
     private:
@@ -251,7 +245,7 @@ public:
         AuthController(IdentityManager *parent) { m_parent = parent; }
         virtual ~AuthController() {}
 
-        uint32_t initializateDefaultPasswordSchemes(bool *defaultPasswordSchemesExist);
+        std::optional<uint32_t> initializateDefaultPasswordSchemes(bool *defaultPasswordSchemesExist);
 
         bool setAccountPasswordOnScheme(const std::string &accountName, std::string *sInitPW, const uint32_t &schemeId);
 
@@ -369,17 +363,15 @@ public:
 
         /////////////////////////////////////////////////////////////////////////////////
         // AuthController Slot SlotIds:
-        virtual uint32_t addNewAuthenticationSlot(const AuthenticationSlotDetails &details) = 0;
+        virtual std::optional<uint32_t> addNewAuthenticationSlot(const AuthenticationSlotDetails &details) = 0;
         virtual bool removeAuthenticationSlot(const uint32_t &slotId) = 0;
         virtual bool updateAuthenticationSlotDetails(const uint32_t &slotId, const AuthenticationSlotDetails &details) = 0;
         virtual std::map<uint32_t, AuthenticationSlotDetails> listAuthenticationSlots() = 0;
 
-        virtual uint32_t addAuthenticationScheme(const std::string &description) = 0;
+        virtual std::optional<uint32_t> addAuthenticationScheme(const std::string &description) = 0;
         virtual bool updateAuthenticationScheme(const uint32_t &schemeId, const std::string &description) = 0;
         virtual bool removeAuthenticationScheme(const uint32_t &schemeId) = 0;
         virtual std::map<uint32_t, std::string> listAuthenticationSchemes() = 0;
-
-
 
         virtual std::vector<AuthenticationSchemeUsedSlot> listAuthenticationSlotsUsedByScheme(const uint32_t &schemeId) = 0;
         virtual bool updateAuthenticationSlotUsedByScheme(const uint32_t &schemeId, const std::list<AuthenticationSchemeUsedSlot> &slotsUsedByScheme) = 0;
@@ -446,7 +438,6 @@ public:
         // A aplication activity can have multiple authentication schemes...
         // by example, some (special) activities can be: transfer_money, edit_details, and so...
         // Activities can be defined here:
-
 
         // Tokens:
         virtual bool updateWebLoginJWTConfigForApplication(const ApplicationTokenProperties &tokenInfo) = 0;

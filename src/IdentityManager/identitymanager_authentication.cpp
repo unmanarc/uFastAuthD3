@@ -3,6 +3,7 @@
 
 #include <Mantids30/Helpers/random.h>
 #include <Mantids30/Threads/lock_shared.h>
+#include <optional>
 
 using namespace Mantids30;
 
@@ -297,9 +298,6 @@ std::set<ApplicationScope> IdentityManager::AuthController::getAccountUsableAppl
 
 bool IdentityManager::AuthController::setAccountPasswordOnScheme(const std::string &accountName, std::string *sInitPW, const uint32_t &schemeId)
 {
-    if (schemeId == UINT32_MAX)
-        return false;
-
     *sInitPW = "";
     std::vector<AuthenticationSchemeUsedSlot> authSlots;
     std::string newPass;
@@ -475,7 +473,7 @@ json IdentityManager::AuthController::getApplicableAuthenticationSchemesForAccou
     return r;
 }
 
-uint32_t IdentityManager::AuthController::initializateDefaultPasswordSchemes(bool *defaultPasswordSchemesExist)
+std::optional<uint32_t> IdentityManager::AuthController::initializateDefaultPasswordSchemes(bool *defaultPasswordSchemesExist)
 {
     uint32_t schemeId, authSlotId;
     bool r = true;
@@ -484,11 +482,28 @@ uint32_t IdentityManager::AuthController::initializateDefaultPasswordSchemes(boo
 
     if (authSchemes.empty())
     {
-        r = r && (authSlotId = addNewAuthenticationSlot(AuthenticationSlotDetails("Master Password", HashFunction::FN_SHA256, "", 3600 * 24 * 365 * 1, 0))) != UINT32_MAX;
-        r = r && (schemeId = addAuthenticationScheme("Simple Password Login")) != UINT32_MAX;
+        if (r) {
+            std::optional<uint32_t> opt_asi = addNewAuthenticationSlot(AuthenticationSlotDetails("Master Password", HashFunction::FN_SHA256, "", 3600 * 24 * 365 * 1, 0));
+            if ((r = opt_asi.has_value())) {
+                authSlotId = *opt_asi;
+            }
+        }
+
+        if (r) {
+            std::optional<uint32_t> opt_sid = addAuthenticationScheme("Simple Password Login");
+            if ((r = opt_sid.has_value())) {
+                schemeId = *opt_sid;
+            }
+        }
+
         r = r && updateAuthenticationSlotUsedByScheme(schemeId, {AuthenticationSchemeUsedSlot(authSlotId, 0, false)});
+
         *defaultPasswordSchemesExist = false;
-        return !r ? UINT32_MAX : schemeId;
+
+        if (!r)
+            return std::nullopt;
+
+        return schemeId;
     }
 
     *defaultPasswordSchemesExist = true;
@@ -502,5 +517,5 @@ uint32_t IdentityManager::AuthController::initializateDefaultPasswordSchemes(boo
             return scheme.first;
         }
     }
-    return UINT32_MAX;
+    return std::nullopt;
 }

@@ -15,17 +15,17 @@ public:
 protected:
     static void addMethods_AuthController(std::shared_ptr<MethodsHandler> methods);
 
-    static void addNewAuthenticationScheme(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
-    static void listAuthenticationSchemes(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
-    static void deleteAuthenticationScheme(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
-    static void updateAuthenticationScheme(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
+    static APIReturn addNewAuthenticationScheme(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
+    static APIReturn listAuthenticationSchemes(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
+    static APIReturn deleteAuthenticationScheme(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
+    static APIReturn updateAuthenticationScheme(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
 
-    static void listAuthenticationSlotsUsedByScheme(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
-    static void updateAuthenticationSlotsUsedByScheme(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
+    static APIReturn listAuthenticationSlotsUsedByScheme(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
+    static APIReturn updateAuthenticationSlotsUsedByScheme(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
 
 
-    static void listAuthenticationSlots(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
-    static void addNewAuthenticationSlot(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
-    static void deleteAuthenticationSlot(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
-    static void updateAuthenticationSlot(void *context, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
+    static APIReturn listAuthenticationSlots(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
+    static APIReturn addNewAuthenticationSlot(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
+    static APIReturn deleteAuthenticationSlot(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
+    static APIReturn updateAuthenticationSlot(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
 };
