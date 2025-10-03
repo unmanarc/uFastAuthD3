@@ -96,8 +96,8 @@ public:
 
         *(Globals::getConfig()) = pConfig;
 
-        Globals::setAppLog(Program::Config::Logs::createAppLog(Globals::getConfig()));
-        Globals::setRPCLog(Program::Config::Logs::createRPCLog(Globals::getConfig()));
+        Globals::appLog = Program::Config::Logs::createAppLog(Globals::getConfig());
+        Globals::rpcLog = Program::Config::Logs::createRPCLog(Globals::getConfig());
 
         return true;
     }
@@ -156,13 +156,7 @@ public:
 
     void _shutdown()
     {
-        // TODO:
-        // - imagen de login (como el usuario peude validar que esta en el sitio correcto)
-        // - tarjeta de coordenadas?
-        // - mensaje enviado y en espera
-        // - token refresher
-        // - 2fa temporal para operaciones especiales.
-        // - paginas como archivos?
+
     }
 };
 

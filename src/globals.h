@@ -11,8 +11,8 @@
 
 #include <boost/property_tree/ptree.hpp>
 
-#define LOG_RPC Globals::getRPCLog()
-#define LOG_APP Globals::getAppLog()
+#define LOG_RPC Globals::rpcLog
+#define LOG_APP Globals::appLog
 
 class Globals
 {
@@ -38,17 +38,18 @@ public:
 
     static Mantids30::Network::Servers::Web::APIEngineCore *getWebLoginServer();
     static void setWebLoginServer(Mantids30::Network::Servers::Web::APIEngineCore *newWebLoginServer);
-
+/*
     static Mantids30::Network::Protocols::FastRPC::FastRPC1 *getFastRPC();
     static void setFastRPC(Mantids30::Network::Protocols::FastRPC::FastRPC1 *newFastRPC);
+*/
+    static std::shared_ptr<Mantids30::Program::Logs::RPCLog> rpcLog;
+    static std::shared_ptr<Mantids30::Program::Logs::AppLog> appLog;
 
 private:
-    static Mantids30::Program::Logs::RPCLog *rpclog;
     static bool resetAdminPasswd;
     static boost::property_tree::ptree pConfig;
     static LoginDirectoryManager *loginDirManager;
-    static Mantids30::Program::Logs::AppLog *applog;
     static IdentityManager *identityManager;
     static Mantids30::Network::Servers::Web::APIEngineCore *webLoginServer;
-    static Mantids30::Network::Protocols::FastRPC::FastRPC1 *fastRPC;
+//    static Mantids30::Network::Protocols::FastRPC::FastRPC1 *fastRPC;
 };
