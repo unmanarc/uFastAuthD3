@@ -93,7 +93,7 @@ void TokensManager::setIAMAccessTokenCookie(APIReturn &response, const RequestPa
     Mantids30::DataFormat::JWT::Token accessToken;
     std::string accountName = JSON_ASSTRING_D(intermediateToken.getClaim("preAuthUser"), "");
     auto accountExpirationTime = identityManager->accounts->getAccountExpirationTime(accountName);
-    time_t expectedRefresherTokenTimeoutTime = safeAdd(time(nullptr), Globals::getConfig()->get<time_t>("WebLoginService.IAMTokenTimeout", 2592000));
+    time_t expectedRefresherTokenTimeoutTime = safeAdd(time(nullptr), Globals::pConfig.get<time_t>("WebLoginService.IAMTokenTimeout", 2592000));
 
     if (!keepAuthenticated)
     {

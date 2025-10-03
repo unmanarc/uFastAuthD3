@@ -17,12 +17,12 @@ Mantids30::Program::Logs::AppLog *Globals::getAppLog()
 void Globals::setAppLog(Mantids30::Program::Logs::AppLog *value)
 {
     applog = value;
-}*/
+}
 
 boost::property_tree::ptree *Globals::getConfig()
 {
     return &pConfig;
-}
+}*/
 
 IdentityManager *Globals::getIdentityManager()
 {

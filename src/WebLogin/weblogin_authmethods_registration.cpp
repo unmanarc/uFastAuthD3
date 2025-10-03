@@ -24,9 +24,9 @@ API::APIReturn WebLogin_AuthMethods::registerAccount(void *context, const Reques
     API::APIReturn response;
     IdentityManager *identityManager = Globals::getIdentityManager();
 
-    auto config = Globals::getConfig();
-    bool bAllowSelfRegistration = config->get<bool>("WebLoginService.Registration.AllowSelfRegistration", false);
-    bool bAutoConfirmAccount = config->get<bool>("WebLoginService.Registration.AutoConfirm", false);
+    auto config = Globals::pConfig;
+    bool bAllowSelfRegistration = config.get<bool>("WebLoginService.Registration.AllowSelfRegistration", false);
+    bool bAutoConfirmAccount = config.get<bool>("WebLoginService.Registration.AutoConfirm", false);
 
     AccountFlags accountFlags;
     accountFlags.confirmed = bAutoConfirmAccount;

@@ -49,7 +49,6 @@ public:
         // process config:
         auto initLog = Program::Config::Logs::createInitLog();
         unsigned int logMode = Program::Logs::MODE_STANDARD;
-        boost::property_tree::ptree pConfig;
 
         Network::Sockets::Socket_TLS::prepareTLS();
 
@@ -91,13 +90,11 @@ public:
                 }
             }
 
-            boost::property_tree::info_parser::read_info("ufastauthd3.conf", pConfig);
+            boost::property_tree::info_parser::read_info("ufastauthd3.conf", Globals::pConfig);
         }
 
-        *(Globals::getConfig()) = pConfig;
-
-        Globals::appLog = Program::Config::Logs::createAppLog(Globals::getConfig());
-        Globals::rpcLog = Program::Config::Logs::createRPCLog(Globals::getConfig());
+        Globals::appLog = Program::Config::Logs::createAppLog(Globals::pConfig);
+        Globals::rpcLog = Program::Config::Logs::createRPCLog(Globals::pConfig);
 
         return true;
     }

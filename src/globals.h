@@ -25,7 +25,7 @@ public:
     static Mantids30::Program::Logs::AppLog *getAppLog();
     static void setAppLog(Mantids30::Program::Logs::AppLog *value);
 
-    static boost::property_tree::ptree *getConfig();
+    //static boost::property_tree::ptree *getConfig();
 
     static IdentityManager *getIdentityManager();
     static void setIdentityManager(IdentityManager *value);
@@ -44,10 +44,10 @@ public:
 */
     static std::shared_ptr<Mantids30::Program::Logs::RPCLog> rpcLog;
     static std::shared_ptr<Mantids30::Program::Logs::AppLog> appLog;
+    static boost::property_tree::ptree pConfig;
 
 private:
     static bool resetAdminPasswd;
-    static boost::property_tree::ptree pConfig;
     static LoginDirectoryManager *loginDirManager;
     static IdentityManager *identityManager;
     static Mantids30::Network::Servers::Web::APIEngineCore *webLoginServer;

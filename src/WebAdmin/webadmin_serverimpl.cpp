@@ -19,10 +19,10 @@ using namespace Program;
 
 bool WebAdmin_ServerImpl::createService()
 {
-    boost::property_tree::ptree *config = Globals::getConfig();
+    boost::property_tree::ptree config = Globals::pConfig;
     try
     {
-        config = &config->get_child("WebAdminService");
+        config = config.get_child("WebAdminService");
     }
     catch (boost::property_tree::ptree_error &e)
     {

@@ -28,8 +28,8 @@ API::APIReturn WebLogin_AuthMethods::preAuthorize(void *context, const API::REST
     IdentityManager *identityManager = Globals::getIdentityManager();
 
     //  Configuration parameters:
-    auto config = Globals::getConfig();
-    uint32_t loginAuthenticationTimeout = config->get<uint32_t>("WebLoginService.AuthenticationTimeout", 300);
+    auto config = Globals::pConfig;
+    uint32_t loginAuthenticationTimeout = config.get<uint32_t>("WebLoginService.AuthenticationTimeout", 300);
 
     // Input parameters:
     std::string app = JSON_ASSTRING(*request.inputJSON, "app", "");                 // APPNAME.
@@ -108,8 +108,8 @@ bool setupNewIntermediateAuthToken(const RequestParameters &request, Mantids30::
                                    const std::vector<AuthenticationSchemeUsedSlot> &authSlots, const time_t &oldIntermediateTokenExpirationTime, const std::string &accountName)
 {
     // Retrieve configuration parameters from global settings.
-    auto config = Globals::getConfig();
-    uint32_t loginAuthenticationTimeout = config->get<uint32_t>("WebLoginService.AuthenticationTimeout", 300);
+    auto config = Globals::pConfig;
+    uint32_t loginAuthenticationTimeout = config.get<uint32_t>("WebLoginService.AuthenticationTimeout", 300);
     JWT::Token newIntermediateAuthToken;
 
     if (authContext->currentSlotPosition == 0)

@@ -26,8 +26,8 @@ using namespace Mantids30;
 
 bool AuthStorageImpl::createAuth()
 {
-    std::string sDriverName = Globals::getConfig()->get<std::string>("Auth.Driver", "");
-    std::string sDefaultUser = Globals::getConfig()->get<std::string>("Auth.DefaultUser", "admin");
+    std::string sDriverName = Globals::pConfig.get<std::string>("Auth.Driver", "");
+    std::string sDefaultUser = Globals::pConfig.get<std::string>("Auth.DefaultUser", "admin");
 
     IdentityManager_DB *identityManager = nullptr;
 
@@ -35,7 +35,7 @@ bool AuthStorageImpl::createAuth()
     {
         SQLConnector_SQLite3 *dbConnector = new SQLConnector_SQLite3();
 
-        dbConnector->setThrowCPPErrorOnQueryFailure(Globals::getConfig()->get<bool>("Auth.TerminateOnSQLError", false));
+        dbConnector->setThrowCPPErrorOnQueryFailure(Globals::pConfig.get<bool>("Auth.TerminateOnSQLError", false));
 
         if (!dbConnector->connectInMemory())
         {
@@ -64,8 +64,8 @@ bool AuthStorageImpl::createAuth()
             return true;
         };
 
-        std::string dbFilePath = Globals::getConfig()->get<std::string>("Auth.IAMMainFile", "");
-        std::string dbLogsPath = Globals::getConfig()->get<std::string>("Auth.IAMLogsFile", "");
+        std::string dbFilePath = Globals::pConfig.get<std::string>("Auth.IAMMainFile", "");
+        std::string dbLogsPath = Globals::pConfig.get<std::string>("Auth.IAMLogsFile", "");
 
         if (!createFileIfNotExists(dbFilePath))
         {
