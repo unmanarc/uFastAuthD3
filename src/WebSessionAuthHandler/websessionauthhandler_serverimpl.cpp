@@ -61,7 +61,7 @@ bool WebSessionAuthHandler_ServerImpl::createService()
         return false;
     }
 
-    RESTful::Engine *webSessionAuthHandlerServer = Program::Config::RESTful_Engine::createRESTfulEngine(Globals::pConfig, LOG_APP, LOG_RPC, "Web Session Auth Handler", AUTHSERVER_WEBDIR);
+    RESTful::Engine *webSessionAuthHandlerServer = Program::Config::RESTful_Engine::createRESTfulEngine(config, LOG_APP, LOG_RPC, "Web Session Auth Handler", AUTHSERVER_WEBDIR, Program::Config::REST_ENGINE_NOCONFIG_JWT);
 
     if (!webSessionAuthHandlerServer)
         return false;

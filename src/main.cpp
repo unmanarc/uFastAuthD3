@@ -55,7 +55,9 @@ public:
         Globals::setResetAdminPasswd(globalArguments->getCommandLineOptionBooleanValue("resetadmpw"));
         std::string configDir = globalArguments->getCommandLineOptionValue("config-dir")->toString();
 
-        initLog->log0(__func__, Program::Logs::LEVEL_INFO, "Loading configuration: %s", (configDir + "/ufastauthd3.conf").c_str());
+        std::string configFile = configDir + "/ufastauthd3.conf";
+
+        initLog->log0(__func__, Program::Logs::LEVEL_INFO, "Loading configuration: %s", (configFile).c_str());
 
         if (access(configDir.c_str(), R_OK))
         {
@@ -63,10 +65,10 @@ public:
             return false;
         }
 
-        chdir(configDir.c_str());
+        //chdir(configDir.c_str());
 
         bool isConfigFileInsecure = true;
-        if (!Helpers::File::isSensitiveConfigPermissionInsecure("ufastauthd3.conf", &isConfigFileInsecure))
+        if (!Helpers::File::isSensitiveConfigPermissionInsecure(configFile, &isConfigFileInsecure))
         {
             initLog->log0(__func__, Program::Logs::LEVEL_WARN, "The configuration 'ufastauthd3.conf' file is inaccessible, loading defaults...");
         }
@@ -79,7 +81,7 @@ public:
                               "we are changing the permissions of the file to ensure that your API key remains secure. Please ensure that you take necessary precautions to protect your API key and "
                               "update any affected applications or services as necessary.");
 
-                if (Helpers::File::fixSensitiveConfigPermission("ufastauthd3.conf"))
+                if (Helpers::File::fixSensitiveConfigPermission(configFile))
                 {
                     initLog->log0(__func__, Program::Logs::LEVEL_SECURITY_ALERT, "The permissions of the 'ufastauthd3.conf' file has been changed to 0600.");
                 }
@@ -90,7 +92,7 @@ public:
                 }
             }
 
-            boost::property_tree::info_parser::read_info("ufastauthd3.conf", Globals::pConfig);
+            boost::property_tree::info_parser::read_info(configFile, Globals::pConfig);
         }
 
         Globals::appLog = Program::Config::Logs::createAppLog(Globals::pConfig);
