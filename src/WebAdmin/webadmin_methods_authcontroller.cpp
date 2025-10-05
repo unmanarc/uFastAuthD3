@@ -2,6 +2,7 @@
 #include "../globals.h"
 #include "json/value.h"
 #include <Mantids30/Program_Logs/applog.h>
+#include <optional>
 
 using namespace Mantids30::Program;
 using namespace Mantids30;
@@ -23,6 +24,47 @@ void WebAdmin_Methods_AuthController::addMethods_AuthController(std::shared_ptr<
 
     methods->addResource(MethodsHandler::GET, "listAuthenticationSlotsUsedByScheme", &listAuthenticationSlotsUsedByScheme, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"AUTH_READ"});
     methods->addResource(MethodsHandler::PATCH, "updateAuthenticationSlotsUsedByScheme", &updateAuthenticationSlotsUsedByScheme, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"AUTH_MODIFY"});
+
+    methods->addResource(MethodsHandler::GET, "getDefaultAuthScheme", &getDefaultAuthScheme, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"AUTH_READ"});
+    methods->addResource(MethodsHandler::PATCH, "updateDefaultAuthScheme", &updateDefaultAuthScheme, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"AUTH_MODIFY"});
+
+}
+WebAdmin_Methods_AuthController::APIReturn WebAdmin_Methods_AuthController::updateDefaultAuthScheme(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+{
+    auto authController = Globals::getIdentityManager()->authController;
+
+    // Extract the new default authentication scheme ID from the request body
+    uint32_t newDefaultSchemeId = JSON_ASUINT(*request.inputJSON,"defaultSchemeId",std::numeric_limits<uint32_t>::max());
+
+    if (newDefaultSchemeId == std::numeric_limits<uint32_t>::max())
+    {
+        return APIReturn(HTTP::Status::S_400_BAD_REQUEST,"invalid_request", "Missing or invalid 'defaultSchemeId' in request body");
+    }
+
+    if (!authController->updateDefaultAuthScheme(newDefaultSchemeId))
+    {
+        return APIReturn(HTTP::Status::S_500_INTERNAL_SERVER_ERROR,"invalid_request", "Internal server error while updating default authentication slot");
+    }
+
+    return APIReturn();
+}
+
+WebAdmin_Methods_AuthController::APIReturn WebAdmin_Methods_AuthController::getDefaultAuthScheme(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+{
+    auto authController = Globals::getIdentityManager()->authController;
+
+    // Retrieve the current default authentication slot
+    std::optional<uint32_t> defaultScheme = authController->getDefaultAuthScheme();
+
+
+    if (!defaultScheme.has_value())
+    {
+        return APIReturn(HTTP::Status::S_500_INTERNAL_SERVER_ERROR,"invalid_request", "Internal server error while retrieving default authentication slot");
+    }
+
+    Json::Value response;
+    response["defaultSchemeId"] = *defaultScheme;
+    return response;
 }
 
 API::APIReturn WebAdmin_Methods_AuthController::addNewAuthenticationScheme(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
@@ -42,15 +84,25 @@ API::APIReturn WebAdmin_Methods_AuthController::listAuthenticationSchemes(void *
     API::APIReturn response;
     std::map<uint32_t, std::string> slots = Globals::getIdentityManager()->authController->listAuthenticationSchemes();
     json r;
+
+    auto defaultScheme = Globals::getIdentityManager()->authController->getDefaultAuthScheme();
+
+    if (defaultScheme.has_value())
+        r["defaultSchemeId"] = *defaultScheme;
+    else
+        r["defaultSchemeId"] = Json::nullValue;
+
+    r["schemes"] = Json::arrayValue;
+
     for (const auto & slot : slots)
     {
         json rSlot;
         rSlot["description"] = slot.second;
         rSlot["id"] = slot.first;
-        r.append(rSlot);
+        r["schemes"].append(rSlot);
     }
-    (*response.responseJSON()) = r;
-    return response;
+
+    return r;
 
 }
 

@@ -5,6 +5,7 @@
         $("#appNameCreate").val('');
         $("#appDescriptionCreate").val('');
         $("#scopesModifiableCreate").prop("checked", false);
+        $("#initializeDefaultsCreate").prop("checked", true);
         // TODO:
         $('.nav-tabs a:first').tab('show')
     }
@@ -25,6 +26,27 @@
             return false;
         }
 
+        var appURL = $("#appURLCreate").val().trim();
+        // Check if appURL is a valid URL and starts with https
+        try {
+            var urlObj = new URL(appURL);
+            if (urlObj.protocol !== 'https:') {
+                showToastError("URL must use HTTPS protocol");
+                $("#appURLCreate").focus();
+                return false;
+            }
+            // Check that the URL has no path
+            if (urlObj.pathname !== '/' || urlObj.search !== '' || urlObj.hash !== '') {
+                showToastError("URL must not contain a path, query parameters, or fragment");
+                $("#appURLCreate").focus();
+                return false;
+            }
+        } catch (e) {
+            showToastError("Please enter a valid URL");
+            $("#appURLCreate").focus();
+            return false;
+        }
+
         $.ajax({
             url: '/api/v1/addApplication',
             type: 'POST',
@@ -32,7 +54,9 @@
             data: JSON.stringify({
                 appName: $("#appNameCreate").val(),
                 description: $("#appDescriptionCreate").val(),
+                appURL: $("#appURLCreate").val(),
                 scopesModifiable: $("#scopesModifiableCreate").is(":checked"),
+                initializeDefaultsCreate: $("#initializeDefaultsCreate").is(":checked"),
                 appKey: $("#appKeyCreate").val()
             }),
             success: function (response, textStatus, xhr) {
@@ -97,6 +121,12 @@
                                 </td>
                             </tr>
                             <tr>
+                                <td align="right">URL: </td>
+                                <td><input id="appURLCreate" class="form-control"
+                                        placeholder="Application URL (eg. https://myapp:443)">
+                                </td>
+                            </tr>
+                            <tr>
                                 <td align="right">Key: </td>
                                 <td>
 
@@ -127,7 +157,7 @@
                             </tr>
                         </table>
                     </div>
-
+                    <!--
                     <div class="tab-pane" id="advancedCreate" role="tabpanel" aria-labelledby="advanced-tab-create"
                         style="min-height: 500px;">
                         <table width=100% style=" border-spacing: 10px;   border-collapse: separate;">
@@ -142,9 +172,36 @@
                                     </div>
                                 </td>
                             </tr>
-
                         </table>
                     </div>
+-->
+                    <div class="tab-pane" id="advancedCreate" role="tabpanel" aria-labelledby="advanced-tab-create"
+                        style="min-height: 500px;">
+                        <div class="container-fluid" style="padding-left: 60px; padding-top: 30px;">
+                            <div class="row mb-2">
+                                <div class="col-auto">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="scopesModifiableCreate">
+                                        <label class="form-check-label" for="scopesModifiableCreate">
+                                            Allow manual modification of scopes
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-auto">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="initializeDefaultsCreate">
+                                        <label class="form-check-label" for="initializeDefaultsCreate">
+                                            Initialize with default values
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- --------------------------------- -->
 
                 </div>
 

@@ -375,8 +375,10 @@ public:
 
         virtual std::vector<AuthenticationSchemeUsedSlot> listAuthenticationSlotsUsedByScheme(const uint32_t &schemeId) = 0;
         virtual bool updateAuthenticationSlotUsedByScheme(const uint32_t &schemeId, const std::list<AuthenticationSchemeUsedSlot> &slotsUsedByScheme) = 0;
-
         virtual std::set<uint32_t> listUsedAuthenticationSlotsOnAccount(const std::string &accountName) = 0;
+
+        virtual bool updateDefaultAuthScheme(const uint32_t &schemeId) =0 ;
+        virtual std::optional<uint32_t> getDefaultAuthScheme() = 0;
 
         Credential createNewCredential(const uint32_t &slotId, const std::string &passwordInput, bool forceExpiration = false);
 
@@ -399,7 +401,7 @@ public:
         virtual ~Applications() {}
         /////////////////////////////////////////////////////////////////////////////////
         // applications:
-        virtual bool addApplication(const std::string &appName, const std::string &applicationDescription, const std::string &apiKey, const std::string &sOwnerAccountName, bool canUserModifyScope) = 0;
+        virtual bool addApplication(const std::string &appName, const std::string &applicationDescription, const std::string & appURL, const std::string &apiKey, const std::string &sOwnerAccountName, bool canUserModifyScope, bool initializeDefaultValues) = 0;
         virtual bool removeApplication(const std::string &appName) = 0;
         virtual bool doesApplicationExist(const std::string &appName) = 0;
 

@@ -10,41 +10,71 @@
 #include <Mantids30/Memory/a_uint32.h>
 #include <Mantids30/Memory/a_uint64.h>
 #include <Mantids30/Memory/a_var.h>
+#include <optional>
 
 using namespace Mantids30::Memory;
 using namespace Mantids30::Database;
 using namespace Mantids30::Helpers;
 using namespace Mantids30;
 
-bool IdentityManager_DB::Applications_DB::addApplication(const std::string &appName, const std::string &applicationDescription, const std::string &apiKey, const std::string &sOwnerAccountName,
-                                                         bool canUserModifyScope)
+bool IdentityManager_DB::Applications_DB::addApplication(const std::string &appName, const std::string &applicationDescription, const std::string &appURL, const std::string &apiKey,
+                                                         const std::string &sOwnerAccountName, bool canUserModifyScope, bool initializeDefaultValues)
 {
-    Threads::Sync::Lock_RW lock(_parent->m_mutex);
 
-    // Insert into iam.applications.
-    bool appInsertSuccess = _parent->m_sqlConnector->execute(
-        "INSERT INTO iam.applications (`appName`, `f_appCreator`, `appDescription`, `apiKey`, `canManualModifyScope`) VALUES (:appName, :appCreator, :description, :apiKey, :canManualModifyScope);",
-        {{":appName", MAKE_VAR(STRING, appName)},
-         {":appCreator", MAKE_VAR(STRING, sOwnerAccountName)},
-         {":description", MAKE_VAR(STRING, applicationDescription)},
-         {":apiKey", MAKE_VAR(STRING, Encoders::encodeToBase64Obf(apiKey))},
-         {":canManualModifyScope", MAKE_VAR(BOOL, canUserModifyScope)}});
+    std::optional<uint32_t> defaultSchemeId = _parent->authController->getDefaultAuthScheme();
 
-    // If the insertion is successful, insert another row default values into iam.applicationsJWTTokenConfig.
-    if (appInsertSuccess)
-    {
-        std::string randomSecret = Mantids30::Helpers::Random::createRandomString(64);
-        bool tokenInsertSuccess = _parent->m_sqlConnector->execute("INSERT INTO iam.applicationsJWTTokenConfig (`f_appName`, `accessTokenSigningKey`, `accessTokenValidationKey`) "
-                                                                   "VALUES (:appName, :signingKey, :validationKey);",
-                                                                   {{":appName", MAKE_VAR(STRING, appName)},
-                                                                    {":signingKey", MAKE_VAR(STRING, Helpers::Encoders::encodeToBase64Obf(randomSecret, 0x8A376C54D999F187))},
-                                                                    {":validationKey", MAKE_VAR(STRING, Helpers::Encoders::encodeToBase64Obf(randomSecret, 0x8A376C54D999F187))}});
-        return tokenInsertSuccess;
-    }
-    else
+    if (initializeDefaultValues && !defaultSchemeId.has_value())
     {
         return false;
     }
+
+    bool tokenInsertSuccess;
+    {
+        Threads::Sync::Lock_RW lock(_parent->m_mutex);
+
+        // Insert into iam.applications.
+        bool appInsertSuccess = _parent->m_sqlConnector->execute("INSERT INTO iam.applications (`appName`, `f_appCreator`, `appDescription`, `apiKey`, `canManualModifyScope`) VALUES (:appName, "
+                                                                 ":appCreator, :description, :apiKey, :canManualModifyScope);",
+                                                                 {{":appName", MAKE_VAR(STRING, appName)},
+                                                                  {":appCreator", MAKE_VAR(STRING, sOwnerAccountName)},
+                                                                  {":description", MAKE_VAR(STRING, applicationDescription)},
+                                                                  {":apiKey", MAKE_VAR(STRING, Encoders::encodeToBase64Obf(apiKey))},
+                                                                  {":canManualModifyScope", MAKE_VAR(BOOL, canUserModifyScope)}});
+
+        // If the insertion is successful, insert another row default values into iam.applicationsJWTTokenConfig.
+        if (appInsertSuccess)
+        {
+            std::string randomSecret = Mantids30::Helpers::Random::createRandomString(64);
+            tokenInsertSuccess = _parent->m_sqlConnector->execute("INSERT INTO iam.applicationsJWTTokenConfig (`f_appName`, `accessTokenSigningKey`, `accessTokenValidationKey`) "
+                                                                  "VALUES (:appName, :signingKey, :validationKey);",
+                                                                  {{":appName", MAKE_VAR(STRING, appName)},
+                                                                   {":signingKey", MAKE_VAR(STRING, Helpers::Encoders::encodeToBase64Obf(randomSecret, 0x8A376C54D999F187))},
+                                                                   {":validationKey", MAKE_VAR(STRING, Helpers::Encoders::encodeToBase64Obf(randomSecret, 0x8A376C54D999F187))}});
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    if (tokenInsertSuccess && initializeDefaultValues)
+    {
+
+        if (!setApplicationWebLoginCallbackURI(appName,appURL + "/auth/api/v1/callback"))
+            return false;
+        if (!addWebLoginOriginURLToApplication(appName,appURL))
+            return false;
+        if (!addWebLoginRedirectURIToApplication(appName,appURL + "/"))
+            return false;
+        if (!_parent->applicationActivities->setApplicationActivities(appName, {{"LOGIN", {.description = "Main Login", .parentActivity = ""}}}))
+            return false;
+        if (!_parent->applicationActivities->addAuthenticationSchemeToApplicationActivity(appName, "LOGIN", *defaultSchemeId))
+            return false;
+        if (!_parent->applicationActivities->setApplicationActivityDefaultScheme(appName, "LOGIN", *defaultSchemeId))
+            return false;
+    }
+
+    return tokenInsertSuccess;
 }
 
 bool IdentityManager_DB::Applications_DB::removeApplication(const std::string &appName)

@@ -19,6 +19,7 @@
                     <tr bgcolor=grey>
                         <th scope="col">Scheme ID</th>
                         <th scope="col">Description</th>
+                        <th scope="col">Default</th>
                         <th scope="col" style="text-align: right;">Controls</th>
                     </tr>
                 </thead>
@@ -30,6 +31,34 @@
 </div>
 
 <script>
+
+    function updateDefaultSchemeGlobal() {
+        const selectedRadio = document.querySelector('input[name="defaultScheme"]:checked');
+        if (selectedRadio) {
+            const schemeId = parseInt(selectedRadio.value);
+            $.ajax({
+                url: '/api/v1/updateDefaultAuthScheme',
+                type: 'PATCH',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    defaultSchemeId: schemeId
+                }),
+                success: function (response, textStatus, xhr) {
+                    // Now update parent activity via PATCH
+                    showToastSuccess("Default scheme updated successfully.");
+                    // Refresh the scheme table details.
+                    //populateTable();
+                },
+                error: function(xhr, status, error) {
+                    populateTable();
+                    commonFunctionError(xhr, status, error);
+                }
+            });
+        }
+        else {
+            showToastError("Please select a default scheme.");
+        }
+    }
 
     function deleteAuthScheme(schemeId) {
 
@@ -65,7 +94,7 @@
             success: function (response) {
                 $("#tbody-authSchemes").empty();
 
-                for (let scheme of response) {
+                for (let scheme of response["schemes"]) {
                     let schemeId = parseInt(scheme["id"]);
 
                     authSchemes[schemeId] = scheme;
@@ -74,6 +103,7 @@
                         `<tr> 
                             <th scope="row">${schemeId}</th>
                             <td id="ulist-authSchemeDescription-${schemeId}"></td>
+                            <td><input type="radio" name="defaultScheme" id="defaultSchemeRadio-${schemeId}" onclick="updateDefaultSchemeGlobal();"></td>
                             <td style="text-align: right;">
                                 <button type="button" class="btn btn-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#modalEditAuthScheme" onclick="javascript:editAuthScheme(${schemeId});"><i class="fas fa-edit"></i></button>
                                 <button type="button" class="btn btn-secondary btn-sm" onclick="javascript:deleteAuthScheme(${schemeId});"><i class="fas fa-trash"></i></button>
@@ -82,6 +112,11 @@
                     );
 
                     $(`#ulist-authSchemeDescription-${schemeId}`).text(scheme["description"]);
+                    document.getElementById(`defaultSchemeRadio-${schemeId}`).value = schemeId;
+                    if (schemeId === response["defaultSchemeId"]) 
+                    {
+                        document.getElementById(`defaultSchemeRadio-${schemeId}`).setAttribute('checked', 'checked');
+                    }
                 }
 
             },

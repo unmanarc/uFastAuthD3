@@ -252,6 +252,38 @@ std::set<uint32_t> IdentityManager_DB::AuthController_DB::listUsedAuthentication
     return r;
 }
 
+bool IdentityManager_DB::AuthController_DB::updateDefaultAuthScheme(const uint32_t &schemeId)
+{
+    Threads::Sync::Lock_RW lock(_parent->m_mutex);
+
+    // Delete any existing default scheme
+    _parent->m_sqlConnector->execute("DELETE FROM iam.defaultAuthScheme;", {});
+
+    // Insert the new default scheme
+    return _parent->m_sqlConnector->execute(
+        "INSERT INTO iam.defaultAuthScheme (`f_defaultSchemeId`) VALUES (:schemeId);",
+        {{":schemeId", MAKE_VAR(UINT32, schemeId)}}
+        );
+}
+
+std::optional<uint32_t> IdentityManager_DB::AuthController_DB::getDefaultAuthScheme()
+{
+    Threads::Sync::Lock_RD lock(_parent->m_mutex);
+
+    Abstract::UINT32 schemeId;
+    SQLConnector::QueryInstance i = _parent->m_sqlConnector->qSelect(
+        "SELECT f_defaultSchemeId FROM iam.defaultAuthScheme WHERE id = 1;",
+        {},
+        {&schemeId}
+        );
+
+    if (!i.getResultsOK() || !i.query->step())
+        return std::nullopt;
+
+    return schemeId.getValue();
+}
+
+
 std::optional<uint32_t> IdentityManager_DB::AuthController_DB::addNewAuthenticationSlot(const AuthenticationSlotDetails &details)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);

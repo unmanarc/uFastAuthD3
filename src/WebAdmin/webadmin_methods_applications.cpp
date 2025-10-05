@@ -122,9 +122,11 @@ API::APIReturn WebAdminMethods_Applications::addApplication(void *context, const
     // Attempt to create the new application
     if (!Globals::getIdentityManager()->applications->addApplication(JSON_ASSTRING(*request.inputJSON, "appName", ""),
                                                                      JSON_ASSTRING(*request.inputJSON, "description", ""),
+                                                                     JSON_ASSTRING(*request.inputJSON, "appURL", ""),
                                                                      JSON_ASSTRING(*request.inputJSON, "appKey", ""),
                                                                      request.jwtToken->getSubject(),
-                                                                     JSON_ASBOOL(*request.inputJSON, "scopesModifiable", false)
+                                                                     JSON_ASBOOL(*request.inputJSON, "scopesModifiable", false),
+                                                                     JSON_ASBOOL(*request.inputJSON, "initializeDefaultsCreate", true)
                                                                      ))
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to create application");

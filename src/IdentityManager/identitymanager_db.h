@@ -213,6 +213,8 @@ public:
         bool updateAuthenticationSlotUsedByScheme(const uint32_t &schemeId, const std::list<AuthenticationSchemeUsedSlot> &slotsUsedByScheme) override;
 
         std::set<uint32_t> listUsedAuthenticationSlotsOnAccount(const std::string &accountName) override;
+        bool updateDefaultAuthScheme(const uint32_t &schemeId) override;
+        std::optional<uint32_t> getDefaultAuthScheme() override;
 
         // Tokens:
         std::string getAccountConfirmationToken(const std::string &accountName) override;
@@ -229,7 +231,8 @@ public:
 
         /////////////////////////////////////////////////////////////////////////////////
         // applications:
-        bool addApplication(const std::string &appName, const std::string &applicationDescription, const std::string &apiKey, const std::string &sOwnerAccountName, bool canUserModifyScope) override;
+        bool addApplication(const std::string &appName, const std::string &applicationDescription, const std::string & appURL, const std::string &apiKey, const std::string &sOwnerAccountName, bool canUserModifyScope, bool initializeDefaultValues) override;
+//        bool addApplication(const std::string &appName, const std::string &applicationDescription, const std::string &apiKey, const std::string &sOwnerAccountName, bool canUserModifyScope) override;
         bool removeApplication(const std::string &appName) override;
         bool doesApplicationExist(const std::string &appName) override;
 

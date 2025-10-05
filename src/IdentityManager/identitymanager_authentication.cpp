@@ -188,6 +188,7 @@ std::map<uint32_t, Credential> IdentityManager::AuthController::getAccountAllCre
     }
     return r;
 }
+
 /*
 std::map<uint32_t,AuthenticationSlotDetails> IdentityManager::AuthController::getAccountAuthenticationSlotsUsedForLogin(const std::string &accountName)
 {
@@ -495,6 +496,8 @@ std::optional<uint32_t> IdentityManager::AuthController::initializateDefaultPass
                 schemeId = *opt_sid;
             }
         }
+
+        updateDefaultAuthScheme(schemeId);
 
         r = r && updateAuthenticationSlotUsedByScheme(schemeId, {AuthenticationSchemeUsedSlot(authSlotId, 0, false)});
 

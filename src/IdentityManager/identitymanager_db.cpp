@@ -53,7 +53,6 @@ bool IdentityManager_DB::initializeDatabase()
                                               PRIMARY KEY(`f_accountName`,`f_fieldName`)
                                                                         );
                                        )",
-
         R"(CREATE TABLE IF NOT EXISTS `iam`.`applications` (
                                              `appName`               VARCHAR(256)  NOT NULL,
                                              `f_appCreator`          VARCHAR(256)  NOT NULL,
@@ -142,6 +141,15 @@ bool IdentityManager_DB::initializeDatabase()
                                             `schemeId`          INTEGER PRIMARY KEY AUTOINCREMENT,
                                             `description`       VARCHAR(4096) NOT NULL
                      );     )",
+
+
+        R"(CREATE TABLE IF NOT EXISTS `defaultAuthScheme` (
+                `id` INTEGER PRIMARY KEY DEFAULT 1,
+                `f_defaultSchemeId` INTEGER NOT NULL,
+                `lastUpdated` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (`f_defaultSchemeId`) REFERENCES `authenticationSchemes`(`schemeId`) ON DELETE CASCADE,
+            CHECK (`id` = 1)
+            );)",
         R"(CREATE TABLE IF NOT EXISTS `iam`.`applicationActivitiesAuthSchemes` (
                                              `f_appName`             VARCHAR(256)  NOT NULL,
                                              `f_activityName`        VARCHAR(256)  NOT NULL,

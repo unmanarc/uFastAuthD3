@@ -24,6 +24,9 @@ protected:
     static APIReturn updateAuthenticationSlotsUsedByScheme(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
 
 
+    static APIReturn getDefaultAuthScheme(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
+    static APIReturn updateDefaultAuthScheme(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
+
     static APIReturn listAuthenticationSlots(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
     static APIReturn addNewAuthenticationSlot(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
     static APIReturn deleteAuthenticationSlot(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
