@@ -7,6 +7,7 @@
 #include "WebAdmin/webadmin_serverimpl.h"
 #include "WebLogin/weblogin_serverimpl.h"
 #include "WebSessionAuthHandler/websessionauthhandler_serverimpl.h"
+#include "AppSync/appsync_serverimpl.h"
 /*
 #include "RPC1LoginServer2/fastrpcimpl.h"
 #include "RPC1LoginServer2/rpc1loginserver2impl.h"
@@ -137,6 +138,12 @@ public:
         {
             _exit(-7);
         }
+
+        if (!AppSync_ServerImpl::createService())
+        {
+            _exit(-8);
+        }
+
         /*// Initiate the RPC Listener
         if (!RPC1LoginServer2Impl::createRPCListenerCAB())
         {

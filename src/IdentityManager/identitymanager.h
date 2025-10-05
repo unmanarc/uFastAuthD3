@@ -401,9 +401,19 @@ public:
         virtual ~Applications() {}
         /////////////////////////////////////////////////////////////////////////////////
         // applications:
-        virtual bool addApplication(const std::string &appName, const std::string &applicationDescription, const std::string & appURL, const std::string &apiKey, const std::string &sOwnerAccountName, bool canUserModifyScope, bool initializeDefaultValues) = 0;
+        virtual bool addApplication(const std::string &appName,
+                                    const std::string &applicationDescription,
+                                    const std::string & appURL,
+                                    const std::string &apiKey,
+                                    const std::string &sOwnerAccountName,
+                                    bool canUserModifyScope,
+                                    bool appSyncEnabled,
+                                    bool initializeDefaultValues) = 0;
         virtual bool removeApplication(const std::string &appName) = 0;
         virtual bool doesApplicationExist(const std::string &appName) = 0;
+
+        virtual bool haveApplicationSyncEnabled(const std::string &appName) = 0;
+        virtual bool updateApplicationSyncEnabled(const std::string &appName, bool syncEnabled) = 0;
 
         virtual std::optional<bool> canManuallyModifyApplicationScopes(const std::string &appName) = 0;
         virtual std::string getApplicationDescription(const std::string &appName) = 0;

@@ -20,10 +20,12 @@ void WebAdminMethods_Applications::addMethods_Applications(std::shared_ptr<Metho
     methods->addResource(MethodsHandler::POST, "addApplication", &addApplication, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_CREATE"});
     methods->addResource(MethodsHandler::GET, "doesApplicationExist", &doesApplicationExist, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
     methods->addResource(MethodsHandler::GET, "getApplicationInfo", &getApplicationInfo, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
-    methods->addResource(MethodsHandler::PATCH, "updateApplicationDescription", &updateApplicationDescription, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"});
+    methods->addResource(MethodsHandler::PATCH, "updateApplicationDetails", &updateApplicationDetails, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"});
     methods->addResource(MethodsHandler::PATCH, "updateApplicationAPIKey", &updateApplicationAPIKey, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"});
     methods->addResource(MethodsHandler::PATCH, "updateWebLoginJWTConfigForApplication", &updateWebLoginJWTConfigForApplication, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"});
     methods->addResource(MethodsHandler::PATCH, "updateApplicationLoginCallbackURI", &updateApplicationLoginCallbackURI, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"});
+
+
 
     methods->addResource(MethodsHandler::PUT, "addApplicationLoginOrigin", &addApplicationLoginOrigin, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"});
     methods->addResource(MethodsHandler::DELETE, "removeApplicationLoginOrigin", &removeApplicationLoginOrigin, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"});
@@ -126,7 +128,8 @@ API::APIReturn WebAdminMethods_Applications::addApplication(void *context, const
                                                                      JSON_ASSTRING(*request.inputJSON, "appKey", ""),
                                                                      request.jwtToken->getSubject(),
                                                                      JSON_ASBOOL(*request.inputJSON, "scopesModifiable", false),
-                                                                     JSON_ASBOOL(*request.inputJSON, "initializeDefaultsCreate", true)
+                                                                     JSON_ASBOOL(*request.inputJSON, "syncServiceEnabled", true),
+                                                                     JSON_ASBOOL(*request.inputJSON, "initializeDefaults", true)
                                                                      ))
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to create application");
@@ -185,6 +188,7 @@ API::APIReturn WebAdminMethods_Applications::getApplicationInfo(void *context, c
     ApplicationTokenProperties appWebLoginTokenConfig = Globals::getIdentityManager()->applications->getWebLoginJWTConfigFromApplication(appName);
     payloadOut["tokenConfig"] = appWebLoginTokenConfig.toJSON();
     payloadOut["details"]["description"] = Globals::getIdentityManager()->applications->getApplicationDescription(appName);
+    payloadOut["details"]["syncServiceEnabled"] = Globals::getIdentityManager()->applications->haveApplicationSyncEnabled(appName);
 
     // Get associated scope...
     payloadOut["scopes"] = Json::arrayValue;
@@ -223,15 +227,22 @@ API::APIReturn WebAdminMethods_Applications::getApplicationInfo(void *context, c
 
 }
 
-API::APIReturn WebAdminMethods_Applications::updateApplicationDescription(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn WebAdminMethods_Applications::updateApplicationDetails(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
     std::string appName = JSON_ASSTRING(*request.inputJSON, "appName", "");
+    bool syncServiceEnabled = JSON_ASBOOL(*request.inputJSON, "syncServiceEnabled", false);
 
     if (appName.empty())
     {
         response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Application Name is Empty");
+        return response;
+    }
+
+    if (!Globals::getIdentityManager()->applications->updateApplicationSyncEnabled(appName, syncServiceEnabled))
+    {
+        response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to update synchronization service mode.");
         return response;
     }
 
@@ -284,6 +295,8 @@ API::APIReturn WebAdminMethods_Applications::updateWebLoginJWTConfigForApplicati
     return response;
 
 }
+
+
 
 API::APIReturn WebAdminMethods_Applications::updateApplicationLoginCallbackURI(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {

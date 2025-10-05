@@ -76,10 +76,10 @@ bool IdentityManager::initializeApplicationWithScheme(const std::string &appName
 
     if (!applications->doesApplicationExist(appName))
     {
-        r = r && applications->addApplication(appName, appDescription, "https://iamadmin.localhost:9443", Mantids30::Helpers::Random::createRandomString(32), owner, false, true);
-        r = r && applicationActivities->setApplicationActivities(appName, {{"LOGIN", {.description = "Main Login", .parentActivity = ""}}});
+        r = r && applications->addApplication(appName, appDescription, "https://iamadmin.localhost:9443", Mantids30::Helpers::Random::createRandomString(32), owner, false, false, true);
+/*        r = r && applicationActivities->setApplicationActivities(appName, {{"LOGIN", {.description = "Main Login", .parentActivity = ""}}});
         r = r && applicationActivities->addAuthenticationSchemeToApplicationActivity(appName, "LOGIN", schemeId);
-        r = r && applicationActivities->setApplicationActivityDefaultScheme(appName, "LOGIN", schemeId);
+        r = r && applicationActivities->setApplicationActivityDefaultScheme(appName, "LOGIN", schemeId);*/
         *alreadyExist = false;
     }
     else

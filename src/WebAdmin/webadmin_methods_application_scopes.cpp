@@ -2,7 +2,6 @@
 
 #include "../globals.h"
 #include "defs.h"
-#include "webadmin_methods.h"
 #include <regex>
 #include <Mantids30/Program_Logs/applog.h>
 

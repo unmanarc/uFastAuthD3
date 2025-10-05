@@ -20,7 +20,7 @@ protected:
     static APIReturn addApplication(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
     static APIReturn doesApplicationExist(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
     static APIReturn getApplicationInfo(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
-    static APIReturn updateApplicationDescription(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
+    static APIReturn updateApplicationDetails(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
     static APIReturn updateApplicationAPIKey(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
     static APIReturn updateWebLoginJWTConfigForApplication(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
     static APIReturn updateApplicationLoginCallbackURI(void *context, const RequestParameters &request, ClientDetails &authClientDetails);

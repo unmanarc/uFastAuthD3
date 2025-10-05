@@ -6,6 +6,8 @@
         $("#appDescriptionCreate").val('');
         $("#scopesModifiableCreate").prop("checked", false);
         $("#initializeDefaultsCreate").prop("checked", true);
+        $("#syncServiceEnabledCreate").prop("checked", true);
+        
         // TODO:
         $('.nav-tabs a:first').tab('show')
     }
@@ -56,7 +58,8 @@
                 description: $("#appDescriptionCreate").val(),
                 appURL: $("#appURLCreate").val(),
                 scopesModifiable: $("#scopesModifiableCreate").is(":checked"),
-                initializeDefaultsCreate: $("#initializeDefaultsCreate").is(":checked"),
+                syncServiceEnabled: $("#syncServiceEnabledCreate").is(":checked"),
+                initializeDefaults: $("#initializeDefaultsCreate").is(":checked"),
                 appKey: $("#appKeyCreate").val()
             }),
             success: function (response, textStatus, xhr) {
@@ -157,24 +160,6 @@
                             </tr>
                         </table>
                     </div>
-                    <!--
-                    <div class="tab-pane" id="advancedCreate" role="tabpanel" aria-labelledby="advanced-tab-create"
-                        style="min-height: 500px;">
-                        <table width=100% style=" border-spacing: 10px;   border-collapse: separate;">
-                            <tr>
-                                <td align="right">Scopes Modifiable: </td>
-                                <td>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" id="scopesModifiableCreate">
-                                        <label class="form-check-label" for="scopesModifiableCreate">
-                                            Allow manual modification of scopes
-                                        </label>
-                                    </div>
-                                </td>
-                            </tr>
-                        </table>
-                    </div>
--->
                     <div class="tab-pane" id="advancedCreate" role="tabpanel" aria-labelledby="advanced-tab-create"
                         style="min-height: 500px;">
                         <div class="container-fluid" style="padding-left: 60px; padding-top: 30px;">
@@ -188,6 +173,19 @@
                                     </div>
                                 </div>
                             </div>
+
+                            <div class="row mb-2">
+                                <div class="col-auto">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="syncServiceEnabledCreate">
+                                        <label class="form-check-label" for="syncServiceEnabledCreate">
+                                            Enable Synchronization Service using API Key (Will share+configure JWT keys, permissions and other useful information)
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+
                             <div class="row mb-2">
                                 <div class="col-auto">
                                     <div class="form-check form-switch">
@@ -198,6 +196,8 @@
                                     </div>
                                 </div>
                             </div>
+
+
                         </div>
                     </div>
 

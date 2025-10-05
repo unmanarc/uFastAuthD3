@@ -59,6 +59,7 @@ bool IdentityManager_DB::initializeDatabase()
                                              `appDescription`        VARCHAR(4096) NOT NULL,
                                              `apiKey`                VARCHAR(512)  NOT NULL,
                                              `canManualModifyScope`  BOOLEAN NOT NULL DEFAULT FALSE,
+                                             `appSyncEnabled`  BOOLEAN NOT NULL DEFAULT TRUE,
                                               FOREIGN KEY(`f_appCreator`)   REFERENCES accounts(`accountName`) ON DELETE CASCADE
                                               PRIMARY KEY(`appName`)
                                               UNIQUE(`apiKey`)
