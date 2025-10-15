@@ -37,6 +37,8 @@ bool IdentityManager_DB::ApplicationActivities_DB::addApplicationActivity(const 
         {
             return false;
         }
+
+        addAuthenticationSchemeToApplicationActivity(appName,activityName, defaultSchemeId,false);
     }
     else
     {
@@ -292,15 +294,20 @@ std::set<uint32_t> IdentityManager_DB::ApplicationActivities_DB::listAuthenticat
     return ret;
 }
 
-bool IdentityManager_DB::ApplicationActivities_DB::addAuthenticationSchemeToApplicationActivity(const std::string &appName, const std::string &activityName, const uint32_t &schemeId)
+bool IdentityManager_DB::ApplicationActivities_DB::addAuthenticationSchemeToApplicationActivity(const std::string &appName, const std::string &activityName, const uint32_t &schemeId, bool lock)
 {
     // Acquire a write lock since we are modifying the database
-    Threads::Sync::Lock_RW lock(_parent->m_mutex);
+    if (lock)
+        _parent->m_mutex.lock();
 
     // Execute the query using direct parameter passing...
-    return _parent->m_sqlConnector->execute("INSERT INTO iam.applicationActivitiesAuthSchemes (`f_appName`, `f_activityName`, `f_schemeId`) "
+    bool r= _parent->m_sqlConnector->execute("INSERT INTO iam.applicationActivitiesAuthSchemes (`f_appName`, `f_activityName`, `f_schemeId`) "
                                             "VALUES (:appName, :activityName, :schemeId);",
                                             {{":appName", MAKE_VAR(STRING, appName)}, {":activityName", MAKE_VAR(STRING, activityName)}, {":schemeId", MAKE_VAR(UINT32, schemeId)}});
+
+    if (lock)
+        _parent->m_mutex.unlock();
+    return r;
 }
 
 bool IdentityManager_DB::ApplicationActivities_DB::removeAuthenticationSchemeFromApplicationActivity(const std::string &appName, const std::string &activityName, const uint32_t &schemeId)

@@ -142,8 +142,8 @@ public:
         bool setApplicationActivityDefaultScheme(const std::string &appName, const std::string &activityName, const uint32_t &schemeId) override;
 
         std::set<uint32_t> listAuthenticationSchemesForApplicationActivity(const std::string &appName, const std::string &activityName) override;
-        bool addAuthenticationSchemeToApplicationActivity(const std::string &appName, const std::string &roleName, const uint32_t &schemeId) override;
-        bool removeAuthenticationSchemeFromApplicationActivity(const std::string &appName, const std::string &roleName, const uint32_t &schemeId) override;
+        bool addAuthenticationSchemeToApplicationActivity(const std::string &appName, const std::string &activityName, const uint32_t &schemeId, bool lock = true) override;
+        bool removeAuthenticationSchemeFromApplicationActivity(const std::string &appName, const std::string &activityName, const uint32_t &schemeId) override;
 
 
 

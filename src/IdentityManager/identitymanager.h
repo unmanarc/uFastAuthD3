@@ -227,7 +227,7 @@ public:
          */
         virtual bool setApplicationActivityDefaultScheme(const std::string &appName, const std::string &activityName, const uint32_t &schemeId) = 0;
         virtual std::set<uint32_t> listAuthenticationSchemesForApplicationActivity(const std::string &appName, const std::string &activityName) = 0;
-        virtual bool addAuthenticationSchemeToApplicationActivity(const std::string &appName, const std::string &activityName, const uint32_t &schemeId) = 0;
+        virtual bool addAuthenticationSchemeToApplicationActivity(const std::string &appName, const std::string &activityName, const uint32_t &schemeId, bool lock = true) = 0;
         virtual bool removeAuthenticationSchemeFromApplicationActivity(const std::string &appName, const std::string &activityName, const uint32_t &schemeId) = 0;
     };
 
