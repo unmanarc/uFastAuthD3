@@ -77,13 +77,13 @@ bool WebSessionAuthHandler_ServerImpl::createService()
     webSessionAuthHandlerServer->config.dynamicOriginValidator = myDynamicOriginValidatorFunction;
 
     // Setup the methods handler for version 1:
-    webSessionAuthHandlerServer->methodsHandler[1] = std::make_shared<API::RESTful::MethodsHandler>();
+    webSessionAuthHandlerServer->endpointsHandler[1] = std::make_shared<API::RESTful::Endpoints>();
 
     // This will validate the JWT, the app should match with this:
     webSessionAuthHandlerServer->config.appName = "IAM";
 
     // Add authentication methods
-    WebSessionAuthHandler_AuthMethods::addMethods(webSessionAuthHandlerServer->methodsHandler[1]);
+    WebSessionAuthHandler_AuthMethods::addEndpoints(webSessionAuthHandlerServer->endpointsHandler[1]);
 
     webSessionAuthHandlerServer->startInBackground();
 

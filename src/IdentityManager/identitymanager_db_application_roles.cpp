@@ -58,7 +58,7 @@ bool IdentityManager_DB::ApplicationRoles_DB::updateRoleDescription(const std::s
                                           {{":roleName", MAKE_VAR(STRING, roleName)}, {":roleDescription", MAKE_VAR(STRING, roleDescription)}, {":appName", MAKE_VAR(STRING, appName)}});
 }
 
-std::string IdentityManager_DB::ApplicationRoles_DB::getRoleDescription(const std::string &appName, const std::string &roleName)
+std::string IdentityManager_DB::ApplicationRoles_DB::getApplicationRoleDescription(const std::string &appName, const std::string &roleName)
 {
     Threads::Sync::Lock_RD lock(_parent->m_mutex);
     Abstract::STRING roleDescription;
@@ -71,7 +71,7 @@ std::string IdentityManager_DB::ApplicationRoles_DB::getRoleDescription(const st
     return "";
 }
 
-std::set<ApplicationRole> IdentityManager_DB::ApplicationRoles_DB::getRolesList(const std::string &appName)
+std::set<ApplicationRole> IdentityManager_DB::ApplicationRoles_DB::getApplicationRolesList(const std::string &appName)
 {
     std::set<ApplicationRole> ret;
     Threads::Sync::Lock_RD lock(_parent->m_mutex);
@@ -91,7 +91,7 @@ std::set<ApplicationRole> IdentityManager_DB::ApplicationRoles_DB::getRolesList(
     return ret;
 }
 
-std::set<std::string> IdentityManager_DB::ApplicationRoles_DB::getRoleAccounts(const std::string &appName, const std::string &roleName, bool lock)
+std::set<std::string> IdentityManager_DB::ApplicationRoles_DB::getApplicationRoleAccounts(const std::string &appName, const std::string &roleName, bool lock)
 {
     std::set<std::string> ret;
     if (lock)
@@ -110,7 +110,7 @@ std::set<std::string> IdentityManager_DB::ApplicationRoles_DB::getRoleAccounts(c
     return ret;
 }
 
-Json::Value IdentityManager_DB::ApplicationRoles_DB::searchRoles(const json &dataTablesFilters)
+Json::Value IdentityManager_DB::ApplicationRoles_DB::searchApplicationRoles(const json &dataTablesFilters)
 {
     Json::Value ret;
     Threads::Sync::Lock_RD lock(_parent->m_mutex);

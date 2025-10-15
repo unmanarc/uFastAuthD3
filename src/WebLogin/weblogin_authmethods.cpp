@@ -24,29 +24,26 @@ using namespace Mantids30::DataFormat;
 
 std::regex WebLogin_AuthMethods::originPattern = std::regex("^(https?://[^/]+)");
 
-void WebLogin_AuthMethods::addMethods(std::shared_ptr<MethodsHandler> methods)
+void WebLogin_AuthMethods::addEndpoints(std::shared_ptr<Endpoints> endpoints)
 {
-    using SecurityOptions = Mantids30::API::RESTful::MethodsHandler::SecurityOptions;
+    using SecurityOptions = Mantids30::API::RESTful::Endpoints::SecurityOptions;
 
     // AUTHENTICATION FUNCTIONS:
 
     // Web triggered events:
     // TODO: cuando requiere REQUIRE_JWT_COOKIE_AUTH implica que necesita validar que la aplicación sea la correcta (configurada)
+    endpoints->addEndpoint(Endpoints::POST, "preAuthorize",  SecurityOptions::NO_AUTH, {}, nullptr, &preAuthorize);
 
-    // The Login does not need previous authentication:
-    methods->addResource(MethodsHandler::POST, "preAuthorize", &preAuthorize, nullptr, SecurityOptions::NO_AUTH, {});
+    endpoints->addEndpoint(Endpoints::POST, "authorize",     SecurityOptions::NO_AUTH, {}, nullptr, &authorize);
 
-    //
-    methods->addResource(MethodsHandler::POST, "authorize", &authorize, nullptr, SecurityOptions::NO_AUTH, {});
-
-    // Transform the current authentication to the app authentication...
-    methods->addResource(MethodsHandler::POST, "token", &token, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {});
+        // Transform the current authentication to the app authentication...
+    endpoints->addEndpoint(Endpoints::POST, "token",         SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {}, nullptr, &token);
 
     // Logout only clear the cookie... it just does need a CSRF control method...
-    methods->addResource(MethodsHandler::POST, "logout", &logout, nullptr, SecurityOptions::NO_AUTH, {});
+    endpoints->addEndpoint(Endpoints::POST, "logout",        SecurityOptions::NO_AUTH, {}, nullptr, &logout);
 
     // Account registration:
-    //methods->addResource(MethodsHandler::POST, "registerAccount", &registerAccount, nullptr, SecurityOptions::NO_AUTH, {});
+    //endpoints->addEndpoint(Endpoints::POST, "registerAccount", nullptr, SecurityOptions::NO_AUTH, {}, nullptr, &registerAccount);
 
     // When requested by an external webste, no CSRF challenge could be sent by an external website... So your access token will be used to authenticate the refreshal...
     // In this premise, the refresher cookie is not know by your website (so if your website leaks the data),
@@ -57,15 +54,15 @@ void WebLogin_AuthMethods::addMethods(std::shared_ptr<MethodsHandler> methods)
     //   and... what you can do is: to validate the origin/referer.
 
     // Post-authenticated API:
-    //methods->addResource(MethodsHandler::POST, "retokenize", &retokenize, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {});
+    //endpoints->addEndpoint(Endpoints::POST, "retokenize", nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {}, nullptr, &retokenize);
     // The change credential dialog/html needs to send the CSRF challenge:
-    methods->addResource(MethodsHandler::POST, "changeCredential", &changeCredential, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {});
-    methods->addResource(MethodsHandler::POST, "listCredentials", &listCredentials, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {});
-    methods->addResource(MethodsHandler::POST, "accountCredentialPublicData", &accountCredentialPublicData, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {});
+    endpoints->addEndpoint(Endpoints::POST, "changeCredential",      SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {}, nullptr, &changeCredential);
+    endpoints->addEndpoint(Endpoints::POST, "listCredentials",       SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {}, nullptr, &listCredentials);
+    endpoints->addEndpoint(Endpoints::POST, "accountCredentialPublicData",  SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {}, nullptr, &accountCredentialPublicData);
 
     // Temporal tokens are also given trough an intermediate window...
-    //methods->addResource(MethodsHandler::POST, "tempMFAToken", &tempMFAToken, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {});
-    //    methods->addResource("addAccount",{&addAccount,auth});
+    //endpoints->addEndpoint(Endpoints::POST, "tempMFAToken", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {}, nullptr,&tempMFAToken);
+    //    endpoints->addEndpoint("addAccount",{&addAccount,auth});
 }
 
 bool WebLogin_AuthMethods::retrieveAndValidateAppOrigin(HTTPv1_Base::Request *request, const std::string &appName, const OriginSource &originSource)

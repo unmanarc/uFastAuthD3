@@ -8,13 +8,13 @@ using namespace Mantids30;
 using namespace Mantids30::Memory;
 using namespace Mantids30::Database;
 
-bool IdentityManager_DB::AuthController_DB::addApplicationScope(const ApplicationScope &applicationScope, const std::string &sDescription)
+bool IdentityManager_DB::AuthController_DB::addApplicationScope(const ApplicationScope &applicationScope)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
     return _parent->m_sqlConnector->execute("INSERT INTO iam.applicationScopes (`f_appName`,`scopeId`,`description`) VALUES(:appName,:scopeId,:description);",
                                           {{":appName", MAKE_VAR(STRING, applicationScope.appName)},
                                            {":scopeId", MAKE_VAR(STRING, applicationScope.id)},
-                                           {":description", MAKE_VAR(STRING, sDescription)}});
+                                           {":description", MAKE_VAR(STRING, applicationScope.description)}});
 }
 
 bool IdentityManager_DB::AuthController_DB::removeApplicationScope(const ApplicationScope &applicationScope)
@@ -86,13 +86,13 @@ bool IdentityManager_DB::AuthController_DB::removeApplicationScopeFromAccount(co
     return ret;
 }
 
-bool IdentityManager_DB::AuthController_DB::updateApplicationScopeDescription(const ApplicationScope &applicationScope, const std::string &description)
+bool IdentityManager_DB::AuthController_DB::updateApplicationScopeDescription(const ApplicationScope &applicationScope)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
     return _parent->m_sqlConnector->execute("UPDATE iam.applicationScopes SET `description`=:description WHERE `scopeId`=:scopeId AND `f_appName`=:appName;",
                                           {{":appName", MAKE_VAR(STRING, applicationScope.appName)},
                                            {":scopeId", MAKE_VAR(STRING, applicationScope.id)},
-                                           {":description", MAKE_VAR(STRING, description)}});
+                                           {":description", MAKE_VAR(STRING, applicationScope.description)}});
 }
 
 std::string IdentityManager_DB::AuthController_DB::getApplicationScopeDescription(const ApplicationScope &applicationScope)

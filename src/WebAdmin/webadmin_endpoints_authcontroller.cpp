@@ -1,4 +1,4 @@
-#include "webadmin_methods_authcontroller.h"
+#include "webadmin_endpoints_authcontroller.h"
 #include "../globals.h"
 #include "json/value.h"
 #include <Mantids30/Program_Logs/applog.h>
@@ -8,28 +8,28 @@ using namespace Mantids30::Program;
 using namespace Mantids30;
 using namespace Mantids30::Network::Protocols;
 
-void WebAdmin_Methods_AuthController::addMethods_AuthController(std::shared_ptr<MethodsHandler> methods)
+void WebAdmin_Endpoints_AuthController::addEndpoints_AuthController(std::shared_ptr<Endpoints> endpoints)
 {
-    using SecurityOptions = Mantids30::API::RESTful::MethodsHandler::SecurityOptions;
+    using SecurityOptions = Mantids30::API::RESTful::Endpoints::SecurityOptions;
 
-    methods->addResource(MethodsHandler::GET, "listAuthenticationSlots", &listAuthenticationSlots, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"AUTH_READ"});
-    methods->addResource(MethodsHandler::POST, "addNewAuthenticationSlot", &addNewAuthenticationSlot, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"AUTH_WRITE"});
-    methods->addResource(MethodsHandler::DELETE, "deleteAuthenticationSlot", &deleteAuthenticationSlot, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"AUTH_DELETE"});
-    methods->addResource(MethodsHandler::PATCH, "updateAuthenticationSlot", &updateAuthenticationSlot, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"AUTH_MODIFY"});
+    endpoints->addEndpoint(Endpoints::GET,    "listAuthenticationSlots",     SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"AUTH_READ"},     nullptr, &listAuthenticationSlots);
+    endpoints->addEndpoint(Endpoints::POST,   "addNewAuthenticationSlot",    SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"AUTH_WRITE"},    nullptr, &addNewAuthenticationSlot);
+    endpoints->addEndpoint(Endpoints::DELETE, "deleteAuthenticationSlot",    SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"AUTH_DELETE"},   nullptr, &deleteAuthenticationSlot);
+    endpoints->addEndpoint(Endpoints::PATCH,  "updateAuthenticationSlot",    SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"AUTH_MODIFY"},   nullptr, &updateAuthenticationSlot);
 
-    methods->addResource(MethodsHandler::POST, "addNewAuthenticationScheme", &addNewAuthenticationScheme, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"AUTH_WRITE"});
-    methods->addResource(MethodsHandler::GET, "listAuthenticationSchemes", &listAuthenticationSchemes, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"AUTH_READ"});
-    methods->addResource(MethodsHandler::DELETE, "deleteAuthenticationScheme", &deleteAuthenticationScheme, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"AUTH_DELETE"});
-    methods->addResource(MethodsHandler::PATCH, "updateAuthenticationScheme", &updateAuthenticationScheme, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"AUTH_DELETE"});
+    endpoints->addEndpoint(Endpoints::POST,   "addNewAuthenticationScheme",  SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"AUTH_WRITE"},    nullptr, &addNewAuthenticationScheme);
+    endpoints->addEndpoint(Endpoints::GET,    "listAuthenticationSchemes",   SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"AUTH_READ"},     nullptr, &listAuthenticationSchemes);
+    endpoints->addEndpoint(Endpoints::DELETE, "deleteAuthenticationScheme",  SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"AUTH_DELETE"},   nullptr, &deleteAuthenticationScheme);
+    endpoints->addEndpoint(Endpoints::PATCH,  "updateAuthenticationScheme",  SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"AUTH_DELETE"},   nullptr, &updateAuthenticationScheme);
 
-    methods->addResource(MethodsHandler::GET, "listAuthenticationSlotsUsedByScheme", &listAuthenticationSlotsUsedByScheme, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"AUTH_READ"});
-    methods->addResource(MethodsHandler::PATCH, "updateAuthenticationSlotsUsedByScheme", &updateAuthenticationSlotsUsedByScheme, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"AUTH_MODIFY"});
+    endpoints->addEndpoint(Endpoints::GET,    "listAuthenticationSlotsUsedByScheme", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"AUTH_READ"},     nullptr, &listAuthenticationSlotsUsedByScheme);
+    endpoints->addEndpoint(Endpoints::PATCH,  "updateAuthenticationSlotsUsedByScheme", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"AUTH_MODIFY"},   nullptr, &updateAuthenticationSlotsUsedByScheme);
 
-    methods->addResource(MethodsHandler::GET, "getDefaultAuthScheme", &getDefaultAuthScheme, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"AUTH_READ"});
-    methods->addResource(MethodsHandler::PATCH, "updateDefaultAuthScheme", &updateDefaultAuthScheme, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"AUTH_MODIFY"});
+    endpoints->addEndpoint(Endpoints::GET,    "getDefaultAuthScheme",        SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"AUTH_READ"},     nullptr, &getDefaultAuthScheme);
+    endpoints->addEndpoint(Endpoints::PATCH,  "updateDefaultAuthScheme",     SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"AUTH_MODIFY"},   nullptr, &updateDefaultAuthScheme);
 
 }
-WebAdmin_Methods_AuthController::APIReturn WebAdmin_Methods_AuthController::updateDefaultAuthScheme(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+WebAdmin_Endpoints_AuthController::APIReturn WebAdmin_Endpoints_AuthController::updateDefaultAuthScheme(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     auto authController = Globals::getIdentityManager()->authController;
 
@@ -49,7 +49,7 @@ WebAdmin_Methods_AuthController::APIReturn WebAdmin_Methods_AuthController::upda
     return APIReturn();
 }
 
-WebAdmin_Methods_AuthController::APIReturn WebAdmin_Methods_AuthController::getDefaultAuthScheme(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+WebAdmin_Endpoints_AuthController::APIReturn WebAdmin_Endpoints_AuthController::getDefaultAuthScheme(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     auto authController = Globals::getIdentityManager()->authController;
 
@@ -67,7 +67,7 @@ WebAdmin_Methods_AuthController::APIReturn WebAdmin_Methods_AuthController::getD
     return response;
 }
 
-API::APIReturn WebAdmin_Methods_AuthController::addNewAuthenticationScheme(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn WebAdmin_Endpoints_AuthController::addNewAuthenticationScheme(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
     std::optional<uint32_t> r = Globals::getIdentityManager()->authController->addAuthenticationScheme(JSON_ASSTRING(*request.inputJSON,"description",""));
@@ -79,7 +79,7 @@ API::APIReturn WebAdmin_Methods_AuthController::addNewAuthenticationScheme(void 
     return response;
 }
 
-API::APIReturn WebAdmin_Methods_AuthController::listAuthenticationSchemes(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn WebAdmin_Endpoints_AuthController::listAuthenticationSchemes(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
     std::map<uint32_t, std::string> slots = Globals::getIdentityManager()->authController->listAuthenticationSchemes();
@@ -106,7 +106,7 @@ API::APIReturn WebAdmin_Methods_AuthController::listAuthenticationSchemes(void *
 
 }
 
-API::APIReturn WebAdmin_Methods_AuthController::deleteAuthenticationScheme(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn WebAdmin_Endpoints_AuthController::deleteAuthenticationScheme(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
     uint32_t schemeId = JSON_ASUINT(*request.inputJSON, "schemeId", 0);
@@ -119,7 +119,7 @@ API::APIReturn WebAdmin_Methods_AuthController::deleteAuthenticationScheme(void 
 
 }
 
-API::APIReturn WebAdmin_Methods_AuthController::updateAuthenticationScheme(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn WebAdmin_Endpoints_AuthController::updateAuthenticationScheme(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
@@ -134,7 +134,7 @@ API::APIReturn WebAdmin_Methods_AuthController::updateAuthenticationScheme(void 
     return response;
 }
 
-API::APIReturn WebAdmin_Methods_AuthController::listAuthenticationSlotsUsedByScheme(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn WebAdmin_Endpoints_AuthController::listAuthenticationSlotsUsedByScheme(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
@@ -172,7 +172,7 @@ API::APIReturn WebAdmin_Methods_AuthController::listAuthenticationSlotsUsedBySch
 
 }
 
-API::APIReturn WebAdmin_Methods_AuthController::updateAuthenticationSlotsUsedByScheme(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn WebAdmin_Endpoints_AuthController::updateAuthenticationSlotsUsedByScheme(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
@@ -195,7 +195,7 @@ API::APIReturn WebAdmin_Methods_AuthController::updateAuthenticationSlotsUsedByS
 
 }
 
-API::APIReturn WebAdmin_Methods_AuthController::listAuthenticationSlots(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn WebAdmin_Endpoints_AuthController::listAuthenticationSlots(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
@@ -213,7 +213,7 @@ API::APIReturn WebAdmin_Methods_AuthController::listAuthenticationSlots(void *co
 
 }
 
-API::APIReturn WebAdmin_Methods_AuthController::addNewAuthenticationSlot(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn WebAdmin_Endpoints_AuthController::addNewAuthenticationSlot(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
@@ -229,7 +229,7 @@ API::APIReturn WebAdmin_Methods_AuthController::addNewAuthenticationSlot(void *c
 
 }
 
-API::APIReturn WebAdmin_Methods_AuthController::deleteAuthenticationSlot(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn WebAdmin_Endpoints_AuthController::deleteAuthenticationSlot(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
@@ -244,7 +244,7 @@ API::APIReturn WebAdmin_Methods_AuthController::deleteAuthenticationSlot(void *c
 
 }
 
-API::APIReturn WebAdmin_Methods_AuthController::updateAuthenticationSlot(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn WebAdmin_Endpoints_AuthController::updateAuthenticationSlot(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 

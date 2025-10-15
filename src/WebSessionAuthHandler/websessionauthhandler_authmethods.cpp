@@ -22,17 +22,17 @@ using namespace Mantids30::API::RESTful;
 using namespace Mantids30::Network::Protocols;
 using namespace Mantids30::DataFormat;
 
-void WebSessionAuthHandler_AuthMethods::addMethods(std::shared_ptr<MethodsHandler> methods)
+void WebSessionAuthHandler_AuthMethods::addEndpoints(std::shared_ptr<Endpoints> endpoints)
 {
-    using SecurityOptions = Mantids30::API::RESTful::MethodsHandler::SecurityOptions;
+    using SecurityOptions = Mantids30::API::RESTful::Endpoints::SecurityOptions;
 
     // AUTHENTICATION FUNCTIONS:
 
     // Web triggered events:
-    methods->addResource(MethodsHandler::POST, "logout", &appLogout, nullptr, SecurityOptions::NO_AUTH, {});
-    methods->addResource(MethodsHandler::POST, "refreshAccessToken", &refreshAccessToken, nullptr, SecurityOptions::NO_AUTH, {});
-//    methods->addResource(MethodsHandler::POST, "refreshRefresherToken", &refreshRefresherToken, nullptr, SecurityOptions::NO_AUTH, {});
-    methods->addResource(MethodsHandler::POST, "callback", &callback, nullptr, SecurityOptions::NO_AUTH, {});
+    endpoints->addEndpoint(Endpoints::POST, "logout", SecurityOptions::NO_AUTH, {}, nullptr,  &appLogout);
+    endpoints->addEndpoint(Endpoints::POST, "refreshAccessToken", SecurityOptions::NO_AUTH, {}, nullptr, &refreshAccessToken);
+//    endpoints->addEndpoint(Endpoints::POST, "refreshRefresherToken", SecurityOptions::NO_AUTH, {},nullptr, &refreshRefresherToken );
+    endpoints->addEndpoint(Endpoints::POST, "callback", SecurityOptions::NO_AUTH, {}, nullptr, &callback);
 }
 
 bool WebSessionAuthHandler_AuthMethods::validateAPIKey(const std::string &app, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)

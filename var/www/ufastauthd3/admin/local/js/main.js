@@ -62,9 +62,9 @@ function ajaxLoadInfo() {
   csrfReady();
 }
 
-function ajaxRemoteExecuteMethod( methodPermLevel, target, methodName, payload, successFunction  ) {
+function ajaxRemoteExecuteMethod( methodPermLevel, target, endpointName, payload, successFunction  ) {
   var method = "remote." + methodPermLevel;
-  var payloadData = { "target": target, "remoteMethod": methodPermLevel + "." + methodName, "payload" : payload }
+  var payloadData = { "target": target, "remoteMethod": methodPermLevel + "." + endpointName, "payload" : payload }
   $.ajax({
     url: '/japi_exec?method=' + method,
     type: 'POST',
@@ -78,9 +78,9 @@ function ajaxRemoteExecuteMethod( methodPermLevel, target, methodName, payload, 
   });
 }
 
-function ajaxExecuteMethod( methodName, payloadData, successFunction ) {
+function ajaxExecuteMethod( endpointName, payloadData, successFunction ) {
   $.ajax({
-    url: '/japi_exec?method=' + methodName,
+    url: '/japi_exec?method=' + endpointName,
     type: 'POST',
     headers: { "CSRFToken": csrfToken },
     data: { payload: JSON.stringify(payloadData) },

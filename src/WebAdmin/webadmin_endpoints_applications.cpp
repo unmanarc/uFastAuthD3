@@ -1,4 +1,4 @@
-#include "webadmin_methods_applications.h"
+#include "webadmin_endpoints_applications.h"
 
 #include "../globals.h"
 #include "Mantids30/Protocol_HTTP/api_return.h"
@@ -12,45 +12,43 @@ using namespace Mantids30::Network::Protocols;
 
 using ClientDetails = Mantids30::Sessions::ClientDetails;
 
-void WebAdminMethods_Applications::addMethods_Applications(std::shared_ptr<MethodsHandler> methods)
+void WebAdminMethods_Applications::addEndpoints_Applications(std::shared_ptr<Endpoints> endpoints)
 {
-    using SecurityOptions = Mantids30::API::RESTful::MethodsHandler::SecurityOptions;
-    methods->addResource(MethodsHandler::GET, "searchApplications", &searchApplications, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
-    methods->addResource(MethodsHandler::DELETE, "removeApplication", &removeApplication, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_DELETE"});
-    methods->addResource(MethodsHandler::POST, "addApplication", &addApplication, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_CREATE"});
-    methods->addResource(MethodsHandler::GET, "doesApplicationExist", &doesApplicationExist, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
-    methods->addResource(MethodsHandler::GET, "getApplicationInfo", &getApplicationInfo, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
-    methods->addResource(MethodsHandler::PATCH, "updateApplicationDetails", &updateApplicationDetails, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"});
-    methods->addResource(MethodsHandler::PATCH, "updateApplicationAPIKey", &updateApplicationAPIKey, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"});
-    methods->addResource(MethodsHandler::PATCH, "updateWebLoginJWTConfigForApplication", &updateWebLoginJWTConfigForApplication, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"});
-    methods->addResource(MethodsHandler::PATCH, "updateApplicationLoginCallbackURI", &updateApplicationLoginCallbackURI, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"});
+    using SecurityOptions = Mantids30::API::RESTful::Endpoints::SecurityOptions;
+    endpoints->addEndpoint(Endpoints::GET,    "searchApplications",     SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"},     nullptr, &searchApplications);
+    endpoints->addEndpoint(Endpoints::DELETE, "removeApplication",      SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_DELETE"},   nullptr, &removeApplication);
+    endpoints->addEndpoint(Endpoints::POST,   "addApplication",         SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_CREATE"},   nullptr, &addApplication);
+    endpoints->addEndpoint(Endpoints::GET,    "doesApplicationExist",   SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"},     nullptr, &doesApplicationExist);
+    endpoints->addEndpoint(Endpoints::GET,    "getApplicationInfo",     SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"},     nullptr, &getApplicationInfo);
+    endpoints->addEndpoint(Endpoints::PATCH,  "updateApplicationDetails", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"},   nullptr, &updateApplicationDetails);
+    endpoints->addEndpoint(Endpoints::PATCH,  "updateApplicationAPIKey", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"},   nullptr, &updateApplicationAPIKey);
+    endpoints->addEndpoint(Endpoints::PATCH,  "updateWebLoginJWTConfigForApplication", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"},   nullptr, &updateWebLoginJWTConfigForApplication);
+    endpoints->addEndpoint(Endpoints::PATCH,  "updateApplicationLoginCallbackURI", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"},   nullptr, &updateApplicationLoginCallbackURI);
 
+    endpoints->addEndpoint(Endpoints::PUT,    "addApplicationLoginOrigin", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"},   nullptr, &addApplicationLoginOrigin);
+    endpoints->addEndpoint(Endpoints::DELETE, "removeApplicationLoginOrigin", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"},   nullptr, &removeApplicationLoginOrigin);
 
-
-    methods->addResource(MethodsHandler::PUT, "addApplicationLoginOrigin", &addApplicationLoginOrigin, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"});
-    methods->addResource(MethodsHandler::DELETE, "removeApplicationLoginOrigin", &removeApplicationLoginOrigin, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"});
-
-    methods->addResource(MethodsHandler::PUT, "addApplicationLoginRedirectURI", &addApplicationLoginRedirectURI, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"});
-    methods->addResource(MethodsHandler::DELETE, "removeApplicationLoginRedirectURI", &removeApplicationLoginRedirectURI, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"});
+    endpoints->addEndpoint(Endpoints::PUT,    "addApplicationLoginRedirectURI", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"},   nullptr, &addApplicationLoginRedirectURI);
+    endpoints->addEndpoint(Endpoints::DELETE, "removeApplicationLoginRedirectURI", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"},   nullptr, &removeApplicationLoginRedirectURI);
 
     // Applications
    /*
-    methods->addResource(MethodsHandler::GET, "getApplicationDescription", &getApplicationDescription, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
-    methods->addResource(MethodsHandler::GET, "listApplications", &listApplications, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
-    methods->addResource(MethodsHandler::GET, "validateApplicationOwner", &validateApplicationOwner, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
-    methods->addResource(MethodsHandler::GET, "validateApplicationAccount", &validateApplicationAccount, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
-    methods->addResource(MethodsHandler::GET, "listApplicationOwners", &listApplicationOwners, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
-    methods->addResource(MethodsHandler::GET, "listApplicationAccounts", &listApplicationAccounts, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
-    methods->addResource(MethodsHandler::GET, "listAccountApplications", &listAccountApplications, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
-    methods->addResource(MethodsHandler::POST, "addApplicationOwner", &addApplicationOwner, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"});
-    methods->addResource(MethodsHandler::POST, "removeApplicationOwner", &removeApplicationOwner, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"});
-    methods->addResource(MethodsHandler::GET, "getWebLoginJWTConfigFromApplication", &getWebLoginJWTConfigFromApplication, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
-    methods->addResource(MethodsHandler::POST, "setWebLoginJWTSigningKeyForApplication", &setWebLoginJWTSigningKeyForApplication, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"});
-    methods->addResource(MethodsHandler::GET, "getWebLoginJWTSigningKeyForApplication", &getWebLoginJWTSigningKeyForApplication, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
-    methods->addResource(MethodsHandler::POST, "addWebLoginRedirectURIToApplication", &addWebLoginRedirectURIToApplication, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"});
-    methods->addResource(MethodsHandler::POST, "removeWebLoginRedirectURIToApplication", &removeWebLoginRedirectURIToApplication, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"});
-    methods->addResource(MethodsHandler::GET, "listWebLoginRedirectURIsFromApplication", &listWebLoginRedirectURIsFromApplication, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
-    methods->addResource(MethodsHandler::GET, "listWebLoginOriginUrlsFromApplication", &listWebLoginOriginUrlsFromApplication, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});*/
+    endpoints->addEndpoint(Endpoints::GET, "getApplicationDescription", &getApplicationDescription, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
+    endpoints->addEndpoint(Endpoints::GET, "listApplications", &listApplications, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
+    endpoints->addEndpoint(Endpoints::GET, "validateApplicationOwner", &validateApplicationOwner, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
+    endpoints->addEndpoint(Endpoints::GET, "validateApplicationAccount", &validateApplicationAccount, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
+    endpoints->addEndpoint(Endpoints::GET, "listApplicationOwners", &listApplicationOwners, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
+    endpoints->addEndpoint(Endpoints::GET, "listApplicationAccounts", &listApplicationAccounts, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
+    endpoints->addEndpoint(Endpoints::GET, "listAccountApplications", &listAccountApplications, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
+    endpoints->addEndpoint(Endpoints::POST, "addApplicationOwner", &addApplicationOwner, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"});
+    endpoints->addEndpoint(Endpoints::POST, "removeApplicationOwner", &removeApplicationOwner, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"});
+    endpoints->addEndpoint(Endpoints::GET, "getWebLoginJWTConfigFromApplication", &getWebLoginJWTConfigFromApplication, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
+    endpoints->addEndpoint(Endpoints::POST, "setWebLoginJWTSigningKeyForApplication", &setWebLoginJWTSigningKeyForApplication, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"});
+    endpoints->addEndpoint(Endpoints::GET, "getWebLoginJWTSigningKeyForApplication", &getWebLoginJWTSigningKeyForApplication, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
+    endpoints->addEndpoint(Endpoints::POST, "addWebLoginRedirectURIToApplication", &addWebLoginRedirectURIToApplication, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"});
+    endpoints->addEndpoint(Endpoints::POST, "removeWebLoginRedirectURIToApplication", &removeWebLoginRedirectURIToApplication, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"});
+    endpoints->addEndpoint(Endpoints::GET, "listWebLoginRedirectURIsFromApplication", &listWebLoginRedirectURIsFromApplication, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
+    endpoints->addEndpoint(Endpoints::GET, "listWebLoginOriginUrlsFromApplication", &listWebLoginOriginUrlsFromApplication, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});*/
 }
 
 

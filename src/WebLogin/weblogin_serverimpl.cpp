@@ -46,10 +46,10 @@ bool WebLogin_ServerImpl::createService()
     loginWebServer->config.appName = "IAM";
 
     // Setup the methods handler for version 1:
-    loginWebServer->methodsHandler[1] = std::make_shared<API::RESTful::MethodsHandler>();
+    loginWebServer->endpointsHandler[1] = std::make_shared<API::RESTful::Endpoints>();
 
     // Add authentication methods
-    WebLogin_AuthMethods::addMethods(loginWebServer->methodsHandler[1]);
+    WebLogin_AuthMethods::addEndpoints(loginWebServer->endpointsHandler[1]);
 
     loginWebServer->startInBackground();
 

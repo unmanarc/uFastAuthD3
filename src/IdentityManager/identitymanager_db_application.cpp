@@ -34,7 +34,7 @@ bool IdentityManager_DB::Applications_DB::addApplication(const std::string &appN
 
         // Insert into iam.applications.
         bool appInsertSuccess = _parent->m_sqlConnector->execute("INSERT INTO iam.applications (`appName`, `f_appCreator`, `appDescription`, `apiKey`, `canManualModifyScope`, `appSyncEnabled`) VALUES (:appName, "
-                                                                 ":appCreator, :description, :apiKey, :canManualModifyScope);",
+                                                                 ":appCreator, :description, :apiKey, :canManualModifyScope, :appSyncEnabled);",
                                                                  {
                                                                   {":appName", MAKE_VAR(STRING, appName)},
                                                                   {":appCreator", MAKE_VAR(STRING, sOwnerAccountName)},

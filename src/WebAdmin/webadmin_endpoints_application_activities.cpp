@@ -1,4 +1,4 @@
-#include "webadmin_methods_application_activities.h"
+#include "webadmin_endpoints_application_activities.h"
 
 #include "../globals.h"
 #include <Mantids30/Program_Logs/applog.h>
@@ -11,22 +11,22 @@ using namespace Mantids30;
 
 using namespace Mantids30::Network::Protocols;
 
-void WebAdminMethods_ApplicationActivities::addMethods_Activities(std::shared_ptr<MethodsHandler> methods)
+void WebAdminMethods_ApplicationActivities::addEndpoints_Activities(std::shared_ptr<Endpoints> endpoints)
 {
-    using SecurityOptions = Mantids30::API::RESTful::MethodsHandler::SecurityOptions;
+    using SecurityOptions = Mantids30::API::RESTful::Endpoints::SecurityOptions;
 
-    methods->addResource(MethodsHandler::GET, "getActivityInfo", &getActivityInfo, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
-    methods->addResource(MethodsHandler::GET, "listApplicationActivities", &listApplicationActivities, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
-    methods->addResource(MethodsHandler::POST, "addApplicationActivity", &addApplicationActivity, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"});
-    methods->addResource(MethodsHandler::DELETE, "removeApplicationActivity", &removeApplicationActivity, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"});
+    endpoints->addEndpoint(Endpoints::GET,    "getActivityInfo",           SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"},  nullptr, &getActivityInfo);
+    endpoints->addEndpoint(Endpoints::GET,    "listApplicationActivities", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"},  nullptr, &listApplicationActivities);
+    endpoints->addEndpoint(Endpoints::POST,   "addApplicationActivity",    SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"}, nullptr, &addApplicationActivity);
+    endpoints->addEndpoint(Endpoints::DELETE, "removeApplicationActivity", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"}, nullptr, &removeApplicationActivity);
 
-    methods->addResource(MethodsHandler::PATCH, "updateActivityDescription", &updateActivityDescription, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"});
-    methods->addResource(MethodsHandler::PATCH, "updateActivityParentActivity", &updateActivityParentActivity, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"});
+    endpoints->addEndpoint(Endpoints::PATCH, "updateActivityDescription",      SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"}, nullptr, &updateActivityDescription);
+    endpoints->addEndpoint(Endpoints::PATCH, "updateActivityParentActivity",   SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"}, nullptr, &updateActivityParentActivity);
 
-    methods->addResource(MethodsHandler::POST, "addSchemeToApplicationActivity", &addSchemeToApplicationActivity, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"});
-    methods->addResource(MethodsHandler::DELETE, "removeSchemeFromApplicationActivity", &removeSchemeFromApplicationActivity, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"});
+    endpoints->addEndpoint(Endpoints::POST,  "addSchemeToApplicationActivity", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"}, nullptr, &addSchemeToApplicationActivity);
+    endpoints->addEndpoint(Endpoints::DELETE, "removeSchemeFromApplicationActivity", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"}, nullptr, &removeSchemeFromApplicationActivity);
 
-    methods->addResource(MethodsHandler::PATCH, "updateDefaultSchemeOnApplicationActivity", &updateDefaultSchemeOnApplicationActivity, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"});
+    endpoints->addEndpoint(Endpoints::PATCH, "updateDefaultSchemeOnApplicationActivity", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"}, nullptr, &updateDefaultSchemeOnApplicationActivity);
 }
 
 API::APIReturn WebAdminMethods_ApplicationActivities::updateDefaultSchemeOnApplicationActivity(void *context, const RequestParameters &request, ClientDetails &authClientDetails)

@@ -1,44 +1,43 @@
-#include "webadmin_methods_application_roles.h"
+#include "webadmin_endpoints_application_roles.h"
 
 #include "../globals.h"
 #include <Mantids30/Program_Logs/applog.h>
 
-#include "webadmin_methods.h"
+#include "webadmin_endpoints.h"
 
 using namespace Mantids30::Program;
 using namespace Mantids30;
 
 using namespace Mantids30::Network::Protocols;
 
-void WebAdminMethods_ApplicationRoles::addMethods_Roles(std::shared_ptr<MethodsHandler> methods)
+void WebAdminMethods_ApplicationRoles::addEndpoints_Roles(std::shared_ptr<Endpoints> endpoints)
 {
-    using SecurityOptions = Mantids30::API::RESTful::MethodsHandler::SecurityOptions;
-    methods->addResource(MethodsHandler::GET, "searchRoles", &searchRoles, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
-    methods->addResource(MethodsHandler::POST, "addRole", &addRole, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"});
-    methods->addResource(MethodsHandler::GET, "getRoleInfo", &getRoleInfo, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
-    methods->addResource(MethodsHandler::PATCH, "updateRoleDescription", &updateRoleDescription, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"});
-    methods->addResource(MethodsHandler::DELETE, "removeRole", &removeRole, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"});
-
+    using SecurityOptions = Mantids30::API::RESTful::Endpoints::SecurityOptions;
+    endpoints->addEndpoint(Endpoints::GET,    "searchApplicationRoles",        SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"},     nullptr, &searchApplicationRoles);
+    endpoints->addEndpoint(Endpoints::POST,   "addRole",            SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"},   nullptr, &addRole);
+    endpoints->addEndpoint(Endpoints::GET,    "getRoleInfo",        SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"},     nullptr, &getRoleInfo);
+    endpoints->addEndpoint(Endpoints::PATCH,  "updateRoleDescription",SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"},   nullptr, &updateRoleDescription);
+    endpoints->addEndpoint(Endpoints::DELETE, "removeRole",         SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"},   nullptr, &removeRole);
     // Accounts roles:
-    methods->addResource(MethodsHandler::POST, "addApplicationRoleToAccount", &addApplicationRoleToAccount, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"});
-    methods->addResource(MethodsHandler::DELETE, "removeApplicationRoleFromAccount", &removeApplicationRoleFromAccount, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"});
+    endpoints->addEndpoint(Endpoints::POST,   "addApplicationRoleToAccount", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"}, nullptr, &addApplicationRoleToAccount);
+    endpoints->addEndpoint(Endpoints::DELETE, "removeApplicationRoleFromAccount", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"}, nullptr, &removeApplicationRoleFromAccount);
 
 
     // Roles
     /*
-    methods->addResource(MethodsHandler::GET, "doesRoleExist", &doesRoleExist, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
-    methods->addResource(MethodsHandler::GET, "validateApplicationScopeOnRole", &validateApplicationScopeOnRole, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
-    methods->addResource(MethodsHandler::GET, "getRoleDescription", &getRoleDescription, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
-    methods->addResource(MethodsHandler::GET, "getRolesList", &getRolesList, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
-    methods->addResource(MethodsHandler::GET, "getRoleApplicationScopes", &getRoleApplicationScopes, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
-    methods->addResource(MethodsHandler::GET, "getRoleAccounts", &getRoleAccounts, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
+    endpoints->addEndpoint(Endpoints::GET, "doesRoleExist", &doesRoleExist, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
+    endpoints->addEndpoint(Endpoints::GET, "validateApplicationScopeOnRole", &validateApplicationScopeOnRole, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
+    endpoints->addEndpoint(Endpoints::GET, "getApplicationRoleDescription", &getApplicationRoleDescription, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
+    endpoints->addEndpoint(Endpoints::GET, "getApplicationRolesList", &getApplicationRolesList, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
+    endpoints->addEndpoint(Endpoints::GET, "getRoleApplicationScopes", &getRoleApplicationScopes, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
+    endpoints->addEndpoint(Endpoints::GET, "getApplicationRoleAccounts", &getApplicationRoleAccounts, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
     */
 }
 
 
-API::APIReturn WebAdminMethods_ApplicationRoles::searchRoles(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn WebAdminMethods_ApplicationRoles::searchApplicationRoles(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
-    return Globals::getIdentityManager()->applicationRoles->searchRoles(*request.inputJSON);
+    return Globals::getIdentityManager()->applicationRoles->searchApplicationRoles(*request.inputJSON);
 }
 
 API::APIReturn WebAdminMethods_ApplicationRoles::updateRoleDescription(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
@@ -130,10 +129,10 @@ API::APIReturn WebAdminMethods_ApplicationRoles::getRoleInfo(void *context, cons
         return response;
     }
 
-    payloadOut["details"]["description"] = Globals::getIdentityManager()->applicationRoles->getRoleDescription(appName,roleName);
+    payloadOut["details"]["description"] = Globals::getIdentityManager()->applicationRoles->getApplicationRoleDescription(appName,roleName);
 
     int i = 0;
-    std::set<std::string> roleAccounts = Globals::getIdentityManager()->applicationRoles->getRoleAccounts(appName,roleName);
+    std::set<std::string> roleAccounts = Globals::getIdentityManager()->applicationRoles->getApplicationRoleAccounts(appName,roleName);
     for (const std::string &accountName : roleAccounts)
     {
         payloadOut["accounts"][i] = accountName;
@@ -276,31 +275,31 @@ void WebAdminMethods_ApplicationRoles::validateApplicationScopeOnRole(void *cont
                                                                                                                      JSON_ASSTRING(*request.inputJSON, "id", "")});
 }
 
-void WebAdminMethods_ApplicationRoles::getRoleDescription(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+void WebAdminMethods_ApplicationRoles::getApplicationRoleDescription(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
-    (*response.responseJSON()) = Globals::getIdentityManager()->roles->getRoleDescription(JSON_ASSTRING(*request.inputJSON, "roleName", ""));
+    (*response.responseJSON()) = Globals::getIdentityManager()->roles->getApplicationRoleDescription(JSON_ASSTRING(*request.inputJSON, "roleName", ""));
 }
 
-void WebAdminMethods_ApplicationRoles::getRolesList(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+void WebAdminMethods_ApplicationRoles::getApplicationRolesList(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
-    (*response.responseJSON()) = Helpers::setToJSON(Globals::getIdentityManager()->roles->getRolesList());
+    (*response.responseJSON()) = Helpers::setToJSON(Globals::getIdentityManager()->roles->getApplicationRolesList());
 }
 
 void WebAdminMethods_ApplicationRoles::getRoleApplicationScopes(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
-    (*response.responseJSON()) = WebAdmin_Methods::scopeListToJSON(Globals::getIdentityManager()->authController->getRoleApplicationScopes(JSON_ASSTRING(*request.inputJSON, "roleName", "")));
+    (*response.responseJSON()) = WebAdmin_Endpoints::scopeListToJSON(Globals::getIdentityManager()->authController->getRoleApplicationScopes(JSON_ASSTRING(*request.inputJSON, "roleName", "")));
 }
 
-void WebAdminMethods_ApplicationRoles::getRoleAccounts(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+void WebAdminMethods_ApplicationRoles::getApplicationRoleAccounts(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
-    (*response.responseJSON()) = Helpers::setToJSON(Globals::getIdentityManager()->roles->getRoleAccounts(JSON_ASSTRING(*request.inputJSON, "roleName", "")));
+    (*response.responseJSON()) = Helpers::setToJSON(Globals::getIdentityManager()->roles->getApplicationRoleAccounts(JSON_ASSTRING(*request.inputJSON, "roleName", "")));
 }
 
-void WebAdminMethods_ApplicationRoles::searchRoles(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+void WebAdminMethods_ApplicationRoles::searchApplicationRoles(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     json x;
     int i = 0;
-    for (const auto &strVal : Globals::getIdentityManager()->roles->searchRoles(JSON_ASSTRING(*request.inputJSON, "searchWords", ""), JSON_ASUINT64(*request.inputJSON, "limit", 0),
+    for (const auto &strVal : Globals::getIdentityManager()->roles->searchApplicationRoles(JSON_ASSTRING(*request.inputJSON, "searchWords", ""), JSON_ASUINT64(*request.inputJSON, "limit", 0),
                                                                                 JSON_ASUINT64(*request.inputJSON, "offset", 0)))
     {
         x[i]["description"] = strVal.description;

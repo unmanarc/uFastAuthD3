@@ -1,7 +1,7 @@
 #pragma once
 
 #include "IdentityManager/identitymanager.h"
-#include <Mantids30/API_RESTful/methodshandler.h>
+#include <Mantids30/API_RESTful/endpointshandler.h>
 #include <Mantids30/Helpers/json.h>
 #include <Mantids30/Protocol_HTTP/httpv1_base.h>
 
@@ -11,7 +11,7 @@
 class WebSessionAuthHandler_AuthMethods
 {
 public:
-    using MethodsHandler = Mantids30::API::RESTful::MethodsHandler;
+    using Endpoints = Mantids30::API::RESTful::Endpoints;
     using APIReturn = Mantids30::API::APIReturn;
     using RequestParameters = Mantids30::API::RESTful::RequestParameters;
     using HTTPv1_Base = Mantids30::Network::Protocols::HTTP::HTTPv1_Base;
@@ -20,9 +20,9 @@ public:
 
     /**
     * @brief Adds the available login authentication methods as server functions.
-    * @param methods The MethodsHandler to which the authentication methods will be added.
+    * @param methods The Endpoints to which the authentication methods will be added.
     */
-    static void addMethods(std::shared_ptr<MethodsHandler> methods);
+    static void addEndpoints(std::shared_ptr<Endpoints> endpoints);
 
     // Remote triggered:
     static APIReturn refreshAccessToken(void *context, const RequestParameters &request, ClientDetails &authClientDetails);

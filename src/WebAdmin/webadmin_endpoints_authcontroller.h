@@ -1,19 +1,19 @@
 #pragma once
 
-#include <Mantids30/API_RESTful/methodshandler.h>
+#include <Mantids30/API_RESTful/endpointshandler.h>
 #include <Mantids30/Helpers/json.h>
 #include <Mantids30/Protocol_HTTP/httpv1_base.h>
 
-class WebAdmin_Methods_AuthController
+class WebAdmin_Endpoints_AuthController
 {
 public:
-    using MethodsHandler = Mantids30::API::RESTful::MethodsHandler;
+    using Endpoints = Mantids30::API::RESTful::Endpoints;
     using APIReturn = Mantids30::API::APIReturn;
     using RequestParameters = Mantids30::API::RESTful::RequestParameters;
     using ClientDetails = Mantids30::Sessions::ClientDetails;
 
 protected:
-    static void addMethods_AuthController(std::shared_ptr<MethodsHandler> methods);
+    static void addEndpoints_AuthController(std::shared_ptr<Endpoints> endpoints);
 
     static APIReturn addNewAuthenticationScheme(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
     static APIReturn listAuthenticationSchemes(void *context, const RequestParameters &request, ClientDetails &authClientDetails);

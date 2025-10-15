@@ -1,5 +1,5 @@
 #include "webadmin_serverimpl.h"
-#include "webadmin_methods.h"
+#include "webadmin_endpoints.h"
 
 #include "config.h"
 #include "defs.h"
@@ -54,10 +54,10 @@ bool WebAdmin_ServerImpl::createService()
     adminWebServer->config.setSoftwareVersion(atoi(PROJECT_VER_MAJOR), atoi(PROJECT_VER_MINOR), atoi(PROJECT_VER_PATCH), "a");
 
     // Setup the methods handler for version 1:
-    adminWebServer->methodsHandler[1] = std::make_shared<API::RESTful::MethodsHandler>();
+    adminWebServer->endpointsHandler[1] = std::make_shared<API::RESTful::Endpoints>();
 
     // Add authentication methods
-    WebAdmin_Methods::addMethods(adminWebServer->methodsHandler[1]);
+    WebAdmin_Endpoints::addEndpoints(adminWebServer->endpointsHandler[1]);
 
     adminWebServer->startInBackground();
 

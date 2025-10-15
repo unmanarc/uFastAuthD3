@@ -307,42 +307,39 @@ bool AuthStorageImpl::configureApplication(IdentityManager_DB *identityManager, 
         LOG_APP->log0(__func__, Logs::LEVEL_CRITICAL, "Application '%s' does not exist, aborting.", DB_APPNAME);
         return false;
     }
-    std::list<std::pair<ApplicationScope, std::string>> appScopes = {{{DB_APPNAME, "SELF_PWDCHANGE"}, "Change my own password"},
-                                                                               {{DB_APPNAME, "SELF_READ"}, "Read my own user data from the IAM system"},
-                                                                               {{DB_APPNAME, "SELF_DELETE"}, "Delete my own user"},
-
-                                                                               {{DB_APPNAME, "ACCOUNT_READ"}, "Read accounts data from the IAM system"},
-                                                                               {{DB_APPNAME, "ACCOUNT_DELETE"}, "Delete accounts from the IAM system"},
-                                                                               {{DB_APPNAME, "ACCOUNT_MODIFY"}, "Edit accounts details, roles, and scopes"},
-                                                                               {{DB_APPNAME, "ACCOUNT_PWDDCHANGE"}, "Change account passwords"},
-                                                                               {{DB_APPNAME, "ACCOUNT_DISABLE"}, "Disable/lock accounts"},
-                                                                               {{DB_APPNAME, "ACCOUNT_ENABLE"}, "Enable/unlock accounts"},
-
-                                                                               {{DB_APPNAME, "APP_CREATE"}, "Create applications on the IAM"},
-                                                                               {{DB_APPNAME, "APP_DELETE"}, "Delete application's from the IAM"},
-                                                                               {{DB_APPNAME, "APP_MODIFY"}, "Modify application data on the IAM"},
-                                                                               {{DB_APPNAME, "APP_READ"}, "Read application data from the IAM"},
-
-                                                                               {{DB_APPNAME, "AUTH_CREATE"}, "Create authentication schemes and slots on the IAM"},
-                                                                               {{DB_APPNAME, "AUTH_DELETE"}, "Delete authentication schemes and slots on the IAM"},
-                                                                               {{DB_APPNAME, "AUTH_MODIFY"}, "Modify authentication schemes and slots on the IAM"},
-                                                                               {{DB_APPNAME, "AUTH_READ"}, "Read authentication schemes and slots on the IAM"},
-
-                                                                               {{DB_APPNAME, "CONFIG_READ"}, "Read the configuration of the IAM"},
-                                                                               {{DB_APPNAME, "CONFIG_WRITE"}, "Write the configuration of the IAM"},
-
-                                                                               {{DB_APPNAME, "AUDIT_LOG_VIEW"}, "Access, export and view IAM audit logs"},
-                                                                               {{DB_APPNAME, "AUDIT_LOG_CLEAN"}, "Clean/remove audit logs"}};
+    std::list<ApplicationScope> appScopes = {
+                                                {DB_APPNAME, "SELF_PWDCHANGE", "Change my own password"},
+                                                {DB_APPNAME, "SELF_READ", "Read my own user data from the IAM system"},
+                                                {DB_APPNAME, "SELF_DELETE", "Delete my own user"},
+                                                {DB_APPNAME, "ACCOUNT_READ", "Read accounts data from the IAM system"},
+                                                {DB_APPNAME, "ACCOUNT_DELETE", "Delete accounts from the IAM system"},
+                                                {DB_APPNAME, "ACCOUNT_MODIFY", "Edit accounts details, roles, and scopes"},
+                                                {DB_APPNAME, "ACCOUNT_PWDDCHANGE", "Change account passwords"},
+                                                {DB_APPNAME, "ACCOUNT_DISABLE", "Disable/lock accounts"},
+                                                {DB_APPNAME, "ACCOUNT_ENABLE", "Enable/unlock accounts"},
+                                                {DB_APPNAME, "APP_CREATE", "Create applications on the IAM"},
+                                                {DB_APPNAME, "APP_DELETE", "Delete application's from the IAM"},
+                                                {DB_APPNAME, "APP_MODIFY", "Modify application data on the IAM"},
+                                                {DB_APPNAME, "APP_READ", "Read application data from the IAM"},
+                                                {DB_APPNAME, "AUTH_CREATE", "Create authentication schemes and slots on the IAM"},
+                                                {DB_APPNAME, "AUTH_DELETE", "Delete authentication schemes and slots on the IAM"},
+                                                {DB_APPNAME, "AUTH_MODIFY", "Modify authentication schemes and slots on the IAM"},
+                                                {DB_APPNAME, "AUTH_READ", "Read authentication schemes and slots on the IAM"},
+                                                {DB_APPNAME, "CONFIG_READ", "Read the configuration of the IAM"},
+                                                {DB_APPNAME, "CONFIG_WRITE", "Write the configuration of the IAM"},
+                                                {DB_APPNAME, "AUDIT_LOG_VIEW", "Access, export and view IAM audit logs"},
+                                                {DB_APPNAME, "AUDIT_LOG_CLEAN", "Clean/remove audit logs"}
+                                            };
 
     for (auto &scope : appScopes)
     {
-        if (!identityManager->authController->doesApplicationScopeExist(scope.first))
+        if (!identityManager->authController->doesApplicationScopeExist(scope))
         {
-            LOG_APP->log0(__func__, Logs::LEVEL_WARN, "Scope '%s' does not exist, creating it.", scope.first.id.c_str());
+            LOG_APP->log0(__func__, Logs::LEVEL_WARN, "Scope '%s' does not exist, creating it.", scope.id.c_str());
 
-            if (!identityManager->authController->addApplicationScope(scope.first, scope.second))
+            if (!identityManager->authController->addApplicationScope(scope))
             {
-                LOG_APP->log0(__func__, Logs::LEVEL_CRITICAL, "Failed to create the scope '%s'.", scope.first.id.c_str());
+                LOG_APP->log0(__func__, Logs::LEVEL_CRITICAL, "Failed to create the scope '%s'.", scope.id.c_str());
                 return false;
             }
         }

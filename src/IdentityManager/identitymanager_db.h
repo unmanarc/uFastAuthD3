@@ -104,10 +104,10 @@ public:
         bool addAccountToRole(const std::string &appName, const std::string &roleName, const std::string &accountName) override;
         bool removeAccountFromRole(const std::string &appName, const std::string &roleName, const std::string &accountName, bool lock = true) override;
         bool updateRoleDescription(const std::string &appName, const std::string &roleName, const std::string &roleDescription) override;
-        std::string getRoleDescription(const std::string &appName, const std::string &roleName) override;
-        std::set<ApplicationRole> getRolesList(const std::string &appName) override;
-        std::set<std::string> getRoleAccounts(const std::string &appName,const std::string &roleName, bool lock = true) override;
-        Json::Value searchRoles(const json &dataTablesFilters) override;
+        std::string getApplicationRoleDescription(const std::string &appName, const std::string &roleName) override;
+        std::set<ApplicationRole> getApplicationRolesList(const std::string &appName) override;
+        std::set<std::string> getApplicationRoleAccounts(const std::string &appName,const std::string &roleName, bool lock = true) override;
+        Json::Value searchApplicationRoles(const json &dataTablesFilters) override;
 
     private:
         IdentityManager_DB *_parent;
@@ -171,14 +171,14 @@ public:
 
         /////////////////////////////////////////////////////////////////////////////////
         // application scope:
-        bool addApplicationScope(const ApplicationScope &applicationScope, const std::string &description) override;
+        bool addApplicationScope(const ApplicationScope &applicationScope) override;
         bool removeApplicationScope(const ApplicationScope &applicationScope) override;
         bool doesApplicationScopeExist(const ApplicationScope &applicationScope) override;
         bool addApplicationScopeToRole(const ApplicationScope &applicationScope, const std::string &roleName) override;
         bool removeApplicationScopeFromRole(const ApplicationScope &applicationScope, const std::string &roleName, bool lock = true) override;
         bool addApplicationScopeToAccount(const ApplicationScope &applicationScope, const std::string &accountName) override;
         bool removeApplicationScopeFromAccount(const ApplicationScope &applicationScope, const std::string &accountName, bool lock = true) override;
-        bool updateApplicationScopeDescription(const ApplicationScope &applicationScope, const std::string &description) override;
+        bool updateApplicationScopeDescription(const ApplicationScope &applicationScope) override;
         std::string getApplicationScopeDescription(const ApplicationScope &applicationScope) override;
         std::set<ApplicationScope> listApplicationScopes(const std::string &applicationName = "") override;
         std::set<std::string> getApplicationRolesForScope(const ApplicationScope &applicationScope, bool lock = true) override;

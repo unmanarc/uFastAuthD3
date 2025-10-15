@@ -1,8 +1,5 @@
-#include "webadmin_methods_accounts.h"
-
+#include "webadmin_endpoints_accounts.h"
 #include "IdentityManager/ds_account.h"
-#include "webadmin_methods.h"
-
 #include "IdentityManager/ds_authentication.h"
 #include "json/value.h"
 #include <Mantids30/Program_Logs/applog.h>
@@ -25,65 +22,54 @@ std::map<std::string, std::string> WebAdminMethods_Accounts::jsonToMap(const jso
     return r;
 }
 
-void WebAdminMethods_Accounts::addMethods_Accounts(std::shared_ptr<MethodsHandler> methods)
+void WebAdminMethods_Accounts::addEndpoints_Accounts(std::shared_ptr<Endpoints> endpoints)
 {
-    using SecurityOptions = Mantids30::API::RESTful::MethodsHandler::SecurityOptions;
+    using SecurityOptions = Mantids30::API::RESTful::Endpoints::SecurityOptions;
 
     // Accounts:
-    methods->addResource(MethodsHandler::POST, "addAccount", &addAccount, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"});
-    methods->addResource(MethodsHandler::GET, "doesAccountExist", &doesAccountExist, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_READ"});
-    methods->addResource(MethodsHandler::GET, "searchAccounts", &searchAccounts, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_READ"});
-    methods->addResource(MethodsHandler::GET, "getAccountDetailFieldsValues", &getAccountDetailFieldsValues, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH,
-                         {"ACCOUNT_READ"});
-    methods->addResource(MethodsHandler::PUT, "updateAccountDetailFieldsValues", &updateAccountDetailFieldsValues, nullptr,
-                         SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"});
-    methods->addResource(MethodsHandler::GET, "getAccountFlags", &getAccountFlags, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_READ"});
-    methods->addResource(MethodsHandler::PATCH, "changeAccountFlags", &changeAccountFlags, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH,
-                         {"ACCOUNT_MODIFY"});
-    methods->addResource(MethodsHandler::DELETE, "removeAccount", &removeAccount, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_DELETE"});
+    endpoints->addEndpoint(Endpoints::POST, "addAccount",            SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"}, nullptr, &addAccount);
+    endpoints->addEndpoint(Endpoints::GET,  "doesAccountExist",      SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_READ"},   nullptr, &doesAccountExist);
+    endpoints->addEndpoint(Endpoints::GET,  "searchAccounts",        SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_READ"},   nullptr, &searchAccounts);
+    endpoints->addEndpoint(Endpoints::GET,  "getAccountDetailFieldsValues", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_READ"},   nullptr, &getAccountDetailFieldsValues);
+    endpoints->addEndpoint(Endpoints::PUT,  "updateAccountDetailFieldsValues", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"}, nullptr, &updateAccountDetailFieldsValues);
+    endpoints->addEndpoint(Endpoints::GET,  "getAccountFlags",       SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_READ"},   nullptr, &getAccountFlags);
+    endpoints->addEndpoint(Endpoints::PATCH, "changeAccountFlags",   SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"}, nullptr, &changeAccountFlags);
+    endpoints->addEndpoint(Endpoints::DELETE, "removeAccount",       SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_DELETE"}, nullptr, &removeAccount);
 
-
-    //Accounts-Applications:
-    methods->addResource(MethodsHandler::GET, "getAccountApplications", &getAccountApplications, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH,
-                         {"ACCOUNT_READ"});
-    methods->addResource(MethodsHandler::POST, "addAccountToApplication", &addAccountToApplication, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH,
-                         {"ACCOUNT_MODIFY"});
-    methods->addResource(MethodsHandler::DELETE, "removeAccountFromApplication", &removeAccountFromApplication, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH,
-                         {"ACCOUNT_MODIFY"});
-
+    // Accounts-Applications:
+    endpoints->addEndpoint(Endpoints::GET,  "getAccountApplications", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_READ"},   nullptr, &getAccountApplications);
+    endpoints->addEndpoint(Endpoints::POST, "addAccountToApplication", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"}, nullptr, &addAccountToApplication);
+    endpoints->addEndpoint(Endpoints::DELETE, "removeAccountFromApplication", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"}, nullptr, &removeAccountFromApplication);
     // Fields
-    methods->addResource(MethodsHandler::GET, "searchFields", &searchFields, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"CONFIG_READ"});
-    methods->addResource(MethodsHandler::POST, "addAccountDetailField", &addAccountDetailField, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH,
-                         {"CONFIG_WRITE"});
-    methods->addResource(MethodsHandler::DELETE, "removeAccountDetailField", &removeAccountDetailField, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH,
-                         {"CONFIG_WRITE"});
-    methods->addResource(MethodsHandler::GET, "getAccountDetailField", &getAccountDetailField, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH,
-                         {"CONFIG_READ"});
+    endpoints->addEndpoint(Endpoints::GET,  "searchFields",          SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"CONFIG_READ"},    nullptr, &searchFields);
+    endpoints->addEndpoint(Endpoints::POST, "addAccountDetailField", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"CONFIG_WRITE"},   nullptr, &addAccountDetailField);
+    endpoints->addEndpoint(Endpoints::DELETE, "removeAccountDetailField", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"CONFIG_WRITE"},   nullptr, &removeAccountDetailField);
+    endpoints->addEndpoint(Endpoints::GET,  "getAccountDetailField", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"CONFIG_READ"},    nullptr, &getAccountDetailField);
 
 
     // Accounts
-    /* methods->addResource(MethodsHandler::POST, "addAccount", &addAccount, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"});
-    methods->addResource(MethodsHandler::POST, "changeAccountExpiration", &changeAccountExpiration, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"});
-    methods->addResource(MethodsHandler::POST, "changeCredential", &changeCredential, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_PWDDCHANGE"});
-    methods->addResource(MethodsHandler::POST, "confirmAccount", &confirmAccount, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"});
-    methods->addResource(MethodsHandler::POST, "disableAccount", &disableAccount, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_DISABLE"});
-    methods->addResource(MethodsHandler::GET, "doesAccountExist", &doesAccountExist, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_READ"});
-    methods->addResource(MethodsHandler::GET, "getAccountBlockToken", &getAccountBlockToken, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"});
-    methods->addResource(MethodsHandler::GET, "getAccountDirectApplicationScopes", &getAccountDirectApplicationScopes, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_READ"});
-    methods->addResource(MethodsHandler::GET, "getAccountDetails", &getAccountDetails, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_READ"});
-    methods->addResource(MethodsHandler::GET, "getAccountExpirationTime", &getAccountExpirationTime, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_READ"});
-    methods->addResource(MethodsHandler::GET, "getAccountInfo", &getAccountInfo, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_READ"});
-    methods->addResource(MethodsHandler::GET, "getAccountLastAccess", &getAccountLastAccess, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_READ"});
-    methods->addResource(MethodsHandler::GET, "getAccountRoles", &getAccountRoles, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_READ"});
-    methods->addResource(MethodsHandler::GET, "getAccountUsableApplicationScopes", &getAccountUsableApplicationScopes, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_READ"});
-    methods->addResource(MethodsHandler::GET, "isAccountExpired", &isAccountExpired, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_READ"});
-    methods->addResource(MethodsHandler::GET, "listAccounts", &listAccounts, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_READ"});
-    methods->addResource(MethodsHandler::POST, "resetBadAttemptsOnCredential", &resetBadAttemptsOnCredential, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"});
-    methods->addResource(MethodsHandler::GET, "searchAccounts", &searchAccounts, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_READ"});
-    methods->addResource(MethodsHandler::POST, "updateAccountInfo", &updateAccountInfo, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"});
-    methods->addResource(MethodsHandler::POST, "updateAccountRoles", &updateAccountRoles, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"});
-    methods->addResource(MethodsHandler::GET, "validateAccountApplicationScope", &validateAccountApplicationScope, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_READ"});
-    methods->addResource(MethodsHandler::POST, "blockAccountUsingToken", &blockAccountUsingToken, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"});*/
+    /* endpoints->addEndpoint(Endpoints::POST, "addAccount", &addAccount, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"});
+    endpoints->addEndpoint(Endpoints::POST, "changeAccountExpiration", &changeAccountExpiration, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"});
+    endpoints->addEndpoint(Endpoints::POST, "changeCredential", &changeCredential, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_PWDDCHANGE"});
+    endpoints->addEndpoint(Endpoints::POST, "confirmAccount", &confirmAccount, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"});
+    endpoints->addEndpoint(Endpoints::POST, "disableAccount", &disableAccount, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_DISABLE"});
+    endpoints->addEndpoint(Endpoints::GET, "doesAccountExist", &doesAccountExist, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_READ"});
+    endpoints->addEndpoint(Endpoints::GET, "getAccountBlockToken", &getAccountBlockToken, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"});
+    endpoints->addEndpoint(Endpoints::GET, "getAccountDirectApplicationScopes", &getAccountDirectApplicationScopes, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_READ"});
+    endpoints->addEndpoint(Endpoints::GET, "getAccountDetails", &getAccountDetails, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_READ"});
+    endpoints->addEndpoint(Endpoints::GET, "getAccountExpirationTime", &getAccountExpirationTime, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_READ"});
+    endpoints->addEndpoint(Endpoints::GET, "getAccountInfo", &getAccountInfo, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_READ"});
+    endpoints->addEndpoint(Endpoints::GET, "getAccountLastAccess", &getAccountLastAccess, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_READ"});
+    endpoints->addEndpoint(Endpoints::GET, "getAccountRoles", &getAccountRoles, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_READ"});
+    endpoints->addEndpoint(Endpoints::GET, "getAccountUsableApplicationScopes", &getAccountUsableApplicationScopes, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_READ"});
+    endpoints->addEndpoint(Endpoints::GET, "isAccountExpired", &isAccountExpired, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_READ"});
+    endpoints->addEndpoint(Endpoints::GET, "listAccounts", &listAccounts, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_READ"});
+    endpoints->addEndpoint(Endpoints::POST, "resetBadAttemptsOnCredential", &resetBadAttemptsOnCredential, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"});
+    endpoints->addEndpoint(Endpoints::GET, "searchAccounts", &searchAccounts, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_READ"});
+    endpoints->addEndpoint(Endpoints::POST, "updateAccountInfo", &updateAccountInfo, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"});
+    endpoints->addEndpoint(Endpoints::POST, "updateAccountRoles", &updateAccountRoles, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"});
+    endpoints->addEndpoint(Endpoints::GET, "validateAccountApplicationScope", &validateAccountApplicationScope, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_READ"});
+    endpoints->addEndpoint(Endpoints::POST, "blockAccountUsingToken", &blockAccountUsingToken, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"});*/
 }
 
 API::APIReturn WebAdminMethods_Accounts::addAccount(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
@@ -256,7 +242,7 @@ API::APIReturn WebAdminMethods_Accounts::getAccountApplications(void *context, c
         // TODO: optimize:
         (*response.responseJSON())["applications"][i]["description"] = Globals::getIdentityManager()->applications->getApplicationDescription(applicationName);
 
-        std::set<ApplicationRole> allAppRoles = Globals::getIdentityManager()->applicationRoles->getRolesList(applicationName);
+        std::set<ApplicationRole> allAppRoles = Globals::getIdentityManager()->applicationRoles->getApplicationRolesList(applicationName);
         std::set<ApplicationRole> usedAppRoles = Globals::getIdentityManager()->accounts->getAccountRoles(applicationName,accountName);
 
         // Add used roles
@@ -655,7 +641,7 @@ API::APIReturn WebAdminMethods_Accounts::getAccountBlockToken(void *context, con
 
 API::APIReturn WebAdminMethods_Accounts::getAccountDirectApplicationScopes(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
-    (*response.responseJSON()) = WebAdmin_Methods::scopeListToJSON(
+    (*response.responseJSON()) = WebAdmin_Endpoints::scopeListToJSON(
         Globals::getIdentityManager()->authController->getAccountDirectApplicationScopes(JSON_ASSTRING(*request.inputJSON, "accountName", "")));
 }
 
@@ -683,17 +669,17 @@ API::APIReturn WebAdminMethods_Accounts::getAccountInfo(void *context, const Req
     {
         (*response.responseJSON())["roles"][i]["name"] = roleName;
         // TODO: optimize:
-        (*response.responseJSON())["roles"][i]["description"] = Globals::getIdentityManager()->roles->getRoleDescription(roleName);
+        (*response.responseJSON())["roles"][i]["description"] = Globals::getIdentityManager()->roles->getApplicationRoleDescription(roleName);
         i++;
     }
 
     i = 0;
-    for (const auto &roleName : Globals::getIdentityManager()->roles->getRolesList())
+    for (const auto &roleName : Globals::getIdentityManager()->roles->getApplicationRolesList())
     {
         if (getAccountRoles.find(roleName) == getAccountRoles.end())
         {
             (*response.responseJSON())["rolesLeft"][i]["name"] = roleName;
-            (*response.responseJSON())["rolesLeft"][i]["description"] = Globals::getIdentityManager()->roles->getRoleDescription(roleName);
+            (*response.responseJSON())["rolesLeft"][i]["description"] = Globals::getIdentityManager()->roles->getApplicationRoleDescription(roleName);
             i++;
         }
     }
@@ -713,7 +699,7 @@ API::APIReturn WebAdminMethods_Accounts::getAccountRoles(void *context, const Re
 
 API::APIReturn WebAdminMethods_Accounts::getAccountUsableApplicationScopes(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
-    (*response.responseJSON()) = WebAdmin_Methods::scopeListToJSON(
+    (*response.responseJSON()) = WebAdmin_Endpoints::scopeListToJSON(
         Globals::getIdentityManager()->authController->getAccountUsableApplicationScopes(JSON_ASSTRING(*request.inputJSON, "accountName", "")));
 }
 

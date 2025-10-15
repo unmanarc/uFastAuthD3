@@ -1,19 +1,19 @@
-#include "webadmin_methods.h"
+#include "webadmin_endpoints.h"
 #include "../globals.h"
 
 using namespace Mantids30;
 
-void WebAdmin_Methods::addMethods(std::shared_ptr<MethodsHandler> methods)
+void WebAdmin_Endpoints::addEndpoints(std::shared_ptr<Endpoints> endpoints)
 {
-    addMethods_Accounts(methods);
-    addMethods_Scopes(methods);
-    addMethods_Applications(methods);
-    addMethods_Roles(methods);
-    addMethods_AuthController(methods);
-    addMethods_Activities(methods);
+    addEndpoints_Accounts(endpoints);
+    addEndpoints_Scopes(endpoints);
+    addEndpoints_Applications(endpoints);
+    addEndpoints_Roles(endpoints);
+    addEndpoints_AuthController(endpoints);
+    addEndpoints_Activities(endpoints);
 }
 
-json WebAdmin_Methods::scopeListToJSON(const std::set<ApplicationScope> &scopes)
+json WebAdmin_Endpoints::scopeListToJSON(const std::set<ApplicationScope> &scopes)
 {
     json x;
     int i = 0;
@@ -26,7 +26,7 @@ json WebAdmin_Methods::scopeListToJSON(const std::set<ApplicationScope> &scopes)
     return x;
 }
 
-std::set<ApplicationScope> WebAdmin_Methods::iScopesLeftListForRole(const std::string &appName, const std::string &roleName)
+std::set<ApplicationScope> WebAdmin_Endpoints::iScopesLeftListForRole(const std::string &appName, const std::string &roleName)
 {
     auto scopesLeft = Globals::getIdentityManager()->authController->listApplicationScopes(appName);
     auto roleScopes = Globals::getIdentityManager()->authController->getRoleApplicationScopes(appName,roleName);

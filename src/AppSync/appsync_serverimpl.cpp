@@ -40,13 +40,13 @@ bool AppSync_ServerImpl::createService()
     webSessionAuthHandlerServer->config.setSoftwareVersion(atoi(PROJECT_VER_MAJOR), atoi(PROJECT_VER_MINOR), atoi(PROJECT_VER_PATCH), "a");
 
     // Setup the methods handler for version 1:
-    webSessionAuthHandlerServer->methodsHandler[1] = std::make_shared<API::RESTful::MethodsHandler>();
+    webSessionAuthHandlerServer->endpointsHandler[1] = std::make_shared<API::RESTful::Endpoints>();
 
     // This will validate the JWT, the app should match with this:
     webSessionAuthHandlerServer->config.appName = "APPSYNC";
 
     // Add authentication methods
-    AppSync_Endpoints::addAPIEndpoints(webSessionAuthHandlerServer->methodsHandler[1]);
+    AppSync_Endpoints::addAPIEndpoints(webSessionAuthHandlerServer->endpointsHandler[1]);
 
     webSessionAuthHandlerServer->startInBackground();
 

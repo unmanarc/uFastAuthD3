@@ -1,4 +1,4 @@
-#include "webadmin_methods_application_scopes.h"
+#include "webadmin_endpoints_application_scopes.h"
 
 #include "../globals.h"
 #include "defs.h"
@@ -9,36 +9,36 @@ using namespace Mantids30::Program;
 using namespace Mantids30;
 using namespace Mantids30::Network::Protocols;
 
-void WebAdminMethods_ApplicationsScopes::addMethods_Scopes(std::shared_ptr<MethodsHandler> methods)
+void WebAdminMethods_ApplicationsScopes::addEndpoints_Scopes(std::shared_ptr<Endpoints> endpoints)
 {
-    using SecurityOptions = Mantids30::API::RESTful::MethodsHandler::SecurityOptions;
-    methods->addResource(MethodsHandler::POST, "addApplicationScopeToAccount", &addApplicationScopeToAccount, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"});
-    methods->addResource(MethodsHandler::DELETE, "removeApplicationScopeFromAccount", &removeApplicationScopeFromAccount, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"});
+    using SecurityOptions = Mantids30::API::RESTful::Endpoints::SecurityOptions;
+    endpoints->addEndpoint(Endpoints::POST, "addApplicationScopeToAccount", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"}, nullptr, &addApplicationScopeToAccount);
+    endpoints->addEndpoint(Endpoints::DELETE, "removeApplicationScopeFromAccount", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"}, nullptr, &removeApplicationScopeFromAccount);
 
-    methods->addResource(MethodsHandler::POST, "addApplicationScope", &addApplicationScope, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"});
-    methods->addResource(MethodsHandler::DELETE, "removeApplicationScope", &removeApplicationScope, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"});
-    methods->addResource(MethodsHandler::PUT, "addApplicationScopeToRole", &addApplicationScopeToRole, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"});
-    methods->addResource(MethodsHandler::DELETE, "removeApplicationScopeFromRole", &removeApplicationScopeFromRole, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"});
-    methods->addResource(MethodsHandler::GET, "searchApplicationScopes", &searchApplicationScopes, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
+    endpoints->addEndpoint(Endpoints::POST, "addApplicationScope", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"}, nullptr, &addApplicationScope);
+    endpoints->addEndpoint(Endpoints::DELETE, "removeApplicationScope", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"}, nullptr, &removeApplicationScope);
+    endpoints->addEndpoint(Endpoints::PUT, "addApplicationScopeToRole", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"}, nullptr, &addApplicationScopeToRole);
+    endpoints->addEndpoint(Endpoints::DELETE, "removeApplicationScopeFromRole", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"}, nullptr, &removeApplicationScopeFromRole);
+    endpoints->addEndpoint(Endpoints::GET, "searchApplicationScopes", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"}, nullptr, &searchApplicationScopes);
 
     // Application Scopes
 /*
-    methods->addResource(MethodsHandler::POST, "updateApplicationScopeDescription", &updateApplicationScopeDescription, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"});
-    methods->addResource(MethodsHandler::GET, "getApplicationScopeDescription", &getApplicationScopeDescription, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
-    methods->addResource(MethodsHandler::GET, "listApplicationScopes", &listApplicationScopes, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
-    methods->addResource(MethodsHandler::GET, "getApplicationRolesForScope", &getApplicationRolesForScope, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
-    methods->addResource(MethodsHandler::GET, "listAccountsOnApplicationScope", &listAccountsOnApplicationScope, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
-    methods->addResource(MethodsHandler::GET, "scopesLeftListForRole", &scopesLeftListForRole, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
-    methods->addResource(MethodsHandler::POST, "addApplicationScope", &addApplicationScope, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"});
-    methods->addResource(MethodsHandler::DELETE, "removeApplicationScope", &removeApplicationScope, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"});
-    methods->addResource(MethodsHandler::POST, "addApplicationScopeToRole", &addApplicationScopeToRole, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"});
-    methods->addResource(MethodsHandler::PATCH, "updateApplicationScopeDescription", &updateApplicationScopeDescription, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"});
-    methods->addResource(MethodsHandler::GET, "getApplicationScopeDescription", &getApplicationScopeDescription, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
-    methods->addResource(MethodsHandler::GET, "listApplicationScopes", &listApplicationScopes, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
-    methods->addResource(MethodsHandler::GET, "getApplicationRolesForScope", &getApplicationRolesForScope, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
-    methods->addResource(MethodsHandler::GET, "listAccountsOnApplicationScope", &listAccountsOnApplicationScope, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
-    methods->addResource(MethodsHandler::GET, "searchApplicationScopes", &searchApplicationScopes, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
-    methods->addResource(MethodsHandler::GET, "scopesLeftListForRole", &scopesLeftListForRole, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});*/
+    endpoints->addEndpoint(Endpoints::POST, "updateApplicationScopeDescription", &updateApplicationScopeDescription, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"});
+    endpoints->addEndpoint(Endpoints::GET, "getApplicationScopeDescription", &getApplicationScopeDescription, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
+    endpoints->addEndpoint(Endpoints::GET, "listApplicationScopes", &listApplicationScopes, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
+    endpoints->addEndpoint(Endpoints::GET, "getApplicationRolesForScope", &getApplicationRolesForScope, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
+    endpoints->addEndpoint(Endpoints::GET, "listAccountsOnApplicationScope", &listAccountsOnApplicationScope, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
+    endpoints->addEndpoint(Endpoints::GET, "scopesLeftListForRole", &scopesLeftListForRole, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
+    endpoints->addEndpoint(Endpoints::POST, "addApplicationScope", &addApplicationScope, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"});
+    endpoints->addEndpoint(Endpoints::DELETE, "removeApplicationScope", &removeApplicationScope, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"});
+    endpoints->addEndpoint(Endpoints::POST, "addApplicationScopeToRole", &addApplicationScopeToRole, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"});
+    endpoints->addEndpoint(Endpoints::PATCH, "updateApplicationScopeDescription", &updateApplicationScopeDescription, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"});
+    endpoints->addEndpoint(Endpoints::GET, "getApplicationScopeDescription", &getApplicationScopeDescription, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
+    endpoints->addEndpoint(Endpoints::GET, "listApplicationScopes", &listApplicationScopes, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
+    endpoints->addEndpoint(Endpoints::GET, "getApplicationRolesForScope", &getApplicationRolesForScope, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
+    endpoints->addEndpoint(Endpoints::GET, "listAccountsOnApplicationScope", &listAccountsOnApplicationScope, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
+    endpoints->addEndpoint(Endpoints::GET, "searchApplicationScopes", &searchApplicationScopes, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
+    endpoints->addEndpoint(Endpoints::GET, "scopesLeftListForRole", &scopesLeftListForRole, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});*/
 }
 
 API::APIReturn WebAdminMethods_ApplicationsScopes::addApplicationScopeToAccount(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
@@ -122,7 +122,7 @@ API::APIReturn WebAdminMethods_ApplicationsScopes::addApplicationScope(void *con
         return response;
     }
 
-    if (!Globals::getIdentityManager()->authController->addApplicationScope({appName, scopeId}, scopeDescription))
+    if (!Globals::getIdentityManager()->authController->addApplicationScope({appName, scopeId,scopeDescription}))
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "The application scope may already exist.");
     }
@@ -220,7 +220,7 @@ void WebAdminMethods_ApplicationsScopes::updateApplicationScopeDescription(void 
 
 void WebAdminMethods_ApplicationsScopes::listApplicationScopes(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
-    (*response.responseJSON()) = WebAdmin_Methods::scopeListToJSON(Globals::getIdentityManager()->authController->listApplicationScopes(JSON_ASSTRING(*request.inputJSON, "appName", "")));
+    (*response.responseJSON()) = WebAdmin_Endpoints::scopeListToJSON(Globals::getIdentityManager()->authController->listApplicationScopes(JSON_ASSTRING(*request.inputJSON, "appName", "")));
 }
 
 void WebAdminMethods_ApplicationsScopes::getApplicationRolesForScope(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
@@ -243,6 +243,6 @@ void WebAdminMethods_ApplicationsScopes::getApplicationScopeDescription(void *co
 
 void WebAdminMethods_ApplicationsScopes::scopesLeftListForRole(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
-    auto scopesLeft = WebAdmin_Methods::iScopesLeftListForRole(JSON_ASSTRING(*request.inputJSON, "appName", ""), JSON_ASSTRING(*request.inputJSON, "roleName", ""));
-    (*response.responseJSON()) = WebAdmin_Methods::scopeListToJSON(scopesLeft);
+    auto scopesLeft = WebAdmin_Endpoints::iScopesLeftListForRole(JSON_ASSTRING(*request.inputJSON, "appName", ""), JSON_ASSTRING(*request.inputJSON, "roleName", ""));
+    (*response.responseJSON()) = WebAdmin_Endpoints::scopeListToJSON(scopesLeft);
 }*/
