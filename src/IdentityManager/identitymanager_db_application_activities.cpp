@@ -19,13 +19,37 @@ using namespace Mantids30;
 
 bool IdentityManager_DB::ApplicationActivities_DB::addApplicationActivity(const std::string &appName, const std::string &activityName, const std::string &activityDescription)
 {
+    std::optional<uint32_t> defaultAuthScheme = _parent->authController->getDefaultAuthScheme();
+
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
 
-    if (!_parent->m_sqlConnector->execute("INSERT INTO iam.applicationActivities (f_appName, activityName, parentActivity, description) VALUES (:appName, :activityName, NULL, :description);",
-                                          {{":appName", MAKE_VAR(STRING, appName)}, {":activityName", MAKE_VAR(STRING, activityName)}, {":description", MAKE_VAR(STRING, activityDescription)}}))
+    // Determine if we should include the default scheme ID in the insert
+    uint32_t defaultSchemeId;
+    if (defaultAuthScheme.has_value())
     {
-        return false;
+        defaultSchemeId = defaultAuthScheme.value();
+        // Insert the new application activity with the default scheme ID
+        if (!_parent->m_sqlConnector->execute("INSERT INTO iam.applicationActivities (f_appName, activityName, parentActivity, description, defaultSchemeId) VALUES (:appName, :activityName, NULL, :description, :defaultSchemeId);",
+                                              {{":appName", MAKE_VAR(STRING, appName)},
+                                               {":activityName", MAKE_VAR(STRING, activityName)},
+                                               {":description", MAKE_VAR(STRING, activityDescription)},
+                                               {":defaultSchemeId", MAKE_VAR(UINT32, defaultSchemeId)}}))
+        {
+            return false;
+        }
     }
+    else
+    {
+        // we'll handle it by not including the parameter if it's null
+        if (!_parent->m_sqlConnector->execute("INSERT INTO iam.applicationActivities (f_appName, activityName, parentActivity, description) VALUES (:appName, :activityName, NULL, :description);",
+                                              {{":appName", MAKE_VAR(STRING, appName)},
+                                               {":activityName", MAKE_VAR(STRING, activityName)},
+                                               {":description", MAKE_VAR(STRING, activityDescription)}}))
+        {
+            return false;
+        }
+    }
+
 
     return true;
 }

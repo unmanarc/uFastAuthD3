@@ -58,6 +58,23 @@ bool IdentityManager_DB::ApplicationRoles_DB::updateRoleDescription(const std::s
                                           {{":roleName", MAKE_VAR(STRING, roleName)}, {":roleDescription", MAKE_VAR(STRING, roleDescription)}, {":appName", MAKE_VAR(STRING, appName)}});
 }
 
+std::set<std::string> IdentityManager_DB::ApplicationRoles_DB::listApplicationScopesOnApplicationRole(const std::string &appName, const std::string &roleName)
+{
+    Threads::Sync::Lock_RD lock(_parent->m_mutex);
+    std::set<std::string> scopes;
+    Abstract::STRING scopeId;
+    SQLConnector::QueryInstance i = _parent->m_sqlConnector->qSelect("SELECT `f_scopeId` FROM iam.applicationRolesScopes WHERE `f_appName`=:appName AND `f_roleName`=:roleName;",
+                                                                     {{":appName", MAKE_VAR(STRING, appName)}, {":roleName", MAKE_VAR(STRING, roleName)}}, {&scopeId});
+    if (i.getResultsOK())
+    {
+        while(i.query->step())
+        {
+            scopes.insert(scopeId.getValue());
+        }
+    }
+    return scopes;
+}
+
 std::string IdentityManager_DB::ApplicationRoles_DB::getApplicationRoleDescription(const std::string &appName, const std::string &roleName)
 {
     Threads::Sync::Lock_RD lock(_parent->m_mutex);

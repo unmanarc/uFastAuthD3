@@ -104,6 +104,8 @@ public:
         bool addAccountToRole(const std::string &appName, const std::string &roleName, const std::string &accountName) override;
         bool removeAccountFromRole(const std::string &appName, const std::string &roleName, const std::string &accountName, bool lock = true) override;
         bool updateRoleDescription(const std::string &appName, const std::string &roleName, const std::string &roleDescription) override;
+        std::set<std::string> listApplicationScopesOnApplicationRole(const std::string & appName, const std::string &roleName) override;
+
         std::string getApplicationRoleDescription(const std::string &appName, const std::string &roleName) override;
         std::set<ApplicationRole> getApplicationRolesList(const std::string &appName) override;
         std::set<std::string> getApplicationRoleAccounts(const std::string &appName,const std::string &roleName, bool lock = true) override;

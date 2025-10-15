@@ -153,6 +153,7 @@ public:
         virtual bool removeAccountFromRole(const std::string &appName, const std::string &roleName, const std::string &accountName, bool lock = true) = 0;
         virtual bool updateRoleDescription(const std::string &appName, const std::string &roleName, const std::string &roleDescription) = 0;
 
+        virtual std::set<std::string> listApplicationScopesOnApplicationRole(const std::string & appName, const std::string &roleName) = 0;
         virtual std::string getApplicationRoleDescription(const std::string &appName, const std::string &roleName) = 0;
         virtual std::set<ApplicationRole> getApplicationRolesList(const std::string &appName) = 0;
         virtual std::set<std::string> getApplicationRoleAccounts(const std::string &appName, const std::string &roleName, bool lock = true) = 0;

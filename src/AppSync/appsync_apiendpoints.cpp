@@ -117,25 +117,25 @@ AppSync_Endpoints::APIReturn AppSync_Endpoints::updateAccessControlContext(void 
     Json::Value proposedRoles = (*request.inputJSON)["roles"];
     std::set<ApplicationRole> currentRoles = Globals::getIdentityManager()->applicationRoles->getApplicationRolesList(appName);
 
+    // Store proposed role data for scope processing later
+    std::map<std::string, Json::Value> proposedRoleData;
+
     if (proposedRoles.isArray())
     {
         std::set<std::string> proposedRoleIds;
-
         for (const auto &role : proposedRoles)
         {
             std::string id = JSON_ASSTRING(role, "id", "");
             if (id.empty())
                 continue; // skip invalid entries
-
             proposedRoleIds.insert(id);
+            proposedRoleData[id] = role; // Store for scope processing
 
             std::string description = JSON_ASSTRING(role, "description", "");
-
             ApplicationRole newRole;
             newRole.appName = appName;
             newRole.id = id;
             newRole.description = description;
-
             // Check if role exists
             auto existingRole = currentRoles.find(newRole);
             if (existingRole != currentRoles.end())
@@ -154,7 +154,6 @@ AppSync_Endpoints::APIReturn AppSync_Endpoints::updateAccessControlContext(void 
                 Globals::getIdentityManager()->applicationRoles->addRole(appName, id, description);
             }
         }
-
         // Remove roles that are not in proposed list
         for (const auto &currentRole : currentRoles)
         {
@@ -162,6 +161,57 @@ AppSync_Endpoints::APIReturn AppSync_Endpoints::updateAccessControlContext(void 
             {
                 LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LEVEL_INFO, "Removing role '%s' from application '%s'.", currentRole.id.c_str(), appName.c_str());
                 Globals::getIdentityManager()->applicationRoles->removeRole(appName, currentRole.id);
+            }
+        }
+    }
+
+    // Process scopes for each role
+    for (const auto &pair : proposedRoleData)
+    {
+        const std::string &roleId = pair.first;
+        const Json::Value &roleData = pair.second;
+
+        Json::Value roleScopes = roleData["scopes"];
+        if (roleScopes.isArray())
+        {
+            // Get current scopes assigned to this role
+            std::set<std::string> currentScopeIdsForRole = Globals::getIdentityManager()
+                                                               ->applicationRoles->listApplicationScopesOnApplicationRole(appName, roleId); // This won't work correctly, need different approach
+
+            // Collect proposed scope IDs
+            std::set<std::string> proposedScopeIds;
+            for (const auto &scope : roleScopes)
+            {
+                std::string scopeId = scope.asString();
+                if (!scopeId.empty())
+                {
+                    proposedScopeIds.insert(scopeId);
+
+                    // Add scope to role if not already there
+                    if (currentScopeIdsForRole.find(scopeId) == currentScopeIdsForRole.end())
+                    {
+                        ApplicationScope appScope;
+                        appScope.appName = appName;
+                        appScope.id = scopeId;
+                        LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LEVEL_INFO, "Adding scope '%s' to role '%s' in application '%s'.", scopeId.c_str(), roleId.c_str(),
+                                      appName.c_str());
+                        Globals::getIdentityManager()->authController->addApplicationScopeToRole(appScope, roleId);
+                    }
+                }
+            }
+
+            // Remove scopes that should no longer be assigned to this role
+            for (const auto &currentScopeId : currentScopeIdsForRole)
+            {
+                if (proposedScopeIds.find(currentScopeId) == proposedScopeIds.end())
+                {
+                    ApplicationScope appScope;
+                    appScope.appName = appName;
+                    appScope.id = currentScopeId;
+                    LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LEVEL_INFO, "Removing scope '%s' from role '%s' in application '%s'.", currentScopeId.c_str(), roleId.c_str(),
+                                  appName.c_str());
+                    Globals::getIdentityManager()->authController->removeApplicationScopeFromRole(appScope, roleId);
+                }
             }
         }
     }
@@ -175,7 +225,7 @@ AppSync_Endpoints::APIReturn AppSync_Endpoints::updateAccessControlContext(void 
 
         for (const auto &act : proposedActivities)
         {
-            std::string name = JSON_ASSTRING(act, "name", "");
+            std::string name = JSON_ASSTRING(act, "id", "");
             if (name.empty())
                 continue; // skip invalid entries
 
