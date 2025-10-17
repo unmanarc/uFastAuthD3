@@ -1,5 +1,5 @@
 #include "Mantids30/Protocol_HTTP/api_return.h"
-#include "weblogin_authmethods.h"
+#include "weblogin_add_endpoints.h"
 
 #include "../globals.h"
 
@@ -9,6 +9,16 @@ using namespace Mantids30;
 using namespace Program;
 using namespace API::RESTful;
 using namespace Network::Protocols;
+
+
+WebLogin_AuthMethods::APIReturn WebLogin_AuthMethods::getSessionInfo(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+{
+    json r;
+    r["user"] = request.jwtToken->getSubject();
+    r["clientData"] = authClientDetails.toJSON();
+    return r;
+}
+
 
 API::APIReturn WebLogin_AuthMethods::accountCredentialPublicData(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
@@ -46,7 +56,7 @@ API::APIReturn WebLogin_AuthMethods::listCredentials(void *context, const Reques
     }
 
     if (r.empty())
-        response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "no_credentials", "No detected credentials");
+        response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "no_credentials", "No detected credentials for this user.");
 
     return response;
 }

@@ -2,7 +2,7 @@
 #include "config.h"
 #include "defs.h"
 #include "globals.h"
-#include "weblogin_authmethods.h"
+#include "weblogin_add_endpoints.h"
 
 #include <Mantids30/Config_Builder/restful_engine.h>
 #include <Mantids30/Server_RESTfulWebAPI/engine.h>

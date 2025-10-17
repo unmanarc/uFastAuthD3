@@ -1,4 +1,4 @@
-#include "weblogin_authmethods.h"
+#include "weblogin_add_endpoints.h"
 
 #include "../globals.h"
 #include <optional>

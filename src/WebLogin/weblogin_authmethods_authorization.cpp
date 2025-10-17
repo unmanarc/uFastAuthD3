@@ -2,7 +2,7 @@
 #include "Mantids30/Program_Logs/loglevels.h"
 #include "Mantids30/Protocol_HTTP/api_return.h"
 #include "Tokens/tokensmanager.h"
-#include "weblogin_authmethods.h"
+#include "weblogin_add_endpoints.h"
 #include <Mantids30/Helpers/json.h>
 
 #include "../globals.h"
