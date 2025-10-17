@@ -50,6 +50,7 @@ private:
     static APIReturn logout(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
     static void doLogoutInResponse(void *context, const RequestParameters &, ClientDetails &, APIReturn * response);
 
+    static APIReturn getSessionInfo(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
     static APIReturn changeCredential(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
     static APIReturn listCredentials(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
     static APIReturn accountCredentialPublicData(void *context, const RequestParameters &request, ClientDetails &authClientDetails);

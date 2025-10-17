@@ -1,4 +1,4 @@
-#include "weblogin_authmethods.h"
+#include "weblogin_add_endpoints.h"
 
 #include <Mantids30/DataFormat_JWT/jwt.h>
 #include <Mantids30/Helpers/json.h>
@@ -36,7 +36,7 @@ void WebLogin_AuthMethods::addEndpoints(std::shared_ptr<Endpoints> endpoints)
 
     endpoints->addEndpoint(Endpoints::POST, "authorize",     SecurityOptions::NO_AUTH, {}, nullptr, &authorize);
 
-        // Transform the current authentication to the app authentication...
+    // Transform the current authentication to the app authentication...
     endpoints->addEndpoint(Endpoints::POST, "token",         SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {}, nullptr, &token);
 
     // Logout only clear the cookie... it just does need a CSRF control method...
@@ -55,10 +55,10 @@ void WebLogin_AuthMethods::addEndpoints(std::shared_ptr<Endpoints> endpoints)
 
     // Post-authenticated API:
     //endpoints->addEndpoint(Endpoints::POST, "retokenize", nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {}, nullptr, &retokenize);
-    // The change credential dialog/html needs to send the CSRF challenge:
-    endpoints->addEndpoint(Endpoints::POST, "changeCredential",      SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {}, nullptr, &changeCredential);
-    endpoints->addEndpoint(Endpoints::POST, "listCredentials",       SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {}, nullptr, &listCredentials);
-    endpoints->addEndpoint(Endpoints::POST, "accountCredentialPublicData",  SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {}, nullptr, &accountCredentialPublicData);
+    endpoints->addEndpoint(Endpoints::PUT, "changeCredential",             SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {}, nullptr, &changeCredential);
+    endpoints->addEndpoint(Endpoints::GET, "listCredentials",              SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {}, nullptr, &listCredentials);
+    endpoints->addEndpoint(Endpoints::GET, "accountCredentialPublicData",  SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {}, nullptr, &accountCredentialPublicData);
+    endpoints->addEndpoint(Endpoints::GET, "getSessionInfo",               SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {}, nullptr, &getSessionInfo);
 
     // Temporal tokens are also given trough an intermediate window...
     //endpoints->addEndpoint(Endpoints::POST, "tempMFAToken", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {}, nullptr,&tempMFAToken);
