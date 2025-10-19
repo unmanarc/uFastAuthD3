@@ -7,7 +7,7 @@
 #include <boost/algorithm/string/join.hpp>
 #include <json/config.h>
 
-#include "../globals.h"
+#include "globals.h"
 
 #include "Tokens/tokensmanager.h"
 

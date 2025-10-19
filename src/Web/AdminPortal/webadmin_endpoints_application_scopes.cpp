@@ -1,6 +1,6 @@
 #include "webadmin_endpoints_application_scopes.h"
 
-#include "../globals.h"
+#include "globals.h"
 #include "defs.h"
 #include <regex>
 #include <Mantids30/Program_Logs/applog.h>

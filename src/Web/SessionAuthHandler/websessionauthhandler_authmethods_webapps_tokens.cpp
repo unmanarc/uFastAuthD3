@@ -9,7 +9,7 @@
 #include <json/config.h>
 #include <optional>
 
-#include "../globals.h"
+#include "globals.h"
 #include "Tokens/tokensmanager.h"
 
 using namespace Mantids30;

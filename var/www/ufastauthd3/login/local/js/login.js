@@ -76,7 +76,6 @@ function loadTokenAndRedirect() {
                 schemeId: 1,
                 activity: "LOGIN",
                 app: appName
-
             }
         ),
         headers: {

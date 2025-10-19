@@ -13,7 +13,7 @@
 #include <json/value.h>
 #include <string>
 
-#include "../globals.h"
+#include "globals.h"
 #include "logindirectorymanager.h"
 
 using namespace Mantids30;

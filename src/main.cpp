@@ -4,10 +4,10 @@
 #include <Mantids30/Net_Sockets/socket_tls.h>
 #include <Mantids30/Program_Service/application.h>
 
-#include "WebAdmin/webadmin_serverimpl.h"
-#include "WebLogin/weblogin_serverimpl.h"
-#include "WebSessionAuthHandler/websessionauthhandler_serverimpl.h"
-#include "AppSync/appsync_serverimpl.h"
+#include "Web/AdminPortal/webadmin_serverimpl.h"
+#include "Web/LoginPortal/weblogin_serverimpl.h"
+#include "Web/SessionAuthHandler/websessionauthhandler_serverimpl.h"
+#include "Web/AppSync/appsync_serverimpl.h"
 /*
 #include "RPC1LoginServer2/fastrpcimpl.h"
 #include "RPC1LoginServer2/rpc1loginserver2impl.h"
@@ -93,7 +93,27 @@ public:
                 }
             }
 
-            boost::property_tree::info_parser::read_info(configFile, Globals::pConfig);
+            try
+            {
+                boost::property_tree::info_parser::read_info(configFile, Globals::pConfig);
+            }
+            catch (const boost::property_tree::info_parser_error &ex)
+            {
+                initLog->log0(__func__, Program::Logs::LEVEL_CRITICAL,
+                              "Unable to read configuration file '%s' (line %lu): %s",
+                              configFile.c_str(),
+                              static_cast<unsigned long>(ex.line()),
+                              ex.what());
+                return false;
+            }
+            catch (const std::exception &ex)
+            {
+                initLog->log0(__func__, Program::Logs::LEVEL_CRITICAL,
+                              "Unexpected error while reading configuration file '%s': %s",
+                              configFile.c_str(),
+                              ex.what());
+                return false;
+            }
         }
 
         Globals::appLog = Program::Config::Logs::createAppLog(Globals::pConfig);

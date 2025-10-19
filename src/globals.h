@@ -1,6 +1,6 @@
 #pragma once
 
-#include "WebLogin/logindirectorymanager.h"
+#include "Web/LoginPortal/logindirectorymanager.h"
 
 #include <Mantids30/Program_Logs/applog.h>
 #include <Mantids30/Program_Logs/rpclog.h>

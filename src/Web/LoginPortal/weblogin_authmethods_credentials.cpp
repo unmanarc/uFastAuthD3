@@ -1,7 +1,7 @@
 #include "Mantids30/Protocol_HTTP/api_return.h"
 #include "weblogin_add_endpoints.h"
 
-#include "../globals.h"
+#include "globals.h"
 
 #include <inttypes.h>
 

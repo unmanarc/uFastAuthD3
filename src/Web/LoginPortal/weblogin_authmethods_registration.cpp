@@ -1,6 +1,6 @@
 #include "weblogin_add_endpoints.h"
 
-#include "../globals.h"
+#include "globals.h"
 #include <optional>
 
 using namespace Mantids30;

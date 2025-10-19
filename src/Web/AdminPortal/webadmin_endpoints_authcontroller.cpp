@@ -1,5 +1,5 @@
 #include "webadmin_endpoints_authcontroller.h"
-#include "../globals.h"
+#include "globals.h"
 #include "json/value.h"
 #include <Mantids30/Program_Logs/applog.h>
 #include <optional>

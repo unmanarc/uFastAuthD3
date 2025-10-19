@@ -2,12 +2,12 @@
 
 #include "IdentityManager/credentialvalidator.h"
 
-#include "WebAdmin/webadmin_endpoints_accounts.h"
-#include "WebAdmin/webadmin_endpoints_applications.h"
-#include "WebAdmin/webadmin_endpoints_application_scopes.h"
-#include "WebAdmin/webadmin_endpoints_application_roles.h"
-#include "WebAdmin/webadmin_endpoints_application_activities.h"
-#include "WebAdmin/webadmin_endpoints_authcontroller.h"
+#include "Web/AdminPortal/webadmin_endpoints_accounts.h"
+#include "Web/AdminPortal/webadmin_endpoints_applications.h"
+#include "Web/AdminPortal/webadmin_endpoints_application_scopes.h"
+#include "Web/AdminPortal/webadmin_endpoints_application_roles.h"
+#include "Web/AdminPortal/webadmin_endpoints_application_activities.h"
+#include "Web/AdminPortal/webadmin_endpoints_authcontroller.h"
 
 #include <json/json.h>
 

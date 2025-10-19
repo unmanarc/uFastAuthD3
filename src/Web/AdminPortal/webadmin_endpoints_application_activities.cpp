@@ -1,6 +1,6 @@
 #include "webadmin_endpoints_application_activities.h"
 
-#include "../globals.h"
+#include "globals.h"
 #include <Mantids30/Program_Logs/applog.h>
 #include <optional>
 #include <string>

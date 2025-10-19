@@ -4,7 +4,7 @@
 #include "json/value.h"
 #include <Mantids30/Program_Logs/applog.h>
 
-#include "../globals.h"
+#include "globals.h"
 #include <regex>
 
 using namespace Mantids30::Program;

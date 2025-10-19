@@ -5,7 +5,7 @@
 #include "weblogin_add_endpoints.h"
 #include <Mantids30/Helpers/json.h>
 
-#include "../globals.h"
+#include "globals.h"
 
 #include <cstdint>
 #include <inttypes.h>

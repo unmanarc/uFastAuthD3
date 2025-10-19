@@ -1,5 +1,5 @@
 #include "webadmin_endpoints.h"
-#include "../globals.h"
+#include "globals.h"
 
 using namespace Mantids30;
 
