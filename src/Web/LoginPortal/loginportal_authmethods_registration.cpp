@@ -1,4 +1,4 @@
-#include "weblogin_add_endpoints.h"
+#include "loginportal_add_endpoints.h"
 
 #include "globals.h"
 #include <optional>
@@ -19,14 +19,14 @@ using namespace Network::Protocols;
 
 */
 
-API::APIReturn WebLogin_AuthMethods::registerAccount(void *context, const RequestParameters &request, ClientDetails &clientDetails)
+API::APIReturn LoginPortal_AuthMethods::registerAccount(void *context, const RequestParameters &request, ClientDetails &clientDetails)
 {
     API::APIReturn response;
     IdentityManager *identityManager = Globals::getIdentityManager();
 
     auto config = Globals::pConfig;
-    bool bAllowSelfRegistration = config.get<bool>("WebLoginPortal.Registration.AllowSelfRegistration", false);
-    bool bAutoConfirmAccount = config.get<bool>("WebLoginPortal.Registration.AutoConfirm", false);
+    bool bAllowSelfRegistration = config.get<bool>("LoginPortal.Registration.AllowSelfRegistration", false);
+    bool bAutoConfirmAccount = config.get<bool>("LoginPortal.Registration.AutoConfirm", false);
 
     AccountFlags accountFlags;
     accountFlags.confirmed = bAutoConfirmAccount;
@@ -83,7 +83,7 @@ API::APIReturn WebLogin_AuthMethods::registerAccount(void *context, const Reques
     if (!newPass.empty() && success)
     {
         bool r = false;
-        std::optional<uint32_t> applicationRoleDefaultSSOLogin = identityManager->applicationActivities->getApplicationActivityDefaultScheme("IAM", "LOGIN");
+        std::optional<uint32_t> applicationRoleDefaultSSOLogin = identityManager->applicationActivities->getApplicationActivityDefaultScheme(IAM_USRPORTAL_APPNAME, "LOGIN");
 
         // Not any scheme to the default
         if (applicationRoleDefaultSSOLogin.has_value())

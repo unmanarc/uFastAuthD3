@@ -70,16 +70,13 @@ bool IdentityManager::initializeAdminAccountWithPassword(const std::string &acco
     return r;
 }
 
-bool IdentityManager::initializeApplicationWithScheme(const std::string &appName, const std::string &appDescription, const uint32_t &schemeId, const std::string &owner, bool *alreadyExist)
+bool IdentityManager::initializeApplicationWithScheme(const std::string &appName, const std::string &appDescription, const std::string &appURL, const uint32_t &schemeId, const std::string &owner, bool *alreadyExist)
 {
     bool r = true;
 
     if (!applications->doesApplicationExist(appName))
     {
-        r = r && applications->addApplication(appName, appDescription, "https://iamadmin.localhost:9443", Mantids30::Helpers::Random::createRandomString(32), owner, false, false, true);
-/*        r = r && applicationActivities->setApplicationActivities(appName, {{"LOGIN", {.description = "Main Login", .parentActivity = ""}}});
-        r = r && applicationActivities->addAuthenticationSchemeToApplicationActivity(appName, "LOGIN", schemeId);
-        r = r && applicationActivities->setApplicationActivityDefaultScheme(appName, "LOGIN", schemeId);*/
+        r = r && applications->addApplication(appName, appDescription, appURL, Mantids30::Helpers::Random::createRandomString(32), owner, false, false, true);
         *alreadyExist = false;
     }
     else

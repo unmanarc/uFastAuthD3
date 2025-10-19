@@ -98,7 +98,7 @@
             success: function (response) {
                 populateApplicationTokensConfig(response["tokenConfig"]);
                 populateApplicationDetails(response["details"]);
-                populateApplicationScopes(response["advanced"]["scopesModifiable"]);
+                populateApplicationScopes(response["advanced"]["canUserModifyApplicationSecurityContext"]);
                 populateApplicationAccounts(response["accounts"]);
                 populateApplicationActivities(response["activities"]);
                 populateApplicationLoginFlow(response["loginFlow"]);

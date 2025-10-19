@@ -1,5 +1,5 @@
 #include "Mantids30/Program_Logs/loglevels.h"
-#include "weblogin_add_endpoints.h"
+#include "loginportal_add_endpoints.h"
 #include "json/value.h"
 #include <Mantids30/Helpers/json.h>
 
@@ -18,7 +18,7 @@ using namespace API::RESTful;
 using namespace Network::Protocols;
 
 
-bool WebLogin_AuthMethods::token_validateRedirectUri(IdentityManager* identityManager, const std::string& app,
+bool LoginPortal_AuthMethods::token_validateRedirectUri(IdentityManager* identityManager, const std::string& app,
     const std::string& redirectURI, const std::string& user, const std::string& ipAddress)
 {
     std::list<std::string> redirectURIs = identityManager->applications->listWebLoginRedirectURIsFromApplication(app);
@@ -42,7 +42,7 @@ bool WebLogin_AuthMethods::token_validateRedirectUri(IdentityManager* identityMa
     return true;
 }
 
-std::string WebLogin_AuthMethods::token_signApplicationJWT(JWT::Token &accessToken, const ApplicationTokenProperties &tokenProperties)
+std::string LoginPortal_AuthMethods::token_signApplicationJWT(JWT::Token &accessToken, const ApplicationTokenProperties &tokenProperties)
 {
     std::string appName = JSON_ASSTRING_D(accessToken.getClaim("app"), "");
     std::shared_ptr<JWT> signingJWT = Globals::getIdentityManager()->applications->getAppJWTSigner(appName);
@@ -53,7 +53,7 @@ std::string WebLogin_AuthMethods::token_signApplicationJWT(JWT::Token &accessTok
     return signingJWT->signFromToken(accessToken, false);
 }
 
-bool WebLogin_AuthMethods::token_createAndSignJWTs(IdentityManager* identityManager, const JWT::Token* jwtToken,
+bool LoginPortal_AuthMethods::token_createAndSignJWTs(IdentityManager* identityManager, const JWT::Token* jwtToken,
     const std::string& app, const std::string& user, const std::string& redirectURI,
     APIReturn& response)
 {
@@ -81,7 +81,7 @@ bool WebLogin_AuthMethods::token_createAndSignJWTs(IdentityManager* identityMana
     return true;
 }
 
-bool WebLogin_AuthMethods::token_validateJwtClaims(const JWT::Token *jwtToken, const std::string &user, const std::string &ipAddress)
+bool LoginPortal_AuthMethods::token_validateJwtClaims(const JWT::Token *jwtToken, const std::string &user, const std::string &ipAddress)
 {
     if (jwtToken->getClaim("app") != "IAM" || jwtToken->getClaim("type") != "IAM")
     {
@@ -92,7 +92,7 @@ bool WebLogin_AuthMethods::token_validateJwtClaims(const JWT::Token *jwtToken, c
     return true;
 }
 
-bool WebLogin_AuthMethods::token_validateAuthenticationScheme(IdentityManager *identityManager, const JWT::Token *jwtToken, const std::string &app, const std::string &activity, uint32_t schemeId, const std::string &user, const std::string &ipAddress)
+bool LoginPortal_AuthMethods::token_validateAuthenticationScheme(IdentityManager *identityManager, const JWT::Token *jwtToken, const std::string &app, const std::string &activity, uint32_t schemeId, const std::string &user, const std::string &ipAddress)
 {
     std::set<uint32_t> authenticatedSlotIdsSet = Mantids30::Helpers::jsonToUInt32Set(jwtToken->getClaim("slotIds"));
     std::set<std::string> authenticatedAppsSet = Mantids30::Helpers::jsonToStringSet(jwtToken->getClaim("apps"));
@@ -118,7 +118,7 @@ bool WebLogin_AuthMethods::token_validateAuthenticationScheme(IdentityManager *i
 
     return true;
 }
-bool WebLogin_AuthMethods::token_validateAppAuthorization(IdentityManager* identityManager, const JWT::Token* jwtToken,
+bool LoginPortal_AuthMethods::token_validateAppAuthorization(IdentityManager* identityManager, const JWT::Token* jwtToken,
     const std::string& app, const std::string& user, const std::string& ipAddress)
 {
     std::set<std::string> authenticatedAppsSet = Mantids30::Helpers::jsonToStringSet(jwtToken->getClaim("apps"));
@@ -135,7 +135,7 @@ bool WebLogin_AuthMethods::token_validateAppAuthorization(IdentityManager* ident
 /*
     This will tranform the current authentication into an APP access...
 */
-API::APIReturn WebLogin_AuthMethods::token(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn LoginPortal_AuthMethods::token(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 

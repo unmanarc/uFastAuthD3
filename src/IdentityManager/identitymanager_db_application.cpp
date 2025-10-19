@@ -18,7 +18,7 @@ using namespace Mantids30::Helpers;
 using namespace Mantids30;
 
 bool IdentityManager_DB::Applications_DB::addApplication(const std::string &appName, const std::string &applicationDescription, const std::string &appURL, const std::string &apiKey,
-                                                         const std::string &sOwnerAccountName, bool canUserModifyScope, bool appSyncEnabled, bool initializeDefaultValues)
+                                                         const std::string &sOwnerAccountName, bool canUserModifyApplicationSecurityContext, bool appSyncEnabled, bool initializeDefaultValues)
 {
 
     std::optional<uint32_t> defaultSchemeId = _parent->authController->getDefaultAuthScheme();
@@ -33,14 +33,14 @@ bool IdentityManager_DB::Applications_DB::addApplication(const std::string &appN
         Threads::Sync::Lock_RW lock(_parent->m_mutex);
 
         // Insert into iam.applications.
-        bool appInsertSuccess = _parent->m_sqlConnector->execute("INSERT INTO iam.applications (`appName`, `f_appCreator`, `appDescription`, `apiKey`, `canManualModifyScope`, `appSyncEnabled`) VALUES (:appName, "
-                                                                 ":appCreator, :description, :apiKey, :canManualModifyScope, :appSyncEnabled);",
+        bool appInsertSuccess = _parent->m_sqlConnector->execute("INSERT INTO iam.applications (`appName`, `f_appCreator`, `appDescription`, `apiKey`, `canUserModifyApplicationSecurityContext`, `appSyncEnabled`) VALUES (:appName, "
+                                                                 ":appCreator, :description, :apiKey, :canUserModifyApplicationSecurityContext, :appSyncEnabled);",
                                                                  {
                                                                   {":appName", MAKE_VAR(STRING, appName)},
                                                                   {":appCreator", MAKE_VAR(STRING, sOwnerAccountName)},
                                                                   {":description", MAKE_VAR(STRING, applicationDescription)},
                                                                   {":apiKey", MAKE_VAR(STRING, Encoders::encodeToBase64Obf(apiKey))},
-                                                                  {":canManualModifyScope", MAKE_VAR(BOOL, canUserModifyScope)},
+                                                                  {":canUserModifyApplicationSecurityContext", MAKE_VAR(BOOL, canUserModifyApplicationSecurityContext)},
                                                                   {":appSyncEnabled", MAKE_VAR(BOOL, appSyncEnabled)}
                                                                  }
                                                                  );
@@ -124,12 +124,12 @@ bool IdentityManager_DB::Applications_DB::updateApplicationSyncEnabled(const std
         });
 }
 
-std::optional<bool> IdentityManager_DB::Applications_DB::canManuallyModifyApplicationScopes(const std::string &appName)
+std::optional<bool> IdentityManager_DB::Applications_DB::canUserModifyApplicationSecurityContext(const std::string &appName)
 {
     Threads::Sync::Lock_RD lock(_parent->m_mutex);
 
     Abstract::BOOL r;
-    SQLConnector::QueryInstance i = _parent->m_sqlConnector->qSelect("SELECT `canManualModifyScope` FROM iam.applications WHERE `appName`=:appName LIMIT 1;", {{":appName", MAKE_VAR(STRING, appName)}},
+    SQLConnector::QueryInstance i = _parent->m_sqlConnector->qSelect("SELECT `canUserModifyApplicationSecurityContext` FROM iam.applications WHERE `appName`=:appName LIMIT 1;", {{":appName", MAKE_VAR(STRING, appName)}},
                                                                      {&r});
     if (i.getResultsOK() && i.query->step())
     {

@@ -1,16 +1,16 @@
-#include "webadmin_endpoints_application_roles.h"
+#include "adminportal_endpoints_application_roles.h"
 
 #include "globals.h"
 #include <Mantids30/Program_Logs/applog.h>
 
-#include "webadmin_endpoints.h"
+#include "adminportal_endpoints.h"
 
 using namespace Mantids30::Program;
 using namespace Mantids30;
 
 using namespace Mantids30::Network::Protocols;
 
-void WebAdminMethods_ApplicationRoles::addEndpoints_Roles(std::shared_ptr<Endpoints> endpoints)
+void AdminPortalMethods_ApplicationRoles::addEndpoints_Roles(std::shared_ptr<Endpoints> endpoints)
 {
     using SecurityOptions = Mantids30::API::RESTful::Endpoints::SecurityOptions;
     endpoints->addEndpoint(Endpoints::GET,    "searchApplicationRoles",        SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"},     nullptr, &searchApplicationRoles);
@@ -35,12 +35,12 @@ void WebAdminMethods_ApplicationRoles::addEndpoints_Roles(std::shared_ptr<Endpoi
 }
 
 
-API::APIReturn WebAdminMethods_ApplicationRoles::searchApplicationRoles(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortalMethods_ApplicationRoles::searchApplicationRoles(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     return Globals::getIdentityManager()->applicationRoles->searchApplicationRoles(*request.inputJSON);
 }
 
-API::APIReturn WebAdminMethods_ApplicationRoles::updateRoleDescription(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortalMethods_ApplicationRoles::updateRoleDescription(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
@@ -74,7 +74,7 @@ API::APIReturn WebAdminMethods_ApplicationRoles::updateRoleDescription(void *con
 }
 
 
-API::APIReturn WebAdminMethods_ApplicationRoles::addRole(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortalMethods_ApplicationRoles::addRole(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
@@ -109,7 +109,7 @@ API::APIReturn WebAdminMethods_ApplicationRoles::addRole(void *context, const Re
 }
 
 
-API::APIReturn WebAdminMethods_ApplicationRoles::getRoleInfo(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortalMethods_ApplicationRoles::getRoleInfo(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
@@ -164,7 +164,7 @@ API::APIReturn WebAdminMethods_ApplicationRoles::getRoleInfo(void *context, cons
 }
 
 
-API::APIReturn WebAdminMethods_ApplicationRoles::removeRole(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortalMethods_ApplicationRoles::removeRole(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
     const std::string roleName = JSON_ASSTRING(*request.inputJSON, "roleName", "");
@@ -189,7 +189,7 @@ API::APIReturn WebAdminMethods_ApplicationRoles::removeRole(void *context, const
     return response;
 }
 
-API::APIReturn WebAdminMethods_ApplicationRoles::addApplicationRoleToAccount(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortalMethods_ApplicationRoles::addApplicationRoleToAccount(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
@@ -222,7 +222,7 @@ API::APIReturn WebAdminMethods_ApplicationRoles::addApplicationRoleToAccount(voi
     return response;
 }
 
-API::APIReturn WebAdminMethods_ApplicationRoles::removeApplicationRoleFromAccount(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortalMethods_ApplicationRoles::removeApplicationRoleFromAccount(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
@@ -259,7 +259,7 @@ API::APIReturn WebAdminMethods_ApplicationRoles::removeApplicationRoleFromAccoun
 /*
 
 
-void WebAdminMethods_ApplicationRoles::doesRoleExist(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+void AdminPortalMethods_ApplicationRoles::doesRoleExist(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     (*response.responseJSON()) = Globals::getIdentityManager()->roles->doesRoleExist(JSON_ASSTRING(*request.inputJSON, "roleName", ""));
 }
@@ -268,34 +268,34 @@ void WebAdminMethods_ApplicationRoles::doesRoleExist(void *context, const Reques
 
 
 
-void WebAdminMethods_ApplicationRoles::validateApplicationScopeOnRole(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+void AdminPortalMethods_ApplicationRoles::validateApplicationScopeOnRole(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     (*response.responseJSON()) = Globals::getIdentityManager()->authController->validateApplicationScopeOnRole(JSON_ASSTRING(*request.inputJSON, "roleName", ""),
                                                                                                                     {JSON_ASSTRING(*request.inputJSON, "appName", ""),
                                                                                                                      JSON_ASSTRING(*request.inputJSON, "id", "")});
 }
 
-void WebAdminMethods_ApplicationRoles::getApplicationRoleDescription(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+void AdminPortalMethods_ApplicationRoles::getApplicationRoleDescription(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     (*response.responseJSON()) = Globals::getIdentityManager()->roles->getApplicationRoleDescription(JSON_ASSTRING(*request.inputJSON, "roleName", ""));
 }
 
-void WebAdminMethods_ApplicationRoles::getApplicationRolesList(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+void AdminPortalMethods_ApplicationRoles::getApplicationRolesList(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     (*response.responseJSON()) = Helpers::setToJSON(Globals::getIdentityManager()->roles->getApplicationRolesList());
 }
 
-void WebAdminMethods_ApplicationRoles::getRoleApplicationScopes(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+void AdminPortalMethods_ApplicationRoles::getRoleApplicationScopes(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
-    (*response.responseJSON()) = WebAdmin_Endpoints::scopeListToJSON(Globals::getIdentityManager()->authController->getRoleApplicationScopes(JSON_ASSTRING(*request.inputJSON, "roleName", "")));
+    (*response.responseJSON()) = AdminPortal_Endpoints::scopeListToJSON(Globals::getIdentityManager()->authController->getRoleApplicationScopes(JSON_ASSTRING(*request.inputJSON, "roleName", "")));
 }
 
-void WebAdminMethods_ApplicationRoles::getApplicationRoleAccounts(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+void AdminPortalMethods_ApplicationRoles::getApplicationRoleAccounts(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     (*response.responseJSON()) = Helpers::setToJSON(Globals::getIdentityManager()->roles->getApplicationRoleAccounts(JSON_ASSTRING(*request.inputJSON, "roleName", "")));
 }
 
-void WebAdminMethods_ApplicationRoles::searchApplicationRoles(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+void AdminPortalMethods_ApplicationRoles::searchApplicationRoles(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     json x;
     int i = 0;

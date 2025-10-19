@@ -8,6 +8,7 @@
 #include <Mantids30/Server_WebCore/apienginecore.h>
 
 #include "IdentityManager/identitymanager.h"
+#include "defs.h"
 
 #include <boost/property_tree/ptree.hpp>
 

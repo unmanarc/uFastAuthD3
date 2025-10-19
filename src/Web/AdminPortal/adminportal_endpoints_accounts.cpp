@@ -1,4 +1,4 @@
-#include "webadmin_endpoints_accounts.h"
+#include "adminportal_endpoints_accounts.h"
 #include "IdentityManager/ds_account.h"
 #include "IdentityManager/ds_authentication.h"
 #include "json/value.h"
@@ -11,7 +11,7 @@ using namespace Mantids30::Program;
 using namespace Mantids30;
 using namespace Mantids30::Network::Protocols;
 
-std::map<std::string, std::string> WebAdminMethods_Accounts::jsonToMap(const json &jValue)
+std::map<std::string, std::string> AdminPortalMethods_Accounts::jsonToMap(const json &jValue)
 {
     std::map<std::string, std::string> r;
     for (const std::string &memberName : jValue.getMemberNames())
@@ -22,7 +22,7 @@ std::map<std::string, std::string> WebAdminMethods_Accounts::jsonToMap(const jso
     return r;
 }
 
-void WebAdminMethods_Accounts::addEndpoints_Accounts(std::shared_ptr<Endpoints> endpoints)
+void AdminPortalMethods_Accounts::addEndpoints_Accounts(std::shared_ptr<Endpoints> endpoints)
 {
     using SecurityOptions = Mantids30::API::RESTful::Endpoints::SecurityOptions;
 
@@ -72,7 +72,7 @@ void WebAdminMethods_Accounts::addEndpoints_Accounts(std::shared_ptr<Endpoints> 
     endpoints->addEndpoint(Endpoints::POST, "blockAccountUsingToken", &blockAccountUsingToken, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"});*/
 }
 
-API::APIReturn WebAdminMethods_Accounts::addAccount(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortalMethods_Accounts::addAccount(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
     // Extract account name from request
@@ -154,7 +154,7 @@ API::APIReturn WebAdminMethods_Accounts::addAccount(void *context, const Request
     return response;
 }
 
-API::APIReturn WebAdminMethods_Accounts::getAccountFlags(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortalMethods_Accounts::getAccountFlags(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     APIReturn response;
     std::string accountName = JSON_ASSTRING(*request.inputJSON, "accountName", "");
@@ -168,7 +168,7 @@ API::APIReturn WebAdminMethods_Accounts::getAccountFlags(void *context, const Re
     return Globals::getIdentityManager()->accounts->getAccountFlags(accountName).toJSON();
 }
 
-API::APIReturn WebAdminMethods_Accounts::changeAccountFlags(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortalMethods_Accounts::changeAccountFlags(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     APIReturn response;
     std::string accountName = JSON_ASSTRING(*request.inputJSON, "accountName", "");
@@ -199,7 +199,7 @@ API::APIReturn WebAdminMethods_Accounts::changeAccountFlags(void *context, const
     return response;
 }
 
-API::APIReturn WebAdminMethods_Accounts::doesAccountExist(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortalMethods_Accounts::doesAccountExist(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
     std::string accountName = JSON_ASSTRING(*request.inputJSON, "accountName", "");
@@ -218,12 +218,12 @@ API::APIReturn WebAdminMethods_Accounts::doesAccountExist(void *context, const R
     return response;
 }
 
-API::APIReturn WebAdminMethods_Accounts::searchAccounts(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortalMethods_Accounts::searchAccounts(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     return Globals::getIdentityManager()->accounts->searchAccounts(*request.inputJSON);
 }
 
-API::APIReturn WebAdminMethods_Accounts::getAccountApplications(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortalMethods_Accounts::getAccountApplications(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
@@ -311,7 +311,7 @@ API::APIReturn WebAdminMethods_Accounts::getAccountApplications(void *context, c
     return response;
 }
 
-API::APIReturn WebAdminMethods_Accounts::addAccountToApplication(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortalMethods_Accounts::addAccountToApplication(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
@@ -339,7 +339,7 @@ API::APIReturn WebAdminMethods_Accounts::addAccountToApplication(void *context, 
     return response;
 }
 
-API::APIReturn WebAdminMethods_Accounts::removeAccountFromApplication(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortalMethods_Accounts::removeAccountFromApplication(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
@@ -365,12 +365,12 @@ API::APIReturn WebAdminMethods_Accounts::removeAccountFromApplication(void *cont
     return response;
 }
 
-API::APIReturn WebAdminMethods_Accounts::searchFields(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortalMethods_Accounts::searchFields(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     return Globals::getIdentityManager()->accounts->searchFields(*request.inputJSON);
 }
 
-API::APIReturn WebAdminMethods_Accounts::addAccountDetailField(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortalMethods_Accounts::addAccountDetailField(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
@@ -390,7 +390,7 @@ API::APIReturn WebAdminMethods_Accounts::addAccountDetailField(void *context, co
     return response;
 }
 
-API::APIReturn WebAdminMethods_Accounts::removeAccountDetailField(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortalMethods_Accounts::removeAccountDetailField(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
@@ -408,7 +408,7 @@ API::APIReturn WebAdminMethods_Accounts::removeAccountDetailField(void *context,
     return response;
 }
 
-API::APIReturn WebAdminMethods_Accounts::getAccountDetailField(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortalMethods_Accounts::getAccountDetailField(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
@@ -428,7 +428,7 @@ API::APIReturn WebAdminMethods_Accounts::getAccountDetailField(void *context, co
     return field.value().toJSON();
 }
 
-API::APIReturn WebAdminMethods_Accounts::getAccountDetailFieldsValues(void *context, const RequestParameters &request,
+API::APIReturn AdminPortalMethods_Accounts::getAccountDetailFieldsValues(void *context, const RequestParameters &request,
                                                             ClientDetails &authClientDetails)
 {
     API::APIReturn response;
@@ -452,7 +452,7 @@ API::APIReturn WebAdminMethods_Accounts::getAccountDetailFieldsValues(void *cont
     return result;
 }
 
-API::APIReturn WebAdminMethods_Accounts::updateAccountDetailFieldsValues(void *context, const RequestParameters &request,
+API::APIReturn AdminPortalMethods_Accounts::updateAccountDetailFieldsValues(void *context, const RequestParameters &request,
                                                                ClientDetails &authClientDetails)
 {
     API::APIReturn response;
@@ -493,7 +493,7 @@ API::APIReturn WebAdminMethods_Accounts::updateAccountDetailFieldsValues(void *c
     return response;
 }
 
-API::APIReturn WebAdminMethods_Accounts::removeAccount(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortalMethods_Accounts::removeAccount(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
     std::string accountName = JSON_ASSTRING(*request.inputJSON, "accountName", "");
@@ -514,7 +514,7 @@ API::APIReturn WebAdminMethods_Accounts::removeAccount(void *context, const Requ
 
 
 /*
-API::APIReturn WebAdminMethods_Accounts::updateAccountInfo(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortalMethods_Accounts::updateAccountInfo(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     AccountFlags accountFlags;
     accountFlags.fromJSON(request.inputJSON);
@@ -532,37 +532,37 @@ API::APIReturn WebAdminMethods_Accounts::updateAccountInfo(void *context, const 
 }*/
 
 /*
-API::APIReturn WebAdminMethods_Accounts::changeAccountDescription(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortalMethods_Accounts::changeAccountDescription(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
 
     return Globals::getIdentityManager()->accounts->changeAccountDescription(JSON_ASSTRING(*request.inputJSON,"accountName",""), JSON_ASSTRING(*request.inputJSON,"description",""));
 }
 
-API::APIReturn WebAdminMethods_Accounts::changeAccoungGivenName(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortalMethods_Accounts::changeAccoungGivenName(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
 
     return Globals::getIdentityManager()->accounts->changeAccoungGivenName(JSON_ASSTRING(*request.inputJSON,"accountName",""), JSON_ASSTRING(*request.inputJSON,"givenName",""));
 }
 
-API::APIReturn WebAdminMethods_Accounts::changeAccountLastName(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortalMethods_Accounts::changeAccountLastName(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
 
     return Globals::getIdentityManager()->accounts->changeAccountLastName(JSON_ASSTRING(*request.inputJSON,"accountName",""), JSON_ASSTRING(*request.inputJSON,"lastName",""));
 }
 
-API::APIReturn WebAdminMethods_Accounts::changeAccountEmail(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortalMethods_Accounts::changeAccountEmail(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
 
     return Globals::getIdentityManager()->accounts->changeAccountEmail(JSON_ASSTRING(*request.inputJSON,"accountName",""), JSON_ASSTRING(*request.inputJSON,"email",""));
 }
 
-API::APIReturn WebAdminMethods_Accounts::changeAccountExtraData(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortalMethods_Accounts::changeAccountExtraData(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
 
     return Globals::getIdentityManager()->accounts->changeAccountExtraData(JSON_ASSTRING(*request.inputJSON,"accountName",""), JSON_ASSTRING(*request.inputJSON,"extraData",""));
 }*/
 /*
-API::APIReturn WebAdminMethods_Accounts::updateAccountRoles(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortalMethods_Accounts::updateAccountRoles(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     std::set<std::string> roleSet;
 
@@ -584,14 +584,14 @@ API::APIReturn WebAdminMethods_Accounts::updateAccountRoles(void *context, const
     }
 }
 
-API::APIReturn WebAdminMethods_Accounts::validateAccountApplicationScope(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortalMethods_Accounts::validateAccountApplicationScope(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     (*response.responseJSON()) = Globals::getIdentityManager()->authController->validateAccountApplicationScope(JSON_ASSTRING(*request.inputJSON, "accountName", ""),
                                                                                                                      {JSON_ASSTRING(*request.inputJSON, "appName", ""),
                                                                                                                       JSON_ASSTRING(*request.inputJSON, "id", "")});
 }
 
-API::APIReturn WebAdminMethods_Accounts::blockAccountUsingToken(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortalMethods_Accounts::blockAccountUsingToken(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     if (!Globals::getIdentityManager()->accounts->blockAccountUsingToken(JSON_ASSTRING(*request.inputJSON, "accountName", ""), JSON_ASSTRING(*request.inputJSON, "blockToken", "")))
     {
@@ -600,7 +600,7 @@ API::APIReturn WebAdminMethods_Accounts::blockAccountUsingToken(void *context, c
 }*/
 
 /*
-API::APIReturn WebAdminMethods_Accounts::changeAccountExpiration(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortalMethods_Accounts::changeAccountExpiration(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     if (!Globals::getIdentityManager()->accounts->changeAccountExpiration(JSON_ASSTRING(*request.inputJSON, "accountName", ""), JSON_ASUINT64(*request.inputJSON, "expiration", 0)))
     {
@@ -608,7 +608,7 @@ API::APIReturn WebAdminMethods_Accounts::changeAccountExpiration(void *context, 
     }
 }
 
-API::APIReturn WebAdminMethods_Accounts::changeCredential(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortalMethods_Accounts::changeCredential(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     Credential credentialData;
     credentialData.fromJSON((*request.inputJSON)["credentialData"]);
@@ -618,7 +618,7 @@ API::APIReturn WebAdminMethods_Accounts::changeCredential(void *context, const R
     }
 }
 
-API::APIReturn WebAdminMethods_Accounts::confirmAccount(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortalMethods_Accounts::confirmAccount(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     if (!Globals::getIdentityManager()->accounts->disableAccount(JSON_ASSTRING(*request.inputJSON, "accountName", ""), JSON_ASBOOL(*request.inputJSON, "disabled", false)))
     {
@@ -626,7 +626,7 @@ API::APIReturn WebAdminMethods_Accounts::confirmAccount(void *context, const Req
     }
 }
 
-API::APIReturn WebAdminMethods_Accounts::disableAccount(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortalMethods_Accounts::disableAccount(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     if (!Globals::getIdentityManager()->accounts->disableAccount(JSON_ASSTRING(*request.inputJSON, "accountName", ""), JSON_ASBOOL(*request.inputJSON, "disabled", false)))
     {
@@ -634,32 +634,32 @@ API::APIReturn WebAdminMethods_Accounts::disableAccount(void *context, const Req
     }
 }*/
 /*
-API::APIReturn WebAdminMethods_Accounts::getAccountBlockToken(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortalMethods_Accounts::getAccountBlockToken(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     (*response.responseJSON()) = Globals::getIdentityManager()->accounts->getAccountBlockToken(JSON_ASSTRING(*request.inputJSON, "accountName", ""));
 }
 
-API::APIReturn WebAdminMethods_Accounts::getAccountDirectApplicationScopes(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortalMethods_Accounts::getAccountDirectApplicationScopes(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
-    (*response.responseJSON()) = WebAdmin_Endpoints::scopeListToJSON(
+    (*response.responseJSON()) = AdminPortal_Endpoints::scopeListToJSON(
         Globals::getIdentityManager()->authController->getAccountDirectApplicationScopes(JSON_ASSTRING(*request.inputJSON, "accountName", "")));
 }
 
-API::APIReturn WebAdminMethods_Accounts::getAccountDetails(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortalMethods_Accounts::getAccountDetails(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     auto getAccountDetails = Globals::getIdentityManager()->accounts->getAccountDetails(JSON_ASSTRING(*request.inputJSON, "accountName", ""));
     // Llenar el payloadOut con los detalles de la cuenta
     (*response.responseJSON()) = getAccountDetails.toJSON();
 }
 
-API::APIReturn WebAdminMethods_Accounts::getAccountExpirationTime(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortalMethods_Accounts::getAccountExpirationTime(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     (*response.responseJSON()) = Json::Int64(Globals::getIdentityManager()->accounts->getAccountExpirationTime(JSON_ASSTRING(*request.inputJSON, "accountName", "")));
 }
 
 
 
-API::APIReturn WebAdminMethods_Accounts::getAccountInfo(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortalMethods_Accounts::getAccountInfo(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     getAccountDetails(context, response, request, authClientDetails);
 
@@ -687,34 +687,34 @@ API::APIReturn WebAdminMethods_Accounts::getAccountInfo(void *context, const Req
 
 }
 
-API::APIReturn WebAdminMethods_Accounts::getAccountLastAccess(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortalMethods_Accounts::getAccountLastAccess(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     (*response.responseJSON()) = Globals::getIdentityManager()->authController->getAccountLastAccess(JSON_ASSTRING(*request.inputJSON, "accountName", ""));
 }
 
-API::APIReturn WebAdminMethods_Accounts::getAccountRoles(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortalMethods_Accounts::getAccountRoles(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     (*response.responseJSON()) = Helpers::setToJSON(Globals::getIdentityManager()->accounts->getAccountRoles(JSON_ASSTRING(*request.inputJSON, "accountName", "")));
 }
 
-API::APIReturn WebAdminMethods_Accounts::getAccountUsableApplicationScopes(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortalMethods_Accounts::getAccountUsableApplicationScopes(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
-    (*response.responseJSON()) = WebAdmin_Endpoints::scopeListToJSON(
+    (*response.responseJSON()) = AdminPortal_Endpoints::scopeListToJSON(
         Globals::getIdentityManager()->authController->getAccountUsableApplicationScopes(JSON_ASSTRING(*request.inputJSON, "accountName", "")));
 }
 
-API::APIReturn WebAdminMethods_Accounts::isAccountExpired(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortalMethods_Accounts::isAccountExpired(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     (*response.responseJSON()) = Globals::getIdentityManager()->accounts->isAccountExpired(JSON_ASSTRING(*request.inputJSON, "accountName", ""));
 }
 
-API::APIReturn WebAdminMethods_Accounts::listAccounts(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortalMethods_Accounts::listAccounts(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     (*response.responseJSON()) = Helpers::setToJSON(Globals::getIdentityManager()->accounts->listAccounts());
 }
 
 
-API::APIReturn WebAdminMethods_Accounts::resetBadAttemptsOnCredential(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortalMethods_Accounts::resetBadAttemptsOnCredential(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     Globals::getIdentityManager()->authController->resetBadAttemptsOnCredential(JSON_ASSTRING(*request.inputJSON, "accountName", ""), JSON_ASUINT(*request.inputJSON, "slotId", 0));
 }

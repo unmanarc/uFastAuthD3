@@ -1,5 +1,5 @@
 #include "Mantids30/Protocol_HTTP/api_return.h"
-#include "weblogin_add_endpoints.h"
+#include "loginportal_add_endpoints.h"
 
 #include "globals.h"
 
@@ -11,7 +11,7 @@ using namespace API::RESTful;
 using namespace Network::Protocols;
 
 
-WebLogin_AuthMethods::APIReturn WebLogin_AuthMethods::getSessionInfo(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+LoginPortal_AuthMethods::APIReturn LoginPortal_AuthMethods::getSessionInfo(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     json r;
     r["user"] = request.jwtToken->getSubject();
@@ -20,7 +20,7 @@ WebLogin_AuthMethods::APIReturn WebLogin_AuthMethods::getSessionInfo(void *conte
 }
 
 
-API::APIReturn WebLogin_AuthMethods::accountCredentialPublicData(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn LoginPortal_AuthMethods::accountCredentialPublicData(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
     IdentityManager *identityManager = Globals::getIdentityManager();
@@ -35,7 +35,7 @@ API::APIReturn WebLogin_AuthMethods::accountCredentialPublicData(void *context, 
     return response;
 }
 
-API::APIReturn WebLogin_AuthMethods::listCredentials(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn LoginPortal_AuthMethods::listCredentials(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
     IdentityManager *identityManager = Globals::getIdentityManager();
@@ -61,7 +61,7 @@ API::APIReturn WebLogin_AuthMethods::listCredentials(void *context, const Reques
     return response;
 }
 
-API::APIReturn WebLogin_AuthMethods::changeCredential(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn LoginPortal_AuthMethods::changeCredential(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
     IdentityManager *identityManager = Globals::getIdentityManager();

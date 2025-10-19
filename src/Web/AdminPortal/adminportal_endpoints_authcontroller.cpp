@@ -1,4 +1,4 @@
-#include "webadmin_endpoints_authcontroller.h"
+#include "adminportal_endpoints_authcontroller.h"
 #include "globals.h"
 #include "json/value.h"
 #include <Mantids30/Program_Logs/applog.h>
@@ -8,7 +8,7 @@ using namespace Mantids30::Program;
 using namespace Mantids30;
 using namespace Mantids30::Network::Protocols;
 
-void WebAdmin_Endpoints_AuthController::addEndpoints_AuthController(std::shared_ptr<Endpoints> endpoints)
+void AdminPortal_Endpoints_AuthController::addEndpoints_AuthController(std::shared_ptr<Endpoints> endpoints)
 {
     using SecurityOptions = Mantids30::API::RESTful::Endpoints::SecurityOptions;
 
@@ -29,7 +29,7 @@ void WebAdmin_Endpoints_AuthController::addEndpoints_AuthController(std::shared_
     endpoints->addEndpoint(Endpoints::PATCH,  "updateDefaultAuthScheme",     SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"AUTH_MODIFY"},   nullptr, &updateDefaultAuthScheme);
 
 }
-WebAdmin_Endpoints_AuthController::APIReturn WebAdmin_Endpoints_AuthController::updateDefaultAuthScheme(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+AdminPortal_Endpoints_AuthController::APIReturn AdminPortal_Endpoints_AuthController::updateDefaultAuthScheme(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     auto authController = Globals::getIdentityManager()->authController;
 
@@ -49,7 +49,7 @@ WebAdmin_Endpoints_AuthController::APIReturn WebAdmin_Endpoints_AuthController::
     return APIReturn();
 }
 
-WebAdmin_Endpoints_AuthController::APIReturn WebAdmin_Endpoints_AuthController::getDefaultAuthScheme(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+AdminPortal_Endpoints_AuthController::APIReturn AdminPortal_Endpoints_AuthController::getDefaultAuthScheme(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     auto authController = Globals::getIdentityManager()->authController;
 
@@ -67,7 +67,7 @@ WebAdmin_Endpoints_AuthController::APIReturn WebAdmin_Endpoints_AuthController::
     return response;
 }
 
-API::APIReturn WebAdmin_Endpoints_AuthController::addNewAuthenticationScheme(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortal_Endpoints_AuthController::addNewAuthenticationScheme(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
     std::optional<uint32_t> r = Globals::getIdentityManager()->authController->addAuthenticationScheme(JSON_ASSTRING(*request.inputJSON,"description",""));
@@ -79,7 +79,7 @@ API::APIReturn WebAdmin_Endpoints_AuthController::addNewAuthenticationScheme(voi
     return response;
 }
 
-API::APIReturn WebAdmin_Endpoints_AuthController::listAuthenticationSchemes(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortal_Endpoints_AuthController::listAuthenticationSchemes(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
     std::map<uint32_t, std::string> slots = Globals::getIdentityManager()->authController->listAuthenticationSchemes();
@@ -106,7 +106,7 @@ API::APIReturn WebAdmin_Endpoints_AuthController::listAuthenticationSchemes(void
 
 }
 
-API::APIReturn WebAdmin_Endpoints_AuthController::deleteAuthenticationScheme(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortal_Endpoints_AuthController::deleteAuthenticationScheme(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
     uint32_t schemeId = JSON_ASUINT(*request.inputJSON, "schemeId", 0);
@@ -119,7 +119,7 @@ API::APIReturn WebAdmin_Endpoints_AuthController::deleteAuthenticationScheme(voi
 
 }
 
-API::APIReturn WebAdmin_Endpoints_AuthController::updateAuthenticationScheme(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortal_Endpoints_AuthController::updateAuthenticationScheme(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
@@ -134,7 +134,7 @@ API::APIReturn WebAdmin_Endpoints_AuthController::updateAuthenticationScheme(voi
     return response;
 }
 
-API::APIReturn WebAdmin_Endpoints_AuthController::listAuthenticationSlotsUsedByScheme(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortal_Endpoints_AuthController::listAuthenticationSlotsUsedByScheme(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
@@ -172,7 +172,7 @@ API::APIReturn WebAdmin_Endpoints_AuthController::listAuthenticationSlotsUsedByS
 
 }
 
-API::APIReturn WebAdmin_Endpoints_AuthController::updateAuthenticationSlotsUsedByScheme(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortal_Endpoints_AuthController::updateAuthenticationSlotsUsedByScheme(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
@@ -195,7 +195,7 @@ API::APIReturn WebAdmin_Endpoints_AuthController::updateAuthenticationSlotsUsedB
 
 }
 
-API::APIReturn WebAdmin_Endpoints_AuthController::listAuthenticationSlots(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortal_Endpoints_AuthController::listAuthenticationSlots(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
@@ -213,7 +213,7 @@ API::APIReturn WebAdmin_Endpoints_AuthController::listAuthenticationSlots(void *
 
 }
 
-API::APIReturn WebAdmin_Endpoints_AuthController::addNewAuthenticationSlot(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortal_Endpoints_AuthController::addNewAuthenticationSlot(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
@@ -229,7 +229,7 @@ API::APIReturn WebAdmin_Endpoints_AuthController::addNewAuthenticationSlot(void 
 
 }
 
-API::APIReturn WebAdmin_Endpoints_AuthController::deleteAuthenticationSlot(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortal_Endpoints_AuthController::deleteAuthenticationSlot(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
@@ -244,7 +244,7 @@ API::APIReturn WebAdmin_Endpoints_AuthController::deleteAuthenticationSlot(void 
 
 }
 
-API::APIReturn WebAdmin_Endpoints_AuthController::updateAuthenticationSlot(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortal_Endpoints_AuthController::updateAuthenticationSlot(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 

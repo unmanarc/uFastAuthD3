@@ -4,8 +4,8 @@
 #include <Mantids30/Net_Sockets/socket_tls.h>
 #include <Mantids30/Program_Service/application.h>
 
-#include "Web/AdminPortal/webadmin_serverimpl.h"
-#include "Web/LoginPortal/weblogin_serverimpl.h"
+#include "Web/AdminPortal/adminportal_serverimpl.h"
+#include "Web/LoginPortal/loginportal_serverimpl.h"
 #include "Web/SessionAuthHandler/websessionauthhandler_serverimpl.h"
 #include "Web/AppSync/appsync_serverimpl.h"
 /*
@@ -142,13 +142,13 @@ public:
         Globals::setFastRPC(new FastRPCImpl); */
 
         // Dir Web Admin:
-        if (!WebAdmin_ServerImpl::createService())
+        if (!AdminPortal_ServerImpl::createService())
         {
             _exit(-5);
         }
 
         // Web Login:
-        if (!WebLogin_ServerImpl::createService())
+        if (!LoginPortal_ServerImpl::createService())
         {
             _exit(-6);
         }

@@ -23,7 +23,7 @@ bool IdentityManager_DB::initializeDatabase()
                                              `creation`              DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
                                              `creator`               VARCHAR(256)    DEFAULT NULL,
                                              `expiration`            DATETIME        NOT NULL,
-                                             `isAdmin`           BOOLEAN         NOT NULL,
+                                             `isAdmin`               BOOLEAN         NOT NULL,
                                              `isEnabled`             BOOLEAN         NOT NULL,
                                              `isBlocked`             BOOLEAN         NOT NULL,
                                              `isAccountConfirmed`    BOOLEAN         NOT NULL,
@@ -58,7 +58,7 @@ bool IdentityManager_DB::initializeDatabase()
                                              `f_appCreator`          VARCHAR(256)  NOT NULL,
                                              `appDescription`        VARCHAR(4096) NOT NULL,
                                              `apiKey`                VARCHAR(512)  NOT NULL,
-                                             `canManualModifyScope`  BOOLEAN NOT NULL DEFAULT FALSE,
+                                             `canUserModifyApplicationSecurityContext`  BOOLEAN NOT NULL DEFAULT FALSE,
                                              `appSyncEnabled`  BOOLEAN NOT NULL DEFAULT TRUE,
                                               FOREIGN KEY(`f_appCreator`)   REFERENCES accounts(`accountName`) ON DELETE CASCADE
                                               PRIMARY KEY(`appName`)
@@ -104,8 +104,8 @@ bool IdentityManager_DB::initializeDatabase()
                                             `tokenType`                       VARCHAR(20)     NOT NULL DEFAULT 'HS256',
                                             `accessTokenSigningKey`           TEXT DEFAULT NULL,
                                             `accessTokenValidationKey`        TEXT DEFAULT NULL,
-                                            `tokensConfigJSON`              TEXT NOT NULL DEFAULT '{ "accessToken" : {"path" : "/", "timeout" : 300},"refreshToken" : {"path" : "/auth", "timeout" : 2592000} }',
-                                            `includeApplicationScopes`   BOOLEAN NOT NULL DEFAULT TRUE,
+                                            `tokensConfigJSON`                TEXT NOT NULL DEFAULT '{ "accessToken" : {"path" : "/", "timeout" : 300},"refreshToken" : {"path" : "/auth", "timeout" : 2592000} }',
+                                            `includeApplicationScopes`        BOOLEAN NOT NULL DEFAULT TRUE,
                                             `includeBasicAccountInfo`         BOOLEAN NOT NULL DEFAULT TRUE,
                                             `maintainRevocationAndLogoutInfo` BOOLEAN NOT NULL DEFAULT FALSE,
                                             `allowRefreshTokenRenovation`     BOOLEAN NOT NULL DEFAULT TRUE,
@@ -151,6 +151,8 @@ bool IdentityManager_DB::initializeDatabase()
             FOREIGN KEY (`f_defaultSchemeId`) REFERENCES `authenticationSchemes`(`schemeId`) ON DELETE CASCADE,
             CHECK (`id` = 1)
             );)",
+
+
         R"(CREATE TABLE IF NOT EXISTS `iam`.`applicationActivitiesAuthSchemes` (
                                              `f_appName`             VARCHAR(256)  NOT NULL,
                                              `f_activityName`        VARCHAR(256)  NOT NULL,
@@ -203,7 +205,7 @@ bool IdentityManager_DB::initializeDatabase()
                                     )",
         R"(CREATE TABLE IF NOT EXISTS `iam`.`accountCredentials` (
                                              `f_AuthSlotId`                 INTEGER         NOT NULL,
-                                             `f_accountName`                   VARCHAR(256) NOT NULL,
+                                             `f_accountName`                VARCHAR(256) NOT NULL,
                                              `hash`                         VARCHAR(256)    NOT NULL,
                                              `expiration`                   DATETIME        DEFAULT NULL,
                                              `salt`                         VARCHAR(256)            ,
@@ -236,7 +238,7 @@ bool IdentityManager_DB::initializeDatabase()
                                     )",
         R"(CREATE TABLE IF NOT EXISTS `iam`.`applicationRolesScopes` (
                                              `f_scopeId`            VARCHAR(256) NOT NULL,
-                                             `f_appName`                VARCHAR(256) NOT NULL,
+                                             `f_appName`            VARCHAR(256) NOT NULL,
                                              `f_roleName`           VARCHAR(256) NOT NULL,
                                              FOREIGN KEY(`f_appName`,`f_scopeId`) REFERENCES applicationScopes(`f_appName`,`scopeId`) ON DELETE CASCADE,
                                              FOREIGN KEY(`f_roleName`,`f_appName`)      REFERENCES applicationRoles(`roleName`,`f_appName`) ON DELETE CASCADE,
@@ -245,7 +247,7 @@ bool IdentityManager_DB::initializeDatabase()
 
         R"(CREATE TABLE IF NOT EXISTS `iam`.`applicationScopeAccounts` (
                                               `f_appName`                VARCHAR(256) NOT NULL,
-                                              `f_scopeId`           VARCHAR(256) NOT NULL,
+                                              `f_scopeId`                VARCHAR(256) NOT NULL,
                                               `f_accountName`            VARCHAR(256) NOT NULL,
                                               FOREIGN KEY(`f_appName`,`f_scopeId`) REFERENCES applicationScopes(`f_appName`,`scopeId`) ON DELETE CASCADE,
                                               FOREIGN KEY(`f_accountName`, `f_appName`) REFERENCES applicationAccounts(`f_accountName`, `f_appName`) ON DELETE CASCADE,

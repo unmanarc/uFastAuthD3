@@ -238,7 +238,7 @@ public:
                             const std::string & appURL,
                             const std::string &apiKey,
                             const std::string &sOwnerAccountName,
-                            bool canUserModifyScope,
+                            bool canUserModifyApplicationSecurityContext,
                             bool appSyncEnabled,
                             bool initializeDefaultValues) override;
         bool removeApplication(const std::string &appName) override;
@@ -247,7 +247,7 @@ public:
         bool haveApplicationSyncEnabled(const std::string &appName) override;
         bool updateApplicationSyncEnabled(const std::string &appName, bool syncEnabled) override;
 
-        std::optional<bool> canManuallyModifyApplicationScopes(const std::string &appName) override;
+        std::optional<bool> canUserModifyApplicationSecurityContext(const std::string &appName) override;
         std::string getApplicationDescription(const std::string &appName) override;
         std::string getApplicationAPIKey(const std::string &appName) override;
         bool updateApplicationAPIKey(const std::string &appName, const std::string &apiKey) override;

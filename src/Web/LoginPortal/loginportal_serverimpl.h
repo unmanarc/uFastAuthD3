@@ -5,10 +5,10 @@
 #include <Mantids30/Sessions/session.h>
 #include <json/json.h>
 
-class WebLogin_ServerImpl
+class LoginPortal_ServerImpl
 {
 public:
-    WebLogin_ServerImpl() = default;
+    LoginPortal_ServerImpl() = default;
 
     static bool createService();
 };

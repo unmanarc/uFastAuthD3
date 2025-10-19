@@ -8,7 +8,7 @@
 #include <regex>
 
 // This template is for FastRPC
-class WebLogin_AuthMethods
+class LoginPortal_AuthMethods
 {
 public:
     using Endpoints = Mantids30::API::RESTful::Endpoints;

@@ -4,7 +4,7 @@
 #include <Mantids30/Helpers/json.h>
 #include <Mantids30/Protocol_HTTP/httpv1_base.h>
 
-class WebAdminMethods_Accounts
+class AdminPortalMethods_Accounts
 {
 public:
     using Endpoints = Mantids30::API::RESTful::Endpoints;

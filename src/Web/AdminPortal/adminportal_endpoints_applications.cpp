@@ -1,4 +1,4 @@
-#include "webadmin_endpoints_applications.h"
+#include "adminportal_endpoints_applications.h"
 
 #include "globals.h"
 #include "Mantids30/Protocol_HTTP/api_return.h"
@@ -12,7 +12,7 @@ using namespace Mantids30::Network::Protocols;
 
 using ClientDetails = Mantids30::Sessions::ClientDetails;
 
-void WebAdminMethods_Applications::addEndpoints_Applications(std::shared_ptr<Endpoints> endpoints)
+void AdminPortalMethods_Applications::addEndpoints_Applications(std::shared_ptr<Endpoints> endpoints)
 {
     using SecurityOptions = Mantids30::API::RESTful::Endpoints::SecurityOptions;
     endpoints->addEndpoint(Endpoints::GET,    "searchApplications",     SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"},     nullptr, &searchApplications);
@@ -52,18 +52,18 @@ void WebAdminMethods_Applications::addEndpoints_Applications(std::shared_ptr<End
 }
 
 
-API::APIReturn WebAdminMethods_Applications::searchApplications(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortalMethods_Applications::searchApplications(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     return Globals::getIdentityManager()->applications->searchApplications(*request.inputJSON);
 }
 
-API::APIReturn WebAdminMethods_Applications::removeApplication(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortalMethods_Applications::removeApplication(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
     std::string appName = JSON_ASSTRING(*request.inputJSON, "appName", "");
 
-    if (appName == DB_APPNAME)
+    if (appName == IAM_ADMPORTAL_APPNAME)
     {
         response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Can't remove the IAM application");
         return response;
@@ -84,7 +84,7 @@ API::APIReturn WebAdminMethods_Applications::removeApplication(void *context, co
     return response;
 
 }
-API::APIReturn WebAdminMethods_Applications::addApplication(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortalMethods_Applications::addApplication(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
@@ -125,7 +125,7 @@ API::APIReturn WebAdminMethods_Applications::addApplication(void *context, const
                                                                      JSON_ASSTRING(*request.inputJSON, "appURL", ""),
                                                                      JSON_ASSTRING(*request.inputJSON, "appKey", ""),
                                                                      request.jwtToken->getSubject(),
-                                                                     JSON_ASBOOL(*request.inputJSON, "scopesModifiable", false),
+                                                                     JSON_ASBOOL(*request.inputJSON, "canUserModifyApplicationSecurityContext", false),
                                                                      JSON_ASBOOL(*request.inputJSON, "syncServiceEnabled", true),
                                                                      JSON_ASBOOL(*request.inputJSON, "initializeDefaults", true)
                                                                      ))
@@ -137,7 +137,7 @@ API::APIReturn WebAdminMethods_Applications::addApplication(void *context, const
     return response;
 }
 
-API::APIReturn WebAdminMethods_Applications::doesApplicationExist(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortalMethods_Applications::doesApplicationExist(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
     std::string appName = JSON_ASSTRING(*request.inputJSON, "appName", "");
@@ -156,7 +156,7 @@ API::APIReturn WebAdminMethods_Applications::doesApplicationExist(void *context,
     return response;
 
 }
-API::APIReturn WebAdminMethods_Applications::getApplicationInfo(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortalMethods_Applications::getApplicationInfo(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
@@ -172,10 +172,10 @@ API::APIReturn WebAdminMethods_Applications::getApplicationInfo(void *context, c
 
     payloadOut["loginFlow"] = getLoginFlowDetails(appName);
     
-    auto scopesModifiable = Globals::getIdentityManager()->applications->canManuallyModifyApplicationScopes(appName);
-    if (scopesModifiable.has_value())
+    auto canUserModifyApplicationSecurityContext = Globals::getIdentityManager()->applications->canUserModifyApplicationSecurityContext(appName);
+    if (canUserModifyApplicationSecurityContext.has_value())
     {
-        payloadOut["advanced"]["scopesModifiable"] = scopesModifiable.value();
+        payloadOut["advanced"]["canUserModifyApplicationSecurityContext"] = canUserModifyApplicationSecurityContext.value();
     }
     else
     {
@@ -225,7 +225,7 @@ API::APIReturn WebAdminMethods_Applications::getApplicationInfo(void *context, c
 
 }
 
-API::APIReturn WebAdminMethods_Applications::updateApplicationDetails(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortalMethods_Applications::updateApplicationDetails(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
@@ -252,7 +252,7 @@ API::APIReturn WebAdminMethods_Applications::updateApplicationDetails(void *cont
 
 }
 
-API::APIReturn WebAdminMethods_Applications::updateApplicationAPIKey(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortalMethods_Applications::updateApplicationAPIKey(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
@@ -273,7 +273,7 @@ API::APIReturn WebAdminMethods_Applications::updateApplicationAPIKey(void *conte
 }
 
 
-API::APIReturn WebAdminMethods_Applications::updateWebLoginJWTConfigForApplication(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortalMethods_Applications::updateWebLoginJWTConfigForApplication(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
@@ -296,7 +296,7 @@ API::APIReturn WebAdminMethods_Applications::updateWebLoginJWTConfigForApplicati
 
 
 
-API::APIReturn WebAdminMethods_Applications::updateApplicationLoginCallbackURI(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortalMethods_Applications::updateApplicationLoginCallbackURI(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
@@ -319,7 +319,7 @@ API::APIReturn WebAdminMethods_Applications::updateApplicationLoginCallbackURI(v
     return response;
 }
 
-API::APIReturn WebAdminMethods_Applications::addApplicationLoginOrigin(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortalMethods_Applications::addApplicationLoginOrigin(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
@@ -343,7 +343,7 @@ API::APIReturn WebAdminMethods_Applications::addApplicationLoginOrigin(void *con
 
 }
 
-API::APIReturn WebAdminMethods_Applications::removeApplicationLoginOrigin(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortalMethods_Applications::removeApplicationLoginOrigin(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
@@ -366,7 +366,7 @@ API::APIReturn WebAdminMethods_Applications::removeApplicationLoginOrigin(void *
 }
 
 
-API::APIReturn WebAdminMethods_Applications::addApplicationLoginRedirectURI(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortalMethods_Applications::addApplicationLoginRedirectURI(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
@@ -389,7 +389,7 @@ API::APIReturn WebAdminMethods_Applications::addApplicationLoginRedirectURI(void
 
 }
 
-API::APIReturn WebAdminMethods_Applications::removeApplicationLoginRedirectURI(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortalMethods_Applications::removeApplicationLoginRedirectURI(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
@@ -413,7 +413,7 @@ API::APIReturn WebAdminMethods_Applications::removeApplicationLoginRedirectURI(v
 }
 
 
-json WebAdminMethods_Applications::getLoginFlowDetails(const std::string &appName)
+json AdminPortalMethods_Applications::getLoginFlowDetails(const std::string &appName)
 {
     json payloadOut;
     payloadOut["callbackURI"]  = Globals::getIdentityManager()->applications->getApplicationCallbackURI(appName);
@@ -431,12 +431,12 @@ json WebAdminMethods_Applications::getLoginFlowDetails(const std::string &appNam
 }
 
 /*
-void WebAdminMethods_Applications::getApplicationDescription(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+void AdminPortalMethods_Applications::getApplicationDescription(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     (*response.responseJSON()) = Globals::getIdentityManager()->applications->getApplicationDescription(JSON_ASSTRING(*request.inputJSON, "appName", ""));
 }*/
 /*
-void WebAdminMethods_Applications::getApplicationAPIKey(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+void AdminPortalMethods_Applications::getApplicationAPIKey(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
 
     payloadOut["appKey"] = Globals::getIdentityManager()->getApplicationAPIKey( JSON_ASSTRING(*request.inputJSON,"appName",""));
@@ -444,12 +444,12 @@ void WebAdminMethods_Applications::getApplicationAPIKey(void *context, const Req
 }
 
 
-void WebAdminMethods_Applications::listApplications(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+void AdminPortalMethods_Applications::listApplications(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     (*response.responseJSON()) = Helpers::setToJSON(Globals::getIdentityManager()->applications->listApplications());
 }
 
-void WebAdminMethods_Applications::validateApplicationOwner(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+void AdminPortalMethods_Applications::validateApplicationOwner(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     if (!Globals::getIdentityManager()->applications->validateApplicationOwner(JSON_ASSTRING(*request.inputJSON, "appName", ""), JSON_ASSTRING(*request.inputJSON, "accountName", "")))
     {
@@ -457,7 +457,7 @@ void WebAdminMethods_Applications::validateApplicationOwner(void *context, const
     }
 }
 
-void WebAdminMethods_Applications::validateApplicationAccount(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+void AdminPortalMethods_Applications::validateApplicationAccount(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     if (!Globals::getIdentityManager()->applications->validateApplicationAccount(JSON_ASSTRING(*request.inputJSON, "appName", ""), JSON_ASSTRING(*request.inputJSON, "accountName", "")))
     {
@@ -465,23 +465,23 @@ void WebAdminMethods_Applications::validateApplicationAccount(void *context, con
     }
 }
 
-void WebAdminMethods_Applications::listApplicationOwners(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+void AdminPortalMethods_Applications::listApplicationOwners(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     (*response.responseJSON()) = Helpers::setToJSON(Globals::getIdentityManager()->applications->listApplicationOwners(JSON_ASSTRING(*request.inputJSON, "applicationName", "")));
 }
 
-void WebAdminMethods_Applications::listApplicationAccounts(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+void AdminPortalMethods_Applications::listApplicationAccounts(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     (*response.responseJSON()) = Helpers::setToJSON(Globals::getIdentityManager()->applications->listApplicationAccounts(JSON_ASSTRING(*request.inputJSON, "applicationName", "")));
 }
 
-void WebAdminMethods_Applications::listAccountApplications(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+void AdminPortalMethods_Applications::listAccountApplications(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     (*response.responseJSON()) = Helpers::setToJSON(Globals::getIdentityManager()->applications->listAccountApplications(JSON_ASSTRING(*request.inputJSON, "accountName", "")));
 }
 
 
-void WebAdminMethods_Applications::addApplicationOwner(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+void AdminPortalMethods_Applications::addApplicationOwner(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     if (!Globals::getIdentityManager()->applications->addApplicationOwner(JSON_ASSTRING(*request.inputJSON, "appName", ""), JSON_ASSTRING(*request.inputJSON, "accountName", "")))
     {
@@ -489,7 +489,7 @@ void WebAdminMethods_Applications::addApplicationOwner(void *context, const Requ
     }
 }
 
-void WebAdminMethods_Applications::removeApplicationOwner(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+void AdminPortalMethods_Applications::removeApplicationOwner(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     if (!Globals::getIdentityManager()->applications->removeApplicationOwner(JSON_ASSTRING(*request.inputJSON, "appName", ""), JSON_ASSTRING(*request.inputJSON, "accountName", "")))
     {
@@ -498,20 +498,20 @@ void WebAdminMethods_Applications::removeApplicationOwner(void *context, const R
 }
 
 
-void WebAdminMethods_Applications::listWebLoginRedirectURIsFromApplication(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+void AdminPortalMethods_Applications::listWebLoginRedirectURIsFromApplication(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     (*response.responseJSON()) = Helpers::listToJSON(Globals::getIdentityManager()->applications->listWebLoginRedirectURIsFromApplication(JSON_ASSTRING(*request.inputJSON, "appName", "")));
 }
 
 
 
-void WebAdminMethods_Applications::listWebLoginOriginUrlsFromApplication(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+void AdminPortalMethods_Applications::listWebLoginOriginUrlsFromApplication(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     (*response.responseJSON()) = Helpers::listToJSON(Globals::getIdentityManager()->applications->listWebLoginOriginUrlsFromApplication(JSON_ASSTRING(*request.inputJSON, "appName", "")));
 }
 
 
-void WebAdminMethods_Applications::getWebLoginJWTConfigFromApplication(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+void AdminPortalMethods_Applications::getWebLoginJWTConfigFromApplication(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     json payloadOut;
     std::string appName = JSON_ASSTRING(*request.inputJSON, "appName", "");
@@ -531,7 +531,7 @@ void WebAdminMethods_Applications::getWebLoginJWTConfigFromApplication(void *con
     (*response.responseJSON()) = payloadOut;
 }
 
-void WebAdminMethods_Applications::setWebLoginJWTSigningKeyForApplication(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+void AdminPortalMethods_Applications::setWebLoginJWTSigningKeyForApplication(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     std::string appName = JSON_ASSTRING(*request.inputJSON, "appName", "");
     std::string signingKey = JSON_ASSTRING(*request.inputJSON, "signingKey", "");
@@ -542,7 +542,7 @@ void WebAdminMethods_Applications::setWebLoginJWTSigningKeyForApplication(void *
     }
 }
 
-void WebAdminMethods_Applications::getWebLoginJWTSigningKeyForApplication(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+void AdminPortalMethods_Applications::getWebLoginJWTSigningKeyForApplication(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     std::string appName = JSON_ASSTRING(*request.inputJSON, "appName", "");
     std::string signingKey = Globals::getIdentityManager()->applications->getWebLoginJWTSigningKeyForApplication(appName);

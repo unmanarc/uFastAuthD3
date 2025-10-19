@@ -61,7 +61,7 @@ bool WebSessionAuthHandler_ServerImpl::createService()
         return false;
     }
 
-    RESTful::Engine *webSessionAuthHandlerServer = Program::Config::RESTful_Engine::createRESTfulEngine(config, LOG_APP, LOG_RPC, "Web Session Auth Handler", AUTHSERVER_WEBDIR, Program::Config::REST_ENGINE_NOCONFIG_JWT);
+    RESTful::Engine *webSessionAuthHandlerServer = Program::Config::RESTful_Engine::createRESTfulEngine(config, LOG_APP, LOG_RPC, "Web Session Auth Handler", IAM_LOGINPORTAL_DEF_WEBROOTDIR, Program::Config::REST_ENGINE_NOCONFIG_JWT);
 
     if (!webSessionAuthHandlerServer)
         return false;
@@ -80,7 +80,7 @@ bool WebSessionAuthHandler_ServerImpl::createService()
     webSessionAuthHandlerServer->endpointsHandler[1] = std::make_shared<API::RESTful::Endpoints>();
 
     // This will validate the JWT, the app should match with this:
-    webSessionAuthHandlerServer->config.appName = "IAM";
+    webSessionAuthHandlerServer->config.appName = "_";
 
     // Add authentication methods
     WebSessionAuthHandler_AuthMethods::addEndpoints(webSessionAuthHandlerServer->endpointsHandler[1]);

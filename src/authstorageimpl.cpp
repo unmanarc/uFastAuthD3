@@ -184,21 +184,43 @@ bool AuthStorageImpl::createAuth()
 
     if (r)
     {
-        r = r && identityManager->initializeApplicationWithScheme(DB_APPNAME, DB_APPDESCRIPTION, *schemeId, sDefaultUser, &appExisted);
+        r = r && identityManager->initializeApplicationWithScheme(IAM_ADMPORTAL_APPNAME, IAM_ADMPORTAL_DESCRIPTION, IAM_ADMPORTAL_URL, *schemeId, sDefaultUser, &appExisted);
         if (appExisted)
         {
             // User exist, do nothing.
-            LOG_APP->log0(__func__, Logs::LEVEL_DEBUG, "App '%s' already exist.", DB_APPNAME);
+            LOG_APP->log0(__func__, Logs::LEVEL_DEBUG, "App '%s' already exist.", IAM_ADMPORTAL_APPNAME);
         }
         else
         {
             if (r)
             {
-                LOG_APP->log0(__func__, Logs::LEVEL_INFO, "APP '%s' successfully created.", DB_APPNAME);
+                LOG_APP->log0(__func__, Logs::LEVEL_INFO, "APP '%s' successfully created.", IAM_ADMPORTAL_APPNAME);
             }
             else
             {
-                LOG_APP->log0(__func__, Logs::LEVEL_CRITICAL, "APP '%s' can't be created.", DB_APPNAME);
+                LOG_APP->log0(__func__, Logs::LEVEL_CRITICAL, "APP '%s' can't be created.", IAM_ADMPORTAL_APPNAME);
+                return false;
+            }
+        }
+    }
+
+    if (r)
+    {
+        r = r && identityManager->initializeApplicationWithScheme(IAM_USRPORTAL_APPNAME, IAM_USRPORTAL_DESCRIPTION, IAM_USRPORTAL_URL, *schemeId, sDefaultUser, &appExisted);
+        if (appExisted)
+        {
+            // User exist, do nothing.
+            LOG_APP->log0(__func__, Logs::LEVEL_DEBUG, "App '%s' already exist.", IAM_USRPORTAL_APPNAME);
+        }
+        else
+        {
+            if (r)
+            {
+                LOG_APP->log0(__func__, Logs::LEVEL_INFO, "APP '%s' successfully created.", IAM_USRPORTAL_APPNAME);
+            }
+            else
+            {
+                LOG_APP->log0(__func__, Logs::LEVEL_CRITICAL, "APP '%s' can't be created.", IAM_USRPORTAL_APPNAME);
                 return false;
             }
         }
@@ -302,33 +324,33 @@ bool AuthStorageImpl::resetAdminPwd(IdentityManager_DB *identityManager, std::st
 
 bool AuthStorageImpl::configureApplication(IdentityManager_DB *identityManager, const std::string &owner)
 {
-    if (!identityManager->applications->doesApplicationExist(DB_APPNAME))
+    if (!identityManager->applications->doesApplicationExist(IAM_ADMPORTAL_APPNAME))
     {
-        LOG_APP->log0(__func__, Logs::LEVEL_CRITICAL, "Application '%s' does not exist, aborting.", DB_APPNAME);
+        LOG_APP->log0(__func__, Logs::LEVEL_CRITICAL, "Application '%s' does not exist, aborting.", IAM_ADMPORTAL_APPNAME);
         return false;
     }
     std::list<ApplicationScope> appScopes = {
-                                                {DB_APPNAME, "SELF_PWDCHANGE", "Change my own password"},
-                                                {DB_APPNAME, "SELF_READ", "Read my own user data from the IAM system"},
-                                                {DB_APPNAME, "SELF_DELETE", "Delete my own user"},
-                                                {DB_APPNAME, "ACCOUNT_READ", "Read accounts data from the IAM system"},
-                                                {DB_APPNAME, "ACCOUNT_DELETE", "Delete accounts from the IAM system"},
-                                                {DB_APPNAME, "ACCOUNT_MODIFY", "Edit accounts details, roles, and scopes"},
-                                                {DB_APPNAME, "ACCOUNT_PWDDCHANGE", "Change account passwords"},
-                                                {DB_APPNAME, "ACCOUNT_DISABLE", "Disable/lock accounts"},
-                                                {DB_APPNAME, "ACCOUNT_ENABLE", "Enable/unlock accounts"},
-                                                {DB_APPNAME, "APP_CREATE", "Create applications on the IAM"},
-                                                {DB_APPNAME, "APP_DELETE", "Delete application's from the IAM"},
-                                                {DB_APPNAME, "APP_MODIFY", "Modify application data on the IAM"},
-                                                {DB_APPNAME, "APP_READ", "Read application data from the IAM"},
-                                                {DB_APPNAME, "AUTH_CREATE", "Create authentication schemes and slots on the IAM"},
-                                                {DB_APPNAME, "AUTH_DELETE", "Delete authentication schemes and slots on the IAM"},
-                                                {DB_APPNAME, "AUTH_MODIFY", "Modify authentication schemes and slots on the IAM"},
-                                                {DB_APPNAME, "AUTH_READ", "Read authentication schemes and slots on the IAM"},
-                                                {DB_APPNAME, "CONFIG_READ", "Read the configuration of the IAM"},
-                                                {DB_APPNAME, "CONFIG_WRITE", "Write the configuration of the IAM"},
-                                                {DB_APPNAME, "AUDIT_LOG_VIEW", "Access, export and view IAM audit logs"},
-                                                {DB_APPNAME, "AUDIT_LOG_CLEAN", "Clean/remove audit logs"}
+                                                {IAM_ADMPORTAL_APPNAME, "SELF_PWDCHANGE", "Change my own password"},
+                                                {IAM_ADMPORTAL_APPNAME, "SELF_READ", "Read my own user data from the IAM system"},
+                                                {IAM_ADMPORTAL_APPNAME, "SELF_DELETE", "Delete my own user"},
+                                                {IAM_ADMPORTAL_APPNAME, "ACCOUNT_READ", "Read accounts data from the IAM system"},
+                                                {IAM_ADMPORTAL_APPNAME, "ACCOUNT_DELETE", "Delete accounts from the IAM system"},
+                                                {IAM_ADMPORTAL_APPNAME, "ACCOUNT_MODIFY", "Edit accounts details, roles, and scopes"},
+                                                {IAM_ADMPORTAL_APPNAME, "ACCOUNT_PWDDCHANGE", "Change account passwords"},
+                                                {IAM_ADMPORTAL_APPNAME, "ACCOUNT_DISABLE", "Disable/lock accounts"},
+                                                {IAM_ADMPORTAL_APPNAME, "ACCOUNT_ENABLE", "Enable/unlock accounts"},
+                                                {IAM_ADMPORTAL_APPNAME, "APP_CREATE", "Create applications on the IAM"},
+                                                {IAM_ADMPORTAL_APPNAME, "APP_DELETE", "Delete application's from the IAM"},
+                                                {IAM_ADMPORTAL_APPNAME, "APP_MODIFY", "Modify application data on the IAM"},
+                                                {IAM_ADMPORTAL_APPNAME, "APP_READ", "Read application data from the IAM"},
+                                                {IAM_ADMPORTAL_APPNAME, "AUTH_CREATE", "Create authentication schemes and slots on the IAM"},
+                                                {IAM_ADMPORTAL_APPNAME, "AUTH_DELETE", "Delete authentication schemes and slots on the IAM"},
+                                                {IAM_ADMPORTAL_APPNAME, "AUTH_MODIFY", "Modify authentication schemes and slots on the IAM"},
+                                                {IAM_ADMPORTAL_APPNAME, "AUTH_READ", "Read authentication schemes and slots on the IAM"},
+                                                {IAM_ADMPORTAL_APPNAME, "CONFIG_READ", "Read the configuration of the IAM"},
+                                                {IAM_ADMPORTAL_APPNAME, "CONFIG_WRITE", "Write the configuration of the IAM"},
+                                                {IAM_ADMPORTAL_APPNAME, "AUDIT_LOG_VIEW", "Access, export and view IAM audit logs"},
+                                                {IAM_ADMPORTAL_APPNAME, "AUDIT_LOG_CLEAN", "Clean/remove audit logs"}
                                             };
 
     for (auto &scope : appScopes)
@@ -345,24 +367,24 @@ bool AuthStorageImpl::configureApplication(IdentityManager_DB *identityManager, 
         }
     }
 
-    if (!identityManager->applications->validateApplicationAccount(DB_APPNAME, owner))
+    if (!identityManager->applications->validateApplicationAccount(IAM_ADMPORTAL_APPNAME, owner))
     {
-        LOG_APP->log0(__func__, Logs::LEVEL_WARN, "Setting up '%s' user as application '%s' user.", owner.c_str(), DB_APPNAME);
+        LOG_APP->log0(__func__, Logs::LEVEL_WARN, "Setting up '%s' user as application '%s' user.", owner.c_str(), IAM_ADMPORTAL_APPNAME);
 
-        if (!identityManager->applications->addAccountToApplication(DB_APPNAME, owner))
+        if (!identityManager->applications->addAccountToApplication(IAM_ADMPORTAL_APPNAME, owner))
         {
-            LOG_APP->log0(__func__, Logs::LEVEL_CRITICAL, "Failed to set the '%s' account as application '%s' user.", owner.c_str(), DB_APPNAME);
+            LOG_APP->log0(__func__, Logs::LEVEL_CRITICAL, "Failed to set the '%s' account as application '%s' user.", owner.c_str(), IAM_ADMPORTAL_APPNAME);
             return false;
         }
     }
 
-    if (!identityManager->applications->validateApplicationOwner(DB_APPNAME, owner))
+    if (!identityManager->applications->validateApplicationOwner(IAM_ADMPORTAL_APPNAME, owner))
     {
-        LOG_APP->log0(__func__, Logs::LEVEL_WARN, "Setting up '%s' user as application '%s' owner.", owner.c_str(), DB_APPNAME);
+        LOG_APP->log0(__func__, Logs::LEVEL_WARN, "Setting up '%s' user as application '%s' owner.", owner.c_str(), IAM_ADMPORTAL_APPNAME);
 
-        if (!identityManager->applications->addApplicationOwner(DB_APPNAME, owner))
+        if (!identityManager->applications->addApplicationOwner(IAM_ADMPORTAL_APPNAME, owner))
         {
-            LOG_APP->log0(__func__, Logs::LEVEL_CRITICAL, "Failed to set the '%s' account as application '%s' owner.", owner.c_str(), DB_APPNAME);
+            LOG_APP->log0(__func__, Logs::LEVEL_CRITICAL, "Failed to set the '%s' account as application '%s' owner.", owner.c_str(), IAM_ADMPORTAL_APPNAME);
             return false;
         }
     }

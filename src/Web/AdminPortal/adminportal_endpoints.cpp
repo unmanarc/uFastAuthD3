@@ -1,9 +1,9 @@
-#include "webadmin_endpoints.h"
+#include "adminportal_endpoints.h"
 #include "globals.h"
 
 using namespace Mantids30;
 
-void WebAdmin_Endpoints::addEndpoints(std::shared_ptr<Endpoints> endpoints)
+void AdminPortal_Endpoints::addEndpoints(std::shared_ptr<Endpoints> endpoints)
 {
     addEndpoints_Accounts(endpoints);
     addEndpoints_Scopes(endpoints);
@@ -13,7 +13,7 @@ void WebAdmin_Endpoints::addEndpoints(std::shared_ptr<Endpoints> endpoints)
     addEndpoints_Activities(endpoints);
 }
 
-json WebAdmin_Endpoints::scopeListToJSON(const std::set<ApplicationScope> &scopes)
+json AdminPortal_Endpoints::scopeListToJSON(const std::set<ApplicationScope> &scopes)
 {
     json x;
     int i = 0;
@@ -26,7 +26,7 @@ json WebAdmin_Endpoints::scopeListToJSON(const std::set<ApplicationScope> &scope
     return x;
 }
 
-std::set<ApplicationScope> WebAdmin_Endpoints::iScopesLeftListForRole(const std::string &appName, const std::string &roleName)
+std::set<ApplicationScope> AdminPortal_Endpoints::iScopesLeftListForRole(const std::string &appName, const std::string &roleName)
 {
     auto scopesLeft = Globals::getIdentityManager()->authController->listApplicationScopes(appName);
     auto roleScopes = Globals::getIdentityManager()->authController->getRoleApplicationScopes(appName,roleName);

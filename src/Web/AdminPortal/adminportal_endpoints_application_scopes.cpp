@@ -1,4 +1,4 @@
-#include "webadmin_endpoints_application_scopes.h"
+#include "adminportal_endpoints_application_scopes.h"
 
 #include "globals.h"
 #include "defs.h"
@@ -9,7 +9,7 @@ using namespace Mantids30::Program;
 using namespace Mantids30;
 using namespace Mantids30::Network::Protocols;
 
-void WebAdminMethods_ApplicationsScopes::addEndpoints_Scopes(std::shared_ptr<Endpoints> endpoints)
+void AdminPortalMethods_ApplicationsScopes::addEndpoints_Scopes(std::shared_ptr<Endpoints> endpoints)
 {
     using SecurityOptions = Mantids30::API::RESTful::Endpoints::SecurityOptions;
     endpoints->addEndpoint(Endpoints::POST, "addApplicationScopeToAccount", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"}, nullptr, &addApplicationScopeToAccount);
@@ -41,7 +41,7 @@ void WebAdminMethods_ApplicationsScopes::addEndpoints_Scopes(std::shared_ptr<End
     endpoints->addEndpoint(Endpoints::GET, "scopesLeftListForRole", &scopesLeftListForRole, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});*/
 }
 
-API::APIReturn WebAdminMethods_ApplicationsScopes::addApplicationScopeToAccount(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortalMethods_ApplicationsScopes::addApplicationScopeToAccount(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
@@ -64,7 +64,7 @@ API::APIReturn WebAdminMethods_ApplicationsScopes::addApplicationScopeToAccount(
     return response;
 }
 
-API::APIReturn WebAdminMethods_ApplicationsScopes::removeApplicationScopeFromAccount(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortalMethods_ApplicationsScopes::removeApplicationScopeFromAccount(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
@@ -86,7 +86,7 @@ API::APIReturn WebAdminMethods_ApplicationsScopes::removeApplicationScopeFromAcc
     }
     return response;
 }
-API::APIReturn WebAdminMethods_ApplicationsScopes::addApplicationScope(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortalMethods_ApplicationsScopes::addApplicationScope(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
@@ -116,7 +116,7 @@ API::APIReturn WebAdminMethods_ApplicationsScopes::addApplicationScope(void *con
     }
 
     // Don't modify scope from our directory.
-    if (appName == DB_APPNAME)
+    if (appName == IAM_ADMPORTAL_APPNAME)
     {
         response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Can't add application scope to the IAM");
         return response;
@@ -130,7 +130,7 @@ API::APIReturn WebAdminMethods_ApplicationsScopes::addApplicationScope(void *con
     return response;
 }
 
-API::APIReturn WebAdminMethods_ApplicationsScopes::removeApplicationScope(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortalMethods_ApplicationsScopes::removeApplicationScope(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
@@ -151,7 +151,7 @@ API::APIReturn WebAdminMethods_ApplicationsScopes::removeApplicationScope(void *
     }
 
     // Don't modify scope from our directory.
-    if (appName == DB_APPNAME)
+    if (appName == IAM_ADMPORTAL_APPNAME)
     {
         response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Can't remove application scope to the IAM");
         return response;
@@ -165,7 +165,7 @@ API::APIReturn WebAdminMethods_ApplicationsScopes::removeApplicationScope(void *
     return response;
 }
 
-API::APIReturn WebAdminMethods_ApplicationsScopes::addApplicationScopeToRole(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortalMethods_ApplicationsScopes::addApplicationScopeToRole(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
@@ -177,7 +177,7 @@ API::APIReturn WebAdminMethods_ApplicationsScopes::addApplicationScopeToRole(voi
 
     return response;
 }
-API::APIReturn WebAdminMethods_ApplicationsScopes::removeApplicationScopeFromRole(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortalMethods_ApplicationsScopes::removeApplicationScopeFromRole(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
@@ -191,7 +191,7 @@ API::APIReturn WebAdminMethods_ApplicationsScopes::removeApplicationScopeFromRol
 }
 
 
-API::APIReturn WebAdminMethods_ApplicationsScopes::searchApplicationScopes(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortalMethods_ApplicationsScopes::searchApplicationScopes(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     return Globals::getIdentityManager()->authController->searchApplicationScopes(*request.inputJSON);
 }
@@ -201,12 +201,12 @@ API::APIReturn WebAdminMethods_ApplicationsScopes::searchApplicationScopes(void 
 
 
 
-void WebAdminMethods_ApplicationsScopes::updateApplicationScopeDescription(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+void AdminPortalMethods_ApplicationsScopes::updateApplicationScopeDescription(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     std::string appName = JSON_ASSTRING(*request.inputJSON, "appName", "");
 
     // Don't modify scopes from our directory.
-    if (appName == DB_APPNAME)
+    if (appName == IAM_ADMPORTAL_APPNAME)
     {
         response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Can't update application scope to the IAM");
     }
@@ -218,31 +218,31 @@ void WebAdminMethods_ApplicationsScopes::updateApplicationScopeDescription(void 
     }
 }
 
-void WebAdminMethods_ApplicationsScopes::listApplicationScopes(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+void AdminPortalMethods_ApplicationsScopes::listApplicationScopes(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
-    (*response.responseJSON()) = WebAdmin_Endpoints::scopeListToJSON(Globals::getIdentityManager()->authController->listApplicationScopes(JSON_ASSTRING(*request.inputJSON, "appName", "")));
+    (*response.responseJSON()) = AdminPortal_Endpoints::scopeListToJSON(Globals::getIdentityManager()->authController->listApplicationScopes(JSON_ASSTRING(*request.inputJSON, "appName", "")));
 }
 
-void WebAdminMethods_ApplicationsScopes::getApplicationRolesForScope(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+void AdminPortalMethods_ApplicationsScopes::getApplicationRolesForScope(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     (*response.responseJSON()) = Helpers::setToJSON(
         Globals::getIdentityManager()->authController->getApplicationRolesForScope({JSON_ASSTRING(*request.inputJSON, "appName", ""), JSON_ASSTRING(*request.inputJSON, "id", "")}));
 }
 
-void WebAdminMethods_ApplicationsScopes::listAccountsOnApplicationScope(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+void AdminPortalMethods_ApplicationsScopes::listAccountsOnApplicationScope(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     (*response.responseJSON()) = Helpers::setToJSON(
         Globals::getIdentityManager()->authController->listAccountsOnApplicationScope({JSON_ASSTRING(*request.inputJSON, "appName", ""), JSON_ASSTRING(*request.inputJSON, "id", "")}));
 }
 
-void WebAdminMethods_ApplicationsScopes::getApplicationScopeDescription(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+void AdminPortalMethods_ApplicationsScopes::getApplicationScopeDescription(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     (*response.responseJSON()) = Globals::getIdentityManager()->authController->getApplicationScopeDescription(
         {JSON_ASSTRING(*request.inputJSON, "appName", ""), JSON_ASSTRING(*request.inputJSON, "id", "")});
 }
 
-void WebAdminMethods_ApplicationsScopes::scopesLeftListForRole(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+void AdminPortalMethods_ApplicationsScopes::scopesLeftListForRole(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
-    auto scopesLeft = WebAdmin_Endpoints::iScopesLeftListForRole(JSON_ASSTRING(*request.inputJSON, "appName", ""), JSON_ASSTRING(*request.inputJSON, "roleName", ""));
-    (*response.responseJSON()) = WebAdmin_Endpoints::scopeListToJSON(scopesLeft);
+    auto scopesLeft = AdminPortal_Endpoints::iScopesLeftListForRole(JSON_ASSTRING(*request.inputJSON, "appName", ""), JSON_ASSTRING(*request.inputJSON, "roleName", ""));
+    (*response.responseJSON()) = AdminPortal_Endpoints::scopeListToJSON(scopesLeft);
 }*/

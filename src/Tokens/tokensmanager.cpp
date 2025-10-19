@@ -93,7 +93,7 @@ void TokensManager::setIAMAccessTokenCookie(APIReturn &response, const RequestPa
     Mantids30::DataFormat::JWT::Token accessToken;
     std::string accountName = JSON_ASSTRING_D(intermediateToken.getClaim("preAuthUser"), "");
     auto accountExpirationTime = identityManager->accounts->getAccountExpirationTime(accountName);
-    time_t expectedRefresherTokenTimeoutTime = safeAdd(time(nullptr), Globals::pConfig.get<time_t>("WebLoginPortal.IAMTokenTimeout", 2592000));
+    time_t expectedRefresherTokenTimeoutTime = safeAdd(time(nullptr), Globals::pConfig.get<time_t>("LoginPortal.IAMTokenTimeout", 2592000));
 
     if (!keepAuthenticated)
     {
@@ -123,7 +123,7 @@ void TokensManager::setIAMAccessTokenCookie(APIReturn &response, const RequestPa
     accessToken.setNotBefore(time(nullptr) - 30);
     accessToken.addClaim("slotIds", combinedSlotIds);
     accessToken.addClaim("type", "IAM");
-    accessToken.addClaim("app", "IAM");
+    accessToken.addClaim("app", IAM_USRPORTAL_APPNAME);
     accessToken.addClaim("apps", Mantids30::Helpers::setToJSON(uniqueAuthApps));
     accessToken.addClaim("keepAuthenticated", keepAuthenticated);
 

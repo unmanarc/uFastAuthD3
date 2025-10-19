@@ -1,4 +1,4 @@
-#include "weblogin_add_endpoints.h"
+#include "loginportal_add_endpoints.h"
 #include <Mantids30/Helpers/json.h>
 
 using namespace Mantids30;
@@ -7,14 +7,14 @@ using namespace Network::Protocols;
 
 // Get the application token...
 
-API::APIReturn WebLogin_AuthMethods::logout(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn LoginPortal_AuthMethods::logout(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
     doLogoutInResponse(context,request,authClientDetails,&response);
     return response;
 }
 
-void WebLogin_AuthMethods::doLogoutInResponse(void *, const RequestParameters &request, ClientDetails &, APIReturn * response)
+void LoginPortal_AuthMethods::doLogoutInResponse(void *, const RequestParameters &request, ClientDetails &, APIReturn * response)
 {
     if ( request.clientRequest->headers.getOptionValueStringByName("X-Logout") != "1" )
     {

@@ -2,7 +2,7 @@
 #include "Mantids30/Program_Logs/loglevels.h"
 #include "Mantids30/Protocol_HTTP/api_return.h"
 #include "Tokens/tokensmanager.h"
-#include "weblogin_add_endpoints.h"
+#include "loginportal_add_endpoints.h"
 #include <Mantids30/Helpers/json.h>
 
 #include "globals.h"
@@ -20,7 +20,7 @@ using namespace Network::Protocols;
 using namespace Mantids30::DataFormat;
 
 // Validate user and get authorization flow:
-API::APIReturn WebLogin_AuthMethods::preAuthorize(void *context, const API::RESTful::RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn LoginPortal_AuthMethods::preAuthorize(void *context, const API::RESTful::RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
     // Environment:
@@ -29,7 +29,7 @@ API::APIReturn WebLogin_AuthMethods::preAuthorize(void *context, const API::REST
 
     //  Configuration parameters:
     auto config = Globals::pConfig;
-    uint32_t loginAuthenticationTimeout = config.get<uint32_t>("WebLoginPortal.AuthenticationTimeout", 300);
+    uint32_t loginAuthenticationTimeout = config.get<uint32_t>("LoginPortal.AuthenticationTimeout", 300);
 
     // Input parameters:
     std::string app = JSON_ASSTRING(*request.inputJSON, "app", "");                 // APPNAME.
@@ -47,7 +47,7 @@ API::APIReturn WebLogin_AuthMethods::preAuthorize(void *context, const API::REST
     return response;
 }
 
-bool validateIAMAccessTokenCookieProperties(const RequestParameters &request, WebLogin_AuthMethods::APIReturn &response, JWT::Token *token, const std::string &accountName, const std::string &appName)
+bool validateIAMAccessTokenCookieProperties(const RequestParameters &request, LoginPortal_AuthMethods::APIReturn &response, JWT::Token *token, const std::string &accountName, const std::string &appName)
 {
     std::string cookieAccessTokenStr = request.clientRequest->getCookie("AccessToken");
 
@@ -59,7 +59,7 @@ bool validateIAMAccessTokenCookieProperties(const RequestParameters &request, We
             response.setError(HTTP::Status::S_403_FORBIDDEN, "AUTH_ERR_" + std::to_string(REASON_UNAUTHENTICATED), getReasonText(REASON_UNAUTHENTICATED));
             return false;
         }
-        if (token->getClaim("app") != "IAM" || token->getClaim("type") != "IAM")
+        if (token->getClaim("app") != IAM_USRPORTAL_APPNAME || token->getClaim("type") != "IAM")
         {
             // This Token is not for this cookie...
             response.setError(HTTP::Status::S_403_FORBIDDEN, "AUTH_ERR_" + std::to_string(REASON_UNAUTHENTICATED), getReasonText(REASON_UNAUTHENTICATED));
@@ -82,7 +82,7 @@ bool validateIAMAccessTokenCookieProperties(const RequestParameters &request, We
     return true;
 }
 
-bool validateAndDecodeBearerAccessTokenProperties(const RequestParameters &request, WebLogin_AuthMethods::APIReturn &response, JWT::Token *oldIntermediateAuthToken, std::string *accountName,
+bool validateAndDecodeBearerAccessTokenProperties(const RequestParameters &request, LoginPortal_AuthMethods::APIReturn &response, JWT::Token *oldIntermediateAuthToken, std::string *accountName,
                                                   bool *isFullyAuthenticated, std::shared_ptr<AppAuthExtras> authContext)
 {
     std::string oldIntermediateAuthTokenStr = request.clientRequest->getAuthorizationBearer();
@@ -109,7 +109,7 @@ bool setupNewIntermediateAuthToken(const RequestParameters &request, Mantids30::
 {
     // Retrieve configuration parameters from global settings.
     auto config = Globals::pConfig;
-    uint32_t loginAuthenticationTimeout = config.get<uint32_t>("WebLoginPortal.AuthenticationTimeout", 300);
+    uint32_t loginAuthenticationTimeout = config.get<uint32_t>("LoginPortal.AuthenticationTimeout", 300);
     JWT::Token newIntermediateAuthToken;
 
     if (authContext->currentSlotPosition == 0)
@@ -177,7 +177,7 @@ bool setupNewIntermediateAuthToken(const RequestParameters &request, Mantids30::
 }
 
 // Validate credential:
-API::APIReturn WebLogin_AuthMethods::authorize(void *context, const RequestParameters &request, ClientDetails &clientDetails)
+API::APIReturn LoginPortal_AuthMethods::authorize(void *context, const RequestParameters &request, ClientDetails &clientDetails)
 {
     API::APIReturn response;
 

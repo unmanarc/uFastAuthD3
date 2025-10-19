@@ -4,7 +4,7 @@
         generateRandomKey("appKeyCreate");
         $("#appNameCreate").val('');
         $("#appDescriptionCreate").val('');
-        $("#scopesModifiableCreate").prop("checked", false);
+        $("#canUserModifyApplicationSecurityContextCreate").prop("checked", false);
         $("#initializeDefaultsCreate").prop("checked", true);
         $("#syncServiceEnabledCreate").prop("checked", true);
         
@@ -57,7 +57,7 @@
                 appName: $("#appNameCreate").val(),
                 description: $("#appDescriptionCreate").val(),
                 appURL: $("#appURLCreate").val(),
-                scopesModifiable: $("#scopesModifiableCreate").is(":checked"),
+                canUserModifyApplicationSecurityContext: $("#canUserModifyApplicationSecurityContextCreate").is(":checked"),
                 syncServiceEnabled: $("#syncServiceEnabledCreate").is(":checked"),
                 initializeDefaults: $("#initializeDefaultsCreate").is(":checked"),
                 appKey: $("#appKeyCreate").val()
@@ -166,8 +166,8 @@
                             <div class="row mb-2">
                                 <div class="col-auto">
                                     <div class="form-check form-switch">
-                                        <input class="form-check-input" type="checkbox" id="scopesModifiableCreate">
-                                        <label class="form-check-label" for="scopesModifiableCreate">
+                                        <input class="form-check-input" type="checkbox" id="canUserModifyApplicationSecurityContextCreate">
+                                        <label class="form-check-label" for="canUserModifyApplicationSecurityContextCreate">
                                             Allow manual modification of scopes
                                         </label>
                                     </div>

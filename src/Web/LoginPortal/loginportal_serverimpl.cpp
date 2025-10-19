@@ -1,8 +1,8 @@
-#include "weblogin_serverimpl.h"
+#include "loginportal_serverimpl.h"
 #include "config.h"
 #include "defs.h"
 #include "globals.h"
-#include "weblogin_add_endpoints.h"
+#include "loginportal_add_endpoints.h"
 
 #include <Mantids30/Config_Builder/restful_engine.h>
 #include <Mantids30/Server_RESTfulWebAPI/engine.h>
@@ -17,39 +17,39 @@ using namespace Network::Sockets;
 using namespace Network::Servers;
 using namespace Program;
 
-bool WebLogin_ServerImpl::createService()
+bool LoginPortal_ServerImpl::createService()
 {
     boost::property_tree::ptree config = Globals::pConfig;
 
     try
     {
-        config = config.get_child("WebLoginPortal");
+        config = config.get_child("LoginPortal");
     }
     catch (boost::property_tree::ptree_error &e)
     {
-        LOG_APP->log0(__func__, Logs::LEVEL_INFO, "Configuration error: WebLoginPortal not found: %s", e.what());
+        LOG_APP->log0(__func__, Logs::LEVEL_INFO, "Configuration error: LoginPortal not found: %s", e.what());
         return false;
     }
 
-    RESTful::Engine *loginWebServer = Program::Config::RESTful_Engine::createRESTfulEngine(config, LOG_APP, LOG_RPC, "Web Login", AUTHSERVER_WEBDIR, Program::Config::REST_ENGINE_MANDATORY_SSL);
+    RESTful::Engine *loginWebServer = Program::Config::RESTful_Engine::createRESTfulEngine(config, LOG_APP, LOG_RPC, "Web Login", IAM_LOGINPORTAL_DEF_WEBROOTDIR, Program::Config::REST_ENGINE_MANDATORY_SSL);
 
     if (!loginWebServer)
         return false;
 
     // Handle the login function for APP personalized site:
-    loginWebServer->config.dynamicRequestHandlersByRoute["/login"] = {&WebLogin_AuthMethods::handleLoginDynamicRequest, nullptr};
+    loginWebServer->config.dynamicRequestHandlersByRoute["/login"] = {&LoginPortal_AuthMethods::handleLoginDynamicRequest, nullptr};
 
     // Set the software version:
     loginWebServer->config.setSoftwareVersion(atoi(PROJECT_VER_MAJOR), atoi(PROJECT_VER_MINOR), atoi(PROJECT_VER_PATCH), "a");
 
     // This will validate the JWT, the app should match with this:
-    loginWebServer->config.appName = "IAM";
+    loginWebServer->config.appName = IAM_USRPORTAL_APPNAME;
 
     // Setup the methods handler for version 1:
     loginWebServer->endpointsHandler[1] = std::make_shared<API::RESTful::Endpoints>();
 
     // Add authentication methods
-    WebLogin_AuthMethods::addEndpoints(loginWebServer->endpointsHandler[1]);
+    LoginPortal_AuthMethods::addEndpoints(loginWebServer->endpointsHandler[1]);
 
     loginWebServer->startInBackground();
 

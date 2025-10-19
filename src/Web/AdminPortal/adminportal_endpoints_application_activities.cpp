@@ -1,4 +1,4 @@
-#include "webadmin_endpoints_application_activities.h"
+#include "adminportal_endpoints_application_activities.h"
 
 #include "globals.h"
 #include <Mantids30/Program_Logs/applog.h>
@@ -11,7 +11,7 @@ using namespace Mantids30;
 
 using namespace Mantids30::Network::Protocols;
 
-void WebAdminMethods_ApplicationActivities::addEndpoints_Activities(std::shared_ptr<Endpoints> endpoints)
+void AdminPortalMethods_ApplicationActivities::addEndpoints_Activities(std::shared_ptr<Endpoints> endpoints)
 {
     using SecurityOptions = Mantids30::API::RESTful::Endpoints::SecurityOptions;
 
@@ -29,7 +29,7 @@ void WebAdminMethods_ApplicationActivities::addEndpoints_Activities(std::shared_
     endpoints->addEndpoint(Endpoints::PATCH, "updateDefaultSchemeOnApplicationActivity", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"}, nullptr, &updateDefaultSchemeOnApplicationActivity);
 }
 
-API::APIReturn WebAdminMethods_ApplicationActivities::updateDefaultSchemeOnApplicationActivity(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortalMethods_ApplicationActivities::updateDefaultSchemeOnApplicationActivity(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
@@ -63,7 +63,7 @@ API::APIReturn WebAdminMethods_ApplicationActivities::updateDefaultSchemeOnAppli
 }
 
 
-API::APIReturn WebAdminMethods_ApplicationActivities::addSchemeToApplicationActivity(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortalMethods_ApplicationActivities::addSchemeToApplicationActivity(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
@@ -96,7 +96,7 @@ API::APIReturn WebAdminMethods_ApplicationActivities::addSchemeToApplicationActi
     return response;
 }
 
-API::APIReturn WebAdminMethods_ApplicationActivities::removeSchemeFromApplicationActivity(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortalMethods_ApplicationActivities::removeSchemeFromApplicationActivity(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
@@ -130,7 +130,7 @@ API::APIReturn WebAdminMethods_ApplicationActivities::removeSchemeFromApplicatio
 }
 
 
-API::APIReturn WebAdminMethods_ApplicationActivities::updateActivityDescription(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortalMethods_ApplicationActivities::updateActivityDescription(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
@@ -163,7 +163,7 @@ API::APIReturn WebAdminMethods_ApplicationActivities::updateActivityDescription(
     return response;
 }
 
-API::APIReturn WebAdminMethods_ApplicationActivities::updateActivityParentActivity(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortalMethods_ApplicationActivities::updateActivityParentActivity(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
@@ -192,7 +192,7 @@ API::APIReturn WebAdminMethods_ApplicationActivities::updateActivityParentActivi
 
 
 
-API::APIReturn WebAdminMethods_ApplicationActivities::getActivityInfo(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortalMethods_ApplicationActivities::getActivityInfo(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
     std::string appName = JSON_ASSTRING(*request.inputJSON, "appName", "");
@@ -266,7 +266,7 @@ API::APIReturn WebAdminMethods_ApplicationActivities::getActivityInfo(void *cont
     return response;
 }
 
-API::APIReturn WebAdminMethods_ApplicationActivities::listApplicationActivities(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortalMethods_ApplicationActivities::listApplicationActivities(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
     std::string appName = JSON_ASSTRING(*request.inputJSON, "appName", "");
@@ -290,7 +290,7 @@ API::APIReturn WebAdminMethods_ApplicationActivities::listApplicationActivities(
     return response;
 }
 
-API::APIReturn WebAdminMethods_ApplicationActivities::addApplicationActivity(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortalMethods_ApplicationActivities::addApplicationActivity(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
@@ -323,7 +323,7 @@ API::APIReturn WebAdminMethods_ApplicationActivities::addApplicationActivity(voi
     return response;
 }
 
-API::APIReturn WebAdminMethods_ApplicationActivities::removeApplicationActivity(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortalMethods_ApplicationActivities::removeApplicationActivity(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 

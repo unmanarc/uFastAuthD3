@@ -1,4 +1,4 @@
-#include "weblogin_add_endpoints.h"
+#include "loginportal_add_endpoints.h"
 
 #include <Mantids30/DataFormat_JWT/jwt.h>
 #include <Mantids30/Helpers/json.h>
@@ -22,9 +22,9 @@ using namespace Mantids30::API::RESTful;
 using namespace Mantids30::Network::Protocols;
 using namespace Mantids30::DataFormat;
 
-std::regex WebLogin_AuthMethods::originPattern = std::regex("^(https?://[^/]+)");
+std::regex LoginPortal_AuthMethods::originPattern = std::regex("^(https?://[^/]+)");
 
-void WebLogin_AuthMethods::addEndpoints(std::shared_ptr<Endpoints> endpoints)
+void LoginPortal_AuthMethods::addEndpoints(std::shared_ptr<Endpoints> endpoints)
 {
     using SecurityOptions = Mantids30::API::RESTful::Endpoints::SecurityOptions;
 
@@ -65,7 +65,7 @@ void WebLogin_AuthMethods::addEndpoints(std::shared_ptr<Endpoints> endpoints)
     //    endpoints->addEndpoint("addAccount",{&addAccount,auth});
 }
 
-bool WebLogin_AuthMethods::retrieveAndValidateAppOrigin(HTTPv1_Base::Request *request, const std::string &appName, const OriginSource &originSource)
+bool LoginPortal_AuthMethods::retrieveAndValidateAppOrigin(HTTPv1_Base::Request *request, const std::string &appName, const OriginSource &originSource)
 {
     auto origins = Globals::getIdentityManager()->applications->listWebLoginOriginUrlsFromApplication(appName);
 
@@ -98,7 +98,7 @@ bool WebLogin_AuthMethods::retrieveAndValidateAppOrigin(HTTPv1_Base::Request *re
 }
 
 // Handle personalized login forms:
-HTTP::Status::Codes WebLogin_AuthMethods::handleLoginDynamicRequest(const std::string &appName, HTTPv1_Base::Request *request, HTTPv1_Base::Response *response, std::shared_ptr<void>)
+HTTP::Status::Codes LoginPortal_AuthMethods::handleLoginDynamicRequest(const std::string &appName, HTTPv1_Base::Request *request, HTTPv1_Base::Response *response, std::shared_ptr<void>)
 {
     std::string page;
     LoginDirectoryManager::ErrorCode status = Globals::getLoginDirManager()->retrieveFile(appName, page);
