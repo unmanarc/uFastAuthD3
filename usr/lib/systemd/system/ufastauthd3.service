@@ -1,13 +1,13 @@
 [Unit]
-Description=Unmanarc's Fast Authentication Daemon
+Description=Unmanarc's Fast Authentication Daemon 3
 After=network.target
 
 [Service]
 Type=simple
 Restart=always
 RestartSec=5
-WorkingDirectory=/var/lib/ufastauthd
-ExecStart=/usr/bin/uFastAuthD
+WorkingDirectory=/
+ExecStart=/usr/bin/uFastAuthD3
 Environment=
 
 [Install]
