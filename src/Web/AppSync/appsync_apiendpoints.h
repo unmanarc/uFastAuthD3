@@ -15,6 +15,12 @@ public:
     using ClientDetails = Mantids30::Sessions::ClientDetails;
     using JWT = Mantids30::DataFormat::JWT;
 
+
+    static void updateAppScopes( const std::string & appName, const std::string & ipAddress,  const json & proposedScopes );
+    static void updateAppRoles( const std::string & appName, const std::string & ipAddress,  const json & proposedRoles );
+    static void updateAppActivities( const std::string & appName, const std::string & ipAddress,  const json & proposedActivities );
+
+
     /**
     * @brief Adds the available login authentication methods as server functions.
     * @param methods The Endpoints to which the authentication methods will be added.

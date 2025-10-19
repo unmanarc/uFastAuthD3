@@ -20,6 +20,8 @@
 
 #include <fstream>
 
+#include "Web/AppSync/appsync_apiendpoints.h"
+
 using namespace Mantids30::Database;
 using namespace Mantids30::Program;
 using namespace Mantids30;
@@ -102,6 +104,7 @@ bool AuthStorageImpl::createAuth()
         }
 
         identityManager = new IdentityManager_DB(dbConnector);
+        Globals::setIdentityManager(identityManager);
     }
     /*    else if (boost::to_lower_copy(driver) == "postgresql")
     {
@@ -276,7 +279,6 @@ bool AuthStorageImpl::createAuth()
     if (!configureUserPortalApplication(identityManager, sDefaultUser))
         return false;
 
-    Globals::setIdentityManager(identityManager);
 
     return true;
 }
@@ -325,6 +327,14 @@ bool AuthStorageImpl::resetAdminPwd(IdentityManager_DB *identityManager, std::st
     return identityManager->authController->changeCredential("admin", credentialData);
 }*/
 
+
+static auto parse = [](const char *json)
+{
+    Json::Value r;
+    Json::Reader().parse(json, r);
+    return r;
+};
+
 bool AuthStorageImpl::configureAdminPortalApplication(IdentityManager_DB *identityManager, const std::string &adminUser)
 {
     if (!identityManager->applications->doesApplicationExist(IAM_ADMPORTAL_APPNAME))
@@ -333,43 +343,95 @@ bool AuthStorageImpl::configureAdminPortalApplication(IdentityManager_DB *identi
         return false;
     }
 
-    std::list<ApplicationScope> appScopes = {
-                                                {IAM_ADMPORTAL_APPNAME, "SELF_PWDCHANGE", "Change my own password"},
-                                                {IAM_ADMPORTAL_APPNAME, "SELF_READ", "Read my own user data from the IAM system"},
-                                                {IAM_ADMPORTAL_APPNAME, "SELF_DELETE", "Delete my own user"},
-                                                {IAM_ADMPORTAL_APPNAME, "ACCOUNT_READ", "Read accounts data from the IAM system"},
-                                                {IAM_ADMPORTAL_APPNAME, "ACCOUNT_DELETE", "Delete accounts from the IAM system"},
-                                                {IAM_ADMPORTAL_APPNAME, "ACCOUNT_MODIFY", "Edit accounts details, roles, and scopes"},
-                                                {IAM_ADMPORTAL_APPNAME, "ACCOUNT_PWDDCHANGE", "Change account passwords"},
-                                                {IAM_ADMPORTAL_APPNAME, "ACCOUNT_DISABLE", "Disable/lock accounts"},
-                                                {IAM_ADMPORTAL_APPNAME, "ACCOUNT_ENABLE", "Enable/unlock accounts"},
-                                                {IAM_ADMPORTAL_APPNAME, "APP_CREATE", "Create applications on the IAM"},
-                                                {IAM_ADMPORTAL_APPNAME, "APP_DELETE", "Delete application's from the IAM"},
-                                                {IAM_ADMPORTAL_APPNAME, "APP_MODIFY", "Modify application data on the IAM"},
-                                                {IAM_ADMPORTAL_APPNAME, "APP_READ", "Read application data from the IAM"},
-                                                {IAM_ADMPORTAL_APPNAME, "AUTH_CREATE", "Create authentication schemes and slots on the IAM"},
-                                                {IAM_ADMPORTAL_APPNAME, "AUTH_DELETE", "Delete authentication schemes and slots on the IAM"},
-                                                {IAM_ADMPORTAL_APPNAME, "AUTH_MODIFY", "Modify authentication schemes and slots on the IAM"},
-                                                {IAM_ADMPORTAL_APPNAME, "AUTH_READ", "Read authentication schemes and slots on the IAM"},
-                                                {IAM_ADMPORTAL_APPNAME, "CONFIG_READ", "Read the configuration of the IAM"},
-                                                {IAM_ADMPORTAL_APPNAME, "CONFIG_WRITE", "Write the configuration of the IAM"},
-                                                {IAM_ADMPORTAL_APPNAME, "AUDIT_LOG_VIEW", "Access, export and view IAM audit logs"},
-                                                {IAM_ADMPORTAL_APPNAME, "AUDIT_LOG_CLEAN", "Clean/remove audit logs"}
-                                            };
-
-    for (auto &scope : appScopes)
-    {
-        if (!identityManager->authController->doesApplicationScopeExist(scope))
-        {
-            LOG_APP->log0(__func__, Logs::LEVEL_WARN, "Scope '%s' does not exist, creating it.", scope.id.c_str());
-
-            if (!identityManager->authController->addApplicationScope(scope))
+    AppSync_Endpoints::updateAppScopes( IAM_ADMPORTAL_APPNAME, "127.0.0.1", parse(R"(
+        [
             {
-                LOG_APP->log0(__func__, Logs::LEVEL_CRITICAL, "Failed to create the scope '%s'.", scope.id.c_str());
-                return false;
+                "id": "SELF_PWDCHANGE",
+                "description": "Change my own password"
+            },
+            {
+                "id": "SELF_READ",
+                "description": "Read my own user data from the IAM system"
+            },
+            {
+                "id": "SELF_DELETE",
+                "description": "Delete my own user"
+            },
+            {
+                "id": "ACCOUNT_READ",
+                "description": "Read accounts data from the IAM system"
+            },
+            {
+                "id": "ACCOUNT_DELETE",
+                "description": "Delete accounts from the IAM system"
+            },
+            {
+                "id": "ACCOUNT_MODIFY",
+                "description": "Edit accounts details, roles, and scopes"
+            },
+            {
+                "id": "ACCOUNT_PWDDCHANGE",
+                "description": "Change account passwords"
+            },
+            {
+                "id": "ACCOUNT_DISABLE",
+                "description": "Disable/lock accounts"
+            },
+            {
+                "id": "ACCOUNT_ENABLE",
+                "description": "Enable/unlock accounts"
+            },
+            {
+                "id": "APP_CREATE",
+                "description": "Create applications on the IAM"
+            },
+            {
+                "id": "APP_DELETE",
+                "description": "Delete application's from the IAM"
+            },
+            {
+                "id": "APP_MODIFY",
+                "description": "Modify application data on the IAM"
+            },
+            {
+                "id": "APP_READ",
+                "description": "Read application data from the IAM"
+            },
+            {
+                "id": "AUTH_CREATE",
+                "description": "Create authentication schemes and slots on the IAM"
+            },
+            {
+                "id": "AUTH_DELETE",
+                "description": "Delete authentication schemes and slots on the IAM"
+            },
+            {
+                "id": "AUTH_MODIFY",
+                "description": "Modify authentication schemes and slots on the IAM"
+            },
+            {
+                "id": "AUTH_READ",
+                "description": "Read authentication schemes and slots on the IAM"
+            },
+            {
+                "id": "CONFIG_READ",
+                "description": "Read the configuration of the IAM"
+            },
+            {
+                "id": "CONFIG_WRITE",
+                "description": "Write the configuration of the IAM"
+            },
+            {
+                "id": "AUDIT_LOG_VIEW",
+                "description": "Access, export and view IAM audit logs"
+            },
+            {
+                "id": "AUDIT_LOG_CLEAN",
+                "description": "Clean/remove audit logs"
             }
-        }
-    }
+        ]
+    )") );
+
 
     if (!identityManager->applications->validateApplicationAccount(IAM_ADMPORTAL_APPNAME, adminUser))
     {
@@ -396,6 +458,7 @@ bool AuthStorageImpl::configureAdminPortalApplication(IdentityManager_DB *identi
     return true;
 }
 
+
 bool AuthStorageImpl::configureUserPortalApplication(IdentityManager_DB *identityManager, const std::string &adminUser)
 {
     if (!identityManager->applications->doesApplicationExist(IAM_USRPORTAL_APPNAME))
@@ -404,31 +467,67 @@ bool AuthStorageImpl::configureUserPortalApplication(IdentityManager_DB *identit
         return false;
     }
 
-    std::list<ApplicationScope> appScopes = {
-        {IAM_USRPORTAL_APPNAME, "LOGIN", "Access the self-service user portal"},
-        {IAM_USRPORTAL_APPNAME, "CHANGEPWD", "Change my account password"},
-        {IAM_USRPORTAL_APPNAME, "SELF_PROFILE_VIEW", "View my profile information and attributes"},
-        {IAM_USRPORTAL_APPNAME, "SELF_PROFILE_EDIT", "Update my profile information and preferences"},
-        {IAM_USRPORTAL_APPNAME, "SELF_MFA_MANAGE", "Manage my multi-factor authenticators"},
-        {IAM_USRPORTAL_APPNAME, "SELF_SESSIONS_VIEW", "Review my active sessions, devices, and remembered browsers"},
-        {IAM_USRPORTAL_APPNAME, "SELF_SESSIONS_TERMINATE", "Sign out or revoke specific sessions and devices"},
-        {IAM_USRPORTAL_APPNAME, "VIEWLOGS", "View my personal audit and activity logs"},
-        {IAM_USRPORTAL_APPNAME, "VIEWIP", "Inspect IP addresses recorded for my activity"},
-    };
+    AppSync_Endpoints::updateAppScopes( IAM_USRPORTAL_APPNAME, "127.0.0.1", parse(R"(
+    [
+      {
+        "id": "LOGIN",
+        "description": "Access the self-service user portal"
+      },
+      {
+        "id": "CHANGEPWD",
+        "description": "Change my account password"
+      },
+      {
+        "id": "SELF_PROFILE_VIEW",
+        "description": "View my profile information and attributes"
+      },
+      {
+        "id": "SELF_PROFILE_EDIT",
+        "description": "Update my profile information and preferences"
+      },
+      {
+        "id": "SELF_MFA_MANAGE",
+        "description": "Manage my multi-factor authenticators"
+      },
+      {
+        "id": "SELF_SESSIONS_VIEW",
+        "description": "Review my active sessions, devices, and remembered browsers"
+      },
+      {
+        "id": "SELF_SESSIONS_TERMINATE",
+        "description": "Sign out or revoke specific sessions and devices"
+      },
+      {
+        "id": "VIEWLOGS",
+        "description": "View my personal audit and activity logs"
+      },
+      {
+        "id": "VIEWIP",
+        "description": "Inspect IP addresses recorded for my activity"
+      }
+    ]
+    )") );
 
-    for (auto &scope : appScopes)
-    {
-        if (!identityManager->authController->doesApplicationScopeExist(scope))
-        {
-            LOG_APP->log0(__func__, Logs::LEVEL_WARN, "Scope '%s' does not exist, creating it.", scope.id.c_str());
 
-            if (!identityManager->authController->addApplicationScope(scope))
-            {
-                LOG_APP->log0(__func__, Logs::LEVEL_CRITICAL, "Failed to create the scope '%s'.", scope.id.c_str());
-                return false;
-            }
-        }
-    }
+    AppSync_Endpoints::updateAppRoles( IAM_USRPORTAL_APPNAME, "127.0.0.1", parse(R"(
+    [
+      {
+        "id": "GENERIC_USER",
+        "description": "Standard user with access to all self-mgmt functionality",
+        "scopes": [
+          "LOGIN",
+          "CHANGEPWD",
+          "SELF_PROFILE_VIEW",
+          "SELF_PROFILE_EDIT",
+          "SELF_MFA_MANAGE",
+          "SELF_SESSIONS_VIEW",
+          "SELF_SESSIONS_TERMINATE",
+          "VIEWLOGS",
+          "VIEWIP"
+        ]
+      }
+    ]
+    )") );
 
     if (!identityManager->applications->validateApplicationAccount(IAM_USRPORTAL_APPNAME, adminUser))
     {
@@ -441,16 +540,18 @@ bool AuthStorageImpl::configureUserPortalApplication(IdentityManager_DB *identit
         }
     }
 
-    if (!identityManager->applications->isApplicationAdmin(IAM_USRPORTAL_APPNAME, adminUser))
+    std::set<std::string> accounts = identityManager->applicationRoles->getApplicationRoleAccounts(IAM_USRPORTAL_APPNAME, "GENERIC_USER");
+    if (accounts.find(adminUser) == accounts.end())
     {
-        LOG_APP->log0(__func__, Logs::LEVEL_WARN, "Setting up '%s' user as application '%s' admin.", adminUser.c_str(), IAM_USRPORTAL_APPNAME);
+        LOG_APP->log0(__func__, Logs::LEVEL_WARN, "Setting up '%s' user with role 'GENERIC_USER' in application '%s'.", adminUser.c_str(), IAM_USRPORTAL_APPNAME);
 
-        if (!identityManager->applications->changeApplicationAdmin(IAM_USRPORTAL_APPNAME, adminUser,true))
+        if (!identityManager->applicationRoles->addAccountToRole(IAM_USRPORTAL_APPNAME, "GENERIC_USER", adminUser))
         {
-            LOG_APP->log0(__func__, Logs::LEVEL_CRITICAL, "Failed to set the '%s' account as application '%s' admin.", adminUser.c_str(), IAM_USRPORTAL_APPNAME);
+            LOG_APP->log0(__func__, Logs::LEVEL_CRITICAL, "Failed to set up '%s' user with role 'GENERIC_USER' in application '%s'.", adminUser.c_str(), IAM_USRPORTAL_APPNAME);
             return false;
         }
     }
+
 
     return true;
 }

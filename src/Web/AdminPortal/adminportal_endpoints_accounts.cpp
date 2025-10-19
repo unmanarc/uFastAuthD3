@@ -4,6 +4,7 @@
 #include "json/value.h"
 #include <Mantids30/Program_Logs/applog.h>
 
+#include "defs.h"
 #include "globals.h"
 #include <regex>
 
@@ -151,11 +152,18 @@ API::APIReturn AdminPortalMethods_Accounts::addAccount(void *context, const Requ
         return response;
     }
 
-    if (!Globals::getIdentityManager()->applications->changeApplicationAdmin(IAM_USRPORTAL_APPNAME, accountName,true))
+    if (!Globals::getIdentityManager()->applications->addAccountToApplication(IAM_USRPORTAL_APPNAME, accountName))
     {
-        response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to assign user portal full access to the new user.");
+        response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to assign user with GENERIC_USER in app '" IAM_USRPORTAL_APPNAME "'.");
         return response;
     }
+
+    if (!Globals::getIdentityManager()->applicationRoles->addAccountToRole(IAM_USRPORTAL_APPNAME, "GENERIC_USER", accountName))
+    {
+        response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to assign user with GENERIC_USER in app '" IAM_USRPORTAL_APPNAME "'.");
+        return response;
+    }
+
 
     return response;
 }

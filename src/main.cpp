@@ -4,6 +4,8 @@
 #include <Mantids30/Net_Sockets/socket_tls.h>
 #include <Mantids30/Program_Service/application.h>
 
+
+#include "Web/UserPortal/userportal_serverimpl.h"
 #include "Web/AdminPortal/adminportal_serverimpl.h"
 #include "Web/LoginPortal/loginportal_serverimpl.h"
 #include "Web/SessionAuthHandler/websessionauthhandler_serverimpl.h"
@@ -164,6 +166,11 @@ public:
             _exit(-8);
         }
 
+        // Dir Web User:
+        if (!UserPortal_ServerImpl::createService())
+        {
+            _exit(-9);
+        }
         /*// Initiate the RPC Listener
         if (!RPC1LoginServer2Impl::createRPCListenerCAB())
         {

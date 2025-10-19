@@ -35,38 +35,8 @@ void AppSync_Endpoints::addAPIEndpoints(std::shared_ptr<Endpoints> endpoints)
     endpoints->addEndpoint(Endpoints::POST, "updateAccessControlContext", SecurityOptions::NO_AUTH, {}, nullptr, &updateAccessControlContext);
 }
 
-AppSync_Endpoints::APIReturn AppSync_Endpoints::updateAccessControlContext(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+void AppSync_Endpoints::updateAppScopes( const std::string & appName, const std::string & ipAddress,  const json & proposedScopes )
 {
-    std::string appName = request.clientRequest->requestLine.urlVars()->getStringValue("APP");
-    if (appName.empty())
-    {
-        LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LEVEL_WARN, "Missing application name in request during request.");
-        return APIReturn(HTTP::Status::S_400_BAD_REQUEST, "missing_app_name", "Application name is required.");
-    }
-
-    if (!Globals::getIdentityManager()->applications->haveApplicationSyncEnabled(appName))
-    {
-        LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LEVEL_SECURITY_ALERT, "Application '%s' does not have sync enabled.", appName.c_str());
-        return APIReturn(HTTP::Status::S_400_BAD_REQUEST, "sync_not_enabled", "Application sync is not enabled.");
-    }
-
-    std::string apiKey = JSON_ASSTRING(*request.inputJSON, "APIKEY", "");
-    if (apiKey.empty())
-    {
-        LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LEVEL_WARN, "Missing API key in request for application '%s' during request.", appName.c_str());
-        return APIReturn(HTTP::Status::S_400_BAD_REQUEST, "missing_api_key", "API key is required.");
-    }
-
-    if (Globals::getIdentityManager()->applications->getApplicationNameByAPIKey(apiKey) != appName)
-    {
-        LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LEVEL_SECURITY_ALERT, "Invalid API Key for Application '%s'. Possible attack attempt.", appName.c_str());
-        return APIReturn(HTTP::Status::S_401_UNAUTHORIZED, "invalid_api_key", "Invalid API Key for the specified application.");
-    }
-
-    // Scopes, Roles, and Activities...
-    // ------------------------------------------------------
-
-    Json::Value proposedScopes = (*request.inputJSON)["scopes"];
     // Current elements...
     std::set<ApplicationScope> currentScopes = Globals::getIdentityManager()->authController->listApplicationScopes(appName);
     if (proposedScopes.isArray())
@@ -90,14 +60,14 @@ AppSync_Endpoints::APIReturn AppSync_Endpoints::updateAccessControlContext(void 
                     // If description changed, update it
                     if (existingScope->description != newScope.description)
                     {
-                        LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LEVEL_INFO, "Updating description for scope '%s' in application '%s'.", id.c_str(), appName.c_str());
+                        LOG_APP->log2(__func__, "", ipAddress, Logs::LEVEL_INFO, "Updating description for scope '%s' in application '%s'.", id.c_str(), appName.c_str());
                         Globals::getIdentityManager()->authController->updateApplicationScopeDescription(newScope);
                     }
                 }
                 else
                 {
                     // Add new scope
-                    LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LEVEL_INFO, "Adding new scope '%s' to application '%s'.", id.c_str(), appName.c_str());
+                    LOG_APP->log2(__func__, "", ipAddress, Logs::LEVEL_INFO, "Adding new scope '%s' to application '%s'.", id.c_str(), appName.c_str());
                     Globals::getIdentityManager()->authController->addApplicationScope(newScope);
                 }
             }
@@ -108,13 +78,15 @@ AppSync_Endpoints::APIReturn AppSync_Endpoints::updateAccessControlContext(void 
         {
             if (proposedScopeIds.find(currentScope.id) == proposedScopeIds.end())
             {
-                LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LEVEL_INFO, "Removing scope '%s' from application '%s'.", currentScope.id.c_str(), appName.c_str());
+                LOG_APP->log2(__func__, "", ipAddress, Logs::LEVEL_INFO, "Removing scope '%s' from application '%s'.", currentScope.id.c_str(), appName.c_str());
                 Globals::getIdentityManager()->authController->removeApplicationScope(currentScope);
             }
         }
     }
+}
 
-    Json::Value proposedRoles = (*request.inputJSON)["roles"];
+void AppSync_Endpoints::updateAppRoles( const std::string & appName, const std::string & ipAddress,  const json & proposedRoles )
+{
     std::set<ApplicationRole> currentRoles = Globals::getIdentityManager()->applicationRoles->getApplicationRolesList(appName);
 
     // Store proposed role data for scope processing later
@@ -143,14 +115,14 @@ AppSync_Endpoints::APIReturn AppSync_Endpoints::updateAccessControlContext(void 
                 // If description changed, update it
                 if (existingRole->description != newRole.description)
                 {
-                    LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LEVEL_INFO, "Updating description for role '%s' in application '%s'.", id.c_str(), appName.c_str());
+                    LOG_APP->log2(__func__, "", ipAddress, Logs::LEVEL_INFO, "Updating description for role '%s' in application '%s'.", id.c_str(), appName.c_str());
                     Globals::getIdentityManager()->applicationRoles->updateRoleDescription(appName, id, description);
                 }
             }
             else
             {
                 // Add new role
-                LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LEVEL_INFO, "Adding new role '%s' to application '%s'.", id.c_str(), appName.c_str());
+                LOG_APP->log2(__func__, "", ipAddress, Logs::LEVEL_INFO, "Adding new role '%s' to application '%s'.", id.c_str(), appName.c_str());
                 Globals::getIdentityManager()->applicationRoles->addRole(appName, id, description);
             }
         }
@@ -159,7 +131,7 @@ AppSync_Endpoints::APIReturn AppSync_Endpoints::updateAccessControlContext(void 
         {
             if (proposedRoleIds.find(currentRole.id) == proposedRoleIds.end())
             {
-                LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LEVEL_INFO, "Removing role '%s' from application '%s'.", currentRole.id.c_str(), appName.c_str());
+                LOG_APP->log2(__func__, "", ipAddress, Logs::LEVEL_INFO, "Removing role '%s' from application '%s'.", currentRole.id.c_str(), appName.c_str());
                 Globals::getIdentityManager()->applicationRoles->removeRole(appName, currentRole.id);
             }
         }
@@ -193,7 +165,7 @@ AppSync_Endpoints::APIReturn AppSync_Endpoints::updateAccessControlContext(void 
                         ApplicationScope appScope;
                         appScope.appName = appName;
                         appScope.id = scopeId;
-                        LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LEVEL_INFO, "Adding scope '%s' to role '%s' in application '%s'.", scopeId.c_str(), roleId.c_str(),
+                        LOG_APP->log2(__func__, "", ipAddress, Logs::LEVEL_INFO, "Adding scope '%s' to role '%s' in application '%s'.", scopeId.c_str(), roleId.c_str(),
                                       appName.c_str());
                         Globals::getIdentityManager()->authController->addApplicationScopeToRole(appScope, roleId);
                     }
@@ -208,15 +180,17 @@ AppSync_Endpoints::APIReturn AppSync_Endpoints::updateAccessControlContext(void 
                     ApplicationScope appScope;
                     appScope.appName = appName;
                     appScope.id = currentScopeId;
-                    LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LEVEL_INFO, "Removing scope '%s' from role '%s' in application '%s'.", currentScopeId.c_str(), roleId.c_str(),
+                    LOG_APP->log2(__func__, "", ipAddress, Logs::LEVEL_INFO, "Removing scope '%s' from role '%s' in application '%s'.", currentScopeId.c_str(), roleId.c_str(),
                                   appName.c_str());
                     Globals::getIdentityManager()->authController->removeApplicationScopeFromRole(appScope, roleId);
                 }
             }
         }
     }
+}
 
-    Json::Value proposedActivities = (*request.inputJSON)["activities"];
+void AppSync_Endpoints::updateAppActivities( const std::string & appName, const std::string & ipAddress,  const json & proposedActivities )
+{
     std::map<std::string, IdentityManager::ApplicationActivities::ActivityData> currentActivities = Globals::getIdentityManager()->applicationActivities->listApplicationActivities(appName);
 
     if (proposedActivities.isArray())
@@ -242,20 +216,20 @@ AppSync_Endpoints::APIReturn AppSync_Endpoints::updateAccessControlContext(void 
 
                 if (currentData.description != activityData.description)
                 {
-                    LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LEVEL_INFO, "Updating description for activity '%s' in application '%s'.", name.c_str(), appName.c_str());
+                    LOG_APP->log2(__func__, "", ipAddress, Logs::LEVEL_INFO, "Updating description for activity '%s' in application '%s'.", name.c_str(), appName.c_str());
                     Globals::getIdentityManager()->applicationActivities->setApplicationActivityDescription(appName, name, activityData.description);
                 }
 
                 if (currentData.parentActivity != activityData.parentActivity)
                 {
-                    LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LEVEL_INFO, "Setting parent activity for activity '%s' in application '%s'.", name.c_str(), appName.c_str());
+                    LOG_APP->log2(__func__, "", ipAddress, Logs::LEVEL_INFO, "Setting parent activity for activity '%s' in application '%s'.", name.c_str(), appName.c_str());
                     Globals::getIdentityManager()->applicationActivities->setApplicationActivityParentActivity(appName, name, activityData.parentActivity);
                 }
             }
             else
             {
                 // New activity
-                LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LEVEL_INFO, "Adding new activity '%s' to application '%s'.", name.c_str(), appName.c_str());
+                LOG_APP->log2(__func__, "", ipAddress, Logs::LEVEL_INFO, "Adding new activity '%s' to application '%s'.", name.c_str(), appName.c_str());
 
                 // First register basic activity data
                 Globals::getIdentityManager()->applicationActivities->addApplicationActivity(appName, name, activityData.description);
@@ -274,11 +248,47 @@ AppSync_Endpoints::APIReturn AppSync_Endpoints::updateAccessControlContext(void 
             const std::string &existingActivityName = pair.first;
             if (proposedActivityNames.find(existingActivityName) == proposedActivityNames.end())
             {
-                LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LEVEL_INFO, "Removing obsolete activity '%s' from application '%s'.", existingActivityName.c_str(), appName.c_str());
+                LOG_APP->log2(__func__, "", ipAddress, Logs::LEVEL_INFO, "Removing obsolete activity '%s' from application '%s'.", existingActivityName.c_str(), appName.c_str());
                 Globals::getIdentityManager()->applicationActivities->removeApplicationActivity(appName, existingActivityName);
             }
         }
     }
+}
+
+AppSync_Endpoints::APIReturn AppSync_Endpoints::updateAccessControlContext(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+{
+    std::string appName = request.clientRequest->requestLine.urlVars()->getStringValue("APP");
+    if (appName.empty())
+    {
+        LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LEVEL_WARN, "Missing application name in request during request.");
+        return APIReturn(HTTP::Status::S_400_BAD_REQUEST, "missing_app_name", "Application name is required.");
+    }
+
+    if (!Globals::getIdentityManager()->applications->haveApplicationSyncEnabled(appName))
+    {
+        LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LEVEL_SECURITY_ALERT, "Application '%s' does not have sync enabled.", appName.c_str());
+        return APIReturn(HTTP::Status::S_400_BAD_REQUEST, "sync_not_enabled", "Application sync is not enabled.");
+    }
+
+    std::string apiKey = JSON_ASSTRING(*request.inputJSON, "APIKEY", "");
+    if (apiKey.empty())
+    {
+        LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LEVEL_WARN, "Missing API key in request for application '%s' during request.", appName.c_str());
+        return APIReturn(HTTP::Status::S_400_BAD_REQUEST, "missing_api_key", "API key is required.");
+    }
+
+    if (Globals::getIdentityManager()->applications->getApplicationNameByAPIKey(apiKey) != appName)
+    {
+        LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LEVEL_SECURITY_ALERT, "Invalid API Key for Application '%s'. Possible attack attempt.", appName.c_str());
+        return APIReturn(HTTP::Status::S_401_UNAUTHORIZED, "invalid_api_key", "Invalid API Key for the specified application.");
+    }
+
+    // Scopes, Roles, and Activities...
+    // ------------------------------------------------------
+
+    updateAppScopes(appName,authClientDetails.ipAddress,(*request.inputJSON)["scopes"]);
+    updateAppRoles(appName,authClientDetails.ipAddress,(*request.inputJSON)["roles"]);
+    updateAppActivities(appName,authClientDetails.ipAddress,(*request.inputJSON)["activities"]);
 
     return APIReturn();
 }
