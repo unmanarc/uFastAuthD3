@@ -23,11 +23,11 @@ bool WebLogin_ServerImpl::createService()
 
     try
     {
-        config = config.get_child("WebLoginService");
+        config = config.get_child("WebLoginPortal");
     }
     catch (boost::property_tree::ptree_error &e)
     {
-        LOG_APP->log0(__func__, Logs::LEVEL_INFO, "Configuration error: WebLoginService not found: %s", e.what());
+        LOG_APP->log0(__func__, Logs::LEVEL_INFO, "Configuration error: WebLoginPortal not found: %s", e.what());
         return false;
     }
 

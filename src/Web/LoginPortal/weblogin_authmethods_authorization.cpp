@@ -29,7 +29,7 @@ API::APIReturn WebLogin_AuthMethods::preAuthorize(void *context, const API::REST
 
     //  Configuration parameters:
     auto config = Globals::pConfig;
-    uint32_t loginAuthenticationTimeout = config.get<uint32_t>("WebLoginService.AuthenticationTimeout", 300);
+    uint32_t loginAuthenticationTimeout = config.get<uint32_t>("WebLoginPortal.AuthenticationTimeout", 300);
 
     // Input parameters:
     std::string app = JSON_ASSTRING(*request.inputJSON, "app", "");                 // APPNAME.
@@ -109,7 +109,7 @@ bool setupNewIntermediateAuthToken(const RequestParameters &request, Mantids30::
 {
     // Retrieve configuration parameters from global settings.
     auto config = Globals::pConfig;
-    uint32_t loginAuthenticationTimeout = config.get<uint32_t>("WebLoginService.AuthenticationTimeout", 300);
+    uint32_t loginAuthenticationTimeout = config.get<uint32_t>("WebLoginPortal.AuthenticationTimeout", 300);
     JWT::Token newIntermediateAuthToken;
 
     if (authContext->currentSlotPosition == 0)

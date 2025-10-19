@@ -22,11 +22,11 @@ bool WebAdmin_ServerImpl::createService()
     boost::property_tree::ptree config = Globals::pConfig;
     try
     {
-        config = config.get_child("WebAdminService");
+        config = config.get_child("WebAdminPortal");
     }
     catch (boost::property_tree::ptree_error &e)
     {
-        LOG_APP->log0(__func__, Logs::LEVEL_INFO, "Configuration error: WebAdminService not found: %s", e.what());
+        LOG_APP->log0(__func__, Logs::LEVEL_INFO, "Configuration error: WebAdminPortal not found: %s", e.what());
         return false;
     }
 
