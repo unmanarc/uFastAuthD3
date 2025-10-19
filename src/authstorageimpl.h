@@ -12,5 +12,6 @@ public:
 private:
     static bool createPassFile(const std::string &sInitPW);
     static bool createAdmin(IdentityManager_DB *, std::string *sInitPW);
-    static bool configureApplication(IdentityManager_DB *, const std::string &owner);
+    static bool configureAdminPortalApplication(IdentityManager_DB *, const std::string &adminUser);
+    static bool configureUserPortalApplication(IdentityManager_DB *, const std::string &adminUser);
 };

@@ -75,7 +75,7 @@ function loadTokenAndRedirect() {
                 redirectURI: decodedRedirectURI,
                 schemeId: 1,
                 activity: "LOGIN",
-                app: appName
+                appName: appName
             }
         ),
         headers: {
@@ -112,9 +112,8 @@ $(document).ready(function () {
     }
 
     if (!appName) {
-        updateMessage('ERROR: Invalid Application Name.');
-        $("#usernameForm").addClass("d-none");
-        return;
+        // Override appName to IAM_USRPORTAL
+        window.location.href = "/?app=IAM_USRPORTAL";
     }
 
     // Validate if 'redirectURI' exists and is a valid base64 string

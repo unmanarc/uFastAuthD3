@@ -148,7 +148,7 @@ API::APIReturn WebSessionAuthHandler_AuthMethods::refreshAccessToken(void *conte
     }
 
     // Extract application from the refresh token
-    const auto &refreshTokenApp = JSON_ASSTRING_D(refreshTokenNoVerified.getClaim("app"), "");
+    const std::string &refreshTokenApp = JSON_ASSTRING_D(refreshTokenNoVerified.getClaim("app"), "");
     ApplicationTokenProperties tokenProps = identityManager->applications->getWebLoginJWTConfigFromApplication(refreshTokenApp);
 
     if (refreshTokenApp.empty())
@@ -310,7 +310,7 @@ API::APIReturn WebSessionAuthHandler_AuthMethods::callback(void *context, const 
     }
 
     // Verify the redirection... (VERY IMPORTANT)
-    std::list<std::string> redirectURLS = identityManager->applications->listWebLoginRedirectURIsFromApplication(appNameStr);
+    std::list<std::string> redirectURLS = identityManager->applications->listWebLoginAllowedRedirectURIsFromApplication(appNameStr);
 
     if (std::find(redirectURLS.begin(), redirectURLS.end(), redirectURIStr) == redirectURLS.end())
     {

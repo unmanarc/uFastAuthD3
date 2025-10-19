@@ -255,22 +255,23 @@ public:
         std::string getApplicationNameByAPIKey(const std::string &apiKey) override;
 
         std::set<std::string> listApplications() override;
-        bool validateApplicationOwner(const std::string &appName, const std::string &accountName) override;
+        bool isApplicationAdmin(const std::string &appName, const std::string &accountName) override;
         bool validateApplicationAccount(const std::string &appName, const std::string &accountName) override;
-        std::set<std::string> listApplicationOwners(const std::string &appName) override;
+        std::set<std::string> listApplicationAdmins(const std::string &appName) override;
         std::set<std::string> listApplicationAccounts(const std::string &appName) override;
         std::set<std::string> listAccountApplications(const std::string &accountName) override;
         bool addAccountToApplication(const std::string &appName, const std::string &accountName) override;
         bool removeAccountFromApplication(const std::string &appName, const std::string &accountName) override;
-        bool addApplicationOwner(const std::string &appName, const std::string &accountName) override;
-        bool removeApplicationOwner(const std::string &appName, const std::string &accountName) override;
+        bool changeApplicationAdmin(const std::string &appName, const std::string &accountName, bool isAppAdmin) override;
 
         Json::Value searchApplications(const json & dataTablesFilters) override;
 
         // Weblogin return urls:
-        bool addWebLoginRedirectURIToApplication(const std::string &appName, const std::string &loginRedirectURI) override;
-        bool removeWebLoginRedirectURIToApplication(const std::string &appName, const std::string &loginRedirectURI) override;
-        std::list<std::string> listWebLoginRedirectURIsFromApplication(const std::string &appName) override;
+        bool addWebLoginAllowedRedirectURIToApplication(const std::string &appName, const std::string &loginRedirectURI) override;
+        bool removeWebLoginAllowedRedirectURIToApplication(const std::string &appName, const std::string &loginRedirectURI) override;
+        std::list<std::string> listWebLoginAllowedRedirectURIsFromApplication(const std::string &appName) override;
+        bool updateWebLoginDefaultRedirectURIForApplication(const std::string &appName, const std::string &loginRedirectURI) override;
+        std::string getWebLoginDefaultRedirectURIForApplication(const std::string &appName) override;
 
         // Weblogin return urls:
         bool setApplicationWebLoginCallbackURI(const std::string &appName, const std::string &callbackURI) override;

@@ -52,8 +52,11 @@ void TokensManager::configureAccessToken(Mantids30::DataFormat::JWT::Token &acce
         accessToken.addClaim("accountInfo", identityManager->accounts->getAccountDetails(jwtAccountName).toJSON());
     }
 
-    if (identityManager->accounts->getAccountFlags(jwtAccountName).admin)
+    // Application Admin
+    if (identityManager->applications->isApplicationAdmin(appName,jwtAccountName))
+    {
         accessToken.addClaim("isAdmin", true);
+    }
 }
 
 void TokensManager::configureRefreshToken(Mantids30::DataFormat::JWT::Token &refreshToken, const std::string &refreshTokenId, const std::string &jwtAccountName, const std::string &appName,

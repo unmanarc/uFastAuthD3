@@ -30,29 +30,62 @@
             }
         }
 
+        function updateWebLoginDefaultRedirectURIForApplication() {
+            const selectedRadio = document.querySelector('input[name="defaultRedirectURI"]:checked');
+            if (selectedRadio) {
+                const redirectURI = selectedRadio.value;
+                $.ajax({
+                    url: '/api/v1/updateWebLoginDefaultRedirectURIForApplication',
+                    type: 'PATCH',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        appName: currentApplication,
+                        redirectURI: redirectURI
+                    }),
+                    success: function (response, textStatus, xhr) {
+                        showToastSuccess("Default Redirect URI successfully updated.");
+                    },
+                    error: function (xhr, status, error) {
+                        populateApplication();
+                        commonFunctionError(xhr, status, error);
+                    }
+                });
+            }
+            else {
+                showToastError("Please select a redirect URI.");
+            }
+        }
 
-        function populateWebLoginRedirectURIs(redirectURIs) {
+
+        function populateWebLoginRedirectURIs(redirectURIs, defaultRedirectURI) 
+        {
             document.getElementById("tbody-webloginRedirectURIs").innerHTML = "";
-            if (redirectURIs != null) {
+            if (redirectURIs != null) 
+            {
                 let internalId = 0;
-
-                for (let account of redirectURIs) {
-
+                for (let redirectURI of redirectURIs) 
+                {
                     $("#tbody-webloginRedirectURIs").append(
                         `<tr> 
                         <th scope="row" id=ulist-webLoginRedirectURIs-${internalId}></th>
+                        <td><input type="radio" name="defaultRedirectURI" id="defaultRedirectURI-${internalId}" onclick="updateWebLoginDefaultRedirectURIForApplication();"></td>
                         <td style="text-align: right;">
                             <input type=hidden id="ulist-webLoginRedirectURIsById-${internalId}">
                             <button type="button" class="btn btn-secondary btn-sm" onclick="javascript:removeWebLoginRedirectURIFromApp(${internalId})"><i class="fas fa-trash"></i></button>
                         </td>
                     </tr>`
                     );
-                    document.getElementById(`ulist-webLoginRedirectURIsById-${internalId}`).value = account;
-                    $(`#ulist-webLoginRedirectURIs-${internalId}`).text(account);
+                    document.getElementById(`ulist-webLoginRedirectURIsById-${internalId}`).value = redirectURI;
+                    $(`#ulist-webLoginRedirectURIs-${internalId}`).text(redirectURI);
+                    document.getElementById(`defaultRedirectURI-${internalId}`).value = redirectURI;
+                    if (redirectURI === defaultRedirectURI) {
+                        document.getElementById(`defaultRedirectURI-${internalId}`).setAttribute('checked', 'checked');
+                    }
                     internalId++;
                 }
             }
         }
+
 
         function addWebLoginRedirectURItoApp() {
             var newRedirectURI = document.getElementById("newWebLoginRedirectURI").value;
@@ -76,7 +109,7 @@
                 showToastError("Redirect URI must start with 'https://' for security reasons.");
                 return;
             }
-            
+
             // Update description via PATCH
             $.ajax({
                 url: '/api/v1/addApplicationLoginRedirectURI',
@@ -94,7 +127,7 @@
                 error: commonFunctionError
             });
         }
-       
+
 
         function addWebLoginOriginToApp() {
             var newOrigin = document.getElementById("newWebLoginOrigin").value;
@@ -129,14 +162,14 @@
 
 
 
-            
+
 
             // Validate if origin starts with https
             if (!newOrigin.toLowerCase().startsWith("https://")) {
                 showToastError("Origin must start with 'https://' for security reasons.");
                 return;
             }
-            
+
             // Update description via PATCH
             $.ajax({
                 url: '/api/v1/addApplicationLoginOrigin',
@@ -201,7 +234,7 @@
             currentLoginFlowDetails = details;
             document.getElementById("callbackURI").value = details["callbackURI"];
             populateWebLoginOrigins(details["loginOrigins"]);
-            populateWebLoginRedirectURIs(details["redirectURIs"]);
+            populateWebLoginRedirectURIs(details["redirectURIs"], details["defaultRedirectURI"]);
         }
 
         function discardLoginCallbackURIDetails() {
@@ -274,13 +307,14 @@
         <div class="card-header" style="text-align: center;"><b>WebLogin Origins (Incomming Traffic)</b></div>
         <div class="card-body">
 
-        <div class="input-group mb-3">
-            <input type="text" class="form-control" id="newWebLoginOrigin" placeholder="Enter new origin">
-            &nbsp;&nbsp;
-            <div class="input-group-append">
-                <button class="btn btn-outline-success" type="button" onclick="addWebLoginOriginToApp()"><i class="fas fa-plus"></i> Add Origin</button>
+            <div class="input-group mb-3">
+                <input type="text" class="form-control" id="newWebLoginOrigin" placeholder="Enter new origin">
+                &nbsp;&nbsp;
+                <div class="input-group-append">
+                    <button class="btn btn-outline-success" type="button" onclick="addWebLoginOriginToApp()"><i
+                            class="fas fa-plus"></i> Add Origin</button>
+                </div>
             </div>
-        </div>
 
             <table class="table table-hover">
                 <thead class="thead-light">
@@ -297,21 +331,25 @@
     </div>
 
     <div class="card mb-3">
-        <div class="card-header" style="text-align: center;"><b>WebLogin Redirect URI's (Outgoing Redirections)</b></div>
+        <div class="card-header" style="text-align: center;"><b>WebLogin Redirect URI's (Outgoing Redirections)</b>
+        </div>
         <div class="card-body">
 
-        <div class="input-group mb-3">
-            <input type="text" class="form-control" id="newWebLoginRedirectURI" placeholder="Enter new redirect URI">
-            &nbsp;&nbsp;
-            <div class="input-group-append">
-                <button class="btn btn-outline-success" type="button" onclick="addWebLoginRedirectURItoApp()"><i class="fas fa-plus"></i> Add Redirect URI</button>
+            <div class="input-group mb-3">
+                <input type="text" class="form-control" id="newWebLoginRedirectURI"
+                    placeholder="Enter new redirect URI">
+                &nbsp;&nbsp;
+                <div class="input-group-append">
+                    <button class="btn btn-outline-success" type="button" onclick="addWebLoginRedirectURItoApp()"><i
+                            class="fas fa-plus"></i> Add Redirect URI</button>
+                </div>
             </div>
-        </div>
 
             <table class="table table-hover">
                 <thead class="thead-light">
                     <tr bgcolor=grey>
                         <th scope="col">Redirect URI</th>
+                        <th scope="col">Default</th>
                         <th scope="col" style="text-align: right;"></th>
                     </tr>
                 </thead>

@@ -151,6 +151,12 @@ API::APIReturn AdminPortalMethods_Accounts::addAccount(void *context, const Requ
         return response;
     }
 
+    if (!Globals::getIdentityManager()->applications->changeApplicationAdmin(IAM_USRPORTAL_APPNAME, accountName,true))
+    {
+        response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to assign user portal full access to the new user.");
+        return response;
+    }
+
     return response;
 }
 

@@ -270,7 +270,10 @@ bool AuthStorageImpl::createAuth()
             return false;
     }
 
-    if (!configureApplication(identityManager, sDefaultUser))
+    if (!configureAdminPortalApplication(identityManager, sDefaultUser))
+        return false;
+
+    if (!configureUserPortalApplication(identityManager, sDefaultUser))
         return false;
 
     Globals::setIdentityManager(identityManager);
@@ -322,13 +325,14 @@ bool AuthStorageImpl::resetAdminPwd(IdentityManager_DB *identityManager, std::st
     return identityManager->authController->changeCredential("admin", credentialData);
 }*/
 
-bool AuthStorageImpl::configureApplication(IdentityManager_DB *identityManager, const std::string &owner)
+bool AuthStorageImpl::configureAdminPortalApplication(IdentityManager_DB *identityManager, const std::string &adminUser)
 {
     if (!identityManager->applications->doesApplicationExist(IAM_ADMPORTAL_APPNAME))
     {
         LOG_APP->log0(__func__, Logs::LEVEL_CRITICAL, "Application '%s' does not exist, aborting.", IAM_ADMPORTAL_APPNAME);
         return false;
     }
+
     std::list<ApplicationScope> appScopes = {
                                                 {IAM_ADMPORTAL_APPNAME, "SELF_PWDCHANGE", "Change my own password"},
                                                 {IAM_ADMPORTAL_APPNAME, "SELF_READ", "Read my own user data from the IAM system"},
@@ -367,24 +371,83 @@ bool AuthStorageImpl::configureApplication(IdentityManager_DB *identityManager, 
         }
     }
 
-    if (!identityManager->applications->validateApplicationAccount(IAM_ADMPORTAL_APPNAME, owner))
+    if (!identityManager->applications->validateApplicationAccount(IAM_ADMPORTAL_APPNAME, adminUser))
     {
-        LOG_APP->log0(__func__, Logs::LEVEL_WARN, "Setting up '%s' user as application '%s' user.", owner.c_str(), IAM_ADMPORTAL_APPNAME);
+        LOG_APP->log0(__func__, Logs::LEVEL_WARN, "Setting up '%s' user as application '%s' user.", adminUser.c_str(), IAM_ADMPORTAL_APPNAME);
 
-        if (!identityManager->applications->addAccountToApplication(IAM_ADMPORTAL_APPNAME, owner))
+        if (!identityManager->applications->addAccountToApplication(IAM_ADMPORTAL_APPNAME, adminUser))
         {
-            LOG_APP->log0(__func__, Logs::LEVEL_CRITICAL, "Failed to set the '%s' account as application '%s' user.", owner.c_str(), IAM_ADMPORTAL_APPNAME);
+            LOG_APP->log0(__func__, Logs::LEVEL_CRITICAL, "Failed to set the '%s' account as application '%s' user.", adminUser.c_str(), IAM_ADMPORTAL_APPNAME);
             return false;
         }
     }
 
-    if (!identityManager->applications->validateApplicationOwner(IAM_ADMPORTAL_APPNAME, owner))
+    if (!identityManager->applications->isApplicationAdmin(IAM_ADMPORTAL_APPNAME, adminUser))
     {
-        LOG_APP->log0(__func__, Logs::LEVEL_WARN, "Setting up '%s' user as application '%s' owner.", owner.c_str(), IAM_ADMPORTAL_APPNAME);
+        LOG_APP->log0(__func__, Logs::LEVEL_WARN, "Setting up '%s' user as application '%s' admin.", adminUser.c_str(), IAM_ADMPORTAL_APPNAME);
 
-        if (!identityManager->applications->addApplicationOwner(IAM_ADMPORTAL_APPNAME, owner))
+        if (!identityManager->applications->changeApplicationAdmin(IAM_ADMPORTAL_APPNAME, adminUser,true))
         {
-            LOG_APP->log0(__func__, Logs::LEVEL_CRITICAL, "Failed to set the '%s' account as application '%s' owner.", owner.c_str(), IAM_ADMPORTAL_APPNAME);
+            LOG_APP->log0(__func__, Logs::LEVEL_CRITICAL, "Failed to set the '%s' account as application '%s' admin.", adminUser.c_str(), IAM_ADMPORTAL_APPNAME);
+            return false;
+        }
+    }
+
+    return true;
+}
+
+bool AuthStorageImpl::configureUserPortalApplication(IdentityManager_DB *identityManager, const std::string &adminUser)
+{
+    if (!identityManager->applications->doesApplicationExist(IAM_USRPORTAL_APPNAME))
+    {
+        LOG_APP->log0(__func__, Logs::LEVEL_CRITICAL, "Application '%s' does not exist, aborting.", IAM_USRPORTAL_APPNAME);
+        return false;
+    }
+
+    std::list<ApplicationScope> appScopes = {
+        {IAM_USRPORTAL_APPNAME, "LOGIN", "Access the self-service user portal"},
+        {IAM_USRPORTAL_APPNAME, "CHANGEPWD", "Change my account password"},
+        {IAM_USRPORTAL_APPNAME, "SELF_PROFILE_VIEW", "View my profile information and attributes"},
+        {IAM_USRPORTAL_APPNAME, "SELF_PROFILE_EDIT", "Update my profile information and preferences"},
+        {IAM_USRPORTAL_APPNAME, "SELF_MFA_MANAGE", "Manage my multi-factor authenticators"},
+        {IAM_USRPORTAL_APPNAME, "SELF_SESSIONS_VIEW", "Review my active sessions, devices, and remembered browsers"},
+        {IAM_USRPORTAL_APPNAME, "SELF_SESSIONS_TERMINATE", "Sign out or revoke specific sessions and devices"},
+        {IAM_USRPORTAL_APPNAME, "VIEWLOGS", "View my personal audit and activity logs"},
+        {IAM_USRPORTAL_APPNAME, "VIEWIP", "Inspect IP addresses recorded for my activity"},
+    };
+
+    for (auto &scope : appScopes)
+    {
+        if (!identityManager->authController->doesApplicationScopeExist(scope))
+        {
+            LOG_APP->log0(__func__, Logs::LEVEL_WARN, "Scope '%s' does not exist, creating it.", scope.id.c_str());
+
+            if (!identityManager->authController->addApplicationScope(scope))
+            {
+                LOG_APP->log0(__func__, Logs::LEVEL_CRITICAL, "Failed to create the scope '%s'.", scope.id.c_str());
+                return false;
+            }
+        }
+    }
+
+    if (!identityManager->applications->validateApplicationAccount(IAM_USRPORTAL_APPNAME, adminUser))
+    {
+        LOG_APP->log0(__func__, Logs::LEVEL_WARN, "Setting up '%s' user as application '%s' user.", adminUser.c_str(), IAM_USRPORTAL_APPNAME);
+
+        if (!identityManager->applications->addAccountToApplication(IAM_USRPORTAL_APPNAME, adminUser))
+        {
+            LOG_APP->log0(__func__, Logs::LEVEL_CRITICAL, "Failed to set the '%s' account as application '%s' user.", adminUser.c_str(), IAM_USRPORTAL_APPNAME);
+            return false;
+        }
+    }
+
+    if (!identityManager->applications->isApplicationAdmin(IAM_USRPORTAL_APPNAME, adminUser))
+    {
+        LOG_APP->log0(__func__, Logs::LEVEL_WARN, "Setting up '%s' user as application '%s' admin.", adminUser.c_str(), IAM_USRPORTAL_APPNAME);
+
+        if (!identityManager->applications->changeApplicationAdmin(IAM_USRPORTAL_APPNAME, adminUser,true))
+        {
+            LOG_APP->log0(__func__, Logs::LEVEL_CRITICAL, "Failed to set the '%s' account as application '%s' admin.", adminUser.c_str(), IAM_USRPORTAL_APPNAME);
             return false;
         }
     }

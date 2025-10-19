@@ -424,21 +424,23 @@ public:
         virtual std::string getApplicationNameByAPIKey(const std::string &apiKey) = 0;
 
         virtual std::set<std::string> listApplications() = 0;
-        virtual bool validateApplicationOwner(const std::string &appName, const std::string &accountName) = 0;
+        virtual bool isApplicationAdmin(const std::string &appName, const std::string &accountName) = 0;
         virtual bool validateApplicationAccount(const std::string &appName, const std::string &accountName) = 0;
-        virtual std::set<std::string> listApplicationOwners(const std::string &appName) = 0;
+        virtual std::set<std::string> listApplicationAdmins(const std::string &appName) = 0;
         virtual std::set<std::string> listApplicationAccounts(const std::string &appName) = 0;
         virtual std::set<std::string> listAccountApplications(const std::string &accountName) = 0;
         virtual bool addAccountToApplication(const std::string &appName, const std::string &accountName) = 0;
         virtual bool removeAccountFromApplication(const std::string &appName, const std::string &accountName) = 0;
-        virtual bool addApplicationOwner(const std::string &appName, const std::string &accountName) = 0;
-        virtual bool removeApplicationOwner(const std::string &appName, const std::string &accountName) = 0;
+        virtual bool changeApplicationAdmin(const std::string &appName, const std::string &accountName, bool isAppAdmin) = 0;
         virtual Json::Value searchApplications(const json &dataTablesFilters) = 0;
 
         // Weblogin return urls:
-        virtual bool addWebLoginRedirectURIToApplication(const std::string &appName, const std::string &loginRedirectURI) = 0;
-        virtual bool removeWebLoginRedirectURIToApplication(const std::string &appName, const std::string &loginRedirectURI) = 0;
-        virtual std::list<std::string> listWebLoginRedirectURIsFromApplication(const std::string &appName) = 0;
+        virtual bool addWebLoginAllowedRedirectURIToApplication(const std::string &appName, const std::string &loginRedirectURI) = 0;
+        virtual bool removeWebLoginAllowedRedirectURIToApplication(const std::string &appName, const std::string &loginRedirectURI) = 0;
+        virtual std::list<std::string> listWebLoginAllowedRedirectURIsFromApplication(const std::string &appName) = 0;
+
+        virtual bool updateWebLoginDefaultRedirectURIForApplication(const std::string &appName, const std::string &loginRedirectURI)=0;
+        virtual std::string getWebLoginDefaultRedirectURIForApplication(const std::string &appName) =0;
 
         virtual bool setApplicationWebLoginCallbackURI(const std::string &appName, const std::string &callbackURI) = 0;
         virtual std::string getApplicationCallbackURI(const std::string &appName) = 0;

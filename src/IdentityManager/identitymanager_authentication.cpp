@@ -306,7 +306,6 @@ bool IdentityManager::AuthController::setAccountPasswordOnScheme(const std::stri
 
     {
         Threads::Sync::Lock_RD lock(m_parent->m_mutex);
-        //std::set<uint32_t> applicationRoleSSOLogin = m_parent->authController->listAuthenticationSchemesForApplicationActivity("IAM","LOGIN");
 
         authSlots = m_parent->authController->listAuthenticationSlotsUsedByScheme(schemeId);
         // not any slot assigned to this scheme

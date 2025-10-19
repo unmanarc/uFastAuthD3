@@ -64,14 +64,25 @@ bool IdentityManager_DB::initializeDatabase()
                                               PRIMARY KEY(`appName`)
                                               UNIQUE(`apiKey`)
                                                                         );
-                                    )",       
-        R"(CREATE TABLE IF NOT EXISTS `iam`.`applicationsWebloginRedirectURIs` (
+                                    )",
+        R"(CREATE TABLE IF NOT EXISTS `iam`.`applicationsWebLoginAllowedRedirectURIs` (
                                              `f_appName`             VARCHAR(256)  NOT NULL,
                                              `loginRedirectURI`        VARCHAR(4096) NOT NULL,
                                               FOREIGN KEY(`f_appName`)   REFERENCES applications(`appName`) ON DELETE CASCADE
                                               PRIMARY KEY(`f_appName`,`loginRedirectURI`)
                                                                         );
                                     )",
+
+        R"(CREATE TABLE IF NOT EXISTS `iam`.`applicationsWebLoginDefaultRedirectURI` (
+                                             `f_appName`             VARCHAR(256)  NOT NULL,
+                                             `f_loginRedirectURI`      VARCHAR(4096) NOT NULL,
+                                             `lastUpdated`           DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                                             PRIMARY KEY(`f_appName`),
+                                             FOREIGN KEY(`f_appName`)   REFERENCES applications(`appName`) ON DELETE CASCADE,
+                                             FOREIGN KEY(`f_appName`,`f_loginRedirectURI`) REFERENCES applicationsWebLoginAllowedRedirectURIs(`f_appName`,`loginRedirectURI`) ON DELETE CASCADE
+                                                                        );
+                                    )",
+
         R"(CREATE TABLE IF NOT EXISTS `iam`.`applicationsLoginCallbackURI` (
                                              `f_appName`             VARCHAR(256)  NOT NULL,
                                              `callbackURI`           VARCHAR(4096) NOT NULL,
@@ -79,7 +90,7 @@ bool IdentityManager_DB::initializeDatabase()
                                               PRIMARY KEY(`f_appName`,`callbackURI`)
                                               UNIQUE(`f_appName`)
                      );
-                                    )",
+                                    )",     
         R"(CREATE TABLE IF NOT EXISTS `iam`.`applicationActivities` (
                                              `f_appName`             VARCHAR(256)  NOT NULL,
                                              `activityName`          VARCHAR(256)  NOT NULL,
@@ -90,7 +101,7 @@ bool IdentityManager_DB::initializeDatabase()
                                               PRIMARY KEY(`f_appName`,`activityName`)
                      );
                                     )",
-        R"(CREATE TABLE IF NOT EXISTS `iam`.`applicationsWebloginOrigins` (
+        R"(CREATE TABLE IF NOT EXISTS `iam`.`applicationsWebLoginOrigins` (
                                              `f_appName`             VARCHAR(256)  NOT NULL,
                                              `originUrl`              VARCHAR(2048) NOT NULL,
                                              FOREIGN KEY(`f_appName`)   REFERENCES applications(`appName`) ON DELETE CASCADE
@@ -121,17 +132,10 @@ bool IdentityManager_DB::initializeDatabase()
                                              FOREIGN KEY(`f_appName`)   REFERENCES applications(`appName`) ON DELETE CASCADE
                                                                         );
                                     )",
-        R"(CREATE TABLE IF NOT EXISTS `iam`.`applicationManagers` (
-                                             `f_accountNameManager`       VARCHAR(256)    NOT NULL,
-                                             `f_applicationManaged`       VARCHAR(256)    NOT NULL,
-                                             PRIMARY KEY(`f_accountNameManager`,`f_applicationManaged`),
-                                             FOREIGN KEY(`f_accountNameManager`)       REFERENCES accounts(`accountName`) ON DELETE CASCADE,
-                                             FOREIGN KEY(`f_applicationManaged`)    REFERENCES applications(`appName`) ON DELETE CASCADE
-                                                                        );
-                                    )",
         R"(CREATE TABLE IF NOT EXISTS `iam`.`applicationAccounts` (
                                              `f_accountName`       VARCHAR(256)    NOT NULL,
                                              `f_appName`           VARCHAR(256)    NOT NULL,
+                                             `isAppAdmin`          BOOLEAN NOT NULL DEFAULT FALSE,
                                              PRIMARY KEY(`f_accountName`,`f_appName`),
                                              FOREIGN KEY(`f_accountName`) REFERENCES accounts(`accountName`) ON DELETE CASCADE,
                                              FOREIGN KEY(`f_appName`)  REFERENCES applications(`appName`) ON DELETE CASCADE
@@ -142,17 +146,13 @@ bool IdentityManager_DB::initializeDatabase()
                                             `schemeId`          INTEGER PRIMARY KEY AUTOINCREMENT,
                                             `description`       VARCHAR(4096) NOT NULL
                      );     )",
-
-
-        R"(CREATE TABLE IF NOT EXISTS `defaultAuthScheme` (
+        R"(CREATE TABLE IF NOT EXISTS `iam`.`defaultAuthScheme` (
                 `id` INTEGER PRIMARY KEY DEFAULT 1,
                 `f_defaultSchemeId` INTEGER NOT NULL,
                 `lastUpdated` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (`f_defaultSchemeId`) REFERENCES `authenticationSchemes`(`schemeId`) ON DELETE CASCADE,
             CHECK (`id` = 1)
             );)",
-
-
         R"(CREATE TABLE IF NOT EXISTS `iam`.`applicationActivitiesAuthSchemes` (
                                              `f_appName`             VARCHAR(256)  NOT NULL,
                                              `f_activityName`        VARCHAR(256)  NOT NULL,
@@ -271,7 +271,6 @@ bool IdentityManager_DB::initializeDatabase()
                                              `loginUserAgent`    VARCHAR(4096)   NOT NULL,
                                              `loginExtraData`    VARCHAR(4096)   NOT NULL);
                                     )",
-
         "CREATE INDEX IF NOT EXISTS `logs`.idx_logs_accountName ON accountAuthLog (f_accountName);",
         "CREATE INDEX IF NOT EXISTS `logs`.idx_logs_authSlotID ON accountAuthLog (f_AuthSlotId);",
         "CREATE INDEX IF NOT EXISTS `logs`.idx_logs_dateTime ON accountAuthLog (loginDateTime);",

@@ -6,6 +6,7 @@
                     <thead class="thead-light">
                         <tr bgcolor=grey>
                             <th scope="col">Account Name</th>
+                            <th scope="col">Is Application Admin?</th>
                             <th scope="col" style="text-align: right;"></th>
                         </tr>
                     </thead>
@@ -28,6 +29,11 @@
                 $("#tbody-accounts").append(
                     `<tr> 
                         <th scope="row" id=ulist-accountName-${accountId}></th>
+                        <td>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="ulist-isAppAdmin-${accountId}" ${account["isAppAdmin"] ? 'checked' : ''} onclick="javascript:changeApplicationAdmin(${accountId})">
+                            </div>
+                        </td>
                         <td style="text-align: right;">
                             <input type=hidden id="ulist-accountNameById-${accountId}">
                             <button type="button" class="btn btn-secondary btn-sm" onclick="javascript:removeAccountFromApplication(${accountId})"><i class="fas fa-trash"></i></button>
@@ -41,9 +47,35 @@
         }
     }
 
+    function changeApplicationAdmin(accountId) {
+
+        showYesNoDialog("<b>SECURITY ALERT:</b> Modifying administrator privileges can significantly impact system security and access controls. Confirm to proceed with this security-sensitive change.", function (result) {
+
+            let accountName = document.getElementById(`ulist-accountNameById-${accountId}`).value;
+            let isChecked = document.getElementById(`ulist-isAppAdmin-${accountId}`).checked;
+            var appName = currentApplication;
+            $.ajax({
+                url: '/api/v1/changeApplicationAdmin',
+                type: 'PATCH',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    accountName: accountName,
+                    appName: appName,
+                    isAppAdmin: isChecked
+                }),
+                success: function (response) {
+                    populateApplicationAccounts(reponse);
+                },
+                error: commonFunctionError
+            });
+        });
+
+    }
+
+
 
     function removeAccountFromApplication(accountId) {
-        
+
         let accountName = document.getElementById(`ulist-accountNameById-${accountId}`).value;
         var appName = currentApplication;
         showYesNoDialog("Do you really want to remove this account from the application?", function (result) {

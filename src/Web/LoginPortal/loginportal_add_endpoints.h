@@ -65,7 +65,7 @@ private:
 
 
     // TOKEN HELPERS:
-    static bool token_validateRedirectUri(IdentityManager *identityManager, const std::string &app, const std::string &redirectURI, const std::string &user, const std::string &ipAddress);
+    static bool token_validateRedirectURI(IdentityManager *identityManager, const std::string &app, const std::string &redirectURI, const std::string &user, const std::string &ipAddress);
     static bool token_createAndSignJWTs(IdentityManager *identityManager, const JWT::Token *jwtToken, const std::string &app, const std::string &user, const std::string &redirectURI, APIReturn &response);
     static bool token_validateJwtClaims(const JWT::Token* jwtToken, const std::string& user, const std::string& ipAddress);
     static bool token_validateAuthenticationScheme(IdentityManager* identityManager, const JWT::Token* jwtToken,
