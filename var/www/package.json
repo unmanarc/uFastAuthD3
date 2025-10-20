@@ -6,14 +6,14 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build-assets": "npm run make-dirs && npm run copy-bootstrap && npm run copy-jquery && npm run copy-datatables && npm run copy-datatables-dt && npm run copy-fontawesome-woff2 && npm run copy-fontawesome-css && npm run copy-fontawesome-solid-css",
-    "make-dirs": "mkdir -pv ufastauthd3/assets/js ufastauthd3/assets/webfonts ufastauthd3/assets/css",
-    "copy-bootstrap": "cp -r node_modules/bootstrap/dist/* ufastauthd3/assets/",
-    "copy-jquery": "cp -r node_modules/jquery/dist/* ufastauthd3/assets/js/",
-    "copy-datatables": "cp -r node_modules/datatables.net/js/ ufastauthd3/assets/ && cp -r node_modules/datatables.net/types/ ufastauthd3/assets/",
-    "copy-datatables-dt": "cp -r node_modules/datatables.net-dt/js/ ufastauthd3/assets/ && cp -r node_modules/datatables.net-dt/css/ ufastauthd3/assets/ && cp -r node_modules/datatables.net-dt/types/ ufastauthd3/assets/",
-    "copy-fontawesome-woff2": "cp node_modules/@fortawesome/fontawesome-free/webfonts/fa-solid-900.woff2 ufastauthd3/assets/webfonts/",
-    "copy-fontawesome-css": "cp node_modules/@fortawesome/fontawesome-free/css/fontawesome.min.css ufastauthd3/assets/css/",
-    "copy-fontawesome-solid-css": "cp node_modules/@fortawesome/fontawesome-free/css/solid.min.css ufastauthd3/assets/css/"
+    "make-dirs": "mkdir -pv ufastauthd3/global/assets/js ufastauthd3/global/assets/webfonts ufastauthd3/global/assets/css",
+    "copy-bootstrap": "cp -r node_modules/bootstrap/dist/* ufastauthd3/global/assets/",
+    "copy-jquery": "cp -r node_modules/jquery/dist/* ufastauthd3/global/assets/js/",
+    "copy-datatables": "cp -r node_modules/datatables.net/js/ ufastauthd3/global/assets/ && cp -r node_modules/datatables.net/types/ ufastauthd3/global/assets/",
+    "copy-datatables-dt": "cp -r node_modules/datatables.net-dt/js/ ufastauthd3/global/assets/ && cp -r node_modules/datatables.net-dt/css/ ufastauthd3/global/assets/ && cp -r node_modules/datatables.net-dt/types/ ufastauthd3/global/assets/",
+    "copy-fontawesome-woff2": "cp node_modules/@fortawesome/fontawesome-free/webfonts/fa-solid-900.woff2 ufastauthd3/global/assets/webfonts/",
+    "copy-fontawesome-css": "cp node_modules/@fortawesome/fontawesome-free/css/fontawesome.min.css ufastauthd3/global/assets/css/",
+    "copy-fontawesome-solid-css": "cp node_modules/@fortawesome/fontawesome-free/css/solid.min.css ufastauthd3/global/assets/css/"
   },
   "keywords": [],
   "author": "",

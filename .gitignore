@@ -12,7 +12,7 @@ autom4te.cache/*
 etc/ufastauthd3/jwt/*
 
 # Web assets directories (build after download)
-var/www/ufastauthd3/assets/*
+var/www/ufastauthd3/global/assets/*
 var/www/*/old/*
 
 # Node.js dependencies and build artifacts
