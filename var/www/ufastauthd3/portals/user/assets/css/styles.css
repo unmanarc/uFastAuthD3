@@ -1,0 +1,269 @@
+/* Custom styles for IAM Portal */
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background-color: #f8f9fa;
+}
+
+/* Sidebar */
+.sidebar {
+    position: fixed;
+    top: 56px;
+    bottom: 0;
+    left: 0;
+    z-index: 100;
+    padding: 48px 0 0;
+    box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1);
+    background-color: #f8f9fa !important;
+}
+
+.sidebar-sticky {
+    position: relative;
+    top: 0;
+    height: calc(100vh - 48px);
+    padding-top: .5rem;
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+
+.sidebar .nav-link {
+    font-weight: 500;
+    color: #333;
+    padding: .5rem 1rem;
+}
+
+.sidebar .nav-link:hover {
+    color: #007bff;
+    background-color: rgba(0, 123, 255, 0.1);
+}
+
+.sidebar .nav-link.active {
+    color: #007bff;
+    background-color: rgba(0, 123, 255, 0.1);
+}
+
+.sidebar .nav-link i {
+    margin-right: 8px;
+}
+
+/* Main content */
+main {
+    padding-top: 20px;
+}
+
+/* Cards */
+.card {
+    border: none;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    margin-bottom: 1.5rem;
+}
+
+.card-body {
+    padding: 1.5rem;
+}
+
+/* Dashboard cards */
+.card.text-white .card-text {
+    margin-bottom: 0;
+}
+
+/* Tables */
+.table {
+    background-color: white;
+}
+
+.table thead th {
+    border-bottom: 2px solid #dee2e6;
+    font-weight: 600;
+    color: #495057;
+}
+
+/* Forms */
+.form-control:focus {
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.form-label {
+    font-weight: 500;
+    color: #495057;
+}
+
+/* Buttons */
+.btn {
+    font-weight: 500;
+    border-radius: 0.25rem;
+}
+
+.btn-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+}
+
+/* Toast notifications */
+.toast-container {
+    z-index: 1050;
+}
+
+/* Password strength indicator */
+#passwordStrengthIndicator {
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+}
+
+/* Status badges */
+.badge {
+    padding: 0.35em 0.65em;
+    font-weight: 500;
+}
+
+/* Content sections */
+.content-section {
+    animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Modal customization */
+.modal-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.modal-footer {
+    background-color: #f8f9fa;
+    border-top: 1px solid #dee2e6;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .sidebar {
+        position: static;
+        padding: 0;
+    }
+    
+    main {
+        margin-left: 0 !important;
+    }
+    
+    .card {
+        margin-bottom: 1rem;
+    }
+}
+
+/* Loading spinner */
+.spinner-border {
+    width: 2rem;
+    height: 2rem;
+    border-width: 0.2em;
+}
+
+/* Custom scrollbar for sidebar */
+.sidebar::-webkit-scrollbar {
+    width: 8px;
+}
+
+.sidebar::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+.sidebar::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* Session table customization */
+#sessionsTableBody td {
+    vertical-align: middle;
+}
+
+/* IP address table */
+#ipTableBody td {
+    vertical-align: middle;
+}
+
+/* Activity log filters */
+#logFilter {
+    max-width: 200px;
+}
+
+/* Profile form */
+#profileForm .form-control[readonly] {
+    background-color: #f8f9fa;
+    border-color: #ced4da;
+}
+
+/* Password slot cards */
+.password-slot-card {
+    transition: transform 0.2s;
+}
+
+.password-slot-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+/* MFA QR code container */
+#qrcode {
+    padding: 20px;
+    background-color: white;
+    border: 1px solid #dee2e6;
+    border-radius: 0.25rem;
+}
+
+/* Navbar brand */
+.navbar-brand {
+    font-weight: 600;
+    font-size: 1.25rem;
+}
+
+.navbar-brand i {
+    margin-right: 8px;
+}
+
+/* User dropdown */
+#userNameDisplay {
+    cursor: pointer;
+}
+
+#userNameDisplay:hover {
+    color: rgba(255, 255, 255, 0.85) !important;
+}
+
+/* Error messages */
+.alert {
+    border: none;
+    border-radius: 0.25rem;
+}
+
+.alert i {
+    margin-right: 8px;
+}
+
+/* Print styles */
+@media print {
+    .sidebar,
+    .navbar,
+    .btn,
+    .toast-container {
+        display: none !important;
+    }
+    
+    main {
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+}
