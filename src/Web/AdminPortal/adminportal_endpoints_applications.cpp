@@ -5,6 +5,7 @@
 #include "defs.h"
 #include "json/value.h"
 #include <Mantids30/Program_Logs/applog.h>
+#include <optional>
 #include <string>
 
 using namespace Mantids30::Program;
@@ -116,14 +117,16 @@ API::APIReturn AdminPortalMethods_Applications::addApplication(void *context, co
         return response;
     }
 
+    IdentityManager::Applications::ApplicationAttributes attribs;
+    attribs.fromJSON((*request.inputJSON)["applicationAttributes"]);
+
     // Attempt to create the new application
     if (!Globals::getIdentityManager()->applications->addApplication(JSON_ASSTRING(*request.inputJSON, "appName", ""),
                                                                      JSON_ASSTRING(*request.inputJSON, "description", ""),
                                                                      JSON_ASSTRING(*request.inputJSON, "appURL", ""),
                                                                      JSON_ASSTRING(*request.inputJSON, "appKey", ""),
                                                                      request.jwtToken->getSubject(),
-                                                                     JSON_ASBOOL(*request.inputJSON, "canUserModifyApplicationSecurityContext", false),
-                                                                     JSON_ASBOOL(*request.inputJSON, "syncServiceEnabled", true),
+                                                                     attribs,
                                                                      JSON_ASBOOL(*request.inputJSON, "initializeDefaults", true)
                                                                      ))
     {
@@ -189,7 +192,6 @@ API::APIReturn AdminPortalMethods_Applications::getApplicationInfo(void *context
     json payloadOut;
     std::string appName = JSON_ASSTRING(*request.inputJSON, "appName", "");
 
-
     if (appName.empty())
     {
         response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Application Name is Empty");
@@ -197,22 +199,19 @@ API::APIReturn AdminPortalMethods_Applications::getApplicationInfo(void *context
     }
 
     payloadOut["loginFlow"] = getLoginFlowDetails(appName);
-    
-    auto canUserModifyApplicationSecurityContext = Globals::getIdentityManager()->applications->canUserModifyApplicationSecurityContext(appName);
-    if (canUserModifyApplicationSecurityContext.has_value())
+
+    std::optional<IdentityManager::Applications::ApplicationAttributes> attribs = Globals::getIdentityManager()->applications->getApplicationAttributes(appName);
+
+    if (!attribs.has_value())
     {
-        payloadOut["advanced"]["canUserModifyApplicationSecurityContext"] = canUserModifyApplicationSecurityContext.value();
-    }
-    else
-    {
-        response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to retrieve scopes modifiable status");
+        response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to retrieve the application attributes");
         return response;
     }
 
     ApplicationTokenProperties appWebLoginTokenConfig = Globals::getIdentityManager()->applications->getWebLoginJWTConfigFromApplication(appName);
     payloadOut["tokenConfig"] = appWebLoginTokenConfig.toJSON();
     payloadOut["details"]["description"] = Globals::getIdentityManager()->applications->getApplicationDescription(appName);
-    payloadOut["details"]["syncServiceEnabled"] = Globals::getIdentityManager()->applications->haveApplicationSyncEnabled(appName);
+    payloadOut["applicationAttributes"] = attribs->toJSON();
 
     // Get associated scope...
     payloadOut["scopes"] = Json::arrayValue;
@@ -249,7 +248,9 @@ API::APIReturn AdminPortalMethods_Applications::updateApplicationDetails(void *c
     API::APIReturn response;
 
     std::string appName = JSON_ASSTRING(*request.inputJSON, "appName", "");
-    bool syncServiceEnabled = JSON_ASBOOL(*request.inputJSON, "syncServiceEnabled", false);
+
+    IdentityManager::Applications::ApplicationAttributes attribs;
+    attribs.fromJSON((*request.inputJSON)["applicationAttributes"]);
 
     if (appName.empty())
     {
@@ -257,9 +258,9 @@ API::APIReturn AdminPortalMethods_Applications::updateApplicationDetails(void *c
         return response;
     }
 
-    if (!Globals::getIdentityManager()->applications->updateApplicationSyncEnabled(appName, syncServiceEnabled))
+    if (!Globals::getIdentityManager()->applications->updateApplicationAttributes(appName, attribs))
     {
-        response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to update synchronization service mode.");
+        response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to update some application attributes.");
         return response;
     }
 

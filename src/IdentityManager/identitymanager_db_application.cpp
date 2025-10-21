@@ -16,9 +16,13 @@ using namespace Mantids30::Memory;
 using namespace Mantids30::Database;
 using namespace Mantids30::Helpers;
 using namespace Mantids30;
-
-bool IdentityManager_DB::Applications_DB::addApplication(const std::string &appName, const std::string &applicationDescription, const std::string &appURL, const std::string &apiKey,
-                                                         const std::string &sOwnerAccountName, bool canUserModifyApplicationSecurityContext, bool appSyncEnabled, bool initializeDefaultValues)
+bool IdentityManager_DB::Applications_DB::addApplication(const std::string &appName,
+                                                         const std::string &applicationDescription,
+                                                         const std::string &appURL,
+                                                         const std::string &apiKey,
+                                                         const std::string &creatorAccountName,
+                                                         const ApplicationAttributes & appAttributes,
+                                                         bool initializeDefaultValues)
 {
     std::optional<uint32_t> defaultSchemeId = _parent->authController->getDefaultAuthScheme();
 
@@ -33,14 +37,16 @@ bool IdentityManager_DB::Applications_DB::addApplication(const std::string &appN
 
         // Insert into iam.applications.
         bool appInsertSuccess = _parent->m_sqlConnector->execute("INSERT INTO iam.applications (`appName`, `f_appCreator`, `appDescription`, `apiKey`, "
-                                                                 "`canUserModifyApplicationSecurityContext`, `appSyncEnabled`) VALUES (:appName, "
-                                                                 ":appCreator, :description, :apiKey, :canUserModifyApplicationSecurityContext, :appSyncEnabled);",
+                                                                 "`canAdminModifyApplicationSecurityContext`, `canUserAutoRegister`, `appSyncEnabled`, `appSyncCanRetrieveAppUserList`) VALUES (:appName, "
+                                                                 ":appCreator, :description, :apiKey, :canAdminModifyApplicationSecurityContext, :canUserAutoRegister, :appSyncEnabled, :appSyncCanRetrieveAppUserList);",
                                                                  {{":appName", MAKE_VAR(STRING, appName)},
-                                                                  {":appCreator", MAKE_VAR(STRING, sOwnerAccountName)},
+                                                                  {":appCreator", MAKE_VAR(STRING, creatorAccountName)},
                                                                   {":description", MAKE_VAR(STRING, applicationDescription)},
                                                                   {":apiKey", MAKE_VAR(STRING, Encoders::encodeToBase64Obf(apiKey))},
-                                                                  {":canUserModifyApplicationSecurityContext", MAKE_VAR(BOOL, canUserModifyApplicationSecurityContext)},
-                                                                  {":appSyncEnabled", MAKE_VAR(BOOL, appSyncEnabled)}});
+                                                                  {":canAdminModifyApplicationSecurityContext", MAKE_VAR(BOOL, appAttributes.canAdminModifyApplicationSecurityContext)},
+                                                                  {":canUserAutoRegister", MAKE_VAR(BOOL, appAttributes.canUserAutoRegister)},
+                                                                  {":appSyncEnabled", MAKE_VAR(BOOL, appAttributes.appSyncEnabled)},
+                                                                  {":appSyncCanRetrieveAppUserList", MAKE_VAR(BOOL, appAttributes.appSyncCanRetrieveAppUserList)}});
 
         // If the insertion is successful, insert another row default values into iam.applicationsJWTTokenConfig.
         if (appInsertSuccess)
@@ -97,38 +103,48 @@ bool IdentityManager_DB::Applications_DB::doesApplicationExist(const std::string
     }
     return ret;
 }
-bool IdentityManager_DB::Applications_DB::haveApplicationSyncEnabled(const std::string &appName)
-{
-    Threads::Sync::Lock_RD lock(_parent->m_mutex);
-    Abstract::BOOL appSyncEnabled;
-    SQLConnector::QueryInstance i = _parent->m_sqlConnector->qSelect("SELECT `appSyncEnabled` FROM iam.applications WHERE `appName`=:appName LIMIT 1;", {{":appName", MAKE_VAR(STRING, appName)}},
-                                                                     {&appSyncEnabled});
-    if (i.getResultsOK() && i.query->step())
-    {
-        return appSyncEnabled.getValue();
-    }
-    return false;
-}
 
-bool IdentityManager_DB::Applications_DB::updateApplicationSyncEnabled(const std::string &appName, bool syncEnabled)
+bool IdentityManager_DB::Applications_DB::updateApplicationAttributes(const std::string &appName, const ApplicationAttributes &appAttributes)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
-    return _parent->m_sqlConnector->execute("UPDATE iam.applications SET `appSyncEnabled`=:syncEnabled WHERE `appName`=:appName;",
-                                            {{":appName", MAKE_VAR(STRING, appName)}, {":syncEnabled", MAKE_VAR(BOOL, syncEnabled)}});
+    return _parent->m_sqlConnector->execute("UPDATE iam.applications SET "
+                                            "`canUserAutoRegister`=:canUserAutoRegister, `appSyncEnabled`=:appSyncEnabled, "
+                                            "`appSyncCanRetrieveAppUserList`=:appSyncCanRetrieveAppUserList WHERE `appName`=:appName;",
+                                            {{":appName", MAKE_VAR(STRING, appName)},
+                                             {":canUserAutoRegister", MAKE_VAR(BOOL, appAttributes.canUserAutoRegister)},
+                                             {":appSyncEnabled", MAKE_VAR(BOOL, appAttributes.appSyncEnabled)},
+                                             {":appSyncCanRetrieveAppUserList", MAKE_VAR(BOOL, appAttributes.appSyncCanRetrieveAppUserList)}});
 }
 
-std::optional<bool> IdentityManager_DB::Applications_DB::canUserModifyApplicationSecurityContext(const std::string &appName)
+std::optional<IdentityManager::Applications::ApplicationAttributes> IdentityManager_DB::Applications_DB::getApplicationAttributes(const std::string &appName)
 {
     Threads::Sync::Lock_RD lock(_parent->m_mutex);
+    Abstract::BOOL canAdminModifyApplicationSecurityContext;
+    Abstract::BOOL canUserAutoRegister;
+    Abstract::BOOL appSyncEnabled;
+    Abstract::BOOL appSyncCanRetrieveAppUserList;
 
-    Abstract::BOOL r;
-    SQLConnector::QueryInstance i = _parent->m_sqlConnector->qSelect("SELECT `canUserModifyApplicationSecurityContext` FROM iam.applications WHERE `appName`=:appName LIMIT 1;",
-                                                                     {{":appName", MAKE_VAR(STRING, appName)}}, {&r});
+    SQLConnector::QueryInstance i = _parent->m_sqlConnector->qSelect(
+        "SELECT `canAdminModifyApplicationSecurityContext`, `canUserAutoRegister`, `appSyncEnabled`, `appSyncCanRetrieveAppUserList` "
+        "FROM iam.applications WHERE `appName`=:appName LIMIT 1;",
+        {{":appName", MAKE_VAR(STRING, appName)}},
+        {
+            &canAdminModifyApplicationSecurityContext,
+            &canUserAutoRegister,
+            &appSyncEnabled,
+            &appSyncCanRetrieveAppUserList
+        }
+    );
+
     if (i.getResultsOK() && i.query->step())
     {
-        return r.getValue();
+        IdentityManager::Applications::ApplicationAttributes attrs;
+        attrs.canAdminModifyApplicationSecurityContext = canAdminModifyApplicationSecurityContext.getValue();
+        attrs.canUserAutoRegister = canUserAutoRegister.getValue();
+        attrs.appSyncEnabled = appSyncEnabled.getValue();
+        attrs.appSyncCanRetrieveAppUserList = appSyncCanRetrieveAppUserList.getValue();
+        return attrs;
     }
-
     return std::nullopt;
 }
 

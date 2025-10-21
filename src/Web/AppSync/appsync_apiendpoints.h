@@ -29,7 +29,7 @@ public:
 
     // Remote triggered:
     static APIReturn getApplicationJWTConfig(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
-    static APIReturn getApplicationJWTSigningKey(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
+    //static APIReturn getApplicationJWTSigningKey(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
     static APIReturn getApplicationJWTValidationKey(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
     static APIReturn updateAccessControlContext(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
 

@@ -400,23 +400,47 @@ public:
     {
     public:
         virtual ~Applications() {}
+        struct ApplicationAttributes
+        {
+            Json::Value toJSON() const
+            {
+                Json::Value root;
+                root["canAdminModifyApplicationSecurityContext"] = canAdminModifyApplicationSecurityContext;
+                root["canUserAutoRegister"] = canUserAutoRegister;
+                root["appSyncEnabled"] = appSyncEnabled;
+                root["appSyncCanRetrieveAppUserList"] = appSyncCanRetrieveAppUserList;
+                return root;
+            }
+
+            void fromJSON(const Json::Value &root)
+            {
+                canAdminModifyApplicationSecurityContext = JSON_ASBOOL(root, "canAdminModifyApplicationSecurityContext", false);
+                canUserAutoRegister = JSON_ASBOOL(root, "canUserAutoRegister", false);
+                appSyncEnabled = JSON_ASBOOL(root, "appSyncEnabled", false);
+                appSyncCanRetrieveAppUserList = JSON_ASBOOL(root, "appSyncCanRetrieveAppUserList", false);
+            }
+
+            bool canAdminModifyApplicationSecurityContext = false;
+            bool canUserAutoRegister = false;
+            bool appSyncEnabled = false;
+            bool appSyncCanRetrieveAppUserList = false;
+        };
+
         /////////////////////////////////////////////////////////////////////////////////
         // applications:
-        virtual bool addApplication(const std::string &appName,
-                                    const std::string &applicationDescription,
+        virtual bool addApplication(const std::string & appName,
+                                    const std::string & applicationDescription,
                                     const std::string & appURL,
-                                    const std::string &apiKey,
-                                    const std::string &sOwnerAccountName,
-                                    bool canUserModifyApplicationSecurityContext,
-                                    bool appSyncEnabled,
+                                    const std::string & apiKey,
+                                    const std::string & creatorAccountName,
+                                    const ApplicationAttributes & appAttributes,
                                     bool initializeDefaultValues) = 0;
         virtual bool removeApplication(const std::string &appName) = 0;
         virtual bool doesApplicationExist(const std::string &appName) = 0;
 
-        virtual bool haveApplicationSyncEnabled(const std::string &appName) = 0;
-        virtual bool updateApplicationSyncEnabled(const std::string &appName, bool syncEnabled) = 0;
+        virtual std::optional<ApplicationAttributes> getApplicationAttributes(const std::string &appName) = 0;
+        virtual bool updateApplicationAttributes(const std::string &appName, const ApplicationAttributes & appAttributes) = 0;
 
-        virtual std::optional<bool> canUserModifyApplicationSecurityContext(const std::string &appName) = 0;
         virtual std::string getApplicationDescription(const std::string &appName) = 0;
         virtual std::string getApplicationAPIKey(const std::string &appName) = 0;
         virtual bool updateApplicationDescription(const std::string &appName, const std::string &applicationDescription) = 0;

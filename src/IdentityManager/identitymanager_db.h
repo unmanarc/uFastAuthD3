@@ -229,6 +229,9 @@ public:
         {
             _parent = parent;
         }
+
+
+
         virtual ~Applications_DB() {}
 
         /////////////////////////////////////////////////////////////////////////////////
@@ -237,17 +240,16 @@ public:
                             const std::string &applicationDescription,
                             const std::string & appURL,
                             const std::string &apiKey,
-                            const std::string &sOwnerAccountName,
-                            bool canUserModifyApplicationSecurityContext,
-                            bool appSyncEnabled,
+                            const std::string &creatorAccountName,
+                            const ApplicationAttributes & appAttributes,
                             bool initializeDefaultValues) override;
         bool removeApplication(const std::string &appName) override;
         bool doesApplicationExist(const std::string &appName) override;
 
-        bool haveApplicationSyncEnabled(const std::string &appName) override;
-        bool updateApplicationSyncEnabled(const std::string &appName, bool syncEnabled) override;
+        std::optional<ApplicationAttributes> getApplicationAttributes(const std::string &appName) override;
 
-        std::optional<bool> canUserModifyApplicationSecurityContext(const std::string &appName) override;
+        bool updateApplicationAttributes(const std::string &appName, const ApplicationAttributes & appAttributes) override;
+
         std::string getApplicationDescription(const std::string &appName) override;
         std::string getApplicationAPIKey(const std::string &appName) override;
         bool updateApplicationAPIKey(const std::string &appName, const std::string &apiKey) override;

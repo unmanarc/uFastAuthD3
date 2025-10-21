@@ -31,16 +31,18 @@ bool IdentityManager_DB::initializeDatabase()
                                                                         );
                                     )",
         R"(CREATE TABLE IF NOT EXISTS `iam`.`accountDetailFields` (
-                                             `fieldName`             VARCHAR(256)   NOT NULL,
-                                             `fieldDescription`      VARCHAR(4096)  NOT NULL,
-                                             `fieldRegexpValidator`  TEXT           DEFAULT NULL,
-                                             `fieldType`             VARCHAR(256)   NOT NULL DEFAULT 'TEXTLINE',
-                                             `isUnique`              BOOLEAN        NOT NULL DEFAULT FALSE,
-                                             `canUserEdit`           BOOLEAN        NOT NULL DEFAULT FALSE,
-                                             `isOptionalField`       BOOLEAN        NOT NULL DEFAULT TRUE,
-                                             `includeInSearch`       BOOLEAN        NOT NULL DEFAULT FALSE,
-                                             `includeInColumnView`   BOOLEAN        NOT NULL DEFAULT FALSE,
-                                             `includeInToken`        BOOLEAN        NOT NULL DEFAULT FALSE,
+                                             `fieldName`                     VARCHAR(256)   NOT NULL,
+                                             `fieldDescription`              VARCHAR(4096)  NOT NULL,
+                                             `fieldRegexpValidator`          TEXT           DEFAULT NULL,
+                                             `fieldType`                     VARCHAR(256)   NOT NULL DEFAULT 'TEXTLINE',
+                                             `isUnique`                      BOOLEAN        NOT NULL DEFAULT FALSE,
+                                             `canUserEdit`                   BOOLEAN        NOT NULL DEFAULT FALSE,
+                                             `isOptionalField`               BOOLEAN        NOT NULL DEFAULT TRUE,
+                                             `includeInSearch`               BOOLEAN        NOT NULL DEFAULT FALSE,
+                                             `includeInColumnView`           BOOLEAN        NOT NULL DEFAULT FALSE,
+                                             `includeInToken`                BOOLEAN        NOT NULL DEFAULT FALSE,
+                                             `includeInAppSyncLiteRetrieve`  BOOLEAN        NOT NULL DEFAULT FALSE,
+                                             `includeInAppSyncFullRetrieve`  BOOLEAN        NOT NULL DEFAULT FALSE,
                                               PRIMARY KEY(`fieldName`)
                                                                         );
                                        )",
@@ -54,13 +56,19 @@ bool IdentityManager_DB::initializeDatabase()
                                                                         );
                                        )",
         R"(CREATE TABLE IF NOT EXISTS `iam`.`applications` (
-                                             `appName`               VARCHAR(256)  NOT NULL,
-                                             `f_appCreator`          VARCHAR(256)  NOT NULL,
-                                             `appDescription`        VARCHAR(4096) NOT NULL,
-                                             `apiKey`                VARCHAR(512)  NOT NULL,
-                                             `canUserModifyApplicationSecurityContext`  BOOLEAN NOT NULL DEFAULT FALSE,
-                                             `appSyncEnabled`  BOOLEAN NOT NULL DEFAULT TRUE,
-                                              FOREIGN KEY(`f_appCreator`)   REFERENCES accounts(`accountName`) ON DELETE CASCADE
+                                             `appName`                                      VARCHAR(256)  NOT NULL,
+                                             `f_appCreator`                                 VARCHAR(256)  NOT NULL,
+                                             `appDescription`                               VARCHAR(4096) NOT NULL,
+                                             `apiKey`                                       VARCHAR(512)  NOT NULL,
+                                             `canAdminModifyApplicationSecurityContext`     BOOLEAN NOT NULL DEFAULT FALSE,
+                                             `canUserAutoRegister`                          BOOLEAN NOT NULL DEFAULT FALSE,
+                                             `appSyncEnabled`                               BOOLEAN NOT NULL DEFAULT TRUE,
+                                             `appSyncCanRetrieveAppUserList`                BOOLEAN NOT NULL DEFAULT TRUE,
+                                             `appIcon`                                      BLOB DEFAULT NULL,
+                                             `appLogo`                                      BLOB DEFAULT NULL,
+                                             `extendedJSONAttribs`                          TEXT DEFAULT NULL,
+                                             `appJSONConfig`                                TEXT DEFAULT NULL,
+                                              FOREIGN KEY(`f_appCreator`) REFERENCES accounts(`accountName`) ON DELETE CASCADE
                                               PRIMARY KEY(`appName`)
                                               UNIQUE(`apiKey`)
                                                                         );
@@ -147,9 +155,9 @@ bool IdentityManager_DB::initializeDatabase()
                                             `description`       VARCHAR(4096) NOT NULL
                      );     )",
         R"(CREATE TABLE IF NOT EXISTS `iam`.`defaultAuthScheme` (
-                `id` INTEGER PRIMARY KEY DEFAULT 1,
-                `f_defaultSchemeId` INTEGER NOT NULL,
-                `lastUpdated` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                                             `id` INTEGER PRIMARY KEY DEFAULT 1,
+                                             `f_defaultSchemeId` INTEGER NOT NULL,
+                                             `lastUpdated` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (`f_defaultSchemeId`) REFERENCES `authenticationSchemes`(`schemeId`) ON DELETE CASCADE,
             CHECK (`id` = 1)
             );)",
@@ -227,6 +235,13 @@ bool IdentityManager_DB::initializeDatabase()
                                              PRIMARY KEY(`roleName`,`f_appName`)
                                                                         );
                                     )",
+        R"(CREATE TABLE IF NOT EXISTS `iam`.`defaultAppRoleWhenRegistering` (
+                                             `f_appName`                 VARCHAR(256) NOT NULL,
+                                             `f_roleName` VARCHAR(256) NOT NULL,
+            PRIMARY KEY(`f_appName`,`f_roleName`),
+            FOREIGN KEY(`f_appName`) REFERENCES applications(`appName`) ON DELETE CASCADE,
+            FOREIGN KEY(`f_roleName`) REFERENCES applicationRoles(`roleName`) ON DELETE CASCADE
+            );)",
         R"(CREATE TABLE IF NOT EXISTS `iam`.`applicationRolesAccounts` (
                                              `f_appName`                VARCHAR(256) NOT NULL,
                                              `f_roleName`               VARCHAR(256) NOT NULL,

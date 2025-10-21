@@ -76,7 +76,7 @@ bool IdentityManager::initializeApplicationWithScheme(const std::string &appName
 
     if (!applications->doesApplicationExist(appName))
     {
-        r = r && applications->addApplication(appName, appDescription, appURL, Mantids30::Helpers::Random::createRandomString(32), owner, false, false, true);
+        r = r && applications->addApplication(appName, appDescription, appURL, Mantids30::Helpers::Random::createRandomString(32), owner, Applications::ApplicationAttributes(), true);
         *alreadyExist = false;
     }
     else

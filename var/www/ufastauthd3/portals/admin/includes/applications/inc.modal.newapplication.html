@@ -4,10 +4,12 @@
         generateRandomKey("appKeyCreate");
         $("#appNameCreate").val('');
         $("#appDescriptionCreate").val('');
-        $("#canUserModifyApplicationSecurityContextCreate").prop("checked", false);
+        $("#canAdminModifyApplicationSecurityContextCreate").prop("checked", false);
         $("#initializeDefaultsCreate").prop("checked", true);
         $("#syncServiceEnabledCreate").prop("checked", true);
-        
+        $("#canUserAutoRegisterCreate").prop("checked", true);
+        $("#appSyncCanRetrieveAppUserListCreate").prop("checked", true);
+
         // TODO:
         $('.nav-tabs a:first').tab('show')
     }
@@ -57,8 +59,12 @@
                 appName: $("#appNameCreate").val(),
                 description: $("#appDescriptionCreate").val(),
                 appURL: $("#appURLCreate").val(),
-                canUserModifyApplicationSecurityContext: $("#canUserModifyApplicationSecurityContextCreate").is(":checked"),
-                syncServiceEnabled: $("#syncServiceEnabledCreate").is(":checked"),
+                applicationAttributes: {
+                    canAdminModifyApplicationSecurityContext: $("#canAdminModifyApplicationSecurityContextCreate").is(":checked"),
+                    canUserAutoRegister: $("#canUserAutoRegisterCreate").is(":checked"),
+                    appSyncEnabled: $("#syncServiceEnabledCreate").is(":checked"),
+                    appSyncCanRetrieveAppUserList: $("#appSyncCanRetrieveAppUserListCreate").is(":checked")
+                },
                 initializeDefaults: $("#initializeDefaultsCreate").is(":checked"),
                 appKey: $("#appKeyCreate").val()
             }),
@@ -163,11 +169,14 @@
                     <div class="tab-pane" id="advancedCreate" role="tabpanel" aria-labelledby="advanced-tab-create"
                         style="min-height: 500px;">
                         <div class="container-fluid" style="padding-left: 60px; padding-top: 30px;">
+
                             <div class="row mb-2">
                                 <div class="col-auto">
                                     <div class="form-check form-switch">
-                                        <input class="form-check-input" type="checkbox" id="canUserModifyApplicationSecurityContextCreate">
-                                        <label class="form-check-label" for="canUserModifyApplicationSecurityContextCreate">
+                                        <input class="form-check-input" type="checkbox"
+                                            id="canAdminModifyApplicationSecurityContextCreate">
+                                        <label class="form-check-label"
+                                            for="canAdminModifyApplicationSecurityContextCreate">
                                             Allow manual modification of security context
                                         </label>
                                     </div>
@@ -179,7 +188,31 @@
                                     <div class="form-check form-switch">
                                         <input class="form-check-input" type="checkbox" id="syncServiceEnabledCreate">
                                         <label class="form-check-label" for="syncServiceEnabledCreate">
-                                            Enable Synchronization Service using API Key (Will share+configure JWT keys, permissions and other useful information)
+                                            Enable Synchronization Service using API Key (Will share+configure JWT keys,
+                                            permissions and other useful information)
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row mb-2">
+                                <div class="col-auto">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox"
+                                            id="appSyncCanRetrieveAppUserListCreate">
+                                        <label class="form-check-label" for="appSyncCanRetrieveAppUserListCreate">
+                                            Allow the application to retrieve the list of application users
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row mb-2">
+                                <div class="col-auto">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="canUserAutoRegisterCreate">
+                                        <label class="form-check-label" for="canUserAutoRegisterCreate">
+                                            Allow IAM users to auto-register
                                         </label>
                                     </div>
                                 </div>

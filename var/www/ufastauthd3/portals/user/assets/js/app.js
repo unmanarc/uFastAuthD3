@@ -7,13 +7,18 @@ let ipAddresses = [];
 
 // Initialize on document ready
 $(document).ready(function() {
-    loadUserInfo();
     loadDashboard();
+
+    $('#welcome').text(user);
+    //$("#version").text(softwareVersion);
+
     
     // Set up event listeners
     $('#logFilter').on('change', filterLogs);
     $('#newPassword').on('input', checkPasswordStrength);
 });
+
+
 
 // Navigation functions
 function showSection(sectionName) {
@@ -53,19 +58,6 @@ function showSection(sectionName) {
             loadIPAddresses();
             break;
     }
-}
-
-// User info functions
-function loadUserInfo() {
-    $.ajax({
-        url: '/api/v1/getCurrentUser',
-        type: 'GET',
-        success: function(response) {
-            currentUser = response;
-            $('#currentUserName').text(response.username);
-        },
-        error: handleError
-    });
 }
 
 // Dashboard functions

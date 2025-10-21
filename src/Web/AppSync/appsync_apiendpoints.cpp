@@ -30,7 +30,7 @@ void AppSync_Endpoints::addAPIEndpoints(std::shared_ptr<Endpoints> endpoints)
 
     // Web API Endpoints:
     endpoints->addEndpoint(Endpoints::POST, "getApplicationJWTConfig", SecurityOptions::NO_AUTH, {}, nullptr, &getApplicationJWTConfig);
-    endpoints->addEndpoint(Endpoints::POST, "getApplicationJWTSigningKey", SecurityOptions::NO_AUTH, {}, nullptr, &getApplicationJWTSigningKey);
+//    endpoints->addEndpoint(Endpoints::POST, "getApplicationJWTSigningKey", SecurityOptions::NO_AUTH, {}, nullptr, &getApplicationJWTSigningKey);
     endpoints->addEndpoint(Endpoints::POST, "getApplicationJWTValidationKey", SecurityOptions::NO_AUTH, {}, nullptr, &getApplicationJWTValidationKey);
     endpoints->addEndpoint(Endpoints::POST, "updateAccessControlContext", SecurityOptions::NO_AUTH, {}, nullptr, &updateAccessControlContext);
 }
@@ -264,7 +264,13 @@ AppSync_Endpoints::APIReturn AppSync_Endpoints::updateAccessControlContext(void 
         return APIReturn(HTTP::Status::S_400_BAD_REQUEST, "missing_app_name", "Application name is required.");
     }
 
-    if (!Globals::getIdentityManager()->applications->haveApplicationSyncEnabled(appName))
+    std::optional<IdentityManager::Applications::ApplicationAttributes> attribs = Globals::getIdentityManager()->applications->getApplicationAttributes(appName);
+    if (!attribs.has_value())
+    {
+        return APIReturn(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to retrieve the application attributes.");
+    }
+
+    if (!attribs->appSyncEnabled)
     {
         LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LEVEL_SECURITY_ALERT, "Application '%s' does not have sync enabled.", appName.c_str());
         return APIReturn(HTTP::Status::S_400_BAD_REQUEST, "sync_not_enabled", "Application sync is not enabled.");
@@ -309,7 +315,13 @@ AppSync_Endpoints::APIReturn AppSync_Endpoints::getApplicationJWTConfig(void *co
         return APIReturn(HTTP::Status::S_400_BAD_REQUEST, "missing_app_name", "Application name is required.");
     }
 
-    if (!Globals::getIdentityManager()->applications->haveApplicationSyncEnabled(appName))
+    std::optional<IdentityManager::Applications::ApplicationAttributes> attribs = Globals::getIdentityManager()->applications->getApplicationAttributes(appName);
+    if (!attribs.has_value())
+    {
+        return APIReturn(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to retrieve the application attributes.");
+    }
+
+    if (!attribs->appSyncEnabled)
     {
         LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LEVEL_SECURITY_ALERT, "Application '%s' does not have sync enabled.", appName.c_str());
         return APIReturn(HTTP::Status::S_400_BAD_REQUEST, "sync_not_enabled", "Application sync is not enabled.");
@@ -339,7 +351,7 @@ AppSync_Endpoints::APIReturn AppSync_Endpoints::getApplicationJWTConfig(void *co
  * @param request Request parameters containing application name and API key
  * @param authClientDetails Client authentication details including IP address
  * @return APIReturn containing JWT signing key or error response
- */
+ */ /*
 AppSync_Endpoints::APIReturn AppSync_Endpoints::getApplicationJWTSigningKey(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     std::string appName = request.clientRequest->requestLine.urlVars()->getStringValue("APP");
@@ -349,7 +361,13 @@ AppSync_Endpoints::APIReturn AppSync_Endpoints::getApplicationJWTSigningKey(void
         return APIReturn(HTTP::Status::S_400_BAD_REQUEST, "missing_app_name", "Application name is required.");
     }
 
-    if (!Globals::getIdentityManager()->applications->haveApplicationSyncEnabled(appName))
+    std::optional<IdentityManager::Applications::ApplicationAttributes> attribs = Globals::getIdentityManager()->applications->getApplicationAttributes(appName);
+    if (!attribs.has_value())
+    {
+        return APIReturn(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to retrieve the application attributes.");
+    }
+
+    if (!attribs->appSyncEnabled)
     {
         LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LEVEL_SECURITY_ALERT, "Application '%s' does not have sync enabled.", appName.c_str());
         return APIReturn(HTTP::Status::S_400_BAD_REQUEST, "sync_not_enabled", "Application sync is not enabled.");
@@ -372,7 +390,7 @@ AppSync_Endpoints::APIReturn AppSync_Endpoints::getApplicationJWTSigningKey(void
         return APIReturn(HTTP::Status::S_401_UNAUTHORIZED, "invalid_api_key", "Invalid API Key for the specified application.");
     }
 }
-
+*/
 /**
  * @brief Retrieve JWT validation key for a specified application
  * @param context Execution context (unused)
@@ -389,7 +407,13 @@ AppSync_Endpoints::APIReturn AppSync_Endpoints::getApplicationJWTValidationKey(v
         return APIReturn(HTTP::Status::S_400_BAD_REQUEST, "missing_app_name", "Application name is required.");
     }
 
-    if (!Globals::getIdentityManager()->applications->haveApplicationSyncEnabled(appName))
+    std::optional<IdentityManager::Applications::ApplicationAttributes> attribs = Globals::getIdentityManager()->applications->getApplicationAttributes(appName);
+    if (!attribs.has_value())
+    {
+        return APIReturn(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to retrieve the application attributes.");
+    }
+
+    if (!attribs->appSyncEnabled)
     {
         LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LEVEL_SECURITY_ALERT, "Application '%s' does not have sync enabled.", appName.c_str());
         return APIReturn(HTTP::Status::S_400_BAD_REQUEST, "sync_not_enabled", "Application sync is not enabled.");

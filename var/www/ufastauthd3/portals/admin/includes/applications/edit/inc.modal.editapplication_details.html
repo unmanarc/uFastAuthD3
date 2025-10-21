@@ -4,22 +4,22 @@
     }
 </script>
 
-<div class="tab-pane show active" id="details" role="tabpanel" aria-labelledby="details-tab"
-    style="min-height: 500px;">
+<div class="tab-pane show active" id="details" role="tabpanel" aria-labelledby="details-tab" style="min-height: 500px;">
     <table width=100% style=" border-spacing: 10px;   border-collapse: separate;">
 
         <tr>
-            <td align="right">Description: </td>
+            <td align="right" style="white-space: nowrap; width: 1%;">Description: </td>
             <td><input id="description" oninput="displayUpdateFunction()" onchange="displayUpdateFunction()"
                     class="form-control" placeholder="Description"></td>
         </tr>
 
         <tr>
-            <td align="right">API Key: </td>
+            <td align="right" style="white-space: nowrap; width: 1%;">API Key: </td>
             <td>
                 <div class="input-group">
                     <input id="newAppKey" class="form-control"
-                        placeholder="Click Refresh Icon to generate a new API Key. The new key will replace the existing one." readonly>
+                        placeholder="Click Refresh Icon to generate a new API Key. The new key will replace the existing one."
+                        readonly>
                     <button type="button" class="btn btn-light"
                         onclick="javascript:generateRandomKey('newAppKey'); displayUpdateFunction()">
                         <i class="fas fa-sync-alt"></i>
@@ -27,13 +27,37 @@
                 </div>
             </td>
         </tr>
-
         <tr>
-            <td align="right">Enable Synchronization Service: </td>
+            <td align="right" style="white-space: nowrap; width: 1%;">Allow User Auto Registration: </td>
             <td>
                 <div class="input-group">
                     <div class="form-check form-switch">
-                        <input class="form-check-input" type="checkbox" id="syncServiceEnabled" onchange="displayUpdateFunction()">
+                        <input class="form-check-input" type="checkbox" id="canUserAutoRegister"
+                            onchange="displayUpdateFunction()">
+                    </div>
+                </div>
+            </td>
+        </tr>
+
+        <tr>
+            <td align="right" style="white-space: nowrap; width: 1%;">Enable Synchronization Service: </td>
+            <td>
+                <div class="input-group">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="syncServiceEnabled"
+                            onchange="displayUpdateFunction()">
+                    </div>
+                </div>
+            </td>
+        </tr>
+
+        <tr>
+            <td align="right" style="white-space: nowrap; width: 1%;">Allow to retrieve the user list through the Synchronization Service: </td>
+            <td>
+                <div class="input-group">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="appSyncCanRetrieveAppUserList"
+                            onchange="displayUpdateFunction()">
                     </div>
                 </div>
             </td>
@@ -59,10 +83,14 @@
 
 
 <script>
-    function populateApplicationDetails(details) {
+    function populateApplicationDetails(details, attributes) {
         document.getElementById("description").value = details["description"];
         document.getElementById("newAppKey").value = '';
-        document.getElementById("syncServiceEnabled").checked = details.syncServiceEnabled || false;
+
+        document.getElementById("canUserAutoRegister").checked = attributes.canUserAutoRegister || false;
+        document.getElementById("syncServiceEnabled").checked = attributes.appSyncEnabled || false;
+        document.getElementById("appSyncCanRetrieveAppUserList").checked = attributes.appSyncCanRetrieveAppUserList || false;
+
     }
 
     function discardApplicationDetails() {
@@ -82,7 +110,11 @@
             data: JSON.stringify({
                 appName: currentApplication,
                 description: description,
-                syncServiceEnabled: $("#syncServiceEnabled").is(":checked")
+                applicationAttributes: {
+                    canUserAutoRegister: $("#canUserAutoRegister").is(":checked"),
+                    appSyncEnabled: $("#syncServiceEnabled").is(":checked"),
+                    appSyncCanRetrieveAppUserList: $("#appSyncCanRetrieveAppUserList").is(":checked")
+                },
             }),
             success: function (response, textStatus, xhr) {
                 // Update API key if needed

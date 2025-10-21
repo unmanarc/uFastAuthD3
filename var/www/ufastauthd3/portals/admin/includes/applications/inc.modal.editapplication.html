@@ -97,8 +97,8 @@
             data: JSON.stringify({ appName: currentApplication }),
             success: function (response) {
                 populateApplicationTokensConfig(response["tokenConfig"]);
-                populateApplicationDetails(response["details"]);
-                populateApplicationScopes(response["advanced"]["canUserModifyApplicationSecurityContext"]);
+                populateApplicationDetails(response["details"],response["applicationAttributes"]);
+                populateApplicationScopes(response["applicationAttributes"]["canAdminModifyApplicationSecurityContext"]);
                 populateApplicationAccounts(response["accounts"]);
                 populateApplicationActivities(response["activities"]);
                 populateApplicationLoginFlow(response["loginFlow"]);
