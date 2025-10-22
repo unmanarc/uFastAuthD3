@@ -40,7 +40,15 @@ private:
 /*    static void setupAccessTokenCookies(APIReturn &response, std::string accessToken, const time_t & timeout);
     static void setupRefreshTokenCookies(APIReturn &response, std::string refreshToken, const time_t & timeout);*/
 
-    static void setupCookie(APIReturn &response, const std::string &name, time_t expirationTime, bool secure, const std::string &path, bool httpOnly, const std::string &value);
+    struct CookieProperties {
+        bool sessionCookie = false;
+        bool secure = true;
+        bool httpOnly = true;
+        time_t expirationTime = 0; // don't expire?
+        std::string path;
+    };
+
+    static void setupCookie(APIReturn &response, const std::string &name, const std::string &value, const CookieProperties & props);
     static void setupMaxAgeCookie(APIReturn &response, const std::string &name, time_t expirationTime);
 
     static json getAccountDetails(IdentityManager *identityManager, const std::string &accountName);

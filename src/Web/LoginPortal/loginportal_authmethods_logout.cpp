@@ -22,11 +22,9 @@ void LoginPortal_AuthMethods::doLogoutInResponse(void *, const RequestParameters
     }
 
     response->cookiesMap["AccessToken"] = HTTP::Headers::Cookie();
-    response->cookiesMap["AccessToken"].setAsTransientCookie();
-    response->cookiesMap["AccessToken"].value = "";
+    response->cookiesMap["AccessToken"].deleteCookie();
 
     response->cookiesMap["loggedIn"] = HTTP::Headers::Cookie();
-    response->cookiesMap["loggedIn"].setAsTransientCookie();
+    response->cookiesMap["loggedIn"].deleteCookie();
     response->cookiesMap["loggedIn"].path = "/";
-    response->cookiesMap["loggedIn"].value = "";
 }

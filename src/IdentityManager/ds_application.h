@@ -27,7 +27,6 @@ struct ApplicationTokenProperties
     {
         Json::Value root(Json::objectValue);
         root["appName"] = appName;
-        root["tempMFATokenTimeout"] = tempMFATokenTimeout;
         root["sessionInactivityTimeout"] = sessionInactivityTimeout;
         root["tokenType"] = tokenType;
         root["allowRefreshTokenRenovation"] = allowRefreshTokenRenovation;
@@ -49,7 +48,6 @@ struct ApplicationTokenProperties
             return error;
         }
 
-        tempMFATokenTimeout = JSON_ASUINT(root, "tempMFATokenTimeout", 0);
         sessionInactivityTimeout = JSON_ASUINT(root, "sessionInactivityTimeout", 0);
         tokenType = JSON_ASSTRING(root, "tokenType", "");
         allowRefreshTokenRenovation = JSON_ASBOOL(root, "allowRefreshTokenRenovation", false);
@@ -62,7 +60,6 @@ struct ApplicationTokenProperties
     }
 
     std::string appName;
-    uint32_t tempMFATokenTimeout;
     uint32_t sessionInactivityTimeout;
     std::string tokenType;
     bool allowRefreshTokenRenovation;

@@ -81,44 +81,33 @@ std::optional<JWT::Token> WebSessionAuthHandler_AuthMethods::loadJWTAccessTokenF
 
 void WebSessionAuthHandler_AuthMethods::setupAccessTokenCookies(APIReturn &response, JWT::Token accessToken, const ApplicationTokenProperties &tokenProps)
 {
-    setupCookie(response, "AccessToken", accessToken.getExpirationTime(), true, JSON_ASSTRING(tokenProps.tokensConfiguration["accessToken"],"path","/"), true, signApplicationToken(accessToken, tokenProps));
-    //setupMaxAgeCookie(response, "AccessTokenMaxAge", accessToken.getExpirationTime());
+    CookieProperties props;
+    props.sessionCookie = JSON_ASBOOL(tokenProps.tokensConfiguration["accessToken"],"useSessionCookies",true);
+    props.expirationTime = accessToken.getExpirationTime(); // expire with the JWT token expiration.
+    props.path = JSON_ASSTRING(tokenProps.tokensConfiguration["accessToken"],"path","/");
+    setupCookie(response, "AccessToken", signApplicationToken(accessToken, tokenProps), props);
 }
 
 void WebSessionAuthHandler_AuthMethods::setupRefreshTokenCookies(APIReturn &response, JWT::Token refreshToken, const ApplicationTokenProperties &tokenProps)
 {
-    setupCookie(response, "RefreshToken", refreshToken.getExpirationTime(), true, JSON_ASSTRING(tokenProps.tokensConfiguration["refreshToken"],"path","/auth"), true, signApplicationToken(refreshToken, tokenProps));
-}
-/*
-void WebSessionAuthHandler_AuthMethods::setupAccessTokenCookies(APIReturn &response, std::string accessToken, const time_t &timeout)
-{
-    IdentityManager *identityManager = Globals::getIdentityManager();
-    ApplicationTokenProperties tokenProps = identityManager->applications->getWebLoginJWTConfigFromApplication(refreshTokenApp);
-
-    setupCookie(response, "AccessToken", timeout, true, "/", true, accessToken);
-    setupMaxAgeCookie(response, "AccessTokenMaxAge", timeout);
+    CookieProperties props;
+    props.expirationTime = refreshToken.getExpirationTime(); // expire with the JWT token expiration.
+    props.path = JSON_ASSTRING(tokenProps.tokensConfiguration["refreshToken"],"path","/auth");
+    setupCookie(response, "RefreshToken", signApplicationToken(refreshToken, tokenProps), props);
 }
 
-void WebSessionAuthHandler_AuthMethods::setupRefreshTokenCookies(APIReturn &response, std::string refreshToken, const time_t &timeout)
-{
-    setupCookie(response, "RefreshToken", timeout, true, "/", true, refreshToken);
-}*/
-
-void WebSessionAuthHandler_AuthMethods::setupCookie(APIReturn &response, const std::string &name, time_t expirationTime, bool secure, const std::string &path, bool httpOnly, const std::string &value)
+void WebSessionAuthHandler_AuthMethods::setupCookie(APIReturn &response, const std::string &name, const std::string &value, const CookieProperties &props)
 {
     response.cookiesMap[name] = HTTP::Headers::Cookie();
-    response.cookiesMap[name].setExpiration(expirationTime);
-    response.cookiesMap[name].secure = secure;
-    response.cookiesMap[name].path = path;
-    response.cookiesMap[name].httpOnly = httpOnly;
+    response.cookiesMap[name].setExpiration(props.expirationTime);
+    response.cookiesMap[name].secure = props.secure;
+    response.cookiesMap[name].path = props.path;
+    response.cookiesMap[name].httpOnly = props.httpOnly;
     response.cookiesMap[name].value = value;
-}
 
-/*
-void WebSessionAuthHandler_AuthMethods::setupMaxAgeCookie(APIReturn &response, const std::string &name, time_t expirationTime)
-{
-    setupCookie(response, name, expirationTime, true, "/", false, std::to_string(expirationTime - time(nullptr)));
-}*/
+    if (props.sessionCookie)
+        response.cookiesMap[name].setAsSessionCookie();
+}
 
 API::APIReturn WebSessionAuthHandler_AuthMethods::refreshAccessToken(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
@@ -249,13 +238,11 @@ API::APIReturn WebSessionAuthHandler_AuthMethods::appLogout(void *context, const
 
     // if ok, clear everything!:
     response.cookiesMap["AccessToken"] = HTTP::Headers::Cookie();
-    response.cookiesMap["AccessToken"].setAsTransientCookie();
-    response.cookiesMap["AccessToken"].value = "";
+    response.cookiesMap["AccessToken"].deleteCookie();
     response.cookiesMap["AccessToken"].path = JSON_ASSTRING(tokenProps.tokensConfiguration["accessToken"],"path","");
 
     response.cookiesMap["RefreshToken"] = HTTP::Headers::Cookie();
-    response.cookiesMap["RefreshToken"].setAsTransientCookie();
-    response.cookiesMap["RefreshToken"].value = "";
+    response.cookiesMap["RefreshToken"].deleteCookie();
     response.cookiesMap["RefreshToken"].path = JSON_ASSTRING(tokenProps.tokensConfiguration["refreshToken"],"path","");
 
     return response;

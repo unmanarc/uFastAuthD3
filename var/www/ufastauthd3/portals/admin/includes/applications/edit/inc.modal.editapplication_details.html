@@ -87,9 +87,9 @@
         document.getElementById("description").value = details["description"];
         document.getElementById("newAppKey").value = '';
 
-        document.getElementById("canUserAutoRegister").checked = attributes.canUserAutoRegister || false;
-        document.getElementById("syncServiceEnabled").checked = attributes.appSyncEnabled || false;
-        document.getElementById("appSyncCanRetrieveAppUserList").checked = attributes.appSyncCanRetrieveAppUserList || false;
+        document.getElementById("canUserAutoRegister").checked = attributes.canUserAutoRegister ?? false;
+        document.getElementById("syncServiceEnabled").checked = attributes.appSyncEnabled ?? false;
+        document.getElementById("appSyncCanRetrieveAppUserList").checked = attributes.appSyncCanRetrieveAppUserList ?? false;
 
     }
 

@@ -3,26 +3,26 @@
         <div class="row">
             <!-- Main Configuration Card -->
             <div class="col-md-6">
+
+                <div class="card mb-3">
+                    <div class="card-header" style="text-align: center;"><b>Session Configuration</b></div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="sessionInactivityTimeout" class="form-label">Session Timeout
+                                (seconds)</label>
+                            <input type="number" class="form-control" id="sessionInactivityTimeout"
+                                oninput="displayUpdateTokensFunction(); updatePrettyTime('sessionInactivityTimeout', 'sessionInactivityTimeoutPretty')"
+                                onchange="displayUpdateTokensFunction(); updatePrettyTime('sessionInactivityTimeout', 'sessionInactivityTimeoutPretty')">
+                            <small id="sessionInactivityTimeoutPretty" class="form-text text-muted"></small>
+                        </div>
+                    </div>
+                </div>
+
+
                 <div class="card mb-3">
                     <div class="card-header" style="text-align: center;"><b>JWT Tokens Configuration</b></div>
                     <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="tempMFATokenTimeout" class="form-label">MFA Token Timeout (seconds)</label>
-                                <input type="number" class="form-control" id="tempMFATokenTimeout"
-                                    oninput="displayUpdateTokensFunction(); updatePrettyTime('tempMFATokenTimeout', 'tempMFATokenTimeoutPretty')"
-                                    onchange="displayUpdateTokensFunction(); updatePrettyTime('tempMFATokenTimeout', 'tempMFATokenTimeoutPretty')">
-                                <small id="tempMFATokenTimeoutPretty" class="form-text text-muted"></small>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="sessionInactivityTimeout" class="form-label">Session Timeout
-                                    (seconds)</label>
-                                <input type="number" class="form-control" id="sessionInactivityTimeout"
-                                    oninput="displayUpdateTokensFunction(); updatePrettyTime('sessionInactivityTimeout', 'sessionInactivityTimeoutPretty')"
-                                    onchange="displayUpdateTokensFunction(); updatePrettyTime('sessionInactivityTimeout', 'sessionInactivityTimeoutPretty')">
-                                <small id="sessionInactivityTimeoutPretty" class="form-text text-muted"></small>
-                            </div>
-                        </div>
+
                         <div class="mb-3">
                             <label for="tokenType" class="form-label">Token Type</label>
                             <select class="form-select" id="tokenType" oninput="tokenTypeChanged()"
@@ -38,28 +38,28 @@
                                     keys)</option>
                             </select>
                         </div>
-                        <div class="form-check mb-3">
+                        <div class="form-check form-switch mb-3">
                             <input class="form-check-input" type="checkbox" id="allowRefreshTokenRenovation"
                                 oninput="displayUpdateTokensFunction()" onchange="displayUpdateTokensFunction()">
                             <label class="form-check-label" for="allowRefreshTokenRenovation">
                                 Allow Refresh Token Renewal
                             </label>
                         </div>
-                        <div class="form-check mb-3">
+                        <div class="form-check form-switch mb-3">
                             <input class="form-check-input" type="checkbox" id="includeApplicationScopes"
                                 oninput="displayUpdateTokensFunction()" onchange="displayUpdateTokensFunction()">
                             <label class="form-check-label" for="includeApplicationScopes">
                                 Include Application Scopes
                             </label>
                         </div>
-                        <div class="form-check mb-3">
+                        <div class="form-check form-switch mb-3">
                             <input class="form-check-input" type="checkbox" id="includeBasicAccountInfo"
                                 oninput="displayUpdateTokensFunction()" onchange="displayUpdateTokensFunction()">
                             <label class="form-check-label" for="includeBasicAccountInfo">
                                 Include Basic Account Info
                             </label>
                         </div>
-                        <div class="form-check mb-3">
+                        <div class="form-check form-switch mb-3">
                             <input class="form-check-input" type="checkbox" id="maintainRevocationAndLogoutInfo"
                                 oninput="displayUpdateTokensFunction()" onchange="displayUpdateTokensFunction()">
                             <label class="form-check-label" for="maintainRevocationAndLogoutInfo">
@@ -134,6 +134,15 @@
                 <div class="card mb-3">
                     <div class="card-header" style="text-align: center;"><b>Access Token Cookie Settings</b></div>
                     <div class="card-body">
+
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" id="useSessionCookies"
+                                oninput="displayUpdateTokensFunction()" onchange="displayUpdateTokensFunction()">
+                            <label class="form-check-label" for="useSessionCookies">
+                                Use Session Cookies (removed when navigator closes)
+                            </label>
+                        </div>
+
                         <div class="mb-3">
                             <label for="accessTokenPath" class="form-label">Access Token Path</label>
                             <input type="text" class="form-control" id="accessTokenPath" placeholder="/"
@@ -221,13 +230,12 @@
 
         if (tokensConfig != null) {
             // Main configuration
-            document.getElementById('tempMFATokenTimeout').value = tokensConfig.tempMFATokenTimeout || '';
             document.getElementById('sessionInactivityTimeout').value = tokensConfig.sessionInactivityTimeout || '';
             document.getElementById('tokenType').value = tokensConfig.tokenType || 'HS256';
-            document.getElementById('allowRefreshTokenRenovation').checked = tokensConfig.allowRefreshTokenRenovation || false;
-            document.getElementById('includeApplicationScopes').checked = tokensConfig.includeApplicationScopes || false;
-            document.getElementById('includeBasicAccountInfo').checked = tokensConfig.includeBasicAccountInfo || false;
-            document.getElementById('maintainRevocationAndLogoutInfo').checked = tokensConfig.maintainRevocationAndLogoutInfo || false;
+            document.getElementById('allowRefreshTokenRenovation').checked = tokensConfig.allowRefreshTokenRenovation ?? false;
+            document.getElementById('includeApplicationScopes').checked = tokensConfig.includeApplicationScopes ?? false;
+            document.getElementById('includeBasicAccountInfo').checked = tokensConfig.includeBasicAccountInfo ?? false;
+            document.getElementById('maintainRevocationAndLogoutInfo').checked = tokensConfig.maintainRevocationAndLogoutInfo ?? false;
 
             if (tokensConfig.tokenType.startsWith('HS')) {
                 document.getElementById('modifyRSKey').style.display = 'none';
@@ -244,6 +252,7 @@
                 if (tokens.accessToken) {
                     document.getElementById('accessTokenPath').value = tokens.accessToken.path || '/';
                     document.getElementById('accessTokenTimeout').value = tokens.accessToken.timeout || 300;
+                    document.getElementById('useSessionCookies').checked = tokens.accessToken.useSessionCookies ?? true;
                 }
 
                 if (tokens.refreshToken) {
@@ -251,7 +260,6 @@
                     document.getElementById('refreshTokenTimeout').value = tokens.refreshToken.timeout || 2592000;
                 }
             }
-            updatePrettyTime('tempMFATokenTimeout', 'tempMFATokenTimeoutPretty');
             updatePrettyTime('sessionInactivityTimeout', 'sessionInactivityTimeoutPretty');
             updatePrettyTime('accessTokenTimeout', 'accessTokenTimeoutPretty');
             updatePrettyTime('refreshTokenTimeout', 'refreshTokenTimeoutPretty');
@@ -277,7 +285,6 @@
     function getModifiedApplicationTokenConfig() {
         const tokensConfig = {
             appName: currentApplication,
-            tempMFATokenTimeout: parseInt(document.getElementById('tempMFATokenTimeout').value) || 0,
             sessionInactivityTimeout: parseInt(document.getElementById('sessionInactivityTimeout').value) || 0,
             tokenType: document.getElementById('tokenType').value,
             allowRefreshTokenRenovation: document.getElementById('allowRefreshTokenRenovation').checked,
@@ -286,6 +293,7 @@
             maintainRevocationAndLogoutInfo: document.getElementById('maintainRevocationAndLogoutInfo').checked,
             tokensConfiguration: {
                 accessToken: {
+                    useSessionCookies: document.getElementById('useSessionCookies').checked,
                     path: document.getElementById('accessTokenPath').value || '/',
                     timeout: parseInt(document.getElementById('accessTokenTimeout').value) || 300
                 },

@@ -118,12 +118,11 @@ bool IdentityManager_DB::initializeDatabase()
                                         )",
         R"(CREATE TABLE IF NOT EXISTS `iam`.`applicationsJWTTokenConfig` (
                                             `f_appName`                       VARCHAR(256)    NOT NULL,
-                                            `tempMFATokenTimeout`             BIGINT UNSIGNED NOT NULL DEFAULT '30',
                                             `sessionInactivityTimeout`        BIGINT UNSIGNED NOT NULL DEFAULT '180',
                                             `tokenType`                       VARCHAR(20)     NOT NULL DEFAULT 'HS256',
                                             `accessTokenSigningKey`           TEXT DEFAULT NULL,
                                             `accessTokenValidationKey`        TEXT DEFAULT NULL,
-                                            `tokensConfigJSON`                TEXT NOT NULL DEFAULT '{ "accessToken" : {"path" : "/", "timeout" : 300},"refreshToken" : {"path" : "/auth", "timeout" : 2592000} }',
+                                            `tokensConfigJSON`                TEXT NOT NULL DEFAULT '{ "accessToken" : { useSessionCookies : true, "path" : "/", "timeout" : 300},"refreshToken" : {"path" : "/auth", "timeout" : 2592000} }',
                                             `includeApplicationScopes`        BOOLEAN NOT NULL DEFAULT TRUE,
                                             `includeBasicAccountInfo`         BOOLEAN NOT NULL DEFAULT TRUE,
                                             `maintainRevocationAndLogoutInfo` BOOLEAN NOT NULL DEFAULT FALSE,

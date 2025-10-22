@@ -551,13 +551,12 @@ bool IdentityManager_DB::Applications_DB::updateWebLoginJWTConfigForApplication(
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
     return _parent->m_sqlConnector->execute("UPDATE iam.applicationsJWTTokenConfig SET "
-                                            "tempMFATokenTimeout=:tempMFATokenTimeout, sessionInactivityTimeout=:sessionInactivityTimeout, "
+                                            "sessionInactivityTimeout=:sessionInactivityTimeout, "
                                             "tokenType=:tokenType, includeApplicationScopes=:includeApplicationScopes, "
                                             "includeBasicAccountInfo=:includeBasicAccountInfo, allowRefreshTokenRenovation=:allowRefreshTokenRenovation, "
                                             "tokensConfigJSON=:tokensConfigJSON, "
                                             "maintainRevocationAndLogoutInfo=:maintainRevocationAndLogoutInfo WHERE f_appName=:appName;",
                                             {{":appName", MAKE_VAR(STRING, tokenInfo.appName)},
-                                             {":tempMFATokenTimeout", MAKE_VAR(UINT32, tokenInfo.tempMFATokenTimeout)},
                                              {":sessionInactivityTimeout", MAKE_VAR(UINT32, tokenInfo.sessionInactivityTimeout)},
                                              {":tokenType", MAKE_VAR(STRING, tokenInfo.tokenType)},
                                              {":includeApplicationScopes", MAKE_VAR(BOOL, tokenInfo.includeApplicationScopes)},
@@ -576,20 +575,19 @@ ApplicationTokenProperties IdentityManager_DB::Applications_DB::getWebLoginJWTCo
     tokenInfo.appName = appName;
 
     // Define las variables para capturar los valores de la base de datos.
-    Abstract::UINT32 tempMFATokenTimeout, sessionInactivityTimeout;
+    Abstract::UINT32 sessionInactivityTimeout;
     Abstract::STRING tokenType, tokensConfigJSON;
     Abstract::BOOL includeApplicationScopes, includeBasicAccountInfo, maintainRevocationAndLogoutInfo, allowRefreshTokenRenovation;
 
-    SQLConnector::QueryInstance i = _parent->m_sqlConnector->qSelect("SELECT allowRefreshTokenRenovation,tempMFATokenTimeout, sessionInactivityTimeout, tokenType, "
+    SQLConnector::QueryInstance i = _parent->m_sqlConnector->qSelect("SELECT allowRefreshTokenRenovation,sessionInactivityTimeout, tokenType, "
                                                                      "includeApplicationScopes, includeBasicAccountInfo, maintainRevocationAndLogoutInfo, tokensConfigJSON "
                                                                      "FROM iam.applicationsJWTTokenConfig "
                                                                      "WHERE f_appName=:appName;",
                                                                      {{":appName", MAKE_VAR(STRING, appName)}},
-                                                                     {&allowRefreshTokenRenovation, &tempMFATokenTimeout, &sessionInactivityTimeout, &tokenType, &includeApplicationScopes,
+                                                                     {&allowRefreshTokenRenovation, &sessionInactivityTimeout, &tokenType, &includeApplicationScopes,
                                                                       &includeBasicAccountInfo, &maintainRevocationAndLogoutInfo, &tokensConfigJSON});
     if (i.getResultsOK() && i.query->step())
     {
-        tokenInfo.tempMFATokenTimeout = tempMFATokenTimeout.getValue();
         tokenInfo.sessionInactivityTimeout = sessionInactivityTimeout.getValue();
         tokenInfo.tokenType = tokenType.getValue();
         tokenInfo.includeApplicationScopes = includeApplicationScopes.getValue();

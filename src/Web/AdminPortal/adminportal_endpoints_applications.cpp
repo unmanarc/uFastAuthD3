@@ -553,7 +553,6 @@ void AdminPortalMethods_Applications::getWebLoginJWTConfigFromApplication(void *
 
     payloadOut["appName"] = tokenInfo.appName;
     payloadOut["tokensConfiguration"] = tokenInfo.tokensConfiguration;
-    payloadOut["tempMFATokenTimeout"] = tokenInfo.tempMFATokenTimeout;
     payloadOut["sessionInactivityTimeout"] = tokenInfo.sessionInactivityTimeout;
     payloadOut["tokenType"] = tokenInfo.tokenType;
     payloadOut["includeApplicationScopes"] = tokenInfo.includeApplicationScopes;
