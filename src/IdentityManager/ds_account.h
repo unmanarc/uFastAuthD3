@@ -2,46 +2,85 @@
 
 #include <Mantids30/Helpers/json.h>
 #include <ctime>
+#include <optional>
 #include <string>
+
+enum AccountDetailsToShow
+{
+    ACCOUNT_DETAILS_ALL,
+    ACCOUNT_DETAILS_SEARCH,
+    ACCOUNT_DETAILS_COLUMNVIEW,
+    ACCOUNT_DETAILS_APISYNC,
+    ACCOUNT_DETAILS_TOKEN
+};
+
+
+struct AccountDetailFieldValue
+{
+    std::string name;
+    std::string description;
+    std::string fieldType;
+    std::string fieldRegexpValidator;
+    std::optional<std::string> value;
+
+    Json::Value toJSON() const
+    {
+        Json::Value fieldJson;
+        fieldJson["name"] = name;
+        fieldJson["description"] = description;
+        fieldJson["type"] = fieldType;
+        fieldJson["regexpValidator"] = fieldRegexpValidator;
+
+        if (value.has_value())
+            fieldJson["value"] = value.value();
+        else
+            fieldJson["value"] = Json::Value(Json::nullValue);
+        return fieldJson;
+    }
+
+    void fromJSON(const Json::Value &json)
+    {
+        name = JSON_ASSTRING(json, "name", "");
+        description = JSON_ASSTRING(json, "description", "");
+        fieldType = JSON_ASSTRING(json, "type", "");
+        fieldRegexpValidator = JSON_ASSTRING(json, "regexpValidator", "");
+        if (json.isMember("value") && !json["value"].isNull())
+            value = JSON_ASSTRING(json, "value", "");
+    }
+};
+
 
 struct AccountDetailField
 {
     std::string description;
-    std::string regexpValidator;
-    bool includeInSearch = true;
-    bool includeInColumnView = true;
-    bool includeInToken = true;
     std::string fieldType = "TEXTLINE";
     bool isOptionalField = true;
-    bool canUserEdit = false;
     bool isUnique = false;
+    json extendedAttributes;
+
+    std::string getRegexpValidatorText()
+    {
+        return JSON_ASSTRING(extendedAttributes["behavior"],"regexpValidator","");
+    }
 
     Json::Value toJSON() const
     {
         Json::Value r;
         r["description"] = description;
-        r["regexpValidator"] = regexpValidator;
-        r["includeInSearch"] = includeInSearch;
-        r["includeInToken"] = includeInToken;
-        r["includeInColumnView"] = includeInColumnView;
         r["fieldType"] = fieldType;
         r["isOptionalField"] = isOptionalField;
         r["isUnique"] = isUnique;
-        r["canUserEdit"] = canUserEdit;
+        r["extendedAttributes"] = extendedAttributes;
         return r;
     }
 
     void fromJSON(const Json::Value &r)
     {
         description = JSON_ASSTRING(r, "description", "");
-        regexpValidator = JSON_ASSTRING(r, "regexpValidator", "");
-        includeInSearch = JSON_ASBOOL(r, "includeInSearch", true);
-        includeInToken = JSON_ASBOOL(r, "includeInToken", true);
-        includeInColumnView = JSON_ASBOOL(r, "includeInColumnView", true);
         fieldType = JSON_ASSTRING(r, "fieldType", "TEXTLINE");
         isOptionalField = JSON_ASBOOL(r, "isOptionalField", true);
         isUnique = JSON_ASBOOL(r, "isUnique", false);
-        canUserEdit = JSON_ASBOOL(r, "canUserEdit", false);
+        extendedAttributes = r["extendedAttributes"];
     }
 };
 struct AccountFlags
@@ -82,7 +121,7 @@ struct AccountDetails
 {
     AccountDetails() {}
 
-    std::map<std::string, AccountDetailField> fields;
+    std::map<std::string, AccountDetailFieldValue> fields;
     //std::map<std::string, std::string> fieldValues;
     std::string accountName, creator;
     AccountFlags accountFlags;
@@ -99,16 +138,11 @@ struct AccountDetails
             r["fields"][i.first] = i.second.toJSON();
         }
 
-       /* r["fieldValues"] = json::null;
-        for (auto &i : fieldValues)
-        {
-            r["fieldValues"][i.first] = i.second;
-        }*/
-
         r["accountName"] = accountName;
         r["creator"] = creator;
         r["accountFlags"] = accountFlags.toJSON();
         r["expirationDate"] = expirationDate;
+        r["creationDate"] = creationDate;
         return r;
     }
 
@@ -118,17 +152,10 @@ struct AccountDetails
         const Json::Value &fieldsJson = r["fields"];
         for (Json::ValueConstIterator it = fieldsJson.begin(); it != fieldsJson.end(); ++it)
         {
-            AccountDetailField field;
+            AccountDetailFieldValue field;
             field.fromJSON(*it);
             fields[it.key().asString()] = field;
         }
-
-        // Deserialize 'fieldValues' map
-        /*const Json::Value &fieldValuesJson = r["fieldValues"];
-        for (Json::ValueConstIterator it = fieldValuesJson.begin(); it != fieldValuesJson.end(); ++it)
-        {
-            fieldValues[it.key().asString()] = it->asString();
-        }*/
 
         accountName = JSON_ASSTRING(r, "accountName", "");
         creator = JSON_ASSTRING(r, "creator", "");

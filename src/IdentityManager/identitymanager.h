@@ -59,7 +59,7 @@ public:
         virtual bool disableAccount(const std::string &accountName, bool disabled = true) = 0;
 
         // Account Details:
-        virtual AccountDetails getAccountDetails(const std::string &accountName) = 0;
+        virtual std::optional<AccountDetails> getAccountDetails(const std::string &accountName, const AccountDetailsToShow &detailsToShow) = 0;
         virtual Json::Value searchAccounts(const json &dataTablesFilters) = 0;
 
         // Account Expiration:
@@ -82,6 +82,7 @@ public:
 
         // Account Details Fields
         virtual bool addAccountDetailField(const std::string &fieldName, const AccountDetailField &details) = 0;
+        virtual bool updateAccountDetailField(const std::string &fieldName, const AccountDetailField &details) = 0;
         virtual bool removeAccountDetailField(const std::string &fieldName) = 0;
         virtual std::map<std::string, AccountDetailField> listAccountDetailFields() = 0;
         virtual std::optional<AccountDetailField> getAccountDetailField(const std::string &fieldName) = 0;
@@ -92,49 +93,8 @@ public:
         virtual bool changeAccountDetails(const std::string &accountName, const std::map<std::string, std::string> &fieldsValues, bool resetAllValues = false) = 0;
         virtual bool removeAccountDetail(const std::string &accountName, const std::string &fieldName) = 0;
 
-        enum AccountDetailsToShow
-        {
-            ACCOUNT_DETAILS_ALL,
-            ACCOUNT_DETAILS_SEARCH,
-            ACCOUNT_DETAILS_COLUMNVIEW,
-            ACCOUNT_DETAILS_TOKEN
-        };
 
-        struct AccountDetailFieldValue
-        {
-            std::string name;
-            std::string description;
-            std::string fieldType;
-            std::string fieldRegexpValidator;
-            std::optional<std::string> value;
-
-            Json::Value toJSON() const
-            {
-                Json::Value fieldJson;
-                fieldJson["name"] = name;
-                fieldJson["description"] = description;
-                fieldJson["type"] = fieldType;
-                fieldJson["regexpValidator"] = fieldRegexpValidator;
-
-                if (value.has_value())
-                    fieldJson["value"] = value.value();
-                else
-                    fieldJson["value"] = Json::Value(Json::nullValue);
-                return fieldJson;
-            }
-
-            void fromJSON(const Json::Value &json)
-            {
-                name = JSON_ASSTRING(json, "name", "");
-                description = JSON_ASSTRING(json, "description", "");
-                fieldType = JSON_ASSTRING(json, "type", "");
-                fieldRegexpValidator = JSON_ASSTRING(json, "regexpValidator", "");
-                if (json.isMember("value") && !json["value"].isNull())
-                    value = JSON_ASSTRING(json, "value", "");
-            }
-        };
-
-        virtual std::list<AccountDetailFieldValue> getAccountDetailFieldValues(const std::string &accountName, const AccountDetailsToShow &detailsToShow = ACCOUNT_DETAILS_ALL) = 0;
+        virtual std::map<std::string, AccountDetailFieldValue> getAccountDetailFieldValues(const std::string &accountName, const AccountDetailsToShow &detailsToShow = ACCOUNT_DETAILS_ALL) = 0;
         virtual bool updateAccountDetailFieldValues(const std::string &accountName, const std::list<AccountDetailFieldValue> &fieldValues) = 0;
 
     private:
@@ -408,7 +368,7 @@ public:
                 root["canAdminModifyApplicationSecurityContext"] = canAdminModifyApplicationSecurityContext;
                 root["canUserAutoRegister"] = canUserAutoRegister;
                 root["appSyncEnabled"] = appSyncEnabled;
-                root["appSyncCanRetrieveAppUserList"] = appSyncCanRetrieveAppUserList;
+                root["appSyncCanRetrieveAppAccountsList"] = appSyncCanRetrieveAppAccountsList;
                 return root;
             }
 
@@ -417,13 +377,13 @@ public:
                 canAdminModifyApplicationSecurityContext = JSON_ASBOOL(root, "canAdminModifyApplicationSecurityContext", false);
                 canUserAutoRegister = JSON_ASBOOL(root, "canUserAutoRegister", false);
                 appSyncEnabled = JSON_ASBOOL(root, "appSyncEnabled", false);
-                appSyncCanRetrieveAppUserList = JSON_ASBOOL(root, "appSyncCanRetrieveAppUserList", false);
+                appSyncCanRetrieveAppAccountsList = JSON_ASBOOL(root, "appSyncCanRetrieveAppAccountsList", false);
             }
 
             bool canAdminModifyApplicationSecurityContext = false;
             bool canUserAutoRegister = false;
             bool appSyncEnabled = false;
-            bool appSyncCanRetrieveAppUserList = false;
+            bool appSyncCanRetrieveAppAccountsList = false;
         };
 
         /////////////////////////////////////////////////////////////////////////////////

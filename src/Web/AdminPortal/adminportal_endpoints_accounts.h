@@ -24,6 +24,7 @@ protected:
     // Fields:
     static APIReturn searchFields(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
     static APIReturn addAccountDetailField(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
+    static APIReturn updateAccountDetailField(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
     static APIReturn removeAccountDetailField(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
     static APIReturn getAccountDetailField(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
     static APIReturn getAccountDetailFieldsValues(void *context, const RequestParameters &request, ClientDetails &authClientDetails);

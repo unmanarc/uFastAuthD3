@@ -11,14 +11,17 @@
         document.getElementById("fieldType").selectedIndex = 0;
 
         // Reset checkbox states to their original defaults
-        /*        document.getElementById("isOptionalField").checked = true;
-                document.getElementById("isOptionalField").disabled = false;
-                document.getElementById("isOptionalField").readOnly = false;
-        
-                document.getElementById("includeInSearch").checked = false;
-                document.getElementById("includeInColumnView").checked = false;*/
+        /*      
+        document.getElementById("isOptionalField").checked = true;
+        document.getElementById("isOptionalField").disabled = false;
+        document.getElementById("isOptionalField").readOnly = false;
 
-        document.getElementById("includeInToken").checked = false;
+        document.getElementById("includeInSearch").checked = false;
+        document.getElementById("includeInColumnView").checked = false;
+        */
+
+        document.getElementById("includeInToken").checked = true;
+        document.getElementById("includeInAPISync").checked = true;
 
         document.getElementById("isUnique").checked = false;
         document.getElementById("isUnique").disabled = false;
@@ -27,7 +30,6 @@
         document.getElementById("canUserEdit").checked = false;
         document.getElementById("canUserEdit").disabled = false;
         document.getElementById("canUserEdit").readOnly = false;
-
 
         // Change modal title to "Create Accounts Field"
         document.getElementById("modalCreateAccountFieldLabel").innerText = "Create Accounts Field";
@@ -54,19 +56,17 @@
             data: JSON.stringify({
                 fieldName: fieldName
             }),
+            error: commonFunctionError,
             success: function (response, textStatus, xhr) {
-
                 var myModal = new bootstrap.Modal(document.getElementById("modalCreateAccountField"));
                 myModal.show();
 
-
                 // Populate form fields with response data
-                document.getElementById("fieldName").value = fieldName || "";
+                document.getElementById("fieldName").value = fieldName;
                 document.getElementById("fieldName").readOnly = true;
                 document.getElementById("fieldName").style.backgroundColor = "#f8f9fa";
                 document.getElementById("fieldDescription").value = response.description || "";
-                document.getElementById("fieldRegexpValidator").value = response.regexpValidator || "";
-
+                document.getElementById("fieldRegexpValidator").value = response.extendedAttributes.behavior.regexpValidator || "";
 
                 // Set select dropdown value
                 const fieldTypeSelect = document.getElementById("fieldType");
@@ -80,12 +80,12 @@
                 }
 
                 // Set checkbox states
-                document.getElementById("includeInToken").checked = response.includeInToken ?? false;
-                document.getElementById("canUserEdit").checked = response.canUserEdit ?? false;
+                document.getElementById("includeInToken").checked = response.extendedAttributes.visibility.includeInToken ?? false;
+                document.getElementById("includeInAPISync").checked = response.extendedAttributes.visibility.includeInAPISync ?? false;
+                document.getElementById("canUserEdit").checked = response.extendedAttributes.security.canUserEdit ?? false;
                 document.getElementById("isUnique").checked = response.isUnique ?? false;
                 document.getElementById("isUnique").disabled = true;
                 document.getElementById("isUnique").readOnly = true;
-
 
                 // Change modal title to "Edit Accounts Field"
                 document.getElementById("modalCreateAccountFieldLabel").innerText = "Edit Accounts Field";
@@ -95,19 +95,18 @@
                 if (updateButton) {
                     updateButton.innerText = "Update Field";
                     updateButton.onclick = function () {
-                        // Custom logic for updating the field can be added here
-                        // For now, we'll just call the existing ajaxCreateAccountField function
-                        ajaxCreateAccountField();
+
+                        showYesNoDialog("<b>WARNING:</b> Updating this field will not verify the data already stored in the database against the new parameters. Existing data may become invalid or incompatible with the updated field settings.<br><br>Do you still want to update?", 
+                        function (result) {
+                            ajaxCreateAccountField(true);
+                        });
                     };
                 }
-
-            },
-            error: commonFunctionError
+            }
         });
     }
 
-
-    function ajaxCreateAccountField() {
+    function ajaxCreateAccountField(isUpdate = false) {
         const fieldName = $("#fieldName").val();
 
         // Validate field name to ensure it only contains letters, numbers, hyphens, or underscores
@@ -117,31 +116,52 @@
             return;
         }
 
+        // Determine the URL based on whether it's an update or create operation
+        const url = isUpdate
+            ? '/api/v1/updateAccountDetailField'
+            : '/api/v1/addAccountDetailField';
+
+        // Determine the HTTP method
+        const method = isUpdate ? 'PUT' : 'POST';
+
         $.ajax({
-            url: '/api/v1/addAccountDetailField',
-            type: 'POST',
+            url: url,
+            type: method,
             contentType: 'application/json',
             data: JSON.stringify({
                 fieldName: fieldName,
                 description: $("#fieldDescription").val(),
-                regexpValidator: $("#fieldRegexpValidator").val(),
                 fieldType: $("#fieldType").val(),
-                /*                isOptionalField: $("#isOptionalField:checked").length > 0,
-                                includeInSearch: $("#includeInSearch:checked").length > 0,
-                                includeInColumnView: $("#includeInColumnView:checked").length > 0,*/
-                includeInToken: $("#includeInToken:checked").length > 0,
                 isUnique: $("#isUnique:checked").length > 0,
-                canUserEdit: $("#canUserEdit:checked").length > 0,
-
+                isOptionalField: $("#isOptionalField:checked").length > 0,
+                extendedAttributes: {
+                    visibility: {
+                        includeInToken: $("#includeInToken:checked").length > 0,
+                        includeInAPISync: $("#includeInAPISync:checked").length > 0
+                        /*
+                        includeInSearch: $("#includeInSearch:checked").length > 0,
+                        includeInColumnView: $("#includeInColumnView:checked").length > 0,
+                        */
+                    },
+                    behavior: {
+                        regexpValidator: $("#fieldRegexpValidator").val()
+                    },
+                    security: {
+                        canUserEdit: $("#canUserEdit:checked").length > 0,
+                    }
+                }
             }),
             success: function (response, textStatus, xhr) {
                 $('#modalCreateAccountField').modal('hide');
-                // Refresh the DataTable after successful field creation
+
+                // Refresh the DataTable after successful field creation/update
                 var table = new DataTable('#fieldsTable');
                 table.ajax.reload();
 
-                showToastSuccess("Field created successfully.");
-
+                // Show appropriate success message
+                showToastSuccess(isUpdate
+                    ? "Field updated successfully."
+                    : "Field created successfully.");
             },
             error: commonFunctionError
         });
@@ -220,6 +240,11 @@
                     <tr>
                         <td align="right">Include in Token:</td>
                         <td><input type="checkbox" id="includeInToken"></td>
+                    </tr>
+
+                    <tr>
+                        <td align="right">Include in API Synchronization:</td>
+                        <td><input type="checkbox" id="includeInAPISync"></td>
                     </tr>
 
                     <tr>

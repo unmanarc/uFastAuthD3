@@ -51,7 +51,7 @@ private:
     static void setupCookie(APIReturn &response, const std::string &name, const std::string &value, const CookieProperties & props);
     static void setupMaxAgeCookie(APIReturn &response, const std::string &name, time_t expirationTime);
 
-    static json getAccountDetails(IdentityManager *identityManager, const std::string &accountName);
+    //static json getAccountDetails(IdentityManager *identityManager, const std::string &accountName);
 
     static std::string signApplicationToken(JWT::Token &accessToken, const ApplicationTokenProperties &tokenProperties);
 };

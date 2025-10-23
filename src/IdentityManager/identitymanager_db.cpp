@@ -33,16 +33,10 @@ bool IdentityManager_DB::initializeDatabase()
         R"(CREATE TABLE IF NOT EXISTS `iam`.`accountDetailFields` (
                                              `fieldName`                     VARCHAR(256)   NOT NULL,
                                              `fieldDescription`              VARCHAR(4096)  NOT NULL,
-                                             `fieldRegexpValidator`          TEXT           DEFAULT NULL,
                                              `fieldType`                     VARCHAR(256)   NOT NULL DEFAULT 'TEXTLINE',
                                              `isUnique`                      BOOLEAN        NOT NULL DEFAULT FALSE,
-                                             `canUserEdit`                   BOOLEAN        NOT NULL DEFAULT FALSE,
                                              `isOptionalField`               BOOLEAN        NOT NULL DEFAULT TRUE,
-                                             `includeInSearch`               BOOLEAN        NOT NULL DEFAULT FALSE,
-                                             `includeInColumnView`           BOOLEAN        NOT NULL DEFAULT FALSE,
-                                             `includeInToken`                BOOLEAN        NOT NULL DEFAULT FALSE,
-                                             `includeInAppSyncLiteRetrieve`  BOOLEAN        NOT NULL DEFAULT FALSE,
-                                             `includeInAppSyncFullRetrieve`  BOOLEAN        NOT NULL DEFAULT FALSE,
+                                             `jsonExtendedAttribs`           TEXT           DEFAULT NULL,
                                               PRIMARY KEY(`fieldName`)
                                                                         );
                                        )",
@@ -63,7 +57,7 @@ bool IdentityManager_DB::initializeDatabase()
                                              `canAdminModifyApplicationSecurityContext`     BOOLEAN NOT NULL DEFAULT FALSE,
                                              `canUserAutoRegister`                          BOOLEAN NOT NULL DEFAULT FALSE,
                                              `appSyncEnabled`                               BOOLEAN NOT NULL DEFAULT TRUE,
-                                             `appSyncCanRetrieveAppUserList`                BOOLEAN NOT NULL DEFAULT TRUE,
+                                             `appSyncCanRetrieveAppAccountsList`                BOOLEAN NOT NULL DEFAULT TRUE,
                                              `appIcon`                                      BLOB DEFAULT NULL,
                                              `appLogo`                                      BLOB DEFAULT NULL,
                                              `extendedJSONAttribs`                          TEXT DEFAULT NULL,

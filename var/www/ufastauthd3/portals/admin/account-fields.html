@@ -22,14 +22,8 @@
       <tr>
         <th scope="col">Field Name</th>
         <th scope="col">Field Description</th>
-        <th scope="col">Field Regexp Validator</th>
         <th scope="col">Field Type</th>
-        <!--<th scope="col">Is Optional Field</th>
-                <th scope="col">Include In Search</th>
-        <th scope="col">Include In Column View</th>-->
-        <th scope="col">Include In Token</th>
         <th scope="col">Is Unique</th>
-        <th scope="col">User Can Edit</th>
         <th scope="col" style="text-align: right;">Actions</th>
       </tr>
     </thead>
@@ -88,51 +82,12 @@
         title: "Field Description"
       },
       {
-        data: "fieldRegexpValidator",
-        title: "Field Regexp Validator"
-      },
-      {
         data: "fieldType",
         title: "Field Type"
-      },
-    /*  {
-        data: "isOptionalField",
-        title: "Is Optional Field",
-        render: function (data, type, row) {
-          return data ? 'Yes' : 'No';
-        }
-      },
-      {
-        data: "includeInSearch",
-        title: "Include In Search",
-        render: function (data, type, row) {
-          return data ? 'Yes' : 'No';
-        }
-      },
-      {
-        data: "includeInColumnView",
-        title: "Include In Column View",
-        render: function (data, type, row) {
-          return data ? 'Yes' : 'No';
-        }
-      },*/
-      {
-        data: "includeInToken",
-        title: "Include In Token",
-        render: function (data, type, row) {
-          return data ? 'Yes' : 'No';
-        }
       },
       {
         data: "isUnique",
         title: "Is Unique",
-        render: function (data, type, row) {
-          return data ? 'Yes' : 'No';
-        }
-      },
-      {
-        data: "canUserEdit",
-        title: "User Can Edit",
         render: function (data, type, row) {
           return data ? 'Yes' : 'No';
         }
@@ -144,9 +99,7 @@
         render: function (data, type, row) {
           let b64FieldName = window.btoa(row.fieldName);
           return `<div style="text-align: right;">
-                      <!-- <button type="button" class="btn btn-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#modalEditField" onclick="editAccoundField('${b64FieldName}')">
-                         Edit
-                       </button>-->
+                      <button type="button" class="btn btn-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#modalEditField" onclick="editAccoundField('${b64FieldName}')"><i class="fas fa-edit"></i></button>
                       <button type="button" class="btn btn-secondary btn-sm" onclick="javascript:deleteField(${b64FieldName});"><i class="fas fa-trash"></i></button>
                   </div>`;
         }

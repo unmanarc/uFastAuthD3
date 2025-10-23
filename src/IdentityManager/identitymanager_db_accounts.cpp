@@ -165,7 +165,7 @@ bool IdentityManager_DB::Accounts_DB::changeAccountFlags(const std::string &acco
                                              {":accountName", MAKE_VAR(STRING, accountName)}});
 }
 
-AccountDetails IdentityManager_DB::Accounts_DB::getAccountDetails(const std::string &accountName)
+std::optional<AccountDetails> IdentityManager_DB::Accounts_DB::getAccountDetails(const std::string &accountName, const AccountDetailsToShow &detailsToShow)
 {
     Threads::Sync::Lock_RD lock(_parent->m_mutex);
 
@@ -175,7 +175,6 @@ AccountDetails IdentityManager_DB::Accounts_DB::getAccountDetails(const std::str
     Abstract::DATETIME creation, expiration;
 
     auto allFields = listAccountDetailFields();
-    bool accountExist = false;
     AccountDetails details;
 
     {
@@ -194,20 +193,12 @@ AccountDetails IdentityManager_DB::Accounts_DB::getAccountDetails(const std::str
             details.expirationDate = expiration.getValue();
             details.creationDate = creation.getValue();
             details.expired = std::time(nullptr) > details.expirationDate;
-            accountExist = true;
         }
+        else
+            return std::nullopt;
     }
 
-    /* if (accountExist)
-    {
-        details.fieldValues = getAccountDetailFieldValues(accountName, ACCOUNT_DETAILS_ALL);
-
-        for (auto &i : details.fieldValues)
-        {
-            if (allFields.find(i.first) != allFields.end())
-                details.fields[i.first] = allFields[i.first];
-        }
-    }*/
+    details.fields = getAccountDetailFieldValues(accountName, detailsToShow);
 
     return details;
 }
@@ -266,8 +257,7 @@ Json::Value IdentityManager_DB::Accounts_DB::searchFields(const json &dataTables
 
         auto isValidField = [](const std::string &c) -> bool
         {
-            static const std::vector<std::string> validFields = {"fieldName",       "fieldDescription",    "fieldRegexpValidator", "fieldType", "isOptionalField",
-                                                                 "includeInSearch", "includeInColumnView", "includeInToken",       "isUnique",  "canUserEdit"};
+            static const std::vector<std::string> validFields = {"fieldName", "fieldDescription", "fieldType", "isOptionalField", "isUnique"};
             return std::find(validFields.begin(), validFields.end(), c) != validFields.end();
         };
 
@@ -287,14 +277,9 @@ Json::Value IdentityManager_DB::Accounts_DB::searchFields(const json &dataTables
     SELECT
         fieldName,
         fieldDescription,
-        fieldRegexpValidator,
         fieldType,
         isOptionalField,
-        includeInSearch,
-        includeInColumnView,
-        includeInToken,
-        isUnique,
-        canUserEdit
+        isUnique
     FROM accountDetailFields
     )";
 
@@ -306,11 +291,10 @@ Json::Value IdentityManager_DB::Accounts_DB::searchFields(const json &dataTables
     }
 
     {
-        Abstract::STRING fieldName, fieldDescription, fieldRegexpValidator, fieldType;
-        Abstract::BOOL isOptionalField, includeInSearch, includeInColumnView, includeInToken, isUnique, canUserEdit;
+        Abstract::STRING fieldName, fieldDescription, fieldType;
+        Abstract::BOOL isOptionalField, isUnique;
         SQLConnector::QueryInstance i = _parent->m_sqlConnector->qSelectWithFilters(sqlQueryStr, whereFilters, {{":SEARCHWORDS", MAKE_VAR(STRING, searchValue)}},
-                                                                                    {&fieldName, &fieldDescription, &fieldRegexpValidator, &fieldType, &isOptionalField, &includeInSearch,
-                                                                                     &includeInColumnView, &includeInToken, &isUnique, &canUserEdit},
+                                                                                    {&fieldName, &fieldDescription, &fieldType, &isOptionalField, &isUnique},
                                                                                     orderByStatement, // Order by
                                                                                     limit,            // LIMIT
                                                                                     offset            // OFFSET
@@ -324,21 +308,13 @@ Json::Value IdentityManager_DB::Accounts_DB::searchFields(const json &dataTables
             row["fieldName"] = fieldName.toJSON();
             // fieldDescription
             row["fieldDescription"] = fieldDescription.toJSON();
-            // fieldRegexpValidator
-            row["fieldRegexpValidator"] = fieldRegexpValidator.toJSON();
             // fieldType
             row["fieldType"] = fieldType.toJSON();
             // isOptionalField
             row["isOptionalField"] = isOptionalField.getValue();
-            // includeInSearch
-            row["includeInSearch"] = includeInSearch.getValue();
-            // includeInColumnView
-            row["includeInColumnView"] = includeInColumnView.getValue();
-            // includeInToken
-            row["includeInToken"] = includeInToken.getValue();
             // isUnique
             row["isUnique"] = isUnique.getValue();
-            row["canUserEdit"] = canUserEdit.getValue();
+
             ret["data"].append(row);
         }
 
@@ -489,7 +465,8 @@ std::set<ApplicationRole> IdentityManager_DB::Accounts_DB::getAccountRoles(const
     {
         Abstract::STRING role;
         Abstract::STRING roleDescription;
-        SQLConnector::QueryInstance i = _parent->m_sqlConnector->qSelect("SELECT ar.f_roleName, r.roleDescription FROM iam.applicationRolesAccounts ar LEFT JOIN iam.applicationRoles r ON ar.f_roleName = r.roleName AND ar.f_appName = r.f_appName WHERE ar.f_accountName=:accountName AND ar.f_appName = :appName;",
+        SQLConnector::QueryInstance i = _parent->m_sqlConnector->qSelect("SELECT ar.f_roleName, r.roleDescription FROM iam.applicationRolesAccounts ar LEFT JOIN iam.applicationRoles r ON "
+                                                                         "ar.f_roleName = r.roleName AND ar.f_appName = r.f_appName WHERE ar.f_accountName=:accountName AND ar.f_appName = :appName;",
                                                                          {{":accountName", MAKE_VAR(STRING, accountName)}, {":appName", MAKE_VAR(STRING, appName)}}, {&role, &roleDescription});
         while (i.getResultsOK() && i.query->step())
         {
@@ -621,20 +598,32 @@ bool IdentityManager_DB::Accounts_DB::addAccountDetailField(const std::string &f
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
 
-    if (!_parent->m_sqlConnector->execute("INSERT INTO iam.accountDetailFields (`fieldName`, `fieldDescription`, `fieldRegexpValidator`, `fieldType`, "
-                                          "`isOptionalField`, `includeInSearch`, `includeInToken`, `includeInColumnView`, `isUnique`, `canUserEdit`)"
-                                          " VALUES (:fieldName, :fieldDescription, :fieldRegexpValidator, :fieldType, :isOptionalField, "
-                                          ":includeInSearch,:includeInToken, :includeInColumnView, :isUnique, :canUserEdit);",
+    if (!_parent->m_sqlConnector->execute("INSERT INTO iam.accountDetailFields (`fieldName`, `fieldDescription`, `fieldType`, `isOptionalField`, `isUnique`, `jsonExtendedAttribs`)"
+                                          " VALUES (:fieldName, :fieldDescription, :fieldType, :isOptionalField, :isUnique, :jsonExtendedAttribs);",
                                           {{":fieldName", MAKE_VAR(STRING, fieldName)},
                                            {":fieldDescription", MAKE_VAR(STRING, details.description)},
-                                           {":fieldRegexpValidator", MAKE_VAR(STRING, details.regexpValidator)},
                                            {":fieldType", MAKE_VAR(STRING, details.fieldType)},
                                            {":isOptionalField", MAKE_VAR(BOOL, details.isOptionalField)},
-                                           {":includeInSearch", MAKE_VAR(BOOL, details.includeInSearch)},
-                                           {":includeInToken", MAKE_VAR(BOOL, details.includeInToken)},
-                                           {":includeInColumnView", MAKE_VAR(BOOL, details.includeInColumnView)},
                                            {":isUnique", MAKE_VAR(BOOL, details.isUnique)},
-                                           {":canUserEdit", MAKE_VAR(BOOL, details.canUserEdit)}}))
+                                           {":jsonExtendedAttribs", MAKE_VAR(STRING, details.extendedAttributes.toStyledString())}}))
+    {
+        return false;
+    }
+
+    return true;
+}
+
+bool IdentityManager_DB::Accounts_DB::updateAccountDetailField(const std::string &fieldName, const AccountDetailField &details)
+{
+    Threads::Sync::Lock_RW lock(_parent->m_mutex);
+
+    if (!_parent->m_sqlConnector->execute("UPDATE iam.accountDetailFields SET `fieldDescription`=:fieldDescription, `fieldType`=:fieldType, `isOptionalField`=:isOptionalField, `isUnique`=:isUnique, `jsonExtendedAttribs`=:jsonExtendedAttribs WHERE `fieldName`=:fieldName;",
+                                          {{":fieldName", MAKE_VAR(STRING, fieldName)},
+                                           {":fieldDescription", MAKE_VAR(STRING, details.description)},
+                                           {":fieldType", MAKE_VAR(STRING, details.fieldType)},
+                                           {":isOptionalField", MAKE_VAR(BOOL, details.isOptionalField)},
+                                           {":isUnique", MAKE_VAR(BOOL, details.isUnique)},
+                                           {":jsonExtendedAttribs", MAKE_VAR(STRING, details.extendedAttributes.toStyledString())}}))
     {
         return false;
     }
@@ -661,29 +650,27 @@ std::map<std::string, AccountDetailField> IdentityManager_DB::Accounts_DB::listA
     std::map<std::string, AccountDetailField> fieldMap;
 
     // Variables para capturar valores de la base de datos
-    Abstract::STRING fieldName, fieldDescription, fieldRegexpValidator, fieldType;
-    Abstract::BOOL isOptionalField, includeInSearch, includeInColumnView, includeInToken, isUnique, canUserEdit;
+    Abstract::STRING fieldName, fieldDescription, fieldType;
+    Abstract::BOOL isOptionalField, isUnique;
+    Abstract::STRING jsonExtendedAttribsText;
 
-    SQLConnector::QueryInstance i = _parent->m_sqlConnector->qSelect("SELECT `fieldName`, `fieldDescription`, `fieldRegexpValidator`, `fieldType`, `isOptionalField`, `includeInSearch`, "
-                                                                     "`includeInColumnView`, `isUnique`, `canUserEdit`, `includeInToken` FROM `iam`.`accountDetailFields`;",
-                                                                     {},
-                                                                     {&fieldName, &fieldDescription, &fieldRegexpValidator, &fieldType, &isOptionalField, &includeInSearch, &includeInColumnView,
-                                                                      &isUnique, &canUserEdit, &includeInToken});
+    SQLConnector::QueryInstance i = _parent->m_sqlConnector
+                                        ->qSelect("SELECT `fieldName`, `fieldDescription`, `fieldType`, `isOptionalField`, `isUnique`, `jsonExtendedAttribs` FROM `iam`.`accountDetailFields`;", {},
+                                                  {&fieldName, &fieldDescription, &fieldType, &isOptionalField, &isUnique, &jsonExtendedAttribsText});
 
     if (i.getResultsOK())
     {
         while (i.query->step())
         {
+            Json::Value r;
+            Json::Reader().parse(jsonExtendedAttribsText.getValue(), r);
+
             AccountDetailField field;
             field.description = fieldDescription.getValue();
-            field.regexpValidator = fieldRegexpValidator.getValue();
             field.fieldType = fieldType.getValue();
             field.isOptionalField = isOptionalField.getValue();
-            field.includeInSearch = includeInSearch.getValue();
-            field.includeInToken = includeInToken.getValue();
-            field.includeInColumnView = includeInColumnView.getValue();
             field.isUnique = isUnique.getValue();
-            field.canUserEdit = canUserEdit.getValue();
+            field.extendedAttributes = r;
 
             fieldMap[fieldName.getValue()] = field;
         }
@@ -698,26 +685,24 @@ std::optional<AccountDetailField> IdentityManager_DB::Accounts_DB::getAccountDet
     AccountDetailField field;
 
     // Variables para capturar valores de la base de datos
-    Abstract::STRING fieldDescription, fieldRegexpValidator, fieldType;
-    Abstract::BOOL isOptionalField, includeInSearch, includeInColumnView, includeInToken, isUnique, canUserEdit;
+    Abstract::STRING fieldDescription, fieldType;
+    Abstract::BOOL isOptionalField, isUnique;
+    Abstract::STRING jsonExtendedAttribsText;
 
     SQLConnector::QueryInstance i
-        = _parent->m_sqlConnector->qSelect("SELECT `fieldDescription`, `fieldRegexpValidator`, `fieldType`, `isOptionalField`, `includeInSearch`, "
-                                           "`includeInColumnView`, `isUnique`,`canUserEdit`, `includeInToken` FROM `iam`.`accountDetailFields` WHERE `fieldName` = :fieldName;",
-                                           {{":fieldName", MAKE_VAR(STRING, fieldName)}},
-                                           {&fieldDescription, &fieldRegexpValidator, &fieldType, &isOptionalField, &includeInSearch, &includeInColumnView, &isUnique, &canUserEdit, &includeInToken});
+        = _parent->m_sqlConnector->qSelect("SELECT `fieldDescription`,`fieldType`,`isOptionalField`, `isUnique`,`jsonExtendedAttribs` FROM `iam`.`accountDetailFields` WHERE `fieldName` = :fieldName;",
+                                           {{":fieldName", MAKE_VAR(STRING, fieldName)}}, {&fieldDescription, &fieldType, &isOptionalField, &isUnique, &jsonExtendedAttribsText});
 
     if (i.getResultsOK() && i.query->step())
     {
+        Json::Value r;
+        Json::Reader().parse(jsonExtendedAttribsText.getValue(), r);
+
         field.description = fieldDescription.getValue();
-        field.regexpValidator = fieldRegexpValidator.getValue();
         field.fieldType = fieldType.getValue();
         field.isOptionalField = isOptionalField.getValue();
-        field.includeInSearch = includeInSearch.getValue();
-        field.includeInToken = includeInToken.getValue();
-        field.includeInColumnView = includeInColumnView.getValue();
         field.isUnique = isUnique.getValue();
-        field.canUserEdit = canUserEdit.getValue();
+        field.extendedAttributes = r;
 
         return field;
     }
@@ -781,7 +766,7 @@ bool IdentityManager_DB::Accounts_DB::removeAccountDetail(const std::string &acc
 
 bool IdentityManager_DB::Accounts_DB::updateAccountDetailFieldValues(const std::string &accountName, const std::list<AccountDetailFieldValue> &fieldValues)
 {
-    auto fields = listAccountDetailFields();
+    std::map<std::string, AccountDetailField> fields = listAccountDetailFields();
 
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
 
@@ -792,7 +777,7 @@ bool IdentityManager_DB::Accounts_DB::updateAccountDetailFieldValues(const std::
     {
         if (fields.find(fieldValue.name) != fields.end() && fieldValue.value.has_value())
         {
-            std::string regexpValidator = fields[fieldValue.name].regexpValidator;
+            std::string regexpValidator = fields[fieldValue.name].getRegexpValidatorText();
             std::string value = fieldValue.value.value();
             try
             {
@@ -827,57 +812,69 @@ bool IdentityManager_DB::Accounts_DB::updateAccountDetailFieldValues(const std::
     return true;
 }
 
-std::list<IdentityManager::Accounts::AccountDetailFieldValue> IdentityManager_DB::Accounts_DB::getAccountDetailFieldValues(const std::string &accountName, const AccountDetailsToShow &detailsToShow)
+std::map<std::string, AccountDetailFieldValue> IdentityManager_DB::Accounts_DB::getAccountDetailFieldValues(const std::string &accountName, const AccountDetailsToShow &detailsToShow)
 {
     Threads::Sync::Lock_RD lock(_parent->m_mutex);
 
-    std::list<AccountDetailFieldValue> detailValues;
+    std::map<std::string, AccountDetailFieldValue> detailValues;
 
-    Abstract::STRING fieldName, fieldDescription, fieldType, fieldRegexpValidator, value;
+    Abstract::STRING fieldName, fieldDescription, fieldType, jsonExtendedAttribsText, value;
 
     std::string query = R"(
-                            SELECT vadf.fieldName, vadf.fieldDescription, vadf.fieldType, vadf.fieldRegexpValidator, vadv.value
+                            SELECT vadf.fieldName, vadf.fieldDescription, vadf.fieldType, vadf.jsonExtendedAttribs, vadv.value
                             FROM iam.accountDetailFields vadf
                             LEFT JOIN iam.accountDetailValues vadv ON vadf.fieldName = vadv.f_fieldName
                             AND vadv.f_accountName = :accountName
                         )";
 
-    switch (detailsToShow)
-    {
-    case ACCOUNT_DETAILS_SEARCH:
-        query += " AND vadf.`includeInSearch` = 1";
-        break;
-    case ACCOUNT_DETAILS_COLUMNVIEW:
-        query += " AND vadf.`includeInColumnView` = 1";
-        break;
-    case ACCOUNT_DETAILS_TOKEN:
-        query += " AND vadf.`includeInToken` = 1";
-        break;
-    case ACCOUNT_DETAILS_ALL:
-    default:
-        // no additional filter for ALL
-        break;
-    }
-
     SQLConnector::QueryInstance i = _parent->m_sqlConnector->qSelect(query, {{":accountName", MAKE_VAR(STRING, accountName)}},
-                                                                     {&fieldName, &fieldDescription, &fieldType, &fieldRegexpValidator, &value});
+                                                                     {&fieldName, &fieldDescription, &fieldType, &jsonExtendedAttribsText, &value});
 
     if (i.getResultsOK())
     {
         while (i.query->step())
         {
-            AccountDetailFieldValue field;
-            field.name = fieldName.getValue();
-            field.description = fieldDescription.getValue();
-            field.fieldType = fieldType.getValue();
-            field.fieldRegexpValidator = fieldRegexpValidator.getValue();
+            Json::Value extendedAttributes;
+            Json::Reader().parse(jsonExtendedAttribsText.getValue(), extendedAttributes);
 
-            if (value.isNull())
-                field.value = std::nullopt;
-            else
-                field.value = value.getValue();
+            bool visible = false;
 
-            detailValues.push_back(field);
+            switch (detailsToShow)
+            {
+            case ACCOUNT_DETAILS_SEARCH:
+                visible = JSON_ASBOOL(extendedAttributes["visibility"], "includeInSearch", false);
+                break;
+            case ACCOUNT_DETAILS_COLUMNVIEW:
+                visible = JSON_ASBOOL(extendedAttributes["visibility"], "includeInColumnView", false);
+                break;
+            case ACCOUNT_DETAILS_TOKEN:
+                visible = JSON_ASBOOL(extendedAttributes["visibility"], "includeInToken", false);
+                break;
+            case ACCOUNT_DETAILS_APISYNC:
+                visible = JSON_ASBOOL(extendedAttributes["visibility"], "includeInAPISync", false);
+                break;
+            case ACCOUNT_DETAILS_ALL:
+            default:
+                // no additional filter for ALL
+                visible = true;
+                break;
+            }
+
+            if (visible)
+            {
+                AccountDetailFieldValue field;
+                field.name = fieldName.getValue();
+                field.description = fieldDescription.getValue();
+                field.fieldType = fieldType.getValue();
+                field.fieldRegexpValidator = JSON_ASSTRING(extendedAttributes["behavior"], "regexpValidator", "");
+
+                if (value.isNull())
+                    field.value = std::nullopt;
+                else
+                    field.value = value.getValue();
+
+                detailValues[fieldName.getValue()] = field;
+            }
         }
     }
 

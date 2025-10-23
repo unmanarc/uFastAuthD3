@@ -49,7 +49,7 @@ public:
         bool changeAccountExpiration(const std::string &accountName, time_t expiration = 0) override;
         AccountFlags getAccountFlags(const std::string &accountName) override;
         bool changeAccountFlags(const std::string &accountName, const AccountFlags &accountFlags) override;
-        AccountDetails getAccountDetails(const std::string &accountName) override;
+        std::optional<AccountDetails> getAccountDetails(const std::string &accountName, const AccountDetailsToShow &detailsToShow) override;
         time_t getAccountExpirationTime(const std::string &accountName) override;
         time_t getAccountCreationTime(const std::string &accountName) override;
 
@@ -69,6 +69,7 @@ public:
 
         // Account Details
         bool addAccountDetailField(const std::string &fieldName, const AccountDetailField &details) override;
+        bool updateAccountDetailField(const std::string &fieldName, const AccountDetailField &details) override;
         bool removeAccountDetailField(const std::string &fieldName) override;
         std::map<std::string, AccountDetailField> listAccountDetailFields() override;
         std::optional<AccountDetailField> getAccountDetailField(const std::string & fieldName) override;
@@ -77,7 +78,7 @@ public:
         bool changeAccountDetails(const std::string &accountName, const std::map<std::string, std::string> &fieldsValues, bool resetAllValues = false) override;
         bool removeAccountDetail(const std::string &accountName, const std::string &fieldName) override;
 
-        std::list<AccountDetailFieldValue> getAccountDetailFieldValues(const std::string &accountName, const AccountDetailsToShow &detailsToShow = ACCOUNT_DETAILS_ALL) override;
+        std::map<std::string, AccountDetailFieldValue> getAccountDetailFieldValues(const std::string &accountName, const AccountDetailsToShow &detailsToShow = ACCOUNT_DETAILS_ALL) override;
         bool updateAccountDetailFieldValues(const std::string &accountName, const std::list<AccountDetailFieldValue> & fieldValues) override;
 
     private:

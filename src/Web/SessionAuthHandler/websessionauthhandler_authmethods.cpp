@@ -63,7 +63,7 @@ bool WebSessionAuthHandler_AuthMethods::validateAPIKey(const std::string &app, A
 
     return true;
 }
-
+/*
 json WebSessionAuthHandler_AuthMethods::getAccountDetails(IdentityManager *identityManager, const std::string &accountName)
 {
     json accountInfo;
@@ -71,7 +71,7 @@ json WebSessionAuthHandler_AuthMethods::getAccountDetails(IdentityManager *ident
     accountInfo = identityManager->accounts->getAccountDetails(accountName).toJSON();
 
     return accountInfo;
-}
+}*/
 
 std::string WebSessionAuthHandler_AuthMethods::signApplicationToken(JWT::Token &accessToken, const ApplicationTokenProperties &tokenProperties)
 {

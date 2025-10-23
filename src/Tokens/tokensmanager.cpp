@@ -49,7 +49,10 @@ void TokensManager::configureAccessToken(Mantids30::DataFormat::JWT::Token &acce
     // Get the user basic info if needed for this application...
     if (tokenProperties.includeBasicAccountInfo)
     {
-        accessToken.addClaim("accountInfo", identityManager->accounts->getAccountDetails(jwtAccountName).toJSON());
+        if (auto info = identityManager->accounts->getAccountDetails(jwtAccountName,ACCOUNT_DETAILS_TOKEN))
+        {
+            accessToken.addClaim("accountInfo", info->toJSON());
+        }
     }
 
     // Application Admin

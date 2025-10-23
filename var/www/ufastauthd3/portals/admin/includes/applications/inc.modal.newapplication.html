@@ -8,7 +8,7 @@
         $("#initializeDefaultsCreate").prop("checked", true);
         $("#syncServiceEnabledCreate").prop("checked", true);
         $("#canUserAutoRegisterCreate").prop("checked", true);
-        $("#appSyncCanRetrieveAppUserListCreate").prop("checked", true);
+        $("#appSyncCanRetrieveAppAccountsListCreate").prop("checked", true);
 
         // TODO:
         $('.nav-tabs a:first').tab('show')
@@ -63,7 +63,7 @@
                     canAdminModifyApplicationSecurityContext: $("#canAdminModifyApplicationSecurityContextCreate").is(":checked"),
                     canUserAutoRegister: $("#canUserAutoRegisterCreate").is(":checked"),
                     appSyncEnabled: $("#syncServiceEnabledCreate").is(":checked"),
-                    appSyncCanRetrieveAppUserList: $("#appSyncCanRetrieveAppUserListCreate").is(":checked")
+                    appSyncCanRetrieveAppAccountsList: $("#appSyncCanRetrieveAppAccountsListCreate").is(":checked")
                 },
                 initializeDefaults: $("#initializeDefaultsCreate").is(":checked"),
                 appKey: $("#appKeyCreate").val()
@@ -199,8 +199,8 @@
                                 <div class="col-auto">
                                     <div class="form-check form-switch">
                                         <input class="form-check-input" type="checkbox"
-                                            id="appSyncCanRetrieveAppUserListCreate">
-                                        <label class="form-check-label" for="appSyncCanRetrieveAppUserListCreate">
+                                            id="appSyncCanRetrieveAppAccountsListCreate">
+                                        <label class="form-check-label" for="appSyncCanRetrieveAppAccountsListCreate">
                                             Allow the application to retrieve the list of application users
                                         </label>
                                     </div>

@@ -44,6 +44,7 @@ void AdminPortalMethods_Accounts::addEndpoints_Accounts(std::shared_ptr<Endpoint
     // Fields
     endpoints->addEndpoint(Endpoints::GET,  "searchFields",          SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"CONFIG_READ"},    nullptr, &searchFields);
     endpoints->addEndpoint(Endpoints::POST, "addAccountDetailField", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"CONFIG_WRITE"},   nullptr, &addAccountDetailField);
+    endpoints->addEndpoint(Endpoints::PUT, "updateAccountDetailField", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"CONFIG_WRITE"},   nullptr, &updateAccountDetailField);
     endpoints->addEndpoint(Endpoints::DELETE, "removeAccountDetailField", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"CONFIG_WRITE"},   nullptr, &removeAccountDetailField);
     endpoints->addEndpoint(Endpoints::GET,  "getAccountDetailField", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"CONFIG_READ"},    nullptr, &getAccountDetailField);
 
@@ -72,6 +73,8 @@ void AdminPortalMethods_Accounts::addEndpoints_Accounts(std::shared_ptr<Endpoint
     endpoints->addEndpoint(Endpoints::GET, "validateAccountApplicationScope", &validateAccountApplicationScope, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_READ"});
     endpoints->addEndpoint(Endpoints::POST, "blockAccountUsingToken", &blockAccountUsingToken, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"});*/
 }
+
+
 
 API::APIReturn AdminPortalMethods_Accounts::addAccount(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
@@ -404,6 +407,24 @@ API::APIReturn AdminPortalMethods_Accounts::addAccountDetailField(void *context,
     return response;
 }
 
+AdminPortalMethods_Accounts::APIReturn AdminPortalMethods_Accounts::updateAccountDetailField(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+{
+    API::APIReturn response;
+    AccountDetailField fieldDetails;
+    fieldDetails.fromJSON(*request.inputJSON);
+    std::string fieldName = JSON_ASSTRING((*request.inputJSON), "fieldName", "");
+    if (fieldName.empty())
+    {
+        return API::APIReturn(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Field Name is Empty");
+    }
+    if (!Globals::getIdentityManager()->accounts->updateAccountDetailField(fieldName, fieldDetails))
+    {
+        return API::APIReturn(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "field_already_exists", "Field already exists");
+    }
+
+    return API::APIReturn();
+}
+
 API::APIReturn AdminPortalMethods_Accounts::removeAccountDetailField(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
@@ -454,13 +475,12 @@ API::APIReturn AdminPortalMethods_Accounts::getAccountDetailFieldsValues(void *c
         return response;
     }
 
-    std::list<IdentityManager::Accounts::AccountDetailFieldValue> fieldValues = Globals::getIdentityManager()->accounts->getAccountDetailFieldValues(
-        accountName);
+    std::map<std::string,AccountDetailFieldValue> fieldValues = Globals::getIdentityManager()->accounts->getAccountDetailFieldValues(accountName);
 
     Json::Value result(Json::arrayValue);
     for (const auto &fieldValue : fieldValues)
     {
-        result.append(fieldValue.toJSON());
+        result.append(fieldValue.second.toJSON());
     }
 
     return result;
@@ -486,12 +506,12 @@ API::APIReturn AdminPortalMethods_Accounts::updateAccountDetailFieldsValues(void
         return response;
     }
 
-    std::list<IdentityManager::Accounts::AccountDetailFieldValue> fieldValues;
+    std::list<AccountDetailFieldValue> fieldValues;
 
     // Process each field value in the array
     for (Json::ArrayIndex i = 0; i < fieldValuesArray.size(); ++i)
     {
-        IdentityManager::Accounts::AccountDetailFieldValue fieldValue;
+        AccountDetailFieldValue fieldValue;
         fieldValue.fromJSON(fieldValuesArray[i]);
         fieldValues.push_back(fieldValue);
     }

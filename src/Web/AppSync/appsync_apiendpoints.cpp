@@ -13,6 +13,7 @@
 #include <json/value.h>
 #include <string>
 
+#include "IdentityManager/ds_account.h"
 #include "globals.h"
 
 using namespace Mantids30;
@@ -29,6 +30,7 @@ void AppSync_Endpoints::addAPIEndpoints(std::shared_ptr<Endpoints> endpoints)
     using SecurityOptions = Mantids30::API::RESTful::Endpoints::SecurityOptions;
 
     // Web API Endpoints:
+    endpoints->addEndpoint(Endpoints::POST, "getApplicationAccountsList", SecurityOptions::NO_AUTH, {}, nullptr, &getApplicationAccountsList);
     endpoints->addEndpoint(Endpoints::POST, "getApplicationJWTConfig", SecurityOptions::NO_AUTH, {}, nullptr, &getApplicationJWTConfig);
 //    endpoints->addEndpoint(Endpoints::POST, "getApplicationJWTSigningKey", SecurityOptions::NO_AUTH, {}, nullptr, &getApplicationJWTSigningKey);
     endpoints->addEndpoint(Endpoints::POST, "getApplicationJWTValidationKey", SecurityOptions::NO_AUTH, {}, nullptr, &getApplicationJWTValidationKey);
@@ -255,16 +257,16 @@ void AppSync_Endpoints::updateAppActivities( const std::string & appName, const 
     }
 }
 
-AppSync_Endpoints::APIReturn AppSync_Endpoints::updateAccessControlContext(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+AppSync_Endpoints::APIReturn AppSync_Endpoints::validateAndFetchApplicationAttributes(const RequestParameters &request, ClientDetails &authClientDetails, std::string &appName, std::optional<IdentityManager::Applications::ApplicationAttributes> &attribs)
 {
-    std::string appName = request.clientRequest->requestLine.urlVars()->getStringValue("APP");
+    appName = request.clientRequest->requestLine.urlVars()->getStringValue("APP");
     if (appName.empty())
     {
-        LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LEVEL_WARN, "Missing application name in request during request.");
+        LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LEVEL_WARN, "Missing application name in request.");
         return APIReturn(HTTP::Status::S_400_BAD_REQUEST, "missing_app_name", "Application name is required.");
     }
 
-    std::optional<IdentityManager::Applications::ApplicationAttributes> attribs = Globals::getIdentityManager()->applications->getApplicationAttributes(appName);
+    attribs = Globals::getIdentityManager()->applications->getApplicationAttributes(appName);
     if (!attribs.has_value())
     {
         return APIReturn(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to retrieve the application attributes.");
@@ -279,7 +281,7 @@ AppSync_Endpoints::APIReturn AppSync_Endpoints::updateAccessControlContext(void 
     std::string apiKey = JSON_ASSTRING(*request.inputJSON, "APIKEY", "");
     if (apiKey.empty())
     {
-        LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LEVEL_WARN, "Missing API key in request for application '%s' during request.", appName.c_str());
+        LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LEVEL_WARN, "Missing API key in request for application '%s'.", appName.c_str());
         return APIReturn(HTTP::Status::S_400_BAD_REQUEST, "missing_api_key", "API key is required.");
     }
 
@@ -288,6 +290,19 @@ AppSync_Endpoints::APIReturn AppSync_Endpoints::updateAccessControlContext(void 
         LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LEVEL_SECURITY_ALERT, "Invalid API Key for Application '%s'. Possible attack attempt.", appName.c_str());
         return APIReturn(HTTP::Status::S_401_UNAUTHORIZED, "invalid_api_key", "Invalid API Key for the specified application.");
     }
+
+    return APIReturn(); // Success
+}
+
+AppSync_Endpoints::APIReturn AppSync_Endpoints::updateAccessControlContext(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+{
+    std::string appName;
+    std::optional<IdentityManager::Applications::ApplicationAttributes> attribs;
+
+    auto result = validateAndFetchApplicationAttributes(request, authClientDetails, appName, attribs);
+    if (result.getHTTPResponseCode() != HTTP::Status::S_200_OK)
+        return result;
+
 
     // Scopes, Roles, and Activities...
     // ------------------------------------------------------
@@ -299,6 +314,35 @@ AppSync_Endpoints::APIReturn AppSync_Endpoints::updateAccessControlContext(void 
     return APIReturn();
 }
 
+AppSync_Endpoints::APIReturn AppSync_Endpoints::getApplicationAccountsList(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+{
+    std::string appName;
+    std::optional<IdentityManager::Applications::ApplicationAttributes> attribs;
+
+    auto result = validateAndFetchApplicationAttributes(request, authClientDetails, appName, attribs);
+    if (result.getHTTPResponseCode() != HTTP::Status::S_200_OK)
+        return result;
+
+    if (!attribs->appSyncCanRetrieveAppAccountsList)
+    {
+        LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LEVEL_SECURITY_ALERT, "Application '%s' does not have user list retrieval enabled.", appName.c_str());
+        return APIReturn(HTTP::Status::S_400_BAD_REQUEST, "user_list_not_enabled", "Retrieving the application user list is not enabled for this application.");
+    }
+
+    // Retrieve and return the list of users
+    std::set<std::string> accountList = Globals::getIdentityManager()->applications->listApplicationAccounts(appName);
+    Json::Value response = Json::arrayValue;
+    for (const auto &accountName : accountList)
+    {
+        if (auto x = Globals::getIdentityManager()->accounts->getAccountDetails(accountName,ACCOUNT_DETAILS_APISYNC))
+        {
+            response.append(x->toJSON());
+        }
+    }
+
+    return response;
+}
+
 /**
  * @brief Retrieve JWT configuration for a specified application
  * @param context Execution context (unused)
@@ -308,41 +352,14 @@ AppSync_Endpoints::APIReturn AppSync_Endpoints::updateAccessControlContext(void 
  */
 AppSync_Endpoints::APIReturn AppSync_Endpoints::getApplicationJWTConfig(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
-    std::string appName = request.clientRequest->requestLine.urlVars()->getStringValue("APP");
-    if (appName.empty())
-    {
-        LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LEVEL_WARN, "Missing application name in request during request.");
-        return APIReturn(HTTP::Status::S_400_BAD_REQUEST, "missing_app_name", "Application name is required.");
-    }
+    std::string appName;
+    std::optional<IdentityManager::Applications::ApplicationAttributes> attribs;
 
-    std::optional<IdentityManager::Applications::ApplicationAttributes> attribs = Globals::getIdentityManager()->applications->getApplicationAttributes(appName);
-    if (!attribs.has_value())
-    {
-        return APIReturn(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to retrieve the application attributes.");
-    }
+    auto result = validateAndFetchApplicationAttributes(request, authClientDetails, appName, attribs);
+    if (result.getHTTPResponseCode() != HTTP::Status::S_200_OK)
+        return result;
 
-    if (!attribs->appSyncEnabled)
-    {
-        LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LEVEL_SECURITY_ALERT, "Application '%s' does not have sync enabled.", appName.c_str());
-        return APIReturn(HTTP::Status::S_400_BAD_REQUEST, "sync_not_enabled", "Application sync is not enabled.");
-    }
-
-    std::string apiKey = JSON_ASSTRING(*request.inputJSON, "APIKEY", "");
-    if (apiKey.empty())
-    {
-        LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LEVEL_WARN, "Missing API key in request for application '%s' during request.", appName.c_str());
-        return APIReturn(HTTP::Status::S_400_BAD_REQUEST, "missing_api_key", "API key is required.");
-    }
-
-    if (Globals::getIdentityManager()->applications->getApplicationNameByAPIKey(apiKey) == appName)
-    {
-        return Globals::getIdentityManager()->applications->getWebLoginJWTConfigFromApplication(appName).toJSON();
-    }
-    else
-    {
-        LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LEVEL_SECURITY_ALERT, "Invalid API Key for Application '%s'. Possible attack attempt.", appName.c_str());
-        return APIReturn(HTTP::Status::S_401_UNAUTHORIZED, "invalid_api_key", "Invalid API Key for the specified application.");
-    }
+    return Globals::getIdentityManager()->applications->getWebLoginJWTConfigFromApplication(appName).toJSON();
 }
 
 /**
@@ -354,41 +371,14 @@ AppSync_Endpoints::APIReturn AppSync_Endpoints::getApplicationJWTConfig(void *co
  */ /*
 AppSync_Endpoints::APIReturn AppSync_Endpoints::getApplicationJWTSigningKey(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
-    std::string appName = request.clientRequest->requestLine.urlVars()->getStringValue("APP");
-    if (appName.empty())
-    {
-        LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LEVEL_WARN, "Missing application name in request during request.");
-        return APIReturn(HTTP::Status::S_400_BAD_REQUEST, "missing_app_name", "Application name is required.");
-    }
+    std::string appName;
+    std::optional<IdentityManager::Applications::ApplicationAttributes> attribs;
 
-    std::optional<IdentityManager::Applications::ApplicationAttributes> attribs = Globals::getIdentityManager()->applications->getApplicationAttributes(appName);
-    if (!attribs.has_value())
-    {
-        return APIReturn(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to retrieve the application attributes.");
-    }
+    auto result = validateAndFetchApplicationAttributes(request, authClientDetails, appName, attribs);
+    if (result.getHTTPResponseCode() != HTTP::Status::S_200_OK)
+        return result;
 
-    if (!attribs->appSyncEnabled)
-    {
-        LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LEVEL_SECURITY_ALERT, "Application '%s' does not have sync enabled.", appName.c_str());
-        return APIReturn(HTTP::Status::S_400_BAD_REQUEST, "sync_not_enabled", "Application sync is not enabled.");
-    }
-
-    std::string apiKey = JSON_ASSTRING(*request.inputJSON, "APIKEY", "");
-    if (apiKey.empty())
-    {
-        LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LEVEL_WARN, "Missing API key in request for application '%s' during request.", appName.c_str());
-        return APIReturn(HTTP::Status::S_400_BAD_REQUEST, "missing_api_key", "API key is required.");
-    }
-
-    if (Globals::getIdentityManager()->applications->getApplicationNameByAPIKey(apiKey) == appName)
-    {
-        return (Json::Value) Globals::getIdentityManager()->applications->getWebLoginJWTSigningKeyForApplication(appName);
-    }
-    else
-    {
-        LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LEVEL_SECURITY_ALERT, "Invalid API Key for Application '%s'. Possible attack attempt.", appName.c_str());
-        return APIReturn(HTTP::Status::S_401_UNAUTHORIZED, "invalid_api_key", "Invalid API Key for the specified application.");
-    }
+    return (Json::Value) Globals::getIdentityManager()->applications->getWebLoginJWTSigningKeyForApplication(appName);
 }
 */
 /**
@@ -400,39 +390,12 @@ AppSync_Endpoints::APIReturn AppSync_Endpoints::getApplicationJWTSigningKey(void
  */
 AppSync_Endpoints::APIReturn AppSync_Endpoints::getApplicationJWTValidationKey(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
-    std::string appName = request.clientRequest->requestLine.urlVars()->getStringValue("APP");
-    if (appName.empty())
-    {
-        LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LEVEL_WARN, "Missing application name in request during request.");
-        return APIReturn(HTTP::Status::S_400_BAD_REQUEST, "missing_app_name", "Application name is required.");
-    }
+    std::string appName;
+    std::optional<IdentityManager::Applications::ApplicationAttributes> attribs;
 
-    std::optional<IdentityManager::Applications::ApplicationAttributes> attribs = Globals::getIdentityManager()->applications->getApplicationAttributes(appName);
-    if (!attribs.has_value())
-    {
-        return APIReturn(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to retrieve the application attributes.");
-    }
+    auto result = validateAndFetchApplicationAttributes(request, authClientDetails, appName, attribs);
+    if (result.getHTTPResponseCode() != HTTP::Status::S_200_OK)
+        return result;
 
-    if (!attribs->appSyncEnabled)
-    {
-        LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LEVEL_SECURITY_ALERT, "Application '%s' does not have sync enabled.", appName.c_str());
-        return APIReturn(HTTP::Status::S_400_BAD_REQUEST, "sync_not_enabled", "Application sync is not enabled.");
-    }
-
-    std::string apiKey = JSON_ASSTRING(*request.inputJSON, "APIKEY", "");
-    if (apiKey.empty())
-    {
-        LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LEVEL_WARN, "Missing API key in request for application '%s' during request.", appName.c_str());
-        return APIReturn(HTTP::Status::S_400_BAD_REQUEST, "missing_api_key", "API key is required.");
-    }
-
-    if (Globals::getIdentityManager()->applications->getApplicationNameByAPIKey(apiKey) == appName)
-    {
-        return (Json::Value) Globals::getIdentityManager()->applications->getWebLoginJWTValidationKeyForApplication(appName);
-    }
-    else
-    {
-        LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LEVEL_SECURITY_ALERT, "Invalid API Key for Application '%s'. Possible attack attempt.", appName.c_str());
-        return APIReturn(HTTP::Status::S_401_UNAUTHORIZED, "invalid_api_key", "Invalid API Key for the specified application.");
-    }
+    return (Json::Value) Globals::getIdentityManager()->applications->getWebLoginJWTValidationKeyForApplication(appName);
 }
