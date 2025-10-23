@@ -239,11 +239,11 @@ API::APIReturn WebSessionAuthHandler_AuthMethods::appLogout(void *context, const
     // if ok, clear everything!:
     response.cookiesMap["AccessToken"] = HTTP::Headers::Cookie();
     response.cookiesMap["AccessToken"].deleteCookie();
-    response.cookiesMap["AccessToken"].path = JSON_ASSTRING(tokenProps.tokensConfiguration["accessToken"],"path","");
+    response.cookiesMap["AccessToken"].path = JSON_ASSTRING(tokenProps.tokensConfiguration["accessToken"],"path","/");
 
     response.cookiesMap["RefreshToken"] = HTTP::Headers::Cookie();
     response.cookiesMap["RefreshToken"].deleteCookie();
-    response.cookiesMap["RefreshToken"].path = JSON_ASSTRING(tokenProps.tokensConfiguration["refreshToken"],"path","");
+    response.cookiesMap["RefreshToken"].path = JSON_ASSTRING(tokenProps.tokensConfiguration["refreshToken"],"path","/auth");
 
     return response;
 }
