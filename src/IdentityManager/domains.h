@@ -1,7 +1,7 @@
 #pragma once
 
 #include "identitymanager.h"
-#include <Mantids30/Threads/map.h>
+#include <Mantids30/Threads/safe_map.h>
 
 /**
  * @brief The Domains class provides a manager for managing authentication domains.

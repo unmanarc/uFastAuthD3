@@ -5,7 +5,7 @@
 #include "IdentityManager/ds_application.h"
 
 #include <Mantids30/Helpers/json.h>
-#include <Mantids30/API_RESTful/endpointshandler.h>
+#include <Mantids30/API_EndpointsAndSessions/api_restful_endpoints.h>
 #include <Mantids30/Protocol_HTTP/httpv1_base.h>
 #include <Mantids30/Protocol_HTTP/api_return.h>
 

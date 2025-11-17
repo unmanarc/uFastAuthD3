@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Mantids30/Sessions/session.h>
+#include <Mantids30/API_EndpointsAndSessions/session.h>
 #include <Mantids30/Threads/garbagecollector.h>
 
 #include <mutex>

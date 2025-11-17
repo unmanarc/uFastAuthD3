@@ -16,7 +16,7 @@
 #include <time.h>
 
 #include <Mantids30/DataFormat_JWT/jwt.h>
-#include <Mantids30/Threads/mapitem.h>
+#include <Mantids30/Threads/safe_mapitem.h>
 #include <Mantids30/Threads/mutex_shared.h>
 
 class IdentityManager : public Mantids30::Threads::Safe::MapItem

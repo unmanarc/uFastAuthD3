@@ -14,7 +14,7 @@ using namespace Network::Protocols;
     mmmm , the registration should be at the application or at the IAM? in this case, seems to be at the IAM, and then, the app should be linked to the account.
     and...    captchas or something? how do we do?
 
-    When self-registering, you must come with the sponsored app right? and immediatly link the app with the user I think...
+    When self-registering, you must come with the sponsored app right? and immediately link the app with the user I think...
     anything else?
 
 */

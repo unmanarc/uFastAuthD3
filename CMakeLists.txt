@@ -82,9 +82,7 @@ set(Mantids30_LIBRARIES
     Mantids30_Protocol_APISync
     Mantids30_Server_WebCore
     Mantids30_Server_RESTfulWebAPI
-    Mantids30_API_RESTful
-    Mantids30_API_Monolith
-    Mantids30_Sessions
+    Mantids30_API_EndpointsAndSessions
     Mantids30_DB
     Mantids30_DB_SQLite3
     Mantids30_Protocol_HTTP

@@ -308,7 +308,7 @@ bool AuthStorageImpl::createPassFile(const std::string &sInitPW)
 #endif
     ofstr << sInitPW;
     ofstr.close();
-    LOG_APP->log0(__func__, Logs::LEVEL_INFO, "File '%s' created with the super-user password. Login and change it immediatly", initPassOutFile.c_str());
+    LOG_APP->log0(__func__, Logs::LEVEL_INFO, "File '%s' created with the super-user password. Login and change it immediately", initPassOutFile.c_str());
     return true;
 }
 

@@ -1,5 +1,5 @@
 #include "credentialvalidator.h"
-#include <Mantids30/Helpers/googleauthenticator.h>
+#include <Mantids30/Helpers/totp.h>
 
 #include <Mantids30/Helpers/crypto.h>
 #include <Mantids30/Helpers/encoders.h>
@@ -123,7 +123,7 @@ Reason CredentialValidator::validateGAuth(const std::string &accountName, const 
     }
 
     // Verify the token and update the cache and expirationQueue if successful
-    if (Mantids30::Helpers::TOTP::GoogleAuthenticator::verifyToken(seed, tokenInput))
+    if (Mantids30::Helpers::OTP::TOTP::verifyToken(seed, tokenInput))
     {
         // Add token to cache:
         if (useTokenCache)
