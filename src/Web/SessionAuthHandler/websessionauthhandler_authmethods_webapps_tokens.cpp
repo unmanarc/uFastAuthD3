@@ -2,7 +2,7 @@
 #include "Mantids30/Protocol_HTTP/httpv1_base.h"
 #include "Tokens/tokensmanager.h"
 #include "websessionauthhandler_authmethods.h"
-#include "json/value.h"
+#include <json/value.h>
 #include <Mantids30/Helpers/json.h>
 
 #include <boost/algorithm/string/join.hpp>
@@ -254,9 +254,9 @@ API::APIReturn WebSessionAuthHandler_AuthMethods::callback(void *context, const 
     IdentityManager *identityManager = Globals::getIdentityManager();
 
     // HTTP CLIENT VARS:
-    std::string accessTokenStr = request.clientRequest->getVars(HTTP::VARS_POST)->getStringValue("ACCESSTOKEN");
-    std::string refreshTokenStr = request.clientRequest->getVars(HTTP::VARS_POST)->getStringValue("REFRESHTOKEN");
-    std::string redirectURIStr = request.clientRequest->getVars(HTTP::VARS_POST)->getStringValue("REDIRECTURI");
+    std::string accessTokenStr = request.clientRequest->getVars(HTTP::VARS_POST)->getStringValue("accessToken");
+    std::string refreshTokenStr = request.clientRequest->getVars(HTTP::VARS_POST)->getStringValue("refreshToken");
+    std::string redirectURIStr = request.clientRequest->getVars(HTTP::VARS_POST)->getStringValue("redirectURI");
     std::string xAPIKeyStr = request.clientRequest->getHeaderOption("x-api-key");
 
     // VARS:
