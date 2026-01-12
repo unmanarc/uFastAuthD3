@@ -2,7 +2,7 @@
 #include "Mantids30/Helpers/json.h"
 #include "identitymanager_db.h"
 
-#include "json/value.h"
+#include <json/value.h>
 #include <Mantids30/Threads/lock_shared.h>
 #include <boost/regex.hpp>
 #include <regex>

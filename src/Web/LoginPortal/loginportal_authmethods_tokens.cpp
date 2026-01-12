@@ -1,6 +1,6 @@
 #include "Mantids30/Program_Logs/loglevels.h"
 #include "loginportal_add_endpoints.h"
-#include "json/value.h"
+#include <json/value.h>
 #include <Mantids30/Helpers/json.h>
 
 #include <algorithm> // std::find
