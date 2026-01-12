@@ -4,7 +4,7 @@
 #include "globals.h"
 #include "websessionauthhandler_authmethods.h"
 
-#include <Mantids30/Config_Builder/restful_engine.h>
+#include <Mantids30/Server_RESTfulWebAPI/config_builder.h>
 #include <Mantids30/Server_RESTfulWebAPI/engine.h>
 
 #include <boost/algorithm/string/predicate.hpp>

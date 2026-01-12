@@ -1,4 +1,5 @@
-#include <Mantids30/Config_Builder/program_logs.h>
+#include <Mantids30/Program_Service/program_config.h>
+#include <Mantids30/Program_Logs/config_builder.h>
 #include <Mantids30/Helpers/file.h>
 #include <Mantids30/Memory/a_bool.h>
 #include <Mantids30/Net_Sockets/socket_tls.h>

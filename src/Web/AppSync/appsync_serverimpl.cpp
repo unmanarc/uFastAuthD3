@@ -4,7 +4,7 @@
 #include "globals.h"
 #include "appsync_apiendpoints.h"
 
-#include <Mantids30/Config_Builder/restful_engine.h>
+#include <Mantids30/Server_RESTfulWebAPI/config_builder.h>
 #include <Mantids30/Server_RESTfulWebAPI/engine.h>
 
 #include <boost/algorithm/string/predicate.hpp>
@@ -31,7 +31,12 @@ bool AppSync_ServerImpl::createService()
         return false;
     }
 
-    RESTful::Engine *webSessionAuthHandlerServer = Program::Config::RESTful_Engine::createRESTfulEngine(config, LOG_APP, LOG_RPC, "Application Synchronization Service", IAM_LOGINPORTAL_DEF_WEBROOTDIR, Program::Config::REST_ENGINE_NOCONFIG_JWT);
+    RESTful::Engine *webSessionAuthHandlerServer = Program::Config::RESTful_Engine::createRESTfulEngine(config,
+                                                                                                        LOG_APP,
+                                                                                                        LOG_RPC,
+                                                                                                        "Application Synchronization Service",
+                                                                                                        IAM_LOGINPORTAL_DEF_WEBROOTDIR,
+                                                                                                        Program::Config::REST_ENGINE_NOCONFIG_JWT);
 
     if (!webSessionAuthHandlerServer)
         return false;
