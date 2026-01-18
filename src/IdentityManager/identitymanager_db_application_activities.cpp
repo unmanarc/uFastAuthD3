@@ -29,29 +29,27 @@ bool IdentityManager_DB::ApplicationActivities_DB::addApplicationActivity(const 
     {
         defaultSchemeId = defaultAuthScheme.value();
         // Insert the new application activity with the default scheme ID
-        if (!_parent->m_sqlConnector->execute("INSERT INTO iam.applicationActivities (f_appName, activityName, parentActivity, description, defaultSchemeId) VALUES (:appName, :activityName, NULL, :description, :defaultSchemeId);",
-                                              {{":appName", MAKE_VAR(STRING, appName)},
-                                               {":activityName", MAKE_VAR(STRING, activityName)},
-                                               {":description", MAKE_VAR(STRING, activityDescription)},
-                                               {":defaultSchemeId", MAKE_VAR(UINT32, defaultSchemeId)}}))
+        if (!_parent->m_sqlConnector->qExecuteEx(
+                "INSERT INTO iam.applicationActivities (f_appName, activityName, parentActivity, description, defaultSchemeId) VALUES (:appName, :activityName, NULL, :description, :defaultSchemeId);",
+                {{":appName", MAKE_VAR(STRING, appName)},
+                 {":activityName", MAKE_VAR(STRING, activityName)},
+                 {":description", MAKE_VAR(STRING, activityDescription)},
+                 {":defaultSchemeId", MAKE_VAR(UINT32, defaultSchemeId)}}))
         {
             return false;
         }
 
-        addAuthenticationSchemeToApplicationActivity(appName,activityName, defaultSchemeId,false);
+        addAuthenticationSchemeToApplicationActivity(appName, activityName, defaultSchemeId, false);
     }
     else
     {
         // we'll handle it by not including the parameter if it's null
-        if (!_parent->m_sqlConnector->execute("INSERT INTO iam.applicationActivities (f_appName, activityName, parentActivity, description) VALUES (:appName, :activityName, NULL, :description);",
-                                              {{":appName", MAKE_VAR(STRING, appName)},
-                                               {":activityName", MAKE_VAR(STRING, activityName)},
-                                               {":description", MAKE_VAR(STRING, activityDescription)}}))
+        if (!_parent->m_sqlConnector->qExecuteEx("INSERT INTO iam.applicationActivities (f_appName, activityName, parentActivity, description) VALUES (:appName, :activityName, NULL, :description);",
+                                                 {{":appName", MAKE_VAR(STRING, appName)}, {":activityName", MAKE_VAR(STRING, activityName)}, {":description", MAKE_VAR(STRING, activityDescription)}}))
         {
             return false;
         }
     }
-
 
     return true;
 }
@@ -60,8 +58,8 @@ bool IdentityManager_DB::ApplicationActivities_DB::removeApplicationActivity(con
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
 
-    if (!_parent->m_sqlConnector->execute("DELETE FROM iam.applicationActivities WHERE `f_appName` = :appName AND `activityName` = :activityName;",
-                                          {{":appName", MAKE_VAR(STRING, appName)}, {":activityName", MAKE_VAR(STRING, activityName)}}))
+    if (!_parent->m_sqlConnector->qExecuteEx("DELETE FROM iam.applicationActivities WHERE `f_appName` = :appName AND `activityName` = :activityName;",
+                                             {{":appName", MAKE_VAR(STRING, appName)}, {":activityName", MAKE_VAR(STRING, activityName)}}))
     {
         return false;
     }
@@ -78,12 +76,11 @@ bool IdentityManager_DB::ApplicationActivities_DB::setApplicationActivities(cons
     Abstract::STRING activityName;
 
     {
-        SQLConnector::QueryInstance i = _parent->m_sqlConnector->qSelect("SELECT `activityName` FROM iam.applicationActivities WHERE `f_appName` = :appName;",
-                                                                         {{":appName", MAKE_VAR(STRING, appName)}}, {&activityName});
+        auto i = _parent->m_sqlConnector->qSelect("SELECT `activityName` FROM iam.applicationActivities WHERE `f_appName` = :appName;", {{":appName", MAKE_VAR(STRING, appName)}}, {&activityName});
 
-        if (i.getResultsOK())
+        if (i && i->isSuccessful())
         {
-            while (i.query->step())
+            while (i->step())
             {
                 currentActivities.insert(activityName.getValue());
             }
@@ -99,8 +96,8 @@ bool IdentityManager_DB::ApplicationActivities_DB::setApplicationActivities(cons
     {
         if (activities.find(currentActivity) == activities.end())
         {
-            if (!_parent->m_sqlConnector->execute("DELETE FROM iam.applicationActivities WHERE `f_appName` = :appName AND `activityName` = :activityName;",
-                                                  {{":appName", MAKE_VAR(STRING, appName)}, {":activityName", MAKE_VAR(STRING, currentActivity)}}))
+            if (!_parent->m_sqlConnector->qExecuteEx("DELETE FROM iam.applicationActivities WHERE `f_appName` = :appName AND `activityName` = :activityName;",
+                                                     {{":appName", MAKE_VAR(STRING, appName)}, {":activityName", MAKE_VAR(STRING, currentActivity)}}))
             {
                 return false;
             }
@@ -113,13 +110,13 @@ bool IdentityManager_DB::ApplicationActivities_DB::setApplicationActivities(cons
         if (currentActivities.find(activity.first) != currentActivities.end())
         {
             // Update it (
-            if (!_parent->m_sqlConnector->execute("UPDATE iam.applicationActivities "
-                                                  "SET `description` = :description, `parentActivity` = :parentActivity "
-                                                  "WHERE `f_appName` = :appName AND `activityName` = :activityName;",
-                                                  {{":description", MAKE_VAR(STRING, activity.second.description)},
-                                                   {":parentActivity", MAKE_VAR(STRING, activity.second.parentActivity)},
-                                                   {":appName", MAKE_VAR(STRING, appName)},
-                                                   {":activityName", MAKE_VAR(STRING, activity.first)}}))
+            if (!_parent->m_sqlConnector->qExecuteEx("UPDATE iam.applicationActivities "
+                                                     "SET `description` = :description, `parentActivity` = :parentActivity "
+                                                     "WHERE `f_appName` = :appName AND `activityName` = :activityName;",
+                                                     {{":description", MAKE_VAR(STRING, activity.second.description)},
+                                                      {":parentActivity", MAKE_VAR(STRING, activity.second.parentActivity)},
+                                                      {":appName", MAKE_VAR(STRING, appName)},
+                                                      {":activityName", MAKE_VAR(STRING, activity.first)}}))
             {
                 return false;
             }
@@ -127,12 +124,12 @@ bool IdentityManager_DB::ApplicationActivities_DB::setApplicationActivities(cons
         else
         {
             // Insert the new activity
-            if (!_parent->m_sqlConnector->execute("INSERT INTO iam.applicationActivities (`f_appName`, `activityName`, `parentActivity`, `description`) "
-                                                  "VALUES(:appName, :activityName, :parentActivity, :description);",
-                                                  {{":appName", MAKE_VAR(STRING, appName)},
-                                                   {":activityName", MAKE_VAR(STRING, activity.first)},
-                                                   {":parentActivity", MAKE_VAR(STRING, activity.second.parentActivity)},
-                                                   {":description", MAKE_VAR(STRING, activity.second.description)}}))
+            if (!_parent->m_sqlConnector->qExecuteEx("INSERT INTO iam.applicationActivities (`f_appName`, `activityName`, `parentActivity`, `description`) "
+                                                     "VALUES(:appName, :activityName, :parentActivity, :description);",
+                                                     {{":appName", MAKE_VAR(STRING, appName)},
+                                                      {":activityName", MAKE_VAR(STRING, activity.first)},
+                                                      {":parentActivity", MAKE_VAR(STRING, activity.second.parentActivity)},
+                                                      {":description", MAKE_VAR(STRING, activity.second.description)}}))
             {
                 return false;
             }
@@ -147,7 +144,7 @@ bool IdentityManager_DB::ApplicationActivities_DB::removeApplicationActivities(c
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
 
     // Delete all activities for the specified application
-    if (!_parent->m_sqlConnector->execute("DELETE FROM iam.applicationActivities WHERE `f_appName` = :appName;", {{":appName", MAKE_VAR(STRING, appName)}}))
+    if (!_parent->m_sqlConnector->qExecuteEx("DELETE FROM iam.applicationActivities WHERE `f_appName` = :appName;", {{":appName", MAKE_VAR(STRING, appName)}}))
     {
         return false;
     }
@@ -162,13 +159,15 @@ bool IdentityManager_DB::ApplicationActivities_DB::setApplicationActivityParentA
     if (parentActivityName.empty())
     {
         // Update the parent activity for the specified application activity
-        return _parent->m_sqlConnector->execute("UPDATE iam.applicationActivities SET `parentActivity`=NULL WHERE `f_appName`=:appName AND `activityName`=:activityName;",
-                                                { {":appName", MAKE_VAR(STRING, appName)}, {":activityName", MAKE_VAR(STRING, activityName)}});
+        return _parent->m_sqlConnector->qExecuteEx("UPDATE iam.applicationActivities SET `parentActivity`=NULL WHERE `f_appName`=:appName AND `activityName`=:activityName;",
+                                                   {{":appName", MAKE_VAR(STRING, appName)}, {":activityName", MAKE_VAR(STRING, activityName)}});
     }
 
     // Update the parent activity for the specified application activity
-    return _parent->m_sqlConnector->execute("UPDATE iam.applicationActivities SET `parentActivity`=:parentActivityName WHERE `f_appName`=:appName AND `activityName`=:activityName;",
-                                            {{":parentActivityName", MAKE_VAR(STRING, parentActivityName)}, {":appName", MAKE_VAR(STRING, appName)}, {":activityName", MAKE_VAR(STRING, activityName)}});
+    return _parent->m_sqlConnector->qExecuteEx("UPDATE iam.applicationActivities SET `parentActivity`=:parentActivityName WHERE `f_appName`=:appName AND `activityName`=:activityName;",
+                                               {{":parentActivityName", MAKE_VAR(STRING, parentActivityName)},
+                                                {":appName", MAKE_VAR(STRING, appName)},
+                                                {":activityName", MAKE_VAR(STRING, activityName)}});
 }
 
 bool IdentityManager_DB::ApplicationActivities_DB::setApplicationActivityDescription(const std::string &appName, const std::string &activityName, const std::string &description)
@@ -176,8 +175,8 @@ bool IdentityManager_DB::ApplicationActivities_DB::setApplicationActivityDescrip
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
 
     // Update the description for the specified application activity
-    return _parent->m_sqlConnector->execute("UPDATE iam.applicationActivities SET `description`=:description WHERE `f_appName`=:appName AND `activityName`=:activityName;",
-                                            {{":description", MAKE_VAR(STRING, description)}, {":appName", MAKE_VAR(STRING, appName)}, {":activityName", MAKE_VAR(STRING, activityName)}});
+    return _parent->m_sqlConnector->qExecuteEx("UPDATE iam.applicationActivities SET `description`=:description WHERE `f_appName`=:appName AND `activityName`=:activityName;",
+                                               {{":description", MAKE_VAR(STRING, description)}, {":appName", MAKE_VAR(STRING, appName)}, {":activityName", MAKE_VAR(STRING, activityName)}});
 }
 
 std::optional<IdentityManager::ApplicationActivities::ActivityData> IdentityManager_DB::ApplicationActivities_DB::getApplicationActivityInfo(const std::string &appName, const std::string &activityName)
@@ -188,17 +187,18 @@ std::optional<IdentityManager::ApplicationActivities::ActivityData> IdentityMana
     Abstract::UINT32 defaultSchemeId;
     std::map<std::string, IdentityManager::ApplicationActivities::ActivityData> activities;
 
-    SQLConnector::QueryInstance i = _parent->m_sqlConnector->qSelect(
-        R"(SELECT
-                                                    `parentActivity`,
-                                                    `applicationActivities`.`description`,
-                                                    `defaultSchemeId`,
-                                                    `authenticationSchemes`.`description` as schemeDescription
-                                                FROM applicationActivities
-                                                LEFT JOIN authenticationSchemes ON `defaultSchemeId` = `schemeId`
-                                                WHERE `f_appName` = :appName AND `activityName` = :activityName;)",
-        {{":appName", MAKE_VAR(STRING, appName)}, {":activityName", MAKE_VAR(STRING, activityName)}}, {&parentActivity, &description, &defaultSchemeId, &defaultSchemeDescription});
-    if (i.getResultsOK() && i.query->step())
+    if (_parent->m_sqlConnector->qSelectSingleRow(
+            R"(SELECT
+                    `parentActivity`,
+                    `applicationActivities`.`description`,
+                    `defaultSchemeId`,
+                    `authenticationSchemes`.`description` as schemeDescription
+                FROM applicationActivities
+                LEFT JOIN authenticationSchemes ON `defaultSchemeId` = `schemeId`
+                WHERE `f_appName` = :appName AND `activityName` = :activityName;)",
+            {{":appName", MAKE_VAR(STRING, appName)}, {":activityName", MAKE_VAR(STRING, activityName)}}, {&parentActivity, &description, &defaultSchemeId, &defaultSchemeDescription})
+
+    )
     {
         IdentityManager::ApplicationActivities::ActivityData r;
         r = {.description = description.toString(),
@@ -218,7 +218,7 @@ std::map<std::string, IdentityManager::ApplicationActivities::ActivityData> Iden
     Abstract::UINT32 defaultSchemeId;
     std::map<std::string, IdentityManager::ApplicationActivities::ActivityData> activities;
 
-    SQLConnector::QueryInstance i = _parent->m_sqlConnector->qSelect(
+    auto i = _parent->m_sqlConnector->qSelect(
         R"(SELECT
                                                     `activityName`,
                                                     `parentActivity`,
@@ -229,7 +229,7 @@ std::map<std::string, IdentityManager::ApplicationActivities::ActivityData> Iden
                                                 LEFT JOIN authenticationSchemes ON `defaultSchemeId` = `schemeId`
                                                 WHERE `f_appName` = :appName;)",
         {{":appName", MAKE_VAR(STRING, appName)}}, {&name, &parentActivity, &description, &defaultSchemeId, &defaultSchemeDescription});
-    while (i.getResultsOK() && i.query->step())
+    while (i && i->isSuccessful() && i->step())
     {
         activities[name.toString()] = {.description = description.toString(),
                                        .parentActivity = parentActivity.toString(),
@@ -247,11 +247,9 @@ std::optional<uint32_t> IdentityManager_DB::ApplicationActivities_DB::getApplica
     Abstract::UINT32 uDefaultSchemeId;
 
     // Query to get the default scheme ID for the application activity
-    SQLConnector::QueryInstance i = _parent->m_sqlConnector->qSelect("SELECT `defaultSchemeId` FROM iam.applicationActivities WHERE `f_appName`=:appName AND `activityName`=:activityName;",
-                                                                     {{":appName", MAKE_VAR(STRING, appName)}, {":activityName", MAKE_VAR(STRING, activityName)}}, {&uDefaultSchemeId});
-
     // Check if a result is available
-    if (i.getResultsOK() && i.query->step())
+    if (_parent->m_sqlConnector->qSelectSingleRow("SELECT `defaultSchemeId` FROM iam.applicationActivities WHERE `f_appName`=:appName AND `activityName`=:activityName;",
+                                                  {{":appName", MAKE_VAR(STRING, appName)}, {":activityName", MAKE_VAR(STRING, activityName)}}, {&uDefaultSchemeId}))
     {
         // Return nullopt if no default scheme is set
         if (uDefaultSchemeId.isNull())
@@ -269,8 +267,8 @@ bool IdentityManager_DB::ApplicationActivities_DB::setApplicationActivityDefault
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
 
     // Update the default scheme ID for the specified application activity
-    return _parent->m_sqlConnector->execute("UPDATE iam.applicationActivities SET `defaultSchemeId`=:schemeId WHERE `f_appName`=:appName AND `activityName`=:activityName;",
-                                            {{":schemeId", MAKE_VAR(UINT32, schemeId)}, {":appName", MAKE_VAR(STRING, appName)}, {":activityName", MAKE_VAR(STRING, activityName)}});
+    return _parent->m_sqlConnector->qExecuteEx("UPDATE iam.applicationActivities SET `defaultSchemeId`=:schemeId WHERE `f_appName`=:appName AND `activityName`=:activityName;",
+                                               {{":schemeId", MAKE_VAR(UINT32, schemeId)}, {":appName", MAKE_VAR(STRING, appName)}, {":activityName", MAKE_VAR(STRING, activityName)}});
 }
 
 std::set<uint32_t> IdentityManager_DB::ApplicationActivities_DB::listAuthenticationSchemesForApplicationActivity(const std::string &appName, const std::string &activityName)
@@ -282,11 +280,11 @@ std::set<uint32_t> IdentityManager_DB::ApplicationActivities_DB::listAuthenticat
     // Temporal Variables to store the results
     Abstract::UINT32 uSchemeId;
 
-    SQLConnector::QueryInstance i = _parent->m_sqlConnector->qSelect("SELECT `f_schemeId` FROM iam.applicationActivitiesAuthSchemes WHERE `f_appName`=:appName AND `f_activityName`=:activityName;",
-                                                                     {{":appName", MAKE_VAR(STRING, appName)}, {":activityName", MAKE_VAR(STRING, activityName)}}, {&uSchemeId});
+    auto i = _parent->m_sqlConnector->qSelect("SELECT `f_schemeId` FROM iam.applicationActivitiesAuthSchemes WHERE `f_appName`=:appName AND `f_activityName`=:activityName;",
+                                              {{":appName", MAKE_VAR(STRING, appName)}, {":activityName", MAKE_VAR(STRING, activityName)}}, {&uSchemeId});
 
     // Iterate:
-    while (i.getResultsOK() && i.query->step())
+    while (i && i->isSuccessful() && i->step())
     {
         ret.insert(uSchemeId.getValue());
     }
@@ -301,9 +299,9 @@ bool IdentityManager_DB::ApplicationActivities_DB::addAuthenticationSchemeToAppl
         _parent->m_mutex.lock();
 
     // Execute the query using direct parameter passing...
-    bool r= _parent->m_sqlConnector->execute("INSERT INTO iam.applicationActivitiesAuthSchemes (`f_appName`, `f_activityName`, `f_schemeId`) "
-                                            "VALUES (:appName, :activityName, :schemeId);",
-                                            {{":appName", MAKE_VAR(STRING, appName)}, {":activityName", MAKE_VAR(STRING, activityName)}, {":schemeId", MAKE_VAR(UINT32, schemeId)}});
+    bool r = _parent->m_sqlConnector->qExecuteEx("INSERT INTO iam.applicationActivitiesAuthSchemes (`f_appName`, `f_activityName`, `f_schemeId`) "
+                                                 "VALUES (:appName, :activityName, :schemeId);",
+                                                 {{":appName", MAKE_VAR(STRING, appName)}, {":activityName", MAKE_VAR(STRING, activityName)}, {":schemeId", MAKE_VAR(UINT32, schemeId)}});
 
     if (lock)
         _parent->m_mutex.unlock();
@@ -316,7 +314,7 @@ bool IdentityManager_DB::ApplicationActivities_DB::removeAuthenticationSchemeFro
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
 
     // Execute the query with direct parameter passing
-    return _parent->m_sqlConnector->execute("DELETE FROM iam.applicationActivitiesAuthSchemes "
-                                            "WHERE `f_appName` = :appName AND `f_activityName` = :activityName AND `f_schemeId` = :schemeId;",
-                                            {{":appName", MAKE_VAR(STRING, appName)}, {":activityName", MAKE_VAR(STRING, activityName)}, {":schemeId", MAKE_VAR(UINT32, schemeId)}});
+    return _parent->m_sqlConnector->qExecuteEx("DELETE FROM iam.applicationActivitiesAuthSchemes "
+                                               "WHERE `f_appName` = :appName AND `f_activityName` = :activityName AND `f_schemeId` = :schemeId;",
+                                               {{":appName", MAKE_VAR(STRING, appName)}, {":activityName", MAKE_VAR(STRING, activityName)}, {":schemeId", MAKE_VAR(UINT32, schemeId)}});
 }

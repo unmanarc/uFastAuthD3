@@ -12,39 +12,40 @@ using namespace Mantids30;
 bool IdentityManager_DB::ApplicationRoles_DB::addRole(const std::string &appName, const std::string &roleName, const std::string &roleDescription)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
-    return _parent->m_sqlConnector->execute("INSERT INTO iam.applicationRoles (`f_appName`,`roleName`,`roleDescription`) VALUES(:appName,:roleName,:roleDescription);",
-                                          {{":appName", MAKE_VAR(STRING, appName)}, {":roleName", MAKE_VAR(STRING, roleName)}, {":roleDescription", MAKE_VAR(STRING, roleDescription)}});
+    return _parent->m_sqlConnector->qExecuteEx("INSERT INTO iam.applicationRoles (`f_appName`,`roleName`,`roleDescription`) VALUES(:appName,:roleName,:roleDescription);",
+                                               {{":appName", MAKE_VAR(STRING, appName)}, {":roleName", MAKE_VAR(STRING, roleName)}, {":roleDescription", MAKE_VAR(STRING, roleDescription)}});
 }
 
 bool IdentityManager_DB::ApplicationRoles_DB::removeRole(const std::string &appName, const std::string &roleName)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
-    return _parent->m_sqlConnector->execute("DELETE FROM iam.applicationRoles WHERE `roleName`=:roleName AND `f_appName`=:appName;",
-                                          {{":roleName", MAKE_VAR(STRING, roleName)}, {":appName", MAKE_VAR(STRING, appName)}});
+    return _parent->m_sqlConnector->qExecuteEx("DELETE FROM iam.applicationRoles WHERE `roleName`=:roleName AND `f_appName`=:appName;",
+                                               {{":roleName", MAKE_VAR(STRING, roleName)}, {":appName", MAKE_VAR(STRING, appName)}});
 }
 
 bool IdentityManager_DB::ApplicationRoles_DB::doesRoleExist(const std::string &appName, const std::string &roleName)
 {
     Threads::Sync::Lock_RD lock(_parent->m_mutex);
-    SQLConnector::QueryInstance i = _parent->m_sqlConnector->qSelect("SELECT `roleName` FROM iam.applicationRoles WHERE `roleName`=:roleName AND `f_appName`=:appName;",
-                                                                     {{":roleName", MAKE_VAR(STRING, roleName)}, {":appName", MAKE_VAR(STRING, appName)}}, {});
-    return (i.getResultsOK()) && i.query->step();
+    return _parent->m_sqlConnector->qSelectSingleRow("SELECT `roleName` FROM iam.applicationRoles WHERE `roleName`=:roleName AND `f_appName`=:appName;",
+                                                     {{":roleName", MAKE_VAR(STRING, roleName)}, {":appName", MAKE_VAR(STRING, appName)}}, {});
 }
 
 bool IdentityManager_DB::ApplicationRoles_DB::addAccountToRole(const std::string &appName, const std::string &roleName, const std::string &accountName)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
-    return _parent->m_sqlConnector->execute("INSERT INTO iam.applicationRolesAccounts (`f_roleName`,`f_accountName`,`f_appName`) VALUES(:roleName,:accountName,:appName);",
-                                          {{":roleName", MAKE_VAR(STRING, roleName)},{":appName", MAKE_VAR(STRING, appName)},{":accountName", MAKE_VAR(STRING, accountName)}});
+    return _parent->m_sqlConnector->qExecuteEx("INSERT INTO iam.applicationRolesAccounts (`f_roleName`,`f_accountName`,`f_appName`) VALUES(:roleName,:accountName,:appName);",
+                                               {{":roleName", MAKE_VAR(STRING, roleName)}, {":appName", MAKE_VAR(STRING, appName)}, {":accountName", MAKE_VAR(STRING, accountName)}});
 }
 
 bool IdentityManager_DB::ApplicationRoles_DB::removeAccountFromRole(const std::string &appName, const std::string &roleName, const std::string &accountName, bool lock)
 {
     bool ret = false;
+
     if (lock)
         _parent->m_mutex.lock();
-    ret = _parent->m_sqlConnector->execute("DELETE FROM iam.applicationRolesAccounts WHERE `f_roleName`=:roleName AND `f_appName`=:appName AND `f_accountName`=:accountName;",
-                                         {{":roleName", MAKE_VAR(STRING, roleName)},{":appName", MAKE_VAR(STRING, appName)}, {":accountName", MAKE_VAR(STRING, accountName)}});
+
+    ret = _parent->m_sqlConnector->qExecuteEx("DELETE FROM iam.applicationRolesAccounts WHERE `f_roleName`=:roleName AND `f_appName`=:appName AND `f_accountName`=:accountName;",
+                                              {{":roleName", MAKE_VAR(STRING, roleName)}, {":appName", MAKE_VAR(STRING, appName)}, {":accountName", MAKE_VAR(STRING, accountName)}});
 
     if (lock)
         _parent->m_mutex.unlock();
@@ -54,8 +55,8 @@ bool IdentityManager_DB::ApplicationRoles_DB::removeAccountFromRole(const std::s
 bool IdentityManager_DB::ApplicationRoles_DB::updateRoleDescription(const std::string &appName, const std::string &roleName, const std::string &roleDescription)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
-    return _parent->m_sqlConnector->execute("UPDATE iam.applicationRoles SET `roleDescription`=:roleDescription WHERE `roleName`=:roleName AND `f_appName`=:appName;",
-                                          {{":roleName", MAKE_VAR(STRING, roleName)}, {":roleDescription", MAKE_VAR(STRING, roleDescription)}, {":appName", MAKE_VAR(STRING, appName)}});
+    return _parent->m_sqlConnector->qExecuteEx("UPDATE iam.applicationRoles SET `roleDescription`=:roleDescription WHERE `roleName`=:roleName AND `f_appName`=:appName;",
+                                               {{":roleName", MAKE_VAR(STRING, roleName)}, {":roleDescription", MAKE_VAR(STRING, roleDescription)}, {":appName", MAKE_VAR(STRING, appName)}});
 }
 
 std::set<std::string> IdentityManager_DB::ApplicationRoles_DB::listApplicationScopesOnApplicationRole(const std::string &appName, const std::string &roleName)
@@ -63,11 +64,11 @@ std::set<std::string> IdentityManager_DB::ApplicationRoles_DB::listApplicationSc
     Threads::Sync::Lock_RD lock(_parent->m_mutex);
     std::set<std::string> scopes;
     Abstract::STRING scopeId;
-    SQLConnector::QueryInstance i = _parent->m_sqlConnector->qSelect("SELECT `f_scopeId` FROM iam.applicationRolesScopes WHERE `f_appName`=:appName AND `f_roleName`=:roleName;",
-                                                                     {{":appName", MAKE_VAR(STRING, appName)}, {":roleName", MAKE_VAR(STRING, roleName)}}, {&scopeId});
-    if (i.getResultsOK())
+    auto i = _parent->m_sqlConnector->qSelect("SELECT `f_scopeId` FROM iam.applicationRolesScopes WHERE `f_appName`=:appName AND `f_roleName`=:roleName;",
+                                              {{":appName", MAKE_VAR(STRING, appName)}, {":roleName", MAKE_VAR(STRING, roleName)}}, {&scopeId});
+    if (i && i->isSuccessful())
     {
-        while(i.query->step())
+        while (i->step())
         {
             scopes.insert(scopeId.getValue());
         }
@@ -79,9 +80,8 @@ std::string IdentityManager_DB::ApplicationRoles_DB::getApplicationRoleDescripti
 {
     Threads::Sync::Lock_RD lock(_parent->m_mutex);
     Abstract::STRING roleDescription;
-    SQLConnector::QueryInstance i = _parent->m_sqlConnector->qSelect("SELECT `roleDescription` FROM iam.applicationRoles WHERE `roleName`=:roleName AND `f_appName`=:appName LIMIT 1;",
-                                                                                      {{":roleName", MAKE_VAR(STRING, roleName)}, {":appName", MAKE_VAR(STRING, appName)}}, {&roleDescription});
-    if (i.getResultsOK() && i.query->step())
+    if (_parent->m_sqlConnector->qSelectSingleRow("SELECT `roleDescription` FROM iam.applicationRoles WHERE `roleName`=:roleName AND `f_appName`=:appName LIMIT 1;",
+                                                  {{":roleName", MAKE_VAR(STRING, roleName)}, {":appName", MAKE_VAR(STRING, appName)}}, {&roleDescription}))
     {
         return roleDescription.getValue();
     }
@@ -94,8 +94,9 @@ std::set<ApplicationRole> IdentityManager_DB::ApplicationRoles_DB::getApplicatio
     Threads::Sync::Lock_RD lock(_parent->m_mutex);
 
     Abstract::STRING roleId, description;
-    SQLConnector::QueryInstance i = _parent->m_sqlConnector->qSelect("SELECT `roleName`,`roleDescription` FROM iam.applicationRoles WHERE `f_appName`=:appName;", {{":appName", MAKE_VAR(STRING, appName)}}, {&roleId,&description});
-    while (i.getResultsOK() && i.query->step())
+    auto i = _parent->m_sqlConnector->qSelect("SELECT `roleName`,`roleDescription` FROM iam.applicationRoles WHERE `f_appName`=:appName;", {{":appName", MAKE_VAR(STRING, appName)}},
+                                              {&roleId, &description});
+    while (i && i->isSuccessful() && i->step())
     {
         ApplicationRole r;
 
@@ -115,9 +116,9 @@ std::set<std::string> IdentityManager_DB::ApplicationRoles_DB::getApplicationRol
         _parent->m_mutex.lockShared();
 
     Abstract::STRING accountName;
-    SQLConnector::QueryInstance i = _parent->m_sqlConnector->qSelect("SELECT `f_accountName` FROM iam.applicationRolesAccounts WHERE `f_roleName`=:roleName AND `f_appName`=:appName;",
-                                                                                      {{":appName", MAKE_VAR(STRING, appName)},{":roleName", MAKE_VAR(STRING, roleName)}}, {&accountName});
-    while (i.getResultsOK() && i.query->step())
+    auto i = _parent->m_sqlConnector->qSelect("SELECT `f_accountName` FROM iam.applicationRolesAccounts WHERE `f_roleName`=:roleName AND `f_appName`=:appName;",
+                                              {{":appName", MAKE_VAR(STRING, appName)}, {":roleName", MAKE_VAR(STRING, roleName)}}, {&accountName});
+    while (i && i->isSuccessful() && i->step())
     {
         ret.insert(accountName.getValue());
     }
@@ -135,25 +136,24 @@ Json::Value IdentityManager_DB::ApplicationRoles_DB::searchApplicationRoles(cons
     // DataTables:
     ret["draw"] = dataTablesFilters["draw"];
 
-    std::string appName = JSON_ASSTRING(dataTablesFilters,"appName","");
+    std::string appName = JSON_ASSTRING(dataTablesFilters, "appName", "");
 
-    uint64_t offset = JSON_ASUINT64(dataTablesFilters,"start",0);
-    uint64_t limit = JSON_ASUINT64(dataTablesFilters,"length",0);
+    uint64_t offset = JSON_ASUINT64(dataTablesFilters, "start", 0);
+    uint64_t limit = JSON_ASUINT64(dataTablesFilters, "length", 0);
 
     std::string orderByStatement;
 
     // Manejo de ordenamiento (order)
-    const Json::Value& orderArray = dataTablesFilters["order"];
-    if (JSON_ISARRAY_D(orderArray) && orderArray.size()>0)
+    const Json::Value &orderArray = dataTablesFilters["order"];
+    if (JSON_ISARRAY_D(orderArray) && orderArray.size() > 0)
     {
-        const Json::Value& orderArrayElement = orderArray[0];
-        std::string columnName = getColumnNameFromColumnPos(dataTablesFilters,JSON_ASUINT(orderArrayElement,"column",0));
-        std::string dir = JSON_ASSTRING(orderArrayElement,"dir","desc");
+        const Json::Value &orderArrayElement = orderArray[0];
+        std::string columnName = getColumnNameFromColumnPos(dataTablesFilters, JSON_ASUINT(orderArrayElement, "column", 0));
+        std::string dir = JSON_ASSTRING(orderArrayElement, "dir", "desc");
 
-        auto isValidField = [](const std::string& c) -> bool {
-            static const std::vector<std::string> validFields = {
-                "roleName", "roleDescription"
-            };
+        auto isValidField = [](const std::string &c) -> bool
+        {
+            static const std::vector<std::string> validFields = {"roleName", "roleDescription"};
             return std::find(validFields.begin(), validFields.end(), c) != validFields.end();
         };
 
@@ -165,7 +165,7 @@ Json::Value IdentityManager_DB::ApplicationRoles_DB::searchApplicationRoles(cons
     }
 
     // Extract the search value from dataTablesFilters
-    std::string searchValue = JSON_ASSTRING(dataTablesFilters["search"],"value","");
+    std::string searchValue = JSON_ASSTRING(dataTablesFilters["search"], "value", "");
     std::string whereFilters = "";
 
     // Build the SQL query with WHERE clause for DataTables search
@@ -182,19 +182,14 @@ Json::Value IdentityManager_DB::ApplicationRoles_DB::searchApplicationRoles(cons
 
     {
         Abstract::STRING roleName, roleDescription;
-        SQLConnector::QueryInstance i = _parent->m_sqlConnector->qSelectWithFilters(sqlQueryStr,
-                                                                                    whereFilters,
-                                                                                    {
-                                                                                     {":SEARCHWORDS", MAKE_VAR(STRING, searchValue)},
-                                                                                     {":APPNAME", MAKE_VAR(STRING, appName)}
-                                                                                    },
-                                                                                    {&roleName, &roleDescription},
-                                                                                    orderByStatement, // Order by
-                                                                                    limit, // LIMIT
-                                                                                    offset // OFFSET
-                                                                                    );
+        auto i = _parent->m_sqlConnector->qSelectWithFilters(sqlQueryStr, whereFilters, {{":SEARCHWORDS", MAKE_VAR(STRING, searchValue)}, {":APPNAME", MAKE_VAR(STRING, appName)}},
+                                                             {&roleName, &roleDescription},
+                                                             orderByStatement, // Order by
+                                                             limit,            // LIMIT
+                                                             offset            // OFFSET
+        );
 
-        while (i.getResultsOK() && i.query->step())
+        while (i && i->isSuccessful() && i->step())
         {
             Json::Value row;
 
@@ -206,8 +201,11 @@ Json::Value IdentityManager_DB::ApplicationRoles_DB::searchApplicationRoles(cons
             ret["data"].append(row);
         }
 
-        ret["recordsTotal"] = i.query->getTotalRecordsCount();
-        ret["recordsFiltered"] = i.query->getFilteredRecordsCount();
+        if (i)
+        {
+            ret["recordsTotal"] = i->getTotalRecordsCount();
+            ret["recordsFiltered"] = i->getFilteredRecordsCount();
+        }
     }
 
     return ret;
