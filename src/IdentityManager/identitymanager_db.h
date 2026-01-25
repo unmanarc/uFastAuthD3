@@ -12,20 +12,6 @@ public:
     IdentityManager_DB(Mantids30::Database::SQLConnector *_SQLDirConnection);
     bool initializeDatabase() override;
 
-    static std::string getColumnNameFromColumnPos(const json &dataTablesFilters, const uint32_t & pos)
-    {
-        if (JSON_ISARRAY(dataTablesFilters,"columns"))
-        {
-            if (pos>=dataTablesFilters["columns"].size())
-            {
-                return "";
-            }
-            return JSON_ASSTRING(dataTablesFilters["columns"][pos],"data","");
-        }
-        return "";
-    }
-
-
     class Accounts_DB : public Accounts
     {
     public:

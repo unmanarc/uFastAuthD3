@@ -1,5 +1,6 @@
 #include "identitymanager_db.h"
 #include <Mantids30/Threads/lock_shared.h>
+#include <Mantids30/Helpers/datatables.h>
 
 #include <Mantids30/Memory/a_string.h>
 #include <Mantids30/Memory/a_uint64.h>
@@ -158,28 +159,8 @@ Json::Value IdentityManager_DB::AuthController_DB::searchApplicationScopes(const
     uint64_t offset = JSON_ASUINT64(dataTablesFilters, "start", 0);
     uint64_t limit = JSON_ASUINT64(dataTablesFilters, "length", 0);
 
-    std::string orderByStatement;
-
     // Manejo de ordenamiento (order)
-    const Json::Value &orderArray = dataTablesFilters["order"];
-    if (JSON_ISARRAY_D(orderArray) && orderArray.size() > 0)
-    {
-        const Json::Value &orderArrayElement = orderArray[0];
-        std::string columnName = getColumnNameFromColumnPos(dataTablesFilters, JSON_ASUINT(orderArrayElement, "column", 0));
-        std::string dir = JSON_ASSTRING(orderArrayElement, "dir", "desc");
-
-        auto isValidField = [](const std::string &c) -> bool
-        {
-            static const std::vector<std::string> validFields = {"scopeId", "description"};
-            return std::find(validFields.begin(), validFields.end(), c) != validFields.end();
-        };
-
-        if (isValidField(columnName))
-        {
-            orderByStatement = "`" + columnName + "` ";
-            orderByStatement += (dir == "desc") ? "DESC" : "ASC";
-        }
-    }
+    std::string orderByStatement = Helpers::DataTables::getOrderByStatement(dataTablesFilters);
 
     // Extract the search value from dataTablesFilters
     std::string searchValue = JSON_ASSTRING(dataTablesFilters["search"], "value", "");
