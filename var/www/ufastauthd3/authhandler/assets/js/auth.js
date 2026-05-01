@@ -36,14 +36,13 @@ function refreshAccessToken() {
     error: updateSessionFailed
   });
 }
-
 function logout() {
   $.ajax({
     url: '/auth/api/v1/logout',
     type: 'POST',
     success: function (response) {
-      // Redirect to the login page or reload the current page after logout
-      window.location.reload();
+      // Reload after the cookie cleanup is complete
+      window.location.href = '/login';
     },
     error: function () {
       alert('Logout failed');
