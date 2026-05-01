@@ -249,7 +249,7 @@ public:
         virtual bool changeCredential(const std::string &accountName, Credential passwordData, uint32_t slotId) = 0;
 
         // Account last login:
-        virtual void updateAccountLastAccess(const std::string &accountName, const uint32_t &slotId, const ClientDetails &clientDetails) = 0;
+        virtual void updateAccountLastAccess(const std::string &accountName, const std::string &appName, const uint32_t &schemeId, const ClientDetails &clientDetails) = 0;
         virtual time_t getAccountLastAccess(const std::string &accountName) = 0;
 
         /////////////////////////////////////////////////////////////////////////////////

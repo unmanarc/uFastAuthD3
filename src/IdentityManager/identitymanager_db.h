@@ -71,8 +71,6 @@ public:
         bool isThereAnotherAdmin(const std::string &accountName);
         IdentityManager_DB *_parent;
     };
-
-
     class ApplicationRoles_DB : public ApplicationRoles
     {
     public:
@@ -101,8 +99,6 @@ public:
     private:
         IdentityManager_DB *_parent;
     };
-
-
     class ApplicationActivities_DB : public ApplicationActivities
     {
     public:
@@ -137,7 +133,6 @@ public:
     private:
         IdentityManager_DB *_parent;
     };
-
     class AuthController_DB : public AuthController
     {
     protected:
@@ -183,7 +178,7 @@ public:
         bool changeCredential(const std::string &accountName, Credential passwordData, uint32_t slotId) override;
 
         // Account last login:
-        void updateAccountLastAccess(const std::string &accountName, const uint32_t &slotId, const ClientDetails &clientDetails) override;
+        void updateAccountLastAccess(const std::string &accountName, const std::string &appName, const uint32_t &schemeId, const ClientDetails &clientDetails) override;
         time_t getAccountLastAccess(const std::string &accountName) override;
 
         /////////////////////////////////////////////////////////////////////////////////

@@ -3,7 +3,6 @@
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
-#include <limits.h>
 
 LoginDirectoryManager::LoginDirectoryManager(const std::string &directoryPath)
     : path(directoryPath)

@@ -265,19 +265,21 @@ bool IdentityManager_DB::initializeDatabase()
         // LOGS:
         R"(CREATE TABLE IF NOT EXISTS `logs`.`accountsLastAccess` (
                                               `f_accountName`            VARCHAR(256)  NOT NULL,
-                                              `lastLogin`             DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                                              PRIMARY KEY(`f_accountName`)
+                                              `f_appName`                VARCHAR(256)  NOT NULL,
+                                              `lastLogin`                DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                                              PRIMARY KEY(`f_accountName`, `f_appName`)
                                                                         );
                                        )",
         "CREATE INDEX IF NOT EXISTS `logs`.idx_lastAccess_accountName ON accountsLastAccess (f_accountName);",
         R"(CREATE TABLE IF NOT EXISTS `logs`.`accountAuthLog` (
                                              `f_accountName`        VARCHAR(256)    NOT NULL,
-                                             `f_AuthSlotId`      INTEGER         NOT NULL,
-                                             `loginDateTime`     DATETIME        NOT NULL,
-                                             `loginIP`           VARCHAR(64)     NOT NULL,
-                                             `loginTLSCN`        VARCHAR(1024)   NOT NULL,
-                                             `loginUserAgent`    VARCHAR(4096)   NOT NULL,
-                                             `loginExtraData`    VARCHAR(4096)   NOT NULL);
+                                             `f_AuthSlotId`         INTEGER         NOT NULL,
+                                             `f_appName`            VARCHAR(256)    NOT NULL,
+                                             `loginDateTime`        DATETIME        NOT NULL,
+                                             `loginIP`              VARCHAR(64)     NOT NULL,
+                                             `loginTLSCN`           VARCHAR(1024)   NOT NULL,
+                                             `loginUserAgent`       VARCHAR(4096)   NOT NULL,
+                                             `loginExtraData`       VARCHAR(4096)   NOT NULL);
                                     )",
         "CREATE INDEX IF NOT EXISTS `logs`.idx_logs_accountName ON accountAuthLog (f_accountName);",
         "CREATE INDEX IF NOT EXISTS `logs`.idx_logs_authSlotID ON accountAuthLog (f_AuthSlotId);",

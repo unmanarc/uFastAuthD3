@@ -6,6 +6,7 @@
 #include <algorithm> // std::find
 #include <boost/algorithm/string/join.hpp>
 #include <json/config.h>
+#include <optional>
 
 #include "globals.h"
 
@@ -42,20 +43,20 @@ bool LoginPortal_AuthMethods::token_validateRedirectURI(IdentityManager* identit
     return true;
 }
 
-std::string LoginPortal_AuthMethods::token_signApplicationJWT(JWT::Token &accessToken, const ApplicationTokenProperties &tokenProperties)
+std::optional<std::string> LoginPortal_AuthMethods::token_signApplicationJWT(JWT::Token &accessToken, const ApplicationTokenProperties &tokenProperties)
 {
     std::string appName = JSON_ASSTRING_D(accessToken.getClaim("app"), "");
     std::shared_ptr<JWT> signingJWT = Globals::getIdentityManager()->applications->getAppJWTSigner(appName);
     if (!signingJWT)
     {
-        return std::string();
+        return std::nullopt;
     }
     return signingJWT->signFromToken(accessToken, false);
 }
 
-bool LoginPortal_AuthMethods::token_createAndSignJWTs(IdentityManager* identityManager, const JWT::Token* jwtToken,
-    const std::string& app, const std::string& user, const std::string& redirectURI,
-    APIReturn& response)
+bool LoginPortal_AuthMethods::token_createAndSignApplicationsJWTs(IdentityManager* identityManager, const JWT::Token* jwtToken,
+    const std::string& app, const std::string& user,const uint32_t & schemeId, const std::string& redirectURI,
+    APIReturn& response, ClientDetails &authClientDetails)
 {
     ApplicationTokenProperties tokenProperties = identityManager->applications->getWebLoginJWTConfigFromApplication(app);
 
@@ -73,10 +74,32 @@ bool LoginPortal_AuthMethods::token_createAndSignJWTs(IdentityManager* identityM
     TokensManager::configureRefreshToken(refreshToken, refreshTokenId, user, app, tokenProperties, authenticatedSlotIdsSet);
     TokensManager::configureAccessToken(accessToken, refreshTokenId, user, app, tokenProperties, authenticatedSlotIdsSet);
 
-    (*response.responseJSON())["accessToken"] = token_signApplicationJWT(accessToken, tokenProperties);
-    (*response.responseJSON())["refreshToken"] = token_signApplicationJWT(refreshToken, tokenProperties);
+    // Sign access token
+    std::optional<std::string> accessTokenStr = token_signApplicationJWT(accessToken, tokenProperties);
+    if (!accessTokenStr.has_value())
+    {
+        LOG_APP->log1(__func__, user, Logs::LEVEL_CRITICAL,
+                      "Failed to sign access token for application '%s'.", app.c_str());
+        return false;
+    }
+
+    // Sign refresh token
+    std::optional<std::string> refreshTokenStr = token_signApplicationJWT(refreshToken, tokenProperties);
+    if (!refreshTokenStr.has_value())
+    {
+        LOG_APP->log1(__func__, user, Logs::LEVEL_CRITICAL,
+                      "Failed to sign refresh token for application '%s'.", app.c_str());
+        return false;
+    }
+
+    identityManager->authController->updateAccountLastAccess( user, app, schemeId,  authClientDetails  );
+
+    // Here is the effective logging in the app.
+    (*response.responseJSON())["accessToken"] = accessTokenStr.value();
+    (*response.responseJSON())["refreshToken"] = refreshTokenStr.value();
     (*response.responseJSON())["redirectURI"] = redirectURI;
     (*response.responseJSON())["callbackURI"] = identityManager->applications->getApplicationCallbackURI(app);
+
 
     return true;
 }
@@ -208,7 +231,7 @@ API::APIReturn LoginPortal_AuthMethods::token(void *context, const RequestParame
     //// -------------------------       TOKEN CREATION       --------------------------- ////
     //////////////////////////////////////////////////////////////////////////////////////////
     // Create and sign tokens
-    if (!token_createAndSignJWTs(identityManager, request.jwtToken, appName, authenticatedUser, redirectURI, response))
+    if (!token_createAndSignApplicationsJWTs(identityManager, request.jwtToken, appName, authenticatedUser, schemeId, redirectURI, response, authClientDetails))
     {
         // Failed to create the token...
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "AUTH_ERR_" + std::to_string(REASON_INTERNAL_ERROR), getReasonText(REASON_INTERNAL_ERROR));

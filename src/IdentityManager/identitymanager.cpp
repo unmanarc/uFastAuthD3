@@ -24,7 +24,6 @@ IdentityManager::~IdentityManager()
 bool IdentityManager::validateAccountForNewAccess(const std::string &accountName, const std::string &appName, Reason &reason, bool checkValidAppAccount)
 {
     // First, check if the account is disabled, unconfirmed, or expired.
-
     AccountFlags accountFlags = accounts->getAccountFlags(accountName);
 
     if (!accountFlags.enabled)
