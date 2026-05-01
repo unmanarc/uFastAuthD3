@@ -7,7 +7,6 @@
 
 #include <boost/algorithm/string/join.hpp>
 #include <json/config.h>
-#include <optional>
 
 #include "globals.h"
 #include "Tokens/tokensmanager.h"
@@ -18,6 +17,9 @@ using namespace Program;
 using namespace API::RESTful;
 using namespace Network::Protocols;
 
+
+// The IAM Login Portal inject the Token via POST, then, the token is verified here and return the validated token (this function is not used)
+/*
 std::optional<JWT::Token> WebSessionAuthHandler_AuthMethods::loadJWTAccessTokenFromPOST(APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     IdentityManager *identityManager = Globals::getIdentityManager();
@@ -78,7 +80,7 @@ std::optional<JWT::Token> WebSessionAuthHandler_AuthMethods::loadJWTAccessTokenF
 
     return accessTokenVerified;
 }
-
+*/
 void WebSessionAuthHandler_AuthMethods::setupAccessTokenCookies(APIReturn &response, JWT::Token accessToken, const ApplicationTokenProperties &tokenProps)
 {
     CookieProperties props;
@@ -248,6 +250,7 @@ API::APIReturn WebSessionAuthHandler_AuthMethods::appLogout(void *context, const
     return response;
 }
 
+// Receives the token from the Login Portal (Via proxy, this is why we receive the X-API-Key from the intermediate app), and then, we set the refresh/access token as cookies
 API::APIReturn WebSessionAuthHandler_AuthMethods::callback(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
