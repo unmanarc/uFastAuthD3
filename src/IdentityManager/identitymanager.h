@@ -196,7 +196,8 @@ public:
     private:
         IdentityManager *m_parent;
         static json authSlotsToJSON(const std::vector<AuthenticationSchemeUsedSlot> &authSlots);
-        void incrementCredentialBadCounts(Reason ret, const std::string &accountName, const Credential &pStoredCredentialData, const uint32_t &slotId, const ClientDetails &clientDetails);
+        void updateCredentialAuthStatus(const Reason &authResult, const std::string &accountName, const Credential &storedCredentialData, const uint32_t &slotId,
+                                        const ClientDetails &clientDetails);
 
     protected:
         AuthenticationPolicy m_authenticationPolicy;
@@ -249,12 +250,13 @@ public:
         virtual bool changeCredential(const std::string &accountName, Credential passwordData, uint32_t slotId) = 0;
 
         // Account last login:
-        virtual void updateAccountLastAccess(const std::string &accountName, const std::string &appName, const uint32_t &schemeId, const ClientDetails &clientDetails) = 0;
-        virtual time_t getAccountLastAccess(const std::string &accountName) = 0;
+        virtual void updateAccountLastAccessToApplication(const std::string &accountName, const std::string &appName, const uint32_t &schemeId, const ClientDetails &clientDetails) = 0;
+        virtual void insertAuthCredentialLog(const std::string &accountName, uint32_t slotId, const ClientDetails &clientDetails, int logStatus) = 0;
+        virtual std::optional<time_t> getAccountLastAccess(const std::string &accountName) = 0;
+
 
         /////////////////////////////////////////////////////////////////////////////////
         // authentication:
-
         /**
          * @brief Authenticates a user's credential based on provided details and optional authentication context.
          *

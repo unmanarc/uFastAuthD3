@@ -3,6 +3,7 @@
 
 #include <Mantids30/Helpers/random.h>
 #include <Mantids30/Threads/lock_shared.h>
+#include <cstddef>
 #include <optional>
 
 using namespace Mantids30;
@@ -17,15 +18,14 @@ json IdentityManager::AuthController::authSlotsToJSON(const std::vector<Authenti
     }
     return r;
 }
-
-void IdentityManager::AuthController::incrementCredentialBadCounts(Reason ret, const std::string &accountName, const Credential &pStoredCredentialData, const uint32_t &slotId,
+void IdentityManager::AuthController::updateCredentialAuthStatus(const Reason &authResult, const std::string &accountName, const Credential &storedCredentialData, const uint32_t &slotId,
                                                                    const ClientDetails &clientDetails)
 {
     // Register the change for max attempts...
-    if (!IS_PASSWORD_AUTHENTICATED(ret))
+    if (!IS_PASSWORD_AUTHENTICATED(authResult))
     {
-        // Increment the counter and disable the account acording to the policy.
-        if ((pStoredCredentialData.badAttempts + 1) >= m_authenticationPolicy.maxTries)
+        // Increment the counter and disable the account according to the policy.
+        if ((storedCredentialData.badAttempts + 1) >= m_authenticationPolicy.maxTries)
         {
             // Disable the account...
             m_parent->accounts->disableAccount(accountName, true);
@@ -37,10 +37,12 @@ void IdentityManager::AuthController::incrementCredentialBadCounts(Reason ret, c
     }
     else
     {
-        // Authenticated:
-        updateAccountLastAccess(accountName, slotId, clientDetails);
+        // Credential is authenticated:
         resetBadAttemptsOnCredential(accountName, slotId);
     }
+
+    // Log
+    m_parent->authController->insertAuthCredentialLog(accountName, slotId, clientDetails, authResult);
 }
 
 Reason IdentityManager::AuthController::authenticateCredential(const ClientDetails &clientDetails, const std::string &accountName, const std::string &incomingPassword, const uint32_t &slotId,
@@ -108,12 +110,20 @@ Reason IdentityManager::AuthController::authenticateCredential(const ClientDetai
             ret = REASON_PASSWORD_INDEX_NOTFOUND;
         else
         {
-            time_t lastLogin = getAccountLastAccess(accountName);
+            auto lastLogin = getAccountLastAccess(accountName);
 
-            // There is no last login.. use the creation date for doing the inactivity calculation...
-            if (lastLogin == std::numeric_limits<time_t>::max())
+            // There is no last login..
+            if (lastLogin == std::nullopt)
             {
-                lastLogin = m_parent->accounts->getAccountCreationTime(accountName);
+                // // use the creation date for doing the inactivity calculation...
+                // lastLogin = m_parent->accounts->getAccountCreationTime(accountName);
+
+                // Use current time. (don't invalidate accounts if the log does not prove recent access)... altough it will prevent exposure, will block/mess everything if the log is moved or corrupted.
+                lastLogin = time(nullptr);
+                if (lastLogin == std::nullopt)
+                {
+                    lastLogin = 0;
+                }
             }
 
             auto flags = m_parent->accounts->getAccountFlags(accountName);
@@ -130,7 +140,7 @@ Reason IdentityManager::AuthController::authenticateCredential(const ClientDetai
             else if (m_parent->accounts->isAccountExpired(accountName))
                 return REASON_EXPIRED_ACCOUNT;
 
-            else if (lastLogin + m_authenticationPolicy.abandonedAccountExpirationSeconds < time(nullptr))
+            else if (*lastLogin + m_authenticationPolicy.abandonedAccountExpirationSeconds < time(nullptr))
                 return REASON_INACTIVE_ACCOUNT;
 
             else
@@ -140,7 +150,7 @@ Reason IdentityManager::AuthController::authenticateCredential(const ClientDetai
         }
     }
 
-    incrementCredentialBadCounts(ret, accountName, pStoredCredentialData, slotId, clientDetails);
+    updateCredentialAuthStatus(ret, accountName, pStoredCredentialData, slotId, clientDetails);
 
     return ret;
 }

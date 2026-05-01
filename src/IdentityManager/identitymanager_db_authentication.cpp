@@ -160,31 +160,53 @@ bool IdentityManager_DB::AuthController_DB::changeCredential(const std::string &
     //                                               {":totp2FAStepsToleranceWindow",MAKE_VAR(UINT32,passwordData.totp2FAStepsToleranceWindow)}
 }
 
-void IdentityManager_DB::AuthController_DB::updateAccountLastAccess(const std::string &accountName, const std::string &appName, const uint32_t &schemeId, const ClientDetails &clientDetails)
+void IdentityManager_DB::AuthController_DB::updateAccountLastAccessToApplication(const std::string &accountName, const std::string &appName, const uint32_t &schemeId, const ClientDetails &clientDetails)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
 
-    // Use INSERT OR REPLACE to handle upsert logic for accountsLastAccess
+    // Use INSERT OR REPLACE to handle upsert logic for accountsLastAccessToApplication
     _parent->m_sqlConnector->qExecuteEx(
-        "INSERT OR REPLACE INTO logs.accountsLastAccess (`f_accountName`, `f_appName`, `lastLogin`) "
+        "INSERT OR REPLACE INTO logs.accountsLastAccessToApplication (`f_accountName`, `f_appName`, `lastLogin`) "
         "VALUES (:accountName, :appName, CURRENT_TIMESTAMP);",
         {
             {":accountName", MAKE_VAR(STRING, accountName)},
             {":appName", MAKE_VAR(STRING, appName)}
         }
     );
-
     // Insert into the login history log
-    _parent->m_sqlConnector->qExecuteEx("INSERT INTO logs.accountAuthLog(`f_accountName`, `f_AuthSlotId`, `f_appName`, `loginDateTime`, `loginIP`, `loginTLSCN`, `loginUserAgent`, `loginExtraData`) "
-                                        "VALUES (:accountName, :slotId, :appName, :date, :loginIP, :loginTLSCN, :loginUserAgent, :loginExtraData);",
-                                        {{":accountName", MAKE_VAR(STRING, accountName)},
-                                         {":appName", MAKE_VAR(STRING, appName)},
-                                         {":schemeId", MAKE_VAR(UINT32, schemeId)},
-                                         {":date", MAKE_VAR(DATETIME, time(nullptr))},
-                                         {":loginIP", MAKE_VAR(STRING, clientDetails.ipAddress)},
-                                         {":loginTLSCN", MAKE_VAR(STRING, clientDetails.tlsCommonName)},
-                                         {":loginUserAgent", MAKE_VAR(STRING, clientDetails.userAgent)},
-                                         {":loginExtraData", MAKE_VAR(STRING, clientDetails.extraData)}});
+    _parent->m_sqlConnector->qExecuteEx(
+        "INSERT INTO logs.applicationAuthLog(`f_accountName`, `f_schemeId`, `f_appName`, `loginDateTime`, `loginIP`, `loginTLSCN`, `loginUserAgent`, `loginExtraData`) "
+                                        "VALUES (:accountName, :schemeId, :appName, :loginDateTime, :loginIP, :loginTLSCN, :loginUserAgent, :loginExtraData);",
+        {
+            {":accountName", MAKE_VAR(STRING, accountName)},
+            {":schemeId", MAKE_VAR(UINT32, schemeId)},
+            {":appName", MAKE_VAR(STRING, appName)},
+            {":loginDateTime", MAKE_VAR(DATETIME, time(nullptr))},
+            {":loginIP", MAKE_VAR(STRING, clientDetails.ipAddress)},
+            {":loginTLSCN", MAKE_VAR(STRING, clientDetails.tlsCommonName)},
+            {":loginUserAgent", MAKE_VAR(STRING, clientDetails.userAgent)},
+            {":loginExtraData", MAKE_VAR(STRING, clientDetails.extraData)}
+        }
+    );
+}
+
+void IdentityManager_DB::AuthController_DB::insertAuthCredentialLog(const std::string &accountName, uint32_t slotId, const ClientDetails &clientDetails, int logStatus)
+{
+    Threads::Sync::Lock_RW lock(_parent->m_mutex);
+
+    _parent->m_sqlConnector->qExecuteEx(
+        R"(INSERT INTO logs.authSlotLog (`f_accountName`, `f_slotId`, `logIP`, `logTLSCN`, `logUserAgent`, `logExtraData`, `logStatus`)
+           VALUES (:accountName, :slotId,  :logIP, :logTLSCN, :logUserAgent, :logExtraData, :logStatus);)",
+        {
+            {":accountName", MAKE_VAR(STRING, accountName)},
+            {":slotId", MAKE_VAR(UINT32, slotId)},
+            {":logIP", MAKE_VAR(STRING, clientDetails.ipAddress)},
+            {":logTLSCN", MAKE_VAR(STRING, clientDetails.tlsCommonName)},
+            {":logUserAgent", MAKE_VAR(STRING, clientDetails.userAgent)},
+            {":logExtraData", MAKE_VAR(STRING, clientDetails.extraData)},
+            {":logStatus", MAKE_VAR(INT32, logStatus)}
+        }
+    );
 }
 
 std::string IdentityManager_DB::AuthController_DB::getAccountConfirmationToken(const std::string &accountName)
@@ -200,15 +222,16 @@ std::string IdentityManager_DB::AuthController_DB::getAccountConfirmationToken(c
     return "";
 }
 
-
-time_t IdentityManager_DB::AuthController_DB::getAccountLastAccess(const std::string &accountName)
+std::optional<time_t> IdentityManager_DB::AuthController_DB::getAccountLastAccess(const std::string &accountName)
 {
     Threads::Sync::Lock_RD lock(_parent->m_mutex);
 
     {
         Abstract::DATETIME lastLogin;
 
-        if (_parent->m_sqlConnector->qSelectSingleRow("SELECT `lastLogin` FROM logs.accountsLastAccess WHERE `f_accountName`=:accountName LIMIT 1;", {{":accountName", MAKE_VAR(STRING, accountName)}},
+        if (_parent->m_sqlConnector->qSelectSingleRow(
+            "SELECT `lastLogin` FROM logs.accountsLastAccessToApplication WHERE `f_accountName`=:accountName ORDER BY `lastLogin` DESC LIMIT 1;",
+            {{":accountName", MAKE_VAR(STRING, accountName)}},
                                              {&lastLogin}))
         {
             return lastLogin.getValue(); // Asegúrate de convertir a `time_t` si es necesario
@@ -216,7 +239,7 @@ time_t IdentityManager_DB::AuthController_DB::getAccountLastAccess(const std::st
     }
 
     // no account? time_t max value...
-    return std::numeric_limits<time_t>::max();
+    return std::nullopt;
 }
 
 std::set<uint32_t> IdentityManager_DB::AuthController_DB::listUsedAuthenticationSlotsOnAccount(const std::string &accountName)
@@ -276,6 +299,7 @@ bool IdentityManager_DB::AuthController_DB::removeAuthenticationSlot(const uint3
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
     return _parent->m_sqlConnector->qExecuteEx("DELETE FROM iam.authenticationSlots WHERE `slotId`=:slotId;", {{":slotId", MAKE_VAR(UINT32, slotId)}});
+}
 
 bool IdentityManager_DB::AuthController_DB::updateAuthenticationSlotDetails(const uint32_t &slotId, const AuthenticationSlotDetails &details)
 {

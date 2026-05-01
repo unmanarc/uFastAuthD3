@@ -262,18 +262,17 @@ bool IdentityManager_DB::initializeDatabase()
                                               UNIQUE (`f_appName`, `f_scopeId`, `f_accountName`)
                                                                         );
                                     )",
-        // LOGS:
-        R"(CREATE TABLE IF NOT EXISTS `logs`.`accountsLastAccess` (
+        R"(CREATE TABLE IF NOT EXISTS `logs`.`accountsLastAccessToApplication` (
                                               `f_accountName`            VARCHAR(256)  NOT NULL,
                                               `f_appName`                VARCHAR(256)  NOT NULL,
                                               `lastLogin`                DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
                                               PRIMARY KEY(`f_accountName`, `f_appName`)
                                                                         );
                                        )",
-        "CREATE INDEX IF NOT EXISTS `logs`.idx_lastAccess_accountName ON accountsLastAccess (f_accountName);",
-        R"(CREATE TABLE IF NOT EXISTS `logs`.`accountAuthLog` (
+        R"(CREATE INDEX IF NOT EXISTS `logs`.idx_lastAccess_accountName ON accountsLastAccessToApplication (f_accountName);)",
+        R"(CREATE TABLE IF NOT EXISTS `logs`.`applicationAuthLog` (
                                              `f_accountName`        VARCHAR(256)    NOT NULL,
-                                             `f_AuthSlotId`         INTEGER         NOT NULL,
+                                             `f_schemeId`           INTEGER         NOT NULL,
                                              `f_appName`            VARCHAR(256)    NOT NULL,
                                              `loginDateTime`        DATETIME        NOT NULL,
                                              `loginIP`              VARCHAR(64)     NOT NULL,
@@ -281,10 +280,26 @@ bool IdentityManager_DB::initializeDatabase()
                                              `loginUserAgent`       VARCHAR(4096)   NOT NULL,
                                              `loginExtraData`       VARCHAR(4096)   NOT NULL);
                                     )",
-        "CREATE INDEX IF NOT EXISTS `logs`.idx_logs_accountName ON accountAuthLog (f_accountName);",
-        "CREATE INDEX IF NOT EXISTS `logs`.idx_logs_authSlotID ON accountAuthLog (f_AuthSlotId);",
-        "CREATE INDEX IF NOT EXISTS `logs`.idx_logs_dateTime ON accountAuthLog (loginDateTime);",
-        "CREATE INDEX IF NOT EXISTS `logs`.idx_logs_loginIP ON accountAuthLog (loginIP);"
+        R"(CREATE INDEX IF NOT EXISTS `logs`.idx_logs_accountName ON applicationAuthLog (f_accountName);)",
+        R"(CREATE INDEX IF NOT EXISTS `logs`.idx_logs_schemeID ON applicationAuthLog (f_schemeId);)",
+        R"(CREATE INDEX IF NOT EXISTS `logs`.idx_logs_dateTime ON applicationAuthLog (loginDateTime);)",
+        R"(CREATE INDEX IF NOT EXISTS `logs`.idx_logs_loginIP ON applicationAuthLog (loginIP);)",
+        
+        R"(CREATE TABLE IF NOT EXISTS `logs`.`authSlotLog` (
+                                             `f_accountName`        VARCHAR(256)    NOT NULL,
+                                             `f_slotId`             INTEGER         NOT NULL,
+                                             `logDateTime`          DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                                             `logIP`                VARCHAR(64)     NOT NULL,
+                                             `logTLSCN`             VARCHAR(1024)   NOT NULL,
+                                             `logUserAgent`         VARCHAR(4096)   NOT NULL,
+                                             `logExtraData`         VARCHAR(4096)   NOT NULL,
+                                             `logStatus`            INTEGER    NOT NULL);
+                                    )",
+        R"(CREATE INDEX IF NOT EXISTS `logs`.idx_authSlotLog_accountName ON authSlotLog (f_accountName);)",
+        R"(CREATE INDEX IF NOT EXISTS `logs`.idx_authSlotLog_slotId ON authSlotLog (f_slotId);)",
+        R"(CREATE INDEX IF NOT EXISTS `logs`.idx_authSlotLog_dateTime ON authSlotLog (logDateTime);)",
+        R"(CREATE INDEX IF NOT EXISTS `logs`.idx_authSlotLog_IP ON authSlotLog (logIP);)"
+
     };
 
     // Not using this....

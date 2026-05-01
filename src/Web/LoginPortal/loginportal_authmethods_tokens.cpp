@@ -92,7 +92,7 @@ bool LoginPortal_AuthMethods::token_createAndSignApplicationsJWTs(IdentityManage
         return false;
     }
 
-    identityManager->authController->updateAccountLastAccess( user, app, schemeId,  authClientDetails  );
+    identityManager->authController->updateAccountLastAccessToApplication( user, app, schemeId,  authClientDetails  );
 
     // Here is the effective logging in the app.
     (*response.responseJSON())["accessToken"] = accessTokenStr.value();

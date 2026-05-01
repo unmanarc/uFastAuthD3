@@ -319,7 +319,7 @@ Json::Value IdentityManager_DB::Accounts_DB::searchAccounts(const json &dataTabl
             iam.accounts.accountName as accountName,
             iam.accounts.creation as creation,
             iam.accounts.expiration as expiration,
-            logs.accountsLastAccess.lastLogin as lastLogin,
+            logs.accountsLastAccessToApplication.lastLogin as lastLogin,
             iam.accountCredentials.lastChange as lastChange,
             iam.accounts.isAdmin as isAdmin,
             iam.accounts.isEnabled as isEnabled,
@@ -327,8 +327,8 @@ Json::Value IdentityManager_DB::Accounts_DB::searchAccounts(const json &dataTabl
             iam.accounts.isAccountConfirmed as isAccountConfirmed,
             iam.accounts.creator as creator
         FROM iam.accounts
-        LEFT JOIN logs.accountsLastAccess
-            ON logs.accountsLastAccess.f_accountName = iam.accounts.accountName
+        LEFT JOIN logs.accountsLastAccessToApplication
+            ON logs.accountsLastAccessToApplication.f_accountName = iam.accounts.accountName
         LEFT JOIN iam.accountCredentials
             ON iam.accountCredentials.f_accountName = iam.accounts.accountName
             AND iam.accountCredentials.f_AuthSlotId = 1

@@ -178,8 +178,11 @@ public:
         bool changeCredential(const std::string &accountName, Credential passwordData, uint32_t slotId) override;
 
         // Account last login:
-        void updateAccountLastAccess(const std::string &accountName, const std::string &appName, const uint32_t &schemeId, const ClientDetails &clientDetails) override;
-        time_t getAccountLastAccess(const std::string &accountName) override;
+        void updateAccountLastAccessToApplication(const std::string &accountName, const std::string &appName, const uint32_t &schemeId, const ClientDetails &clientDetails) override;
+        void insertAuthCredentialLog(const std::string &accountName, uint32_t slotId, const ClientDetails &clientDetails, int logStatus) override;
+
+        std::optional<time_t> getAccountLastAccess(const std::string &accountName) override;
+
 
         /////////////////////////////////////////////////////////////////////////////////
         // AuthController Slot SlotIds:
