@@ -17,6 +17,7 @@ using namespace Network::Protocols;
     When self-registering, you must come with the sponsored app right? and immediately link the app with the user I think...
     anything else?
 
+    ANSWER: it should be at the IAM and the user portal itself, then, when you log into your user portal, you will be able to self-register into some specific app.
 */
 
 API::APIReturn LoginPortal_AuthMethods::registerAccount(void *context, const RequestParameters &request, ClientDetails &clientDetails)
