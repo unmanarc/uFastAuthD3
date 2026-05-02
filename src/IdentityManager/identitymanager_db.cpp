@@ -13,6 +13,8 @@ IdentityManager_DB::IdentityManager_DB(Mantids30::Database::SQLConnector *_SQLDi
     authController = new AuthController_DB(this);
 
     m_sqlConnector = _SQLDirConnection;
+
+
 }
 
 bool IdentityManager_DB::initializeDatabase()
@@ -271,20 +273,27 @@ bool IdentityManager_DB::initializeDatabase()
                                        )",
         R"(CREATE INDEX IF NOT EXISTS `logs`.idx_lastAccess_accountName ON accountsLastAccessToApplication (f_accountName);)",
         R"(CREATE TABLE IF NOT EXISTS `logs`.`applicationAuthLog` (
-                                             `f_accountName`        VARCHAR(256)    NOT NULL,
-                                             `f_schemeId`           INTEGER         NOT NULL,
-                                             `f_appName`            VARCHAR(256)    NOT NULL,
-                                             `loginDateTime`        DATETIME        NOT NULL,
-                                             `loginIP`              VARCHAR(64)     NOT NULL,
-                                             `loginTLSCN`           VARCHAR(1024)   NOT NULL,
-                                             `loginUserAgent`       VARCHAR(4096)   NOT NULL,
-                                             `loginExtraData`       VARCHAR(4096)   NOT NULL);
-                                    )",
+                                              `id`                   INTEGER         PRIMARY KEY AUTOINCREMENT,
+                                              `f_accountName`        VARCHAR(256)    NOT NULL,
+                                              `f_schemeId`           INTEGER         NOT NULL,
+                                              `f_appName`            VARCHAR(256)    NOT NULL,
+                                              `loginDateTime`        DATETIME        NOT NULL,
+                                              `loginIP`              VARCHAR(64)     NOT NULL,
+                                              `loginTLSCN`           VARCHAR(1024)   NOT NULL,
+                                              `loginUserAgent`       VARCHAR(4096)   NOT NULL,
+                                              `loginExtraData`       VARCHAR(4096)   NOT NULL,
+                                              `logoutDateTime`       DATETIME        DEFAULT NULL,
+                                              `logoutReason`         INTEGER         DEFAULT NULL,
+                                              `refresherTokenId`     VARCHAR(256)    DEFAULT NULL,
+                                              `accessTokenId`        VARCHAR(256)    DEFAULT NULL,
+                                              `accessTokenExpiration` DATETIME       DEFAULT NULL,
+                                              `refreshTokenExpiration` DATETIME     DEFAULT NULL);
+                                     )",
         R"(CREATE INDEX IF NOT EXISTS `logs`.idx_logs_accountName ON applicationAuthLog (f_accountName);)",
         R"(CREATE INDEX IF NOT EXISTS `logs`.idx_logs_schemeID ON applicationAuthLog (f_schemeId);)",
         R"(CREATE INDEX IF NOT EXISTS `logs`.idx_logs_dateTime ON applicationAuthLog (loginDateTime);)",
         R"(CREATE INDEX IF NOT EXISTS `logs`.idx_logs_loginIP ON applicationAuthLog (loginIP);)",
-        
+
         R"(CREATE TABLE IF NOT EXISTS `logs`.`authSlotLog` (
                                              `f_accountName`        VARCHAR(256)    NOT NULL,
                                              `f_slotId`             INTEGER         NOT NULL,
@@ -317,6 +326,7 @@ bool IdentityManager_DB::initializeDatabase()
             break;
         }
     }
+
 
     return success;
 }

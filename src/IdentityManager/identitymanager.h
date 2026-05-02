@@ -24,6 +24,17 @@ class IdentityManager : public Mantids30::Threads::Safe::MapItem
 public:
     using ClientDetails = Mantids30::Sessions::ClientDetails;
 
+    /**
+     * @brief Logout reasons for applicationAuthLog entries.
+     */
+    enum class LogoutReason : int {
+        None = 0,
+        Timeout = 1,
+        UserInitiated = 2,
+        Revoked = 3,
+        RefreshTokenExpired = 4
+    };
+
     IdentityManager();
     virtual ~IdentityManager();
 
@@ -250,9 +261,15 @@ public:
         virtual bool changeCredential(const std::string &accountName, Credential passwordData, uint32_t slotId) = 0;
 
         // Account last login:
-        virtual void updateAccountLastAccessToApplication(const std::string &accountName, const std::string &appName, const uint32_t &schemeId, const ClientDetails &clientDetails) = 0;
+        virtual void insertApplicationAuthLogAccountAccess(const std::string &accountName, const std::string &appName, const uint32_t &schemeId,
+            const ClientDetails &clientDetails, const std::string &refresherTokenId, const std::string &accessTokenId,
+            const time_t &accessTokenExpiration, const time_t &refreshTokenExpiration) = 0;
         virtual void insertAuthCredentialLog(const std::string &accountName, uint32_t slotId, const ClientDetails &clientDetails, int logStatus) = 0;
         virtual std::optional<time_t> getAccountLastAccess(const std::string &accountName) = 0;
+
+        // Application Auth Log - Logout and Token tracking:
+        virtual bool updateApplicationAuthLogAccessTokenId(const std::string &accountName, const std::string &appName, const std::string &refresherTokenId, const std::string &accessTokenId,const time_t &accessTokenExpiration) =0;
+        virtual bool logoutApplicationAuthLog(const std::string &accountName, const std::string &appName, const std::string &refresherTokenId, LogoutReason reason) =0;
 
 
         /////////////////////////////////////////////////////////////////////////////////

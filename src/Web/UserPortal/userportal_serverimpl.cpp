@@ -43,7 +43,7 @@ bool UserPortal_ServerImpl::createService()
     userPortalWebServer->config.jwtValidator = Globals::getIdentityManager()->applications->getAppJWTValidator(IAM_USRPORTAL_APPNAME);
     if (!userPortalWebServer->config.jwtValidator)
     {
-        LOG_APP->log0(__func__, Logs::LEVEL_CRITICAL, "We need a JWT Validator for the IAM User Portal Web Server (2).");
+        LOG_APP->log0(__func__, Logs::LEVEL_CRITICAL, "We need a JWT Validator for the IAM User Portal Web Server.");
         return false;
     }
 

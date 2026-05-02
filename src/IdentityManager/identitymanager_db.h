@@ -178,10 +178,16 @@ public:
         bool changeCredential(const std::string &accountName, Credential passwordData, uint32_t slotId) override;
 
         // Account last login:
-        void updateAccountLastAccessToApplication(const std::string &accountName, const std::string &appName, const uint32_t &schemeId, const ClientDetails &clientDetails) override;
+        void insertApplicationAuthLogAccountAccess(const std::string &accountName, const std::string &appName, const uint32_t &schemeId,
+                                                   const ClientDetails &clientDetails, const std::string &refresherTokenId, const std::string &accessTokenId,
+                                                   const time_t &accessTokenExpiration, const time_t &refreshTokenExpiration) override;
         void insertAuthCredentialLog(const std::string &accountName, uint32_t slotId, const ClientDetails &clientDetails, int logStatus) override;
 
         std::optional<time_t> getAccountLastAccess(const std::string &accountName) override;
+
+        // Application Auth Log - Logout and Token tracking:
+        bool updateApplicationAuthLogAccessTokenId(const std::string &accountName, const std::string &appName, const std::string &refresherTokenId, const std::string &accessTokenId,const time_t &accessTokenExpiration) override;
+        bool logoutApplicationAuthLog(const std::string &accountName, const std::string &appName, const std::string &refresherTokenId, LogoutReason reason) override;
 
 
         /////////////////////////////////////////////////////////////////////////////////
