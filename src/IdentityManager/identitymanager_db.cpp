@@ -13,8 +13,6 @@ IdentityManager_DB::IdentityManager_DB(Mantids30::Database::SQLConnector *_SQLDi
     authController = new AuthController_DB(this);
 
     m_sqlConnector = _SQLDirConnection;
-
-
 }
 
 bool IdentityManager_DB::initializeDatabase()
@@ -293,7 +291,12 @@ bool IdentityManager_DB::initializeDatabase()
         R"(CREATE INDEX IF NOT EXISTS `logs`.idx_logs_schemeID ON applicationAuthLog (f_schemeId);)",
         R"(CREATE INDEX IF NOT EXISTS `logs`.idx_logs_dateTime ON applicationAuthLog (loginDateTime);)",
         R"(CREATE INDEX IF NOT EXISTS `logs`.idx_logs_loginIP ON applicationAuthLog (loginIP);)",
-
+        R"(CREATE INDEX IF NOT EXISTS `logs`.idx_logs_accessTokenExpiration ON applicationAuthLog (accessTokenExpiration);)",
+        R"(CREATE INDEX IF NOT EXISTS `logs`.idx_logs_refreshTokenExpiration ON applicationAuthLog (refreshTokenExpiration);)",
+        R"(CREATE INDEX IF NOT EXISTS `logs`.idx_logs_logoutDateTime ON applicationAuthLog (logoutDateTime);)",
+        R"(CREATE INDEX IF NOT EXISTS `logs`.idx_logs_logoutReason ON applicationAuthLog (logoutReason);)",
+        R"(CREATE INDEX IF NOT EXISTS `logs`.idx_logs_refresherTokenId ON applicationAuthLog (refresherTokenId);)",
+        
         R"(CREATE TABLE IF NOT EXISTS `logs`.`authSlotLog` (
                                              `f_accountName`        VARCHAR(256)    NOT NULL,
                                              `f_slotId`             INTEGER         NOT NULL,

@@ -170,3 +170,10 @@ std::shared_ptr<JWT> IdentityManager::Applications::getAppJWTSigner(const std::s
 
     return nullptr;
 }
+
+IdentityManager::AuthController::AuthController(IdentityManager *parent)
+{
+    m_authLogGC.setGarbageCollectorInterval(60000); // Check every 60 seconds
+    m_authLogGC.startGarbageCollector(checkExpiredAuthLogSessions, this, "GC:AuthLogSessions");
+    m_parent = parent;
+}

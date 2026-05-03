@@ -450,7 +450,7 @@ std::set<ApplicationScope> IdentityManager_DB::AuthController_DB::getAccountDire
 // Application Auth Log - Logout and Token tracking
 // ------------------------------------------------------------------------
 bool IdentityManager_DB::AuthController_DB::updateApplicationAuthLogAccessTokenId(const std::string &accountName, const std::string &appName, const std::string &refresherTokenId,
-                                                                                  const std::string &accessTokenId,const time_t &accessTokenExpiration)
+                                                                                  const std::string &accessTokenId, const time_t &accessTokenExpiration)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
 
@@ -489,8 +489,8 @@ bool IdentityManager_DB::AuthController_DB::logoutApplicationAuthLog(const std::
 }
 
 void IdentityManager_DB::AuthController_DB::insertApplicationAuthLogAccountAccess(const std::string &accountName, const std::string &appName, const uint32_t &schemeId,
-    const ClientDetails &clientDetails, const std::string &refresherTokenId, const std::string &accessTokenId,
-    const time_t &accessTokenExpiration, const time_t &refreshTokenExpiration)
+                                                                                  const ClientDetails &clientDetails, const std::string &refresherTokenId, const std::string &accessTokenId,
+                                                                                  const time_t &accessTokenExpiration, const time_t &refreshTokenExpiration)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
 
@@ -501,7 +501,8 @@ void IdentityManager_DB::AuthController_DB::insertApplicationAuthLogAccountAcces
     // Insert into the login history log
     _parent->m_sqlConnector->qExecuteEx("INSERT INTO logs.applicationAuthLog(`f_accountName`, `f_schemeId`, `f_appName`, `loginDateTime`, `loginIP`, `loginTLSCN`, `loginUserAgent`, `loginExtraData`, "
                                         "`refresherTokenId`, `accessTokenId`, `accessTokenExpiration`, `refreshTokenExpiration`) "
-                                        "VALUES (:accountName, :schemeId, :appName, :loginDateTime, :loginIP, :loginTLSCN, :loginUserAgent, :loginExtraData, :refresherTokenId, :accessTokenId, :accessTokenExpiration, :refreshTokenExpiration);",
+                                        "VALUES (:accountName, :schemeId, :appName, :loginDateTime, :loginIP, :loginTLSCN, :loginUserAgent, :loginExtraData, :refresherTokenId, :accessTokenId, "
+                                        ":accessTokenExpiration, :refreshTokenExpiration);",
                                         {{":accountName", MAKE_VAR(STRING, accountName)},
                                          {":schemeId", MAKE_VAR(UINT32, schemeId)},
                                          {":appName", MAKE_VAR(STRING, appName)},
@@ -530,4 +531,29 @@ void IdentityManager_DB::AuthController_DB::insertAuthCredentialLog(const std::s
          {":logUserAgent", MAKE_VAR(STRING, clientDetails.userAgent)},
          {":logExtraData", MAKE_VAR(STRING, clientDetails.extraData)},
          {":logStatus", MAKE_VAR(INT32, logStatus)}});
+}
+
+void IdentityManager_DB::AuthController_DB::checkExpiredAuthLogSessionsVirtual()
+{
+    Threads::Sync::Lock_RW lock(_parent->m_mutex);
+
+    time_t now = time(nullptr);
+
+    // Mark entries where refreshToken has expired (covers both access and refresh)
+    _parent->m_sqlConnector->qExecuteEx(
+        R"(UPDATE logs.applicationAuthLog
+           SET logoutReason = 2, logoutDateTime = CURRENT_TIMESTAMP
+           WHERE refreshTokenExpiration < :now
+           AND logoutReason IS NULL)",
+        {{":now", MAKE_VAR(DATETIME, now)}});
+
+    // Mark entries where ONLY accessToken expired (but refresh still valid)
+    _parent->m_sqlConnector->qExecuteEx(
+        R"(UPDATE logs.applicationAuthLog
+           SET logoutReason = 3, logoutDateTime = CURRENT_TIMESTAMP
+           WHERE accessTokenExpiration < :now
+           AND refreshTokenExpiration IS NOT NULL
+           AND refreshTokenExpiration > :now
+           AND logoutReason IS NULL)",
+        {{":now", MAKE_VAR(DATETIME, now)}});
 }

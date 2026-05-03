@@ -148,6 +148,8 @@ public:
             _parent = parent;
         }
 
+        void checkExpiredAuthLogSessionsVirtual() override;
+
         std::set<ApplicationScope> getAccountDirectApplicationScopes(const std::string &accountName, bool lock = true) override;
 
         bool validateApplicationScopeOnRole(const std::string &roleName, const ApplicationScope &scope, bool lock = true) override;

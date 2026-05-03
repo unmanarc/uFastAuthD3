@@ -29,10 +29,11 @@ public:
      */
     enum class LogoutReason : int {
         None = 0,
-        Timeout = 1,
-        UserInitiated = 2,
-        Revoked = 3,
-        RefreshTokenExpired = 4
+        AccessTokenExpired = 1,
+        RefreshTokenExpired = 2,
+        UserInitiated = 3,
+        Revoked = 4,
+        Other = 100
     };
 
     IdentityManager();
@@ -201,11 +202,11 @@ public:
         virtual bool addAuthenticationSchemeToApplicationActivity(const std::string &appName, const std::string &activityName, const uint32_t &schemeId, bool lock = true) = 0;
         virtual bool removeAuthenticationSchemeFromApplicationActivity(const std::string &appName, const std::string &activityName, const uint32_t &schemeId) = 0;
     };
-
     class AuthController : public CredentialValidator
     {
     private:
         IdentityManager *m_parent;
+        Mantids30::Threads::GarbageCollector m_authLogGC;
         static json authSlotsToJSON(const std::vector<AuthenticationSchemeUsedSlot> &authSlots);
         void updateCredentialAuthStatus(const Reason &authResult, const std::string &accountName, const Credential &storedCredentialData, const uint32_t &slotId,
                                         const ClientDetails &clientDetails);
@@ -215,8 +216,15 @@ public:
         virtual Credential retrieveCredential(const std::string &accountName, const uint32_t &slotId, bool *accountFound, bool *authSlotFound) = 0;
 
     public:
-        AuthController(IdentityManager *parent) { m_parent = parent; }
+        AuthController(IdentityManager *parent);
         virtual ~AuthController() {}
+
+        static void checkExpiredAuthLogSessions(void * p)
+        {
+            static_cast<AuthController*>(p)->checkExpiredAuthLogSessionsVirtual();
+        }
+
+        virtual void checkExpiredAuthLogSessionsVirtual() = 0;
 
         std::optional<uint32_t> initializateDefaultPasswordSchemes(bool *defaultPasswordSchemesExist);
 
@@ -487,4 +495,5 @@ public:
 
 protected:
     Mantids30::Threads::Sync::Mutex_Shared m_mutex;
+
 };
