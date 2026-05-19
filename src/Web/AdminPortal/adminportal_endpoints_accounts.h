@@ -51,7 +51,7 @@ protected:
     static APIReturn changeAccountEmail(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
     static APIReturn changeAccountExtraData(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
     static APIReturn changeAccountExpiration(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
-    static APIReturn updateAccountRoles(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
+    static APIReturn updateAccountApplicationRoles(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
     static APIReturn getAccountInfo(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
     static APIReturn getAccountDetails(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
     static APIReturn getAccountLastAccess(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
@@ -62,7 +62,7 @@ protected:
     static APIReturn getAccountBlockToken(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
     static APIReturn blockAccountUsingToken(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
     static APIReturn listAccounts(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
-    static APIReturn getAccountRoles(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
+    static APIReturn getAccountApplicationRoles(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
     static APIReturn getAccountDirectApplicationScopes(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
     static APIReturn getAccountUsableApplicationScopes(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
 */

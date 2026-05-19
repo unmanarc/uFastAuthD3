@@ -62,14 +62,14 @@ void AdminPortalMethods_Accounts::addEndpoints_Accounts(std::shared_ptr<Endpoint
     endpoints->addEndpoint(Endpoints::GET, "getAccountExpirationTime", &getAccountExpirationTime, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_READ"});
     endpoints->addEndpoint(Endpoints::GET, "getAccountInfo", &getAccountInfo, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_READ"});
     endpoints->addEndpoint(Endpoints::GET, "getAccountLastAccess", &getAccountLastAccess, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_READ"});
-    endpoints->addEndpoint(Endpoints::GET, "getAccountRoles", &getAccountRoles, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_READ"});
+    endpoints->addEndpoint(Endpoints::GET, "getAccountApplicationRoles", &getAccountApplicationRoles, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_READ"});
     endpoints->addEndpoint(Endpoints::GET, "getAccountUsableApplicationScopes", &getAccountUsableApplicationScopes, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_READ"});
     endpoints->addEndpoint(Endpoints::GET, "isAccountExpired", &isAccountExpired, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_READ"});
     endpoints->addEndpoint(Endpoints::GET, "listAccounts", &listAccounts, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_READ"});
     endpoints->addEndpoint(Endpoints::POST, "resetBadAttemptsOnCredential", &resetBadAttemptsOnCredential, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"});
     endpoints->addEndpoint(Endpoints::GET, "searchAccounts", &searchAccounts, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_READ"});
     endpoints->addEndpoint(Endpoints::POST, "updateAccountInfo", &updateAccountInfo, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"});
-    endpoints->addEndpoint(Endpoints::POST, "updateAccountRoles", &updateAccountRoles, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"});
+    endpoints->addEndpoint(Endpoints::POST, "updateAccountApplicationRoles", &updateAccountApplicationRoles, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"});
     endpoints->addEndpoint(Endpoints::GET, "validateAccountApplicationScope", &validateAccountApplicationScope, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_READ"});
     endpoints->addEndpoint(Endpoints::POST, "blockAccountUsingToken", &blockAccountUsingToken, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"});*/
 }
@@ -139,7 +139,7 @@ API::APIReturn AdminPortalMethods_Accounts::addAccount(void *context, const Requ
     }
 
     // Apply the credential to the new account
-    if (!Globals::getIdentityManager()->authController->changeCredential(accountName, newCredentialData, slotId))
+    if (!Globals::getIdentityManager()->authController->changeAccountCredential(accountName, newCredentialData, slotId))
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to change the credential on the new user.");
         return response;
@@ -260,7 +260,7 @@ API::APIReturn AdminPortalMethods_Accounts::getAccountApplications(void *context
         (*response.responseJSON())["applications"][i]["description"] = Globals::getIdentityManager()->applications->getApplicationDescription(applicationName);
 
         std::set<ApplicationRole> allAppRoles = Globals::getIdentityManager()->applicationRoles->getApplicationRolesList(applicationName);
-        std::set<ApplicationRole> usedAppRoles = Globals::getIdentityManager()->accounts->getAccountRoles(applicationName,accountName);
+        std::set<ApplicationRole> usedAppRoles = Globals::getIdentityManager()->accounts->getAccountApplicationRoles(applicationName,accountName);
 
         // Add used roles
         for (const auto &role : usedAppRoles)
@@ -517,7 +517,7 @@ API::APIReturn AdminPortalMethods_Accounts::updateAccountDetailFieldsValues(void
     }
 
     // Update account detail fields values
-    if (!Globals::getIdentityManager()->accounts->updateAccountDetailFieldValues(accountName, fieldValues))
+    if (!Globals::getIdentityManager()->accounts->updateAccountDetailFieldValues(accountName, fieldValues,true))
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to update account detail fields values");
         return response;
@@ -596,7 +596,7 @@ API::APIReturn AdminPortalMethods_Accounts::changeAccountExtraData(void *context
     return Globals::getIdentityManager()->accounts->changeAccountExtraData(JSON_ASSTRING(*request.inputJSON,"accountName",""), JSON_ASSTRING(*request.inputJSON,"extraData",""));
 }*/
 /*
-API::APIReturn AdminPortalMethods_Accounts::updateAccountRoles(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortalMethods_Accounts::updateAccountApplicationRoles(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     std::set<std::string> roleSet;
 
@@ -611,7 +611,7 @@ API::APIReturn AdminPortalMethods_Accounts::updateAccountRoles(void *context, co
         roleSet.insert((*request.inputJSON)["roles"][(int) i].asString());
     }
 
-    if (!Globals::getIdentityManager()->accounts->updateAccountRoles(JSON_ASSTRING(*request.inputJSON, "accountName", ""), roleSet))
+    if (!Globals::getIdentityManager()->accounts->updateAccountApplicationRoles(JSON_ASSTRING(*request.inputJSON, "accountName", ""), roleSet))
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Internal Error");
         return response;
@@ -698,8 +698,8 @@ API::APIReturn AdminPortalMethods_Accounts::getAccountInfo(void *context, const 
     getAccountDetails(context, response, request, authClientDetails);
 
     int i = 0;
-    auto getAccountRoles = Globals::getIdentityManager()->accounts->getAccountRoles(JSON_ASSTRING(*request.inputJSON, "accountName", ""));
-    for (const auto &roleName : getAccountRoles)
+    auto getAccountApplicationRoles = Globals::getIdentityManager()->accounts->getAccountApplicationRoles(JSON_ASSTRING(*request.inputJSON, "accountName", ""));
+    for (const auto &roleName : getAccountApplicationRoles)
     {
         (*response.responseJSON())["roles"][i]["name"] = roleName;
         // TODO: optimize:
@@ -710,7 +710,7 @@ API::APIReturn AdminPortalMethods_Accounts::getAccountInfo(void *context, const 
     i = 0;
     for (const auto &roleName : Globals::getIdentityManager()->roles->getApplicationRolesList())
     {
-        if (getAccountRoles.find(roleName) == getAccountRoles.end())
+        if (getAccountApplicationRoles.find(roleName) == getAccountApplicationRoles.end())
         {
             (*response.responseJSON())["rolesLeft"][i]["name"] = roleName;
             (*response.responseJSON())["rolesLeft"][i]["description"] = Globals::getIdentityManager()->roles->getApplicationRoleDescription(roleName);
@@ -726,9 +726,9 @@ API::APIReturn AdminPortalMethods_Accounts::getAccountLastAccess(void *context, 
     (*response.responseJSON()) = Globals::getIdentityManager()->authController->getAccountLastAccess(JSON_ASSTRING(*request.inputJSON, "accountName", ""));
 }
 
-API::APIReturn AdminPortalMethods_Accounts::getAccountRoles(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortalMethods_Accounts::getAccountApplicationRoles(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
-    (*response.responseJSON()) = Helpers::setToJSON(Globals::getIdentityManager()->accounts->getAccountRoles(JSON_ASSTRING(*request.inputJSON, "accountName", "")));
+    (*response.responseJSON()) = Helpers::setToJSON(Globals::getIdentityManager()->accounts->getAccountApplicationRoles(JSON_ASSTRING(*request.inputJSON, "accountName", "")));
 }
 
 API::APIReturn AdminPortalMethods_Accounts::getAccountUsableApplicationScopes(void *context, const RequestParameters &request, ClientDetails &authClientDetails)

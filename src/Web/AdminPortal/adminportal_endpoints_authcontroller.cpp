@@ -154,7 +154,7 @@ API::APIReturn AdminPortal_Endpoints_AuthController::listAuthenticationSlotsUsed
         r["usedSlots"].append(rSlot);
     }
 
-    std::map<uint32_t, AuthenticationSlotDetails> allSlots = Globals::getIdentityManager()->authController->listAuthenticationSlots();
+    std::map<uint32_t, AuthenticationSlotDetails> allSlots = Globals::getIdentityManager()->authController->listAllAuthenticationSlots();
     for (const auto & slot : allSlots)
     {
         if ( usedSlots.find(slot.first) == usedSlots.end()  )
@@ -199,7 +199,7 @@ API::APIReturn AdminPortal_Endpoints_AuthController::listAuthenticationSlots(voi
 {
     API::APIReturn response;
 
-    std::map<uint32_t, AuthenticationSlotDetails> slots = Globals::getIdentityManager()->authController->listAuthenticationSlots();
+    std::map<uint32_t, AuthenticationSlotDetails> slots = Globals::getIdentityManager()->authController->listAllAuthenticationSlots();
     json r;
     for (const auto & slot : slots)
     {
