@@ -56,26 +56,26 @@ bool validateIAMAccessTokenCookieProperties(const RequestParameters &request, Lo
         if (!request.jwtValidator->verify(cookieAccessTokenStr, token))
         {
             // Failed to load the intermediary...
-            response.setError(HTTP::Status::S_403_FORBIDDEN, "AUTH_ERR_" + std::to_string(REASON_UNAUTHENTICATED), getReasonText(REASON_UNAUTHENTICATED));
+            response.setError(HTTP::Status::S_403_FORBIDDEN, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::UNAUTHENTICATED)), authResultToString(AuthenticationResult::UNAUTHENTICATED));
             return false;
         }
-        if (token->getClaim("app") != IAM_USRPORTAL_APPNAME || token->getClaim("type") != "IAM")
+        if (token->getClaim("app") != IAM_LOGINPORTAL_APPNAME || token->getClaim("type") != "access")
         {
             // This Token is not for this cookie...
-            response.setError(HTTP::Status::S_403_FORBIDDEN, "AUTH_ERR_" + std::to_string(REASON_UNAUTHENTICATED), getReasonText(REASON_UNAUTHENTICATED));
+            response.setError(HTTP::Status::S_403_FORBIDDEN, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::UNAUTHENTICATED)), authResultToString(AuthenticationResult::UNAUTHENTICATED));
             return false;
         }
         if (token->getSubject() != accountName)
         {
             // This Token is not for this cookie... (other username... logout first please!)
-            response.setError(HTTP::Status::S_403_FORBIDDEN, "AUTH_ERR_" + std::to_string(REASON_UNAUTHENTICATED), getReasonText(REASON_UNAUTHENTICATED));
+            response.setError(HTTP::Status::S_403_FORBIDDEN, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::UNAUTHENTICATED)), authResultToString(AuthenticationResult::UNAUTHENTICATED));
             return false;
         }
 
         if (token->getClaim("apps").isMember(appName))
         {
             // Already authenticated within this APP...
-            response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "AUTH_ERR_" + std::to_string(REASON_INTERNAL_ERROR), getReasonText(REASON_INTERNAL_ERROR));
+            response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::INTERNAL_ERROR)), authResultToString(AuthenticationResult::INTERNAL_ERROR));
             return false;
         }
     }
@@ -92,7 +92,7 @@ bool validateAndDecodeBearerAccessTokenProperties(const RequestParameters &reque
     {
         if (!request.jwtValidator->verify(oldIntermediateAuthTokenStr, oldIntermediateAuthToken))
         {
-            response.setError(HTTP::Status::S_403_FORBIDDEN, "AUTH_ERR_" + std::to_string(REASON_UNAUTHENTICATED), getReasonText(REASON_UNAUTHENTICATED));
+            response.setError(HTTP::Status::S_403_FORBIDDEN, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::UNAUTHENTICATED)), authResultToString(AuthenticationResult::UNAUTHENTICATED));
             return false;
         }
     }
@@ -211,7 +211,7 @@ API::APIReturn LoginPortal_AuthMethods::authorize(void *context, const RequestPa
     if (authContext->currentSlotPosition == std::numeric_limits<uint32_t>::max() || isFullyAuthenticated || request.clientRequest->getCookie("AccessToken") != "")
     {
         // You don´t need to authorize anything else! it's already authenticated.
-        response.setError(HTTP::Status::S_401_UNAUTHORIZED, "AUTH_ERR_" + std::to_string(REASON_BAD_PASSWORD), getReasonText(REASON_BAD_PASSWORD));
+        response.setError(HTTP::Status::S_401_UNAUTHORIZED, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::BAD_PASSWORD)), authResultToString(AuthenticationResult::BAD_PASSWORD));
         return response;
     }
 
@@ -222,13 +222,13 @@ API::APIReturn LoginPortal_AuthMethods::authorize(void *context, const RequestPa
         throw std::runtime_error("This should not be happening. maybe someone manipulated the JWT, change your key soon!!!");
     }
 
-    Reason authRetCode = identityManager->authController->authenticateCredential(clientDetails, accountName, JSON_ASSTRING(*request.inputJSON, "password", ""),
+    AuthenticationResult authRetCode = identityManager->authController->authenticateCredential(clientDetails, accountName, JSON_ASSTRING(*request.inputJSON, "password", ""),
                                                                                  authSlots.at(authContext->currentSlotPosition).slotId,
                                                                                  getAuthModeFromString(JSON_ASSTRING(*request.inputJSON, "authMode", "MODE_PLAIN")),
                                                                                  JSON_ASSTRING(*request.inputJSON, "challengeSalt", ""), authContext);
 
-    LOG_APP->log2(__func__, accountName, clientDetails.ipAddress, authRetCode ? Logs::LEVEL_SECURITY_ALERT : Logs::LEVEL_INFO,
-                  "Account Authorization Result: %" PRIu32 " - %s, for application '%s', scheme '%" PRIu32 "' and slotId[%" PRIu32 "] '%" PRIu32 "'", authRetCode, getReasonText(authRetCode),
+    LOG_APP->log2(__func__, accountName, clientDetails.ipAddress, authRetCode!=AuthenticationResult::AUTHENTICATED ? Logs::LEVEL_SECURITY_ALERT : Logs::LEVEL_INFO,
+                  "Account Authorization Result: %" PRIu32 " - %s, for application '%s', scheme '%" PRIu32 "' and slotId[%" PRIu32 "] '%" PRIu32 "'", authRetCode, authResultToString(authRetCode),
                   authContext->appName.c_str(), authContext->schemeId, authContext->currentSlotPosition, authSlots[authContext->currentSlotPosition].slotId);
 
     if (IS_PASSWORD_AUTHENTICATED(authRetCode))
@@ -236,19 +236,19 @@ API::APIReturn LoginPortal_AuthMethods::authorize(void *context, const RequestPa
         if (!setupNewIntermediateAuthToken(request, response, identityManager, authContext, authSlots, oldIntermediateAuthToken.getExpirationTime(), accountName))
         {
             // Invalid Cookie...
-            authRetCode = REASON_BAD_PARAMETERS;
-            response.setError(HTTP::Status::S_401_UNAUTHORIZED, "AUTH_ERR_" + std::to_string(authRetCode), getReasonText(authRetCode));
+            authRetCode = AuthenticationResult::BAD_PARAMETERS;
+            response.setError(HTTP::Status::S_401_UNAUTHORIZED, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(authRetCode)), authResultToString(authRetCode));
         }
     }
     else
     {
-        if (authRetCode == REASON_ACCOUNT_NOT_IN_APP)
+        if (authRetCode == AuthenticationResult::ACCOUNT_NOT_IN_APP)
         {
             // Prevent user/app enumeration:
-            authRetCode = REASON_BAD_PASSWORD;
+            authRetCode = AuthenticationResult::BAD_PASSWORD;
         }
 
-        response.setError(HTTP::Status::S_401_UNAUTHORIZED, "AUTH_ERR_" + std::to_string(authRetCode), getReasonText(authRetCode));
+        response.setError(HTTP::Status::S_401_UNAUTHORIZED, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(authRetCode)), authResultToString(authRetCode));
     }
 
     LOG_APP->log2(__func__, accountName, clientDetails.ipAddress, response.getHTTPResponseCode() != HTTP::Status::S_200_OK ? Logs::LEVEL_SECURITY_ALERT : Logs::LEVEL_INFO, "R/%03" PRIu16 ": %s",

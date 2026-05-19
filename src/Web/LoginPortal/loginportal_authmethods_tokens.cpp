@@ -86,7 +86,7 @@ bool LoginPortal_AuthMethods::token_createAndSignApplicationsJWTs(IdentityManage
         return false;
     }
 
-    identityManager->authController->insertApplicationAuthLogAccountAccess(user, app, schemeId, authClientDetails, refreshTokenId, accessToken.getJwtId(), accessToken.getExpirationTime(),
+    identityManager->authController->insertApplicationAccountAccessAuthLog(user, app, schemeId, authClientDetails, refreshTokenId, accessToken.getJwtId(), accessToken.getExpirationTime(),
                                                                            refreshToken.getExpirationTime());
 
     // Here is the effective logging in the app.
@@ -100,7 +100,7 @@ bool LoginPortal_AuthMethods::token_createAndSignApplicationsJWTs(IdentityManage
 
 bool LoginPortal_AuthMethods::token_validateJwtClaims(const JWT::Token *jwtToken, const std::string &user, const std::string &ipAddress)
 {
-    if (jwtToken->getClaim("app") != IAM_USRPORTAL_APPNAME || jwtToken->getClaim("type") != "IAM")
+    if (jwtToken->getClaim("app") != IAM_LOGINPORTAL_APPNAME || jwtToken->getClaim("type") != "access")
     {
         LOG_APP->log2(__func__, user, ipAddress, Logs::LEVEL_SECURITY_ALERT, "Token request denied: Invalid or unauthorized token.");
         return false;
@@ -167,7 +167,7 @@ API::APIReturn LoginPortal_AuthMethods::token(void *context, const RequestParame
     //////////////////////////////////////////////////////////////////////////////////////////
     if (!token_validateJwtClaims(request.jwtToken, authenticatedUser, authClientDetails.ipAddress))
     {
-        response.setError(HTTP::Status::S_403_FORBIDDEN, "AUTH_ERR_" + std::to_string(REASON_UNAUTHENTICATED), getReasonText(REASON_UNAUTHENTICATED));
+        response.setError(HTTP::Status::S_403_FORBIDDEN, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::UNAUTHENTICATED)), authResultToString(AuthenticationResult::UNAUTHENTICATED));
         return response;
     }
 
@@ -177,29 +177,29 @@ API::APIReturn LoginPortal_AuthMethods::token(void *context, const RequestParame
     // Validate authentication scheme
     if (!token_validateAuthenticationScheme(identityManager, request.jwtToken, appName, activity, schemeId, authenticatedUser, authClientDetails.ipAddress))
     {
-        response.setError(HTTP::Status::S_401_UNAUTHORIZED, "AUTH_ERR_" + std::to_string(REASON_UNAUTHENTICATED), getReasonText(REASON_UNAUTHENTICATED));
+        response.setError(HTTP::Status::S_401_UNAUTHORIZED, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::UNAUTHENTICATED)), authResultToString(AuthenticationResult::UNAUTHENTICATED));
         return response;
     }
 
     // Validate app authorization
     if (!token_validateAppAuthorization(identityManager, request.jwtToken, appName, authenticatedUser, authClientDetails.ipAddress))
     {
-        response.setError(HTTP::Status::S_401_UNAUTHORIZED, "AUTH_ERR_" + std::to_string(REASON_ACCOUNT_NOT_IN_APP), getReasonText(REASON_ACCOUNT_NOT_IN_APP));
+        response.setError(HTTP::Status::S_401_UNAUTHORIZED, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::ACCOUNT_NOT_IN_APP)), authResultToString(AuthenticationResult::ACCOUNT_NOT_IN_APP));
         return response;
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////
     //// ---------------------------    ACCOUNT VALIDATIONS   --------------------------- ////
     //////////////////////////////////////////////////////////////////////////////////////////
-    Reason r;
+    AuthenticationResult r;
     if (!identityManager->validateAccountForNewAccess(authenticatedUser, appName, r, true))
     {
         // This token is not available for retrieving app tokens because the user does not have a valid account with the specified application.
-        const char *reasonText = getReasonText(r);
+        const char *reasonText = authResultToString(r);
         LOG_APP->log2(__func__, authenticatedUser, authClientDetails.ipAddress, Logs::LEVEL_SECURITY_ALERT,
                       "Token request denied: User '%s' attempted to obtain an access token for app '%s', but the account is not valid or authorized for this application. Reason: %s.",
                       authenticatedUser.c_str(), appName.c_str(), reasonText);
-        response.setError(HTTP::Status::S_401_UNAUTHORIZED, "AUTH_ERR_INVALID_ACCT", getReasonText(r));
+        response.setError(HTTP::Status::S_401_UNAUTHORIZED, "AUTH_ERR_INVALID_ACCT", authResultToString(r));
         return response;
     }
 
@@ -214,7 +214,7 @@ API::APIReturn LoginPortal_AuthMethods::token(void *context, const RequestParame
 
     if (!token_validateRedirectURI(identityManager, appName, redirectURI, authenticatedUser, authClientDetails.ipAddress))
     {
-        response.setError(HTTP::Status::S_406_NOT_ACCEPTABLE, "AUTH_ERR_" + std::to_string(REASON_BAD_PARAMETERS), "Invalid Redirect URI");
+        response.setError(HTTP::Status::S_406_NOT_ACCEPTABLE, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::BAD_PARAMETERS)), "Invalid Redirect URI");
         return response;
     }
 
@@ -225,7 +225,7 @@ API::APIReturn LoginPortal_AuthMethods::token(void *context, const RequestParame
     if (!token_createAndSignApplicationsJWTs(identityManager, request.jwtToken, appName, authenticatedUser, schemeId, redirectURI, response, authClientDetails))
     {
         // Failed to create the token...
-        response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "AUTH_ERR_" + std::to_string(REASON_INTERNAL_ERROR), getReasonText(REASON_INTERNAL_ERROR));
+        response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::INTERNAL_ERROR)), authResultToString(AuthenticationResult::INTERNAL_ERROR));
         return response;
     }
 

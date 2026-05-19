@@ -22,7 +22,8 @@ using namespace Network::Protocols;
 
 API::APIReturn LoginPortal_AuthMethods::registerAccount(void *context, const RequestParameters &request, ClientDetails &clientDetails)
 {
-    API::APIReturn response;
+        API::APIReturn response;
+/*
     IdentityManager *identityManager = Globals::getIdentityManager();
 
     auto config = Globals::pConfig;
@@ -96,7 +97,7 @@ API::APIReturn LoginPortal_AuthMethods::registerAccount(void *context, const Req
                 if (authSlots.begin()->details.isTextPasswordFunction())
                 {
                     auto credentialData = identityManager->authController->createNewCredential(authSlots.begin()->slotId, newPass, true);
-                    r = identityManager->authController->changeCredential(accountToCreate, credentialData, authSlots.begin()->slotId);
+                    r = identityManager->authController->changeAccountCredential(accountToCreate, credentialData, authSlots.begin()->slotId);
                 }
             }
         }
@@ -104,7 +105,8 @@ API::APIReturn LoginPortal_AuthMethods::registerAccount(void *context, const Req
         LOG_APP->log2(__func__, request.jwtToken->getSubject(), clientDetails.ipAddress, r ? Logs::LEVEL_SECURITY_ALERT : Logs::LEVEL_INFO,
                       !r ? "Failed to change initial password on account '%s'" : "Initial password for account '%s' changed.", accountToCreate.c_str());
     }
-    return response;
+    */
+return response;
 }
 
 // TODO: llenar los details del user.

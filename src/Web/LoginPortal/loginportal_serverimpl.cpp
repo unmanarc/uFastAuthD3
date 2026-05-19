@@ -43,7 +43,7 @@ bool LoginPortal_ServerImpl::createService()
     loginWebServer->config.setSoftwareVersion(atoi(PROJECT_VER_MAJOR), atoi(PROJECT_VER_MINOR), atoi(PROJECT_VER_PATCH), "a");
 
     // This will validate the JWT, the app should match with this:
-    loginWebServer->config.appName = IAM_USRPORTAL_APPNAME;
+    loginWebServer->config.appName = IAM_LOGINPORTAL_APPNAME;
 
     // Setup the methods handler for version 1:
     loginWebServer->endpointsHandler[1] = std::make_shared<API::RESTful::Endpoints>();
