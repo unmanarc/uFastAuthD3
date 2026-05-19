@@ -47,6 +47,13 @@ bool UserPortal_ServerImpl::createService()
         return false;
     }
 
+    userPortalWebServer->config.jwtSigner = Globals::getIdentityManager()->applications->getAppJWTSigner(IAM_USRPORTAL_APPNAME);
+    if (!userPortalWebServer->config.jwtSigner)
+    {
+        LOG_APP->log0(__func__, Logs::LEVEL_CRITICAL, "We need a JWT Signer for the IAM User Portal Web Server.");
+        return false;
+    }
+
     // This will validate the JWT, the app should match with this:
     userPortalWebServer->config.appName = IAM_USRPORTAL_APPNAME;
 
