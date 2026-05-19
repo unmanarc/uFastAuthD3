@@ -127,9 +127,10 @@ struct Credential
         slotDetails.fromJSON(j["slotDetails"]);
         forceExpiration = JSON_ASBOOL(j, "forceExpiration", true);
         badAttempts = JSON_ASUINT(j, "badAttempts", 0);
+        lastChange = (time_t) JSON_ASUINT64(j, "lastChange", 0);
         expirationTimestamp = (time_t) JSON_ASUINT64(j, "expirationTimestamp", 0);
         hash = JSON_ASSTRING(j, "hash", "");
-        Mantids30::Helpers::Encoders::fromHex(JSON_ASSTRING(j, "hash", "FFFFFFFF"), ssalt, 4);
+        Mantids30::Helpers::Encoders::fromHex(JSON_ASSTRING(j, "ssalt", "FFFFFFFF"), ssalt, 4);
     }
 
     json toJSON(const AuthenticationPolicy &authPolicy) const
@@ -141,7 +142,7 @@ struct Credential
         jRet["expirationTimestamp"] = expirationTimestamp;
         jRet["hash"] = hash;
         jRet["ssalt"] = Mantids30::Helpers::Encoders::toHex(ssalt, 4);
-
+        jRet["lastChange"] = lastChange;
         jRet["isExpired"] = isAccountExpired();
         jRet["isLocked"] = isLocked(authPolicy);
 
@@ -164,125 +165,80 @@ struct Credential
     }
 
     bool isLocked(const AuthenticationPolicy &authPolicy) const { return (badAttempts + 1) >= authPolicy.maxTries; }
-
     bool isAccountExpired() const { return (time(nullptr) > expirationTimestamp && expirationTimestamp != 0) || forceExpiration; }
 
     bool forceExpiration = true;
     uint32_t badAttempts = 0;
     // 0 means that the password does not expire... 1 means that it's expired unless and when you change the password, the expiration will be set to current time + slot default time...
-    time_t expirationTimestamp = 1;
+    time_t expirationTimestamp = 1, lastChange=0;
     std::string hash;
     unsigned char ssalt[4] = {0xFF, 0xFF, 0xFF, 0xFF};
     AuthenticationSlotDetails slotDetails;
 };
 
-enum Reason
+enum class AuthenticationResult : uint16_t
 {
-    REASON_AUTHENTICATED = 0,             // AUTHENTICATED!
-    REASON_INTERNAL_ERROR = 500,          // INTERNAL ERROR (OTHER)
-    REASON_NOT_IMPLEMENTED = 501,         // AUTHENTICATION NOT IMPLEMENTED YET :(
-    REASON_DUPLICATED_SESSION = 502,      // DUPLICATED SESSION ID
-    REASON_EXPIRED_PASSWORD = 100,        // VALIDATE, HOWEVER MUST CHANGE PASSWORD NOW!
-    REASON_EXPIRED_ACCOUNT = 102,         // ACCOUNT EXPIRED. NOT USABLE
-    REASON_INACTIVE_ACCOUNT = 111,        // ACCOUNT INACTIVE. NOT USABLE
-    REASON_DISABLED_ACCOUNT = 103,        // ACCOUNT DISABLED BY ADMIN.
-    REASON_UNCONFIRMED_ACCOUNT = 104,     // ACCOUNT NOT CONFIRMED YET.
-    REASON_BAD_ACCOUNT = 105,             // INVALID OR NON-EXISTENT ACCOUNT
-    REASON_BAD_PASSWORD = 106,            // AUTHENTICATION FAILED.
-    REASON_PASSWORD_INDEX_NOTFOUND = 107, // Authentication Slot SlotId not found.
-    REASON_AUTH_SCHEME_CHANGED = 108,     // Authentication scheme changed.
-    REASON_ACCOUNT_NOT_IN_APP = 109,      // Account is not registered on the application
-    REASON_AUTH_SCHEME_EMPTY = 110,       // Authentication scheme is empty.
-    REASON_BAD_PARAMETERS = 993,          // BAD PARAMETERS.
-    REASON_INVALID_DOMAIN = 994,          // AUTHENTICATION FAILED.
-    REASON_INVALID_AUTHENTICATOR = 995,
-    REASON_SESSIONLIMITS_EXCEEDED = 996,
-    REASON_ANSWER_TIMEDOUT = 997,
-    REASON_EXPIRED = 998,
-    REASON_UNAUTHENTICATED = 999
+    AUTHENTICATED = 0,             // AUTHENTICATED!
+    INTERNAL_ERROR = 500,          // INTERNAL ERROR (OTHER)
+    NOT_IMPLEMENTED = 501,         // AUTHENTICATION NOT IMPLEMENTED YET :(
+    DUPLICATED_SESSION = 502,      // DUPLICATED SESSION ID
+    EXPIRED_PASSWORD = 100,        // VALIDATE, HOWEVER MUST CHANGE PASSWORD NOW!
+    EXPIRED_ACCOUNT = 102,         // ACCOUNT EXPIRED. NOT USABLE
+    INACTIVE_ACCOUNT = 111,        // ACCOUNT INACTIVE. NOT USABLE
+    DISABLED_ACCOUNT = 103,        // ACCOUNT DISABLED BY ADMIN.
+    UNCONFIRMED_ACCOUNT = 104,     // ACCOUNT NOT CONFIRMED YET.
+    BAD_ACCOUNT = 105,             // INVALID OR NON-EXISTENT ACCOUNT
+    BAD_PASSWORD = 106,            // AUTHENTICATION FAILED.
+    LOCKED_PASSWORD = 112,         // AUTHENTICATION FAILED (LOCKED PASSWORD).
+    PASSWORD_INDEX_NOTFOUND = 107, // Authentication Slot SlotId not found.
+    AUTH_SCHEME_CHANGED = 108,     // Authentication scheme changed.
+    ACCOUNT_NOT_IN_APP = 109,      // Account is not registered on the application
+    AUTH_SCHEME_EMPTY = 110,       // Authentication scheme is empty.
+    BAD_PARAMETERS = 993,          // BAD PARAMETERS.
+    INVALID_DOMAIN = 994,          // AUTHENTICATION FAILED.
+    INVALID_AUTHENTICATOR = 995,
+    SESSIONLIMITS_EXCEEDED = 996,
+    ANSWER_TIMEDOUT = 997,
+    EXPIRED = 998,
+    UNAUTHENTICATED = 999
 };
 
-static bool IS_PASSWORD_AUTHENTICATED(const Reason &reason)
+
+[[nodiscard]] inline bool IS_PASSWORD_AUTHENTICATED(AuthenticationResult result) noexcept
 {
-    return reason == REASON_AUTHENTICATED || reason == REASON_EXPIRED_PASSWORD;
+    return result == AuthenticationResult::AUTHENTICATED ||
+           result == AuthenticationResult::EXPIRED_PASSWORD;
 }
 
-static const char *cREASON_AUTHENTICATED = "Authenticated";
-static const char *cREASON_INTERNAL_ERROR = "Authentication Internal Error";
-static const char *cREASON_NOT_IMPLEMENTED = "Authentication not implemented yet";
-static const char *cREASON_EXPIRED_PASSWORD = "Password expired";
-static const char *cREASON_EXPIRED_ACCOUNT = "Account expired";
-static const char *cREASON_INACTIVE_ACCOUNT = "Account is inactive";
-static const char *cREASON_DISABLED_ACCOUNT = "Account disabled";
-static const char *cREASON_UNCONFIRMED_ACCOUNT = "Account unconfirmed";
-static const char *cREASON_BAD_ACCOUNT = "Invalid Account";
-static const char *cREASON_BAD_PASSWORD = "Invalid password";
-static const char *cREASON_PASSWORD_INDEX_NOTFOUND = "Authentication Slot ID Not Found";
-static const char *cREASON_EXPIRED = "Expired authentication";
-static const char *cREASON_UNAUTHENTICATED = "Not authenticated yet";
-static const char *cREASON_ANSWER_TIMEDOUT = "Answer timed out";
-static const char *cREASON_DUPLICATED_SESSION = "Session ID Duplicated Error";
-static const char *cREASON_INVALID_AUTHENTICATOR = "Invalid or undefined authenticator";
-static const char *cREASON_INVALID_DOMAIN = "Invalid domain name";
-static const char *cREASON_SESSIONLIMITS_EXCEEDED = "Sessions limits exceeded";
-static const char *cREASON_BAD_PARAMETERS = "Bad Parameters";
-static const char *cREASON_AUTH_CHANGED = "Authentication Scheme Changed";
-static const char *cREASON_ACCOUNT_NOT_IN_APP = "Account not registered in the application";
-static const char *cREASON_AUTH_SCHEME_EMPTY = "Authentication Scheme is Empty";
-
-static const char *cNULL = "";
-
-static const char *getReasonText(const Reason &reason)
+[[nodiscard]] inline const char * authResultToString(AuthenticationResult result) noexcept
 {
-    switch (reason)
+    switch (result)
     {
-    case REASON_SESSIONLIMITS_EXCEEDED:
-        return cREASON_SESSIONLIMITS_EXCEEDED;
-    case REASON_INVALID_AUTHENTICATOR:
-        return cREASON_INVALID_AUTHENTICATOR;
-    case REASON_DUPLICATED_SESSION:
-        return cREASON_DUPLICATED_SESSION;
-    case REASON_AUTHENTICATED:
-        return cREASON_AUTHENTICATED;
-    case REASON_INTERNAL_ERROR:
-        return cREASON_INTERNAL_ERROR;
-    case REASON_NOT_IMPLEMENTED:
-        return cREASON_NOT_IMPLEMENTED;
-    case REASON_EXPIRED_PASSWORD:
-        return cREASON_EXPIRED_PASSWORD;
-    case REASON_EXPIRED_ACCOUNT:
-        return cREASON_EXPIRED_ACCOUNT;
-    case REASON_DISABLED_ACCOUNT:
-        return cREASON_DISABLED_ACCOUNT;
-    case REASON_UNCONFIRMED_ACCOUNT:
-        return cREASON_UNCONFIRMED_ACCOUNT;
-    case REASON_BAD_ACCOUNT:
-        return cREASON_BAD_ACCOUNT;
-    case REASON_BAD_PASSWORD:
-        return cREASON_BAD_PASSWORD;
-    case REASON_PASSWORD_INDEX_NOTFOUND:
-        return cREASON_PASSWORD_INDEX_NOTFOUND;
-    case REASON_ANSWER_TIMEDOUT:
-        return cREASON_ANSWER_TIMEDOUT;
-    case REASON_EXPIRED:
-        return cREASON_EXPIRED;
-    case REASON_UNAUTHENTICATED:
-        return cREASON_UNAUTHENTICATED;
-    case REASON_INVALID_DOMAIN:
-        return cREASON_INVALID_DOMAIN;
-    case REASON_BAD_PARAMETERS:
-        return cREASON_BAD_PARAMETERS;
-    case REASON_AUTH_SCHEME_CHANGED:
-        return cREASON_AUTH_CHANGED;
-    case REASON_ACCOUNT_NOT_IN_APP:
-        return cREASON_ACCOUNT_NOT_IN_APP;
-    case REASON_AUTH_SCHEME_EMPTY:
-        return cREASON_AUTH_SCHEME_EMPTY;
-    case REASON_INACTIVE_ACCOUNT:
-        return cREASON_INACTIVE_ACCOUNT;
-        break;
+    case AuthenticationResult::AUTHENTICATED:            return "Authenticated";
+    case AuthenticationResult::INTERNAL_ERROR:           return "Authentication Internal Error";
+    case AuthenticationResult::NOT_IMPLEMENTED:          return "Authentication not implemented yet";
+    case AuthenticationResult::DUPLICATED_SESSION:       return "Session ID Duplicated Error";
+    case AuthenticationResult::EXPIRED_PASSWORD:         return "Password Expired";
+    case AuthenticationResult::EXPIRED_ACCOUNT:          return "Account Expired";
+    case AuthenticationResult::INACTIVE_ACCOUNT:         return "Account is inactive";
+    case AuthenticationResult::DISABLED_ACCOUNT:         return "Account Disabled";
+    case AuthenticationResult::UNCONFIRMED_ACCOUNT:      return "Account Unconfirmed";
+    case AuthenticationResult::BAD_ACCOUNT:              return "Invalid Account";
+    case AuthenticationResult::BAD_PASSWORD:             return "Invalid Password";
+    case AuthenticationResult::LOCKED_PASSWORD:          return "Password Locked";
+    case AuthenticationResult::PASSWORD_INDEX_NOTFOUND:  return "Authentication Slot ID Not Found";
+    case AuthenticationResult::AUTH_SCHEME_CHANGED:      return "Authentication Scheme Changed";
+    case AuthenticationResult::ACCOUNT_NOT_IN_APP:       return "Account not registered in the application";
+    case AuthenticationResult::AUTH_SCHEME_EMPTY:        return "Authentication Scheme is Empty";
+    case AuthenticationResult::BAD_PARAMETERS:           return "Bad Parameters";
+    case AuthenticationResult::INVALID_DOMAIN:           return "Invalid domain name";
+    case AuthenticationResult::INVALID_AUTHENTICATOR:    return "Invalid or undefined authenticator";
+    case AuthenticationResult::SESSIONLIMITS_EXCEEDED:   return "Sessions limits exceeded";
+    case AuthenticationResult::ANSWER_TIMEDOUT:          return "Answer timed out";
+    case AuthenticationResult::EXPIRED:                  return "Expired authentication";
+    case AuthenticationResult::UNAUTHENTICATED:          return "Not authenticated yet";
+    default:                                             return "Unknown authentication result";
     }
-    return cNULL;
 }
 
 struct AuthenticationSchemeUsedSlot

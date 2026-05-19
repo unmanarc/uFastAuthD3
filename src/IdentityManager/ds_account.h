@@ -22,10 +22,12 @@ struct AccountDetailFieldValue
     std::string fieldType;
     std::string fieldRegexpValidator;
     std::optional<std::string> value;
+    Json::Value extendedAttribs;
 
     Json::Value toJSON() const
     {
         Json::Value fieldJson;
+        fieldJson["extendedAttribs"] = extendedAttribs;
         fieldJson["name"] = name;
         fieldJson["description"] = description;
         fieldJson["type"] = fieldType;
@@ -44,6 +46,7 @@ struct AccountDetailFieldValue
         description = JSON_ASSTRING(json, "description", "");
         fieldType = JSON_ASSTRING(json, "type", "");
         fieldRegexpValidator = JSON_ASSTRING(json, "regexpValidator", "");
+        extendedAttribs = json["extendedAttribs"];
         if (json.isMember("value") && !json["value"].isNull())
             value = JSON_ASSTRING(json, "value", "");
     }
@@ -58,9 +61,14 @@ struct AccountDetailField
     bool isUnique = false;
     json extendedAttributes;
 
-    std::string getRegexpValidatorText()
+    std::string getRegexpValidatorText() const
     {
         return JSON_ASSTRING(extendedAttributes["behavior"],"regexpValidator","");
+    }
+
+    bool canUserEdit() const
+    {
+        return JSON_ASBOOL(extendedAttributes["security"],"canUserEdit",false);
     }
 
     Json::Value toJSON() const

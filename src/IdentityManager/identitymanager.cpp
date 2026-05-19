@@ -21,31 +21,31 @@ IdentityManager::~IdentityManager()
         delete applicationActivities;
 }
 
-bool IdentityManager::validateAccountForNewAccess(const std::string &accountName, const std::string &appName, Reason &reason, bool checkValidAppAccount)
+bool IdentityManager::validateAccountForNewAccess(const std::string &accountName, const std::string &appName, AuthenticationResult &reason, bool checkValidAppAccount)
 {
     // First, check if the account is disabled, unconfirmed, or expired.
     AccountFlags accountFlags = accounts->getAccountFlags(accountName);
 
     if (!accountFlags.enabled)
     {
-        reason = Reason::REASON_DISABLED_ACCOUNT;
+        reason = AuthenticationResult::DISABLED_ACCOUNT;
         return false;
     }
     else if (!accountFlags.confirmed)
     {
-        reason = Reason::REASON_UNCONFIRMED_ACCOUNT;
+        reason = AuthenticationResult::UNCONFIRMED_ACCOUNT;
         return false;
     }
     else if (accounts->isAccountExpired(accountName))
     {
-        reason = Reason::REASON_EXPIRED_ACCOUNT;
+        reason = AuthenticationResult::EXPIRED_ACCOUNT;
         return false;
     }
 
     // If checkValidAppAccount is true, check if the account is valid for the specified application.
     if (checkValidAppAccount && !applications->validateApplicationAccount(appName, accountName))
     {
-        reason = Reason::REASON_BAD_ACCOUNT;
+        reason = AuthenticationResult::BAD_ACCOUNT;
         return false;
     }
 
@@ -174,6 +174,8 @@ std::shared_ptr<JWT> IdentityManager::Applications::getAppJWTSigner(const std::s
 IdentityManager::AuthController::AuthController(IdentityManager *parent)
 {
     m_authLogGC.setGarbageCollectorInterval(60000); // Check every 60 seconds
-    m_authLogGC.startGarbageCollector(checkExpiredAuthLogSessions, this, "GC:AuthLogSessions");
+    m_authLogGC.startGarbageCollector(markExpiredAuthLogSessions, this, "GC:AuthLogSessions");
     m_parent = parent;
 }
+
+

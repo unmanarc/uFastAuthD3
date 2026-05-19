@@ -352,46 +352,90 @@ Json::Value IdentityManager_DB::Applications_DB::searchApplications(const json &
 
     return ret;
 }
-/*
-std::list<ApplicationDetails> IdentityManager_DB::Applications_DB::searchApplications(std::string sSearchWords, size_t limit, size_t offset)
+
+std::vector<AccountApplicationInfo> IdentityManager_DB::Applications_DB::listAccountApplicationsFullInfo(const std::string &accountName)
 {
-    std::list<ApplicationDetails> ret;
+    std::vector<AccountApplicationInfo> ret;
     Threads::Sync::Lock_RD lock(_parent->m_mutex);
 
-    Abstract::STRING applicationName, appCreator, description;
-
-    std::string sSqlQuery = "SELECT `appName`,`f_appCreator`,`appDescription` FROM iam.applications";
-
-    if (!sSearchWords.empty())
+    // Query 1: Obtener apps basicas con JOIN
     {
-        sSearchWords = '%' + sSearchWords + '%';
-        sSqlQuery += " WHERE (`appName` LIKE :SEARCHWORDS OR `appDescription` LIKE :SEARCHWORDS)";
+        Abstract::STRING appName, appDescription;
+        Abstract::BOOL isAppAdmin;
+        Abstract::DATETIME enrollmentDate;
+
+        auto i = _parent->m_sqlConnector->qSelect("SELECT a.`f_appName`, ap.`appDescription`, a.`isAppAdmin`, a.`enrollmentDate` "
+                                                  "FROM iam.applicationAccounts a "
+                                                  "JOIN iam.applications ap ON a.`f_appName` = ap.`appName` "
+                                                  "WHERE a.`f_accountName` = :accountName;",
+                                                  {{":accountName", MAKE_VAR(STRING, accountName)}}, {&appName, &appDescription, &isAppAdmin, &enrollmentDate});
+
+        while (i && i->isSuccessful() && i->step())
+        {
+            AccountApplicationInfo info;
+            info.appName = appName.getValue();
+            info.appDescription = appDescription.getValue();
+            info.isAppAdmin = isAppAdmin.getValue();
+            info.enrollmentDate = enrollmentDate.getValue();
+
+            ret.push_back(info);
+        }
     }
 
-    if (limit)
-        sSqlQuery += " LIMIT :LIMIT OFFSET :OFFSET";
-
-    sSqlQuery += ";";
-
-    auto i = _parent->m_sqlConnector->qSelect(sSqlQuery,
-                                                                                      {{":SEARCHWORDS", MAKE_VAR(STRING, sSearchWords)},
-                                                                                       {":LIMIT", MAKE_VAR(UINT64, limit)},
-                                                                                       {":OFFSET", MAKE_VAR(UINT64, offset)}},
-                                                                                      {&applicationName, &appCreator, &description});
-    while (i && i->isSuccessful() && i->step())
+    for ( AccountApplicationInfo & info: ret )
     {
-        ApplicationDetails rDetail;
+        // Query 2: Obtener roles del account en esta app
+        {
+            Abstract::STRING roleName;
+            auto j = _parent->m_sqlConnector->qSelect("SELECT `f_roleName` FROM iam.applicationRolesAccounts "
+                                                      "WHERE `f_accountName` = :accountName AND `f_appName` = :appName;",
+                                                      {{":accountName", MAKE_VAR(STRING, accountName)}, {":appName", MAKE_VAR(STRING, info.appName)}}, {&roleName});
 
-        rDetail.appCreator = appCreator.getValue();
-        rDetail.description = description.getValue();
-        rDetail.applicationName = applicationName.getValue();
+            while (j && j->isSuccessful() && j->step())
+            {
+                std::string currentRole = roleName.getValue();
+                info.roles.insert(currentRole);
+            }
+        }
 
-        ret.push_back(rDetail);
+
+        for (const std::string & currentRole : info.roles)
+        {
+            // Query 3: Obtener scopes de este rol
+            Abstract::STRING scopeId;
+            auto k = _parent->m_sqlConnector->qSelect("SELECT `f_scopeId` FROM iam.applicationRolesScopes "
+                                                      "WHERE `f_appName` = :appName AND `f_roleName` = :roleName;",
+                                                      {{":appName", MAKE_VAR(STRING, info.appName)}, {":roleName", MAKE_VAR(STRING, currentRole)}}, {&scopeId});
+
+            while (k && k->isSuccessful() && k->step())
+            {
+                std::string scope = scopeId.getValue();
+                info.allScopes.insert(scope);
+            }
+        }
+
+        {
+            // Query 4: Obtener scopes directos del account en esta app
+            // desde iam.applicationScopeAccounts unido con iam.applicationScopes
+            Abstract::STRING scopeId;
+            auto l = _parent->m_sqlConnector->qSelect(
+                "SELECT `f_scopeId` FROM iam.applicationScopeAccounts  WHERE `f_accountName` = :accountName AND `f_appName` = :appName;",
+                {{":accountName", MAKE_VAR(STRING, accountName)}, {":appName", MAKE_VAR(STRING, info.appName)}}, {&scopeId});
+
+            while (l && l->isSuccessful() && l->step())
+            {
+                std::string scope = scopeId.getValue();
+                info.directScopes.insert(scope);
+                info.allScopes.insert(scope); // También en allScopes (unión)
+            }
+        }
     }
+
+
 
     return ret;
 }
-*/
+
 bool IdentityManager_DB::Applications_DB::addWebLoginAllowedRedirectURIToApplication(const std::string &appName, const std::string &loginRedirectURI)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);

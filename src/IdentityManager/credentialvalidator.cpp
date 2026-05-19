@@ -31,17 +31,17 @@ void CredentialValidator::cleanupExpiredTokens(void *asv)
     _asv->cleanupExpiredTokens();
 }
 
-Reason CredentialValidator::validateStoredCredential(const std::string &accountName, const Credential &storedCredential, const std::string &passwordInput, const std::string &challengeSalt,
+AuthenticationResult CredentialValidator::validateStoredCredential(const std::string &accountName, const Credential &storedCredential, const std::string &passwordInput, const std::string &challengeSalt,
                                                      Mode authMode)
 {
-    Reason r = REASON_NOT_IMPLEMENTED;
+    AuthenticationResult r = AuthenticationResult::NOT_IMPLEMENTED;
     //  bool saltedHash = false;
     std::string toCompare;
 
     switch (storedCredential.slotDetails.passwordFunction)
     {
     case FN_NOTFOUND:
-        return REASON_INTERNAL_ERROR;
+        return AuthenticationResult::INTERNAL_ERROR;
     case FN_PLAIN:
     {
         toCompare = passwordInput;
@@ -77,7 +77,7 @@ Reason CredentialValidator::validateStoredCredential(const std::string &accountN
     switch (authMode)
     {
     case MODE_PLAIN:
-        r = storedCredential.hash == toCompare ? REASON_AUTHENTICATED : REASON_BAD_PASSWORD; // 1-1 comparisson
+        r = storedCredential.hash == toCompare ? AuthenticationResult::AUTHENTICATED : AuthenticationResult::BAD_PASSWORD; // 1-1 comparisson
         break;
     case MODE_CHALLENGE:
         r = validateChallenge(storedCredential.hash, passwordInput, challengeSalt);
@@ -86,18 +86,18 @@ Reason CredentialValidator::validateStoredCredential(const std::string &accountN
 
 skipAuthMode:;
 
-    if (storedCredential.isAccountExpired() && r == REASON_AUTHENTICATED)
-        r = REASON_EXPIRED_PASSWORD;
+    if (storedCredential.isAccountExpired() && r == AuthenticationResult::AUTHENTICATED)
+        r = AuthenticationResult::EXPIRED_PASSWORD;
 
     return r;
 }
 
-Reason CredentialValidator::validateChallenge(const std::string &passwordFromDB, const std::string &challengeInput, const std::string &challengeSalt)
+AuthenticationResult CredentialValidator::validateChallenge(const std::string &passwordFromDB, const std::string &challengeInput, const std::string &challengeSalt)
 {
-    return challengeInput == Mantids30::Helpers::Crypto::calcSHA256(passwordFromDB + challengeSalt) ? REASON_AUTHENTICATED : REASON_BAD_PASSWORD;
+    return challengeInput == Mantids30::Helpers::Crypto::calcSHA256(passwordFromDB + challengeSalt) ? AuthenticationResult::AUTHENTICATED : AuthenticationResult::BAD_PASSWORD;
 }
 
-Reason CredentialValidator::validateGAuth(const std::string &accountName, const std::string &seed, const std::string &tokenInput)
+AuthenticationResult CredentialValidator::validateGAuth(const std::string &accountName, const std::string &seed, const std::string &tokenInput)
 {
     // Use the mutex to synchronize access to the cache and expirationQueue
     std::unique_lock<std::mutex> lock(cacheMutex);
@@ -117,7 +117,7 @@ Reason CredentialValidator::validateGAuth(const std::string &accountName, const 
             if (elapsedSeconds < 90)
             {
                 // Token Already Used.
-                return REASON_BAD_PASSWORD;
+                return AuthenticationResult::BAD_PASSWORD;
             }
         }
     }
@@ -132,11 +132,11 @@ Reason CredentialValidator::validateGAuth(const std::string &accountName, const 
             usedTokensCache[accountTokenKey] = now;
             expirationQueue.insert({now, accountTokenKey});
         }
-        return REASON_AUTHENTICATED;
+        return AuthenticationResult::AUTHENTICATED;
     }
     else
     {
-        return REASON_BAD_PASSWORD;
+        return AuthenticationResult::BAD_PASSWORD;
     }
 }
 

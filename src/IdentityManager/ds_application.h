@@ -21,6 +21,47 @@ struct AppError
 };
 
 
+struct AccountApplicationInfo
+{
+    Json::Value toJSON() const
+    {
+        Json::Value app;
+        app["name"] = appName;
+        app["description"] = appDescription;
+        app["isAppAdmin"] = isAppAdmin;
+        app["enrollmentDate"] = Json::Int64(enrollmentDate);
+        app["defaultReturnURL"] = defaultReturnURL;
+
+        // Roles as array
+        Json::Value rolesArray(Json::arrayValue);
+        for (const auto &role : roles)
+            rolesArray.append(role);
+        app["roles"] = rolesArray;
+
+        // Direct scopes as array
+        Json::Value directScopesArray(Json::arrayValue);
+        for (const auto &scope : directScopes)
+            directScopesArray.append(scope);
+        app["directScopes"] = directScopesArray;
+
+        // All scopes (union) as array
+        Json::Value allScopesArray(Json::arrayValue);
+        for (const auto &scope : allScopes)
+            allScopesArray.append(scope);
+        app["allScopes"] = allScopesArray;
+
+        return app;
+    }
+    std::string appName;
+    std::string appDescription;
+    std::set<std::string> roles;        // Roles del account en el app
+    std::set<std::string> directScopes; // Scopes directos (de applicationAccounts)
+    std::set<std::string> allScopes;    // Union: direct + roles' scopes
+    std::string defaultReturnURL; // Default app URL
+    bool isAppAdmin;
+    time_t enrollmentDate;
+};
+
 struct ApplicationTokenProperties
 {
     Json::Value toJSON() const

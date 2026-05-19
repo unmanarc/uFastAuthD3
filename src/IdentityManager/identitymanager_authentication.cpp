@@ -18,7 +18,7 @@ json IdentityManager::AuthController::authSlotsToJSON(const std::vector<Authenti
     }
     return r;
 }
-void IdentityManager::AuthController::updateCredentialAuthStatus(const Reason &authResult, const std::string &accountName, const Credential &storedCredentialData, const uint32_t &slotId,
+void IdentityManager::AuthController::updateCredentialAuthStatus(const AuthenticationResult &authResult, const std::string &accountName, const Credential &storedCredentialData, const uint32_t &slotId,
                                                                    const ClientDetails &clientDetails)
 {
     // Register the change for max attempts...
@@ -32,25 +32,25 @@ void IdentityManager::AuthController::updateCredentialAuthStatus(const Reason &a
         }
         else
         {
-            incrementBadAttemptsOnCredential(accountName, slotId);
+            incrementBadAttemptsOnAccountCredential(accountName, slotId);
         }
     }
     else
     {
         // Credential is authenticated:
-        resetBadAttemptsOnCredential(accountName, slotId);
+        resetBadAttemptsOnAccountCredential(accountName, slotId);
     }
 
     // Log
-    m_parent->authController->insertAuthCredentialLog(accountName, slotId, clientDetails, authResult);
+    m_parent->authController->insertAccountAuthCredentialSlotLog(accountName, slotId, clientDetails, static_cast<uint16_t>(authResult));
 }
 
-Reason IdentityManager::AuthController::authenticateCredential(const ClientDetails &clientDetails, const std::string &accountName, const std::string &incomingPassword, const uint32_t &slotId,
+AuthenticationResult IdentityManager::AuthController::authenticateCredential(const ClientDetails &clientDetails, const std::string &accountName, const std::string &incomingPassword, const uint32_t &slotId,
                                                                const Mode &authMode, const std::string &challengeSalt,
                                                                // Extras...
                                                                std::shared_ptr<AppAuthExtras> authContext)
 {
-    Reason ret = REASON_BAD_ACCOUNT;
+    AuthenticationResult ret = AuthenticationResult::BAD_ACCOUNT;
     bool accountFound = false, authSlotFound = false;
     Credential pStoredCredentialData;
 
@@ -65,7 +65,7 @@ Reason IdentityManager::AuthController::authenticateCredential(const ClientDetai
             // app does not exist or user not in app.
             if (!m_parent->applications->validateApplicationAccount(authContext->appName, accountName))
             {
-                return REASON_ACCOUNT_NOT_IN_APP;
+                return AuthenticationResult::ACCOUNT_NOT_IN_APP;
             }
 
             // Get authentication slots for the scheme id:
@@ -74,7 +74,7 @@ Reason IdentityManager::AuthController::authenticateCredential(const ClientDetai
             // Empty slots / bad scheme id:
             if (authContext->authSlots.empty())
             {
-                return REASON_AUTH_SCHEME_EMPTY;
+                return AuthenticationResult::AUTH_SCHEME_EMPTY;
             }
 
             // Slots in position 0:
@@ -90,58 +90,63 @@ Reason IdentityManager::AuthController::authenticateCredential(const ClientDetai
                 // Validate position:
                 if (authContext->currentSlotPosition >= authContext->authSlots.size())
                 {
-                    return REASON_PASSWORD_INDEX_NOTFOUND;
+                    return AuthenticationResult::PASSWORD_INDEX_NOTFOUND;
                 }
 
                 // hash is not compatible (slots changed, prevent race condition)
                 if (authContext->slotSchemeHash != Helpers::Crypto::calcSHA256(authSlotsToJSON(authContext->authSlots).toStyledString()))
                 {
-                    return REASON_AUTH_SCHEME_CHANGED;
+                    return AuthenticationResult::AUTH_SCHEME_CHANGED;
                 }
             }
         }
 
         // Check if the retrieved credential
-        pStoredCredentialData = retrieveCredential(accountName, slotId, &accountFound, &authSlotFound);
+        pStoredCredentialData = retrieveAccountCredential(accountName, slotId, &accountFound, &authSlotFound);
 
         if (accountFound == false)
-            ret = REASON_BAD_ACCOUNT;
+            ret = AuthenticationResult::BAD_ACCOUNT;
         else if (authSlotFound == false)
-            ret = REASON_PASSWORD_INDEX_NOTFOUND;
+            ret = AuthenticationResult::PASSWORD_INDEX_NOTFOUND;
         else
         {
-            auto lastLogin = getAccountLastAccess(accountName);
+            std::optional<std::pair<time_t, std::string>> lastLogin = getAccountLastAccess(accountName);
 
             // There is no last login..
             if (lastLogin == std::nullopt)
             {
+                // TODO: set on the app preferences.
+
                 // // use the creation date for doing the inactivity calculation...
                 // lastLogin = m_parent->accounts->getAccountCreationTime(accountName);
 
                 // Use current time. (don't invalidate accounts if the log does not prove recent access)... altough it will prevent exposure, will block/mess everything if the log is moved or corrupted.
-                lastLogin = time(nullptr);
+                lastLogin->first = time(nullptr);
                 if (lastLogin == std::nullopt)
                 {
-                    lastLogin = 0;
+                    lastLogin->first = 0;
                 }
             }
 
             auto flags = m_parent->accounts->getAccountFlags(accountName);
 
             if (!flags.confirmed)
-                return REASON_UNCONFIRMED_ACCOUNT;
+                return AuthenticationResult::UNCONFIRMED_ACCOUNT;
 
             else if (!flags.enabled)
-                return REASON_DISABLED_ACCOUNT;
+                return AuthenticationResult::DISABLED_ACCOUNT;
 
             else if (flags.blocked)
-                return REASON_DISABLED_ACCOUNT;
+                return AuthenticationResult::DISABLED_ACCOUNT;
 
             else if (m_parent->accounts->isAccountExpired(accountName))
-                return REASON_EXPIRED_ACCOUNT;
+                return AuthenticationResult::EXPIRED_ACCOUNT;
 
-            else if (*lastLogin + m_authenticationPolicy.abandonedAccountExpirationSeconds < time(nullptr))
-                return REASON_INACTIVE_ACCOUNT;
+            else if (lastLogin->first + m_authenticationPolicy.abandonedAccountExpirationSeconds < time(nullptr))
+                return AuthenticationResult::INACTIVE_ACCOUNT;
+
+            else if ( pStoredCredentialData.isLocked(m_authenticationPolicy) )
+                return AuthenticationResult::LOCKED_PASSWORD;
 
             else
             {
@@ -177,7 +182,7 @@ Credential IdentityManager::AuthController::getAccountCredentialPublicData(const
     // protective-limited method.
     bool bAccountFound = false;
     bool bSlotIdFound = false;
-    Credential credential = retrieveCredential(accountName, slotId, &bAccountFound, &bSlotIdFound);
+    Credential credential = retrieveAccountCredential(accountName, slotId, &bAccountFound, &bSlotIdFound);
     return credential.getPublicData();
 }
 
@@ -190,7 +195,7 @@ std::map<uint32_t, Credential> IdentityManager::AuthController::getAccountAllCre
     for (const uint32_t slotId : slotIdsUsedByAccount)
     {
         bool accountFound, authSlotFound;
-        Credential credential = retrieveCredential(accountName, slotId, &accountFound, &authSlotFound);
+        Credential credential = retrieveAccountCredential(accountName, slotId, &accountFound, &authSlotFound);
         if (accountFound && authSlotFound)
         {
             r[slotId] = credential.getPublicData();
@@ -232,7 +237,7 @@ bool IdentityManager::AuthController::changeAccountAuthenticatedCredential(const
     {
         Threads::Sync::Lock_RD lock(m_parent->m_mutex);
 
-        auto authSlots = listAuthenticationSlots();
+        auto authSlots = listAllAuthenticationSlots();
 
         if (authSlots.find(slotId) == authSlots.end())
         {
@@ -248,7 +253,7 @@ bool IdentityManager::AuthController::changeAccountAuthenticatedCredential(const
 
         bool accountFound, authSlotFound;
 
-        Credential storedCredential = retrieveCredential(accountName, slotId, &accountFound, &authSlotFound);
+        Credential storedCredential = retrieveAccountCredential(accountName, slotId, &accountFound, &authSlotFound);
 
         if (!accountFound)
         {
@@ -270,7 +275,7 @@ bool IdentityManager::AuthController::changeAccountAuthenticatedCredential(const
     }
 
     // change it here...
-    return changeCredential(accountName, passwordData, slotId);
+    return changeAccountCredential(accountName, passwordData, slotId);
 }
 
 bool IdentityManager::AuthController::validateAccountApplicationScope(const std::string &accountName, const ApplicationScope &applicationScope)
@@ -280,7 +285,7 @@ bool IdentityManager::AuthController::validateAccountApplicationScope(const std:
     {
         return true;
     }
-    for (const auto &role : m_parent->accounts->getAccountRoles(applicationScope.appName, accountName, false))
+    for (const auto &role : m_parent->accounts->getAccountApplicationRoles(applicationScope.appName, accountName, false))
     {
         if (validateApplicationScopeOnRole(role.id, applicationScope, false))
         {
@@ -299,7 +304,7 @@ std::set<ApplicationScope> IdentityManager::AuthController::getAccountUsableAppl
         x.insert(scope);
 
     // Take the scope from the belonging roles
-    for (const auto &role : m_parent->accounts->getAccountRoles(appName,accountName, false))
+    for (const auto &role : m_parent->accounts->getAccountApplicationRoles(appName,accountName, false))
     {
         for (const ApplicationScope &scope : getRoleApplicationScopes(appName, role.id, false))
             x.insert(scope);
@@ -333,7 +338,7 @@ bool IdentityManager::AuthController::setAccountPasswordOnScheme(const std::stri
         credentialData = m_parent->authController->createNewCredential(authSlots.begin()->slotId, newPass, true);
     }
 
-    bool r = m_parent->authController->changeCredential(accountName, credentialData, authSlots.begin()->slotId);
+    bool r = m_parent->authController->changeAccountCredential(accountName, credentialData, authSlots.begin()->slotId);
 
     if (r)
         *sInitPW = newPass;
@@ -364,7 +369,7 @@ Credential IdentityManager::AuthController::createNewCredential(const uint32_t &
 {
     Credential r;
 
-    auto authSlots = listAuthenticationSlots();
+    auto authSlots = listAllAuthenticationSlots();
 
     if (authSlots.find(slotId) == authSlots.end())
     {

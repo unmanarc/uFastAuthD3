@@ -2,8 +2,8 @@
 #include "Mantids30/Helpers/json.h"
 #include "identitymanager_db.h"
 
-#include <Mantids30/Threads/lock_shared.h>
 #include <Mantids30/Helpers/datatables.h>
+#include <Mantids30/Threads/lock_shared.h>
 #include <boost/regex.hpp>
 #include <json/value.h>
 #include <regex>
@@ -124,7 +124,7 @@ AccountFlags IdentityManager_DB::Accounts_DB::getAccountFlags(const std::string 
     return r;
 }
 
-bool IdentityManager_DB::Accounts_DB::updateAccountRoles(const std::string &appName, const std::string &accountName, const std::set<std::string> &roleSet)
+bool IdentityManager_DB::Accounts_DB::updateAccountApplicationRoles(const std::string &appName, const std::string &accountName, const std::set<std::string> &roleSet)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
 
@@ -305,7 +305,6 @@ Json::Value IdentityManager_DB::Accounts_DB::searchAccounts(const json &dataTabl
     uint64_t offset = JSON_ASUINT64(dataTablesFilters, "start", 0);
     uint64_t limit = JSON_ASUINT64(dataTablesFilters, "length", 0);
 
-
     // Manejo de ordenamiento (order)
     std::string orderByStatement = Helpers::DataTables::getOrderByStatement(dataTablesFilters);
 
@@ -314,25 +313,30 @@ Json::Value IdentityManager_DB::Accounts_DB::searchAccounts(const json &dataTabl
     std::string whereFilters;
 
     // Build the SQL query with WHERE clause for DataTables search
+
     std::string sqlQueryStr = R"(
-        SELECT
-            iam.accounts.accountName as accountName,
-            iam.accounts.creation as creation,
-            iam.accounts.expiration as expiration,
-            logs.accountsLastAccessToApplication.lastLogin as lastLogin,
-            iam.accountCredentials.lastChange as lastChange,
-            iam.accounts.isAdmin as isAdmin,
-            iam.accounts.isEnabled as isEnabled,
-            iam.accounts.isBlocked as isBlocked,
-            iam.accounts.isAccountConfirmed as isAccountConfirmed,
-            iam.accounts.creator as creator
-        FROM iam.accounts
-        LEFT JOIN logs.accountsLastAccessToApplication
-            ON logs.accountsLastAccessToApplication.f_accountName = iam.accounts.accountName
-        LEFT JOIN iam.accountCredentials
-            ON iam.accountCredentials.f_accountName = iam.accounts.accountName
-            AND iam.accountCredentials.f_AuthSlotId = 1
-        )";
+    SELECT
+        iam.accounts.accountName as accountName,
+        iam.accounts.creation as creation,
+        iam.accounts.expiration as expiration,
+        last_login_agg.lastLogin as lastLogin,
+        iam.accountCredentials.lastChange as lastChange,
+        iam.accounts.isAdmin as isAdmin,
+        iam.accounts.isEnabled as isEnabled,
+        iam.accounts.isBlocked as isBlocked,
+        iam.accounts.isAccountConfirmed as isAccountConfirmed,
+        iam.accounts.creator as creator
+    FROM iam.accounts
+    LEFT JOIN (
+        SELECT f_accountName, MAX(lastLogin) as lastLogin
+        FROM logs.accountsLastAccessToApplication
+        GROUP BY f_accountName
+    ) last_login_agg
+        ON last_login_agg.f_accountName = iam.accounts.accountName
+    LEFT JOIN iam.accountCredentials
+        ON iam.accountCredentials.f_accountName = iam.accounts.accountName
+        AND iam.accountCredentials.f_AuthSlotId = 1
+    )";
 
     // Add WHERE clause for search term if provided
     if (!searchValue.empty())
@@ -407,7 +411,7 @@ std::set<std::string> IdentityManager_DB::Accounts_DB::listAccounts()
     return ret;
 }
 
-std::set<ApplicationRole> IdentityManager_DB::Accounts_DB::getAccountRoles(const std::string &appName, const std::string &accountName, bool lock)
+std::set<ApplicationRole> IdentityManager_DB::Accounts_DB::getAccountApplicationRoles(const std::string &appName, const std::string &accountName, bool lock)
 {
     std::set<ApplicationRole> ret;
     if (lock)
@@ -700,51 +704,100 @@ bool IdentityManager_DB::Accounts_DB::removeAccountDetail(const std::string &acc
                                                {{":accountName", MAKE_VAR(STRING, accountName)}, {":fieldName", MAKE_VAR(STRING, fieldName)}});
 }
 
-bool IdentityManager_DB::Accounts_DB::updateAccountDetailFieldValues(const std::string &accountName, const std::list<AccountDetailFieldValue> &fieldValues)
+bool IdentityManager_DB::Accounts_DB::updateAccountDetailFieldValues(const std::string &accountName, const std::list<AccountDetailFieldValue> &inputFieldValues, bool isAdmin)
 {
-    std::map<std::string, AccountDetailField> fields = listAccountDetailFields();
+    std::map<std::string, AccountDetailField> dbFieldsScheme = listAccountDetailFields();
+
+    // TODO: log the field update operation.
+    for (const auto &inputFieldValue : inputFieldValues)
+    {
+        // Validate Regexp.
+        if (dbFieldsScheme.find(inputFieldValue.name) != dbFieldsScheme.end())
+        {
+            if (!dbFieldsScheme[inputFieldValue.name].canUserEdit() && !isAdmin)
+            {
+                // User can not edit this field.
+                return false;
+            }
+
+            if (inputFieldValue.value.has_value())
+            {
+                std::string regexpValidator = dbFieldsScheme[inputFieldValue.name].getRegexpValidatorText();
+                std::string value = inputFieldValue.value.value();
+                try
+                {
+                    boost::regex regExp(regexpValidator);
+                    if (!boost::regex_search(value, regExp))
+                    {
+                        // Rexep does not match.
+                        return false;
+                    }
+                }
+                catch (const boost::regex_error &)
+                {
+                    // if not defined, continue.
+                }
+            }
+        }
+        else
+        {
+            // Invalid field.
+            return false;
+        }
+    }
 
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
 
-    // Primero borramos todos los datos de campos para ese usuario
-    _parent->m_sqlConnector->qExecuteEx("DELETE FROM iam.accountDetailValues WHERE `f_accountName` = :accountName;", {{":accountName", MAKE_VAR(STRING, accountName)}});
+    _parent->m_sqlConnector->beginTransaction();
 
-    for (const auto &fieldValue : fieldValues)
+    // Delete all the fields that are going to be replaced.
+    if (isAdmin)
     {
-        if (fields.find(fieldValue.name) != fields.end() && fieldValue.value.has_value())
+        _parent->m_sqlConnector->qExecuteEx("DELETE FROM iam.accountDetailValues WHERE `f_accountName` = :accountName;", {{":accountName", MAKE_VAR(STRING, accountName)}});
+    }
+    else
+    {
+        // Collect all editable field names for this account
+        std::set<std::string> editableFields;
+        for (const auto &field : dbFieldsScheme)
         {
-            std::string regexpValidator = fields[fieldValue.name].getRegexpValidatorText();
-            std::string value = fieldValue.value.value();
-            try
+            if ((field.second.canUserEdit() && !isAdmin) || isAdmin)
             {
-                boost::regex regExp(regexpValidator);
-                if (!boost::regex_match(value, regExp))
-                {
-                    return false;
-                }
+                editableFields.insert(field.first);
             }
-            catch (const boost::regex_error &)
+        }
+
+        // Delete every editable field from that user account.
+        for (const auto &fieldName : editableFields)
+        {
+            std::string sql = "DELETE FROM iam.accountDetailValues WHERE `f_accountName` = :account AND `f_fieldName` = :field;";
+            std::map<std::string, std::shared_ptr<Mantids30::Memory::Abstract::Var>> params;
+            params[":account"] = MAKE_VAR(STRING, accountName);
+            params[":field"] = MAKE_VAR(STRING, fieldName);
+            if (!_parent->m_sqlConnector->qExecuteEx(sql, params))
             {
-                // if not possible, continue with the rest.
+                // Maybe the field does not exist yet...
             }
         }
     }
 
-    // Luego insertamos los nuevos datos
-    for (const auto &fieldValue : fieldValues)
+    // Insert all the fields to the database.
+    for (const auto &fieldValue : inputFieldValues)
     {
-        if (fieldValue.value.has_value())
+        if (fieldValue.value.has_value() && dbFieldsScheme.find(fieldValue.name) != dbFieldsScheme.end())
         {
             if (!_parent->m_sqlConnector->qExecuteEx("INSERT INTO iam.accountDetailValues (`f_accountName`, `f_fieldName`, `value`) VALUES(:accountName, :fieldName, :value);",
                                                      {{":accountName", MAKE_VAR(STRING, accountName)},
                                                       {":fieldName", MAKE_VAR(STRING, fieldValue.name)},
                                                       {":value", MAKE_VAR(STRING, fieldValue.value.value())}}))
             {
+                _parent->m_sqlConnector->rollbackTransaction();
                 return false;
             }
         }
     }
 
+    _parent->m_sqlConnector->commitTransaction();
     return true;
 }
 
@@ -795,13 +848,16 @@ std::map<std::string, AccountDetailFieldValue> IdentityManager_DB::Accounts_DB::
                 break;
             }
 
+            visible &= JSON_ASBOOL(extendedAttributes["security"], "canUserView", false);
+
             if (visible)
             {
                 AccountDetailFieldValue field;
                 field.name = fieldName.getValue();
                 field.description = fieldDescription.getValue();
                 field.fieldType = fieldType.getValue();
-                field.fieldRegexpValidator = JSON_ASSTRING(extendedAttributes["behavior"], "regexpValidator", "");
+                field.fieldRegexpValidator = JSON_ASSTRING(extendedAttributes["behavior"], "regexpValidator", ""); // TODO: remover esta linea
+                field.extendedAttribs = extendedAttributes;
 
                 if (value.isNull())
                     field.value = std::nullopt;

@@ -13,6 +13,7 @@ IdentityManager_DB::IdentityManager_DB(Mantids30::Database::SQLConnector *_SQLDi
     authController = new AuthController_DB(this);
 
     m_sqlConnector = _SQLDirConnection;
+//    m_sqlConnector->setThrowCPPErrorOnQueryFailure(true);
 }
 
 bool IdentityManager_DB::initializeDatabase()
@@ -137,6 +138,7 @@ bool IdentityManager_DB::initializeDatabase()
                                              `f_accountName`       VARCHAR(256)    NOT NULL,
                                              `f_appName`           VARCHAR(256)    NOT NULL,
                                              `isAppAdmin`          BOOLEAN NOT NULL DEFAULT FALSE,
+                                             `enrollmentDate`      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
                                              PRIMARY KEY(`f_accountName`,`f_appName`),
                                              FOREIGN KEY(`f_accountName`) REFERENCES accounts(`accountName`) ON DELETE CASCADE,
                                              FOREIGN KEY(`f_appName`)  REFERENCES applications(`appName`) ON DELETE CASCADE

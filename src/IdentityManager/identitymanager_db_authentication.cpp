@@ -1,7 +1,7 @@
 #include "identitymanager_db.h"
 
+#include <Mantids30/Helpers/datatables.h>
 #include <Mantids30/Threads/lock_shared.h>
-#include <limits>
 
 #include <Mantids30/Memory/a_bool.h>
 #include <Mantids30/Memory/a_datetime.h>
@@ -10,13 +10,15 @@
 #include <Mantids30/Memory/a_uint32.h>
 #include <Mantids30/Memory/a_uint64.h>
 #include <Mantids30/Memory/a_var.h>
+#include <memory>
 #include <optional>
+#include <utility>
 
 using namespace Mantids30::Memory;
 using namespace Mantids30::Database;
 using namespace Mantids30;
 
-Credential IdentityManager_DB::AuthController_DB::retrieveCredential(const std::string &accountName, const uint32_t &slotId, bool *accountFound, bool *authSlotFound)
+Credential IdentityManager_DB::AuthController_DB::retrieveAccountCredential(const std::string &accountName, const uint32_t &slotId, bool *accountFound, bool *authSlotFound)
 {
     Credential ret;
     *authSlotFound = false;
@@ -26,7 +28,7 @@ Credential IdentityManager_DB::AuthController_DB::retrieveCredential(const std::
 
     Abstract::UINT32 badAttempts;
     Abstract::BOOL forcedExpiration;
-    Abstract::DATETIME expiration;
+    Abstract::DATETIME expiration,lastChange;
     Abstract::STRING salt, hash;
 
     *accountFound = _parent->accounts->doesAccountExist(accountName);
@@ -34,7 +36,7 @@ Credential IdentityManager_DB::AuthController_DB::retrieveCredential(const std::
     if (!*accountFound)
         return ret;
 
-    auto authSlots = listAuthenticationSlots();
+    auto authSlots = listAllAuthenticationSlots();
 
     if (authSlots.find(slotId) != authSlots.end())
     {
@@ -46,14 +48,15 @@ Credential IdentityManager_DB::AuthController_DB::retrieveCredential(const std::
         return ret;
     }
 
-    if (_parent->m_sqlConnector->qSelectSingleRow(R"(SELECT `forcedExpiration`,`expiration`,`badAttempts`,`salt`,`hash`
+    if (_parent->m_sqlConnector->qSelectSingleRow(R"(SELECT `forcedExpiration`,`expiration`,`badAttempts`,`salt`,`hash`,`lastChange`
                                                                         FROM iam.accountCredentials
                                                                         WHERE `f_accountName`=:accountName AND `f_AuthSlotId`=:slotId LIMIT 1;
                                                                         )",
                                                   {{":accountName", MAKE_VAR(STRING, accountName)}, {":slotId", MAKE_VAR(UINT32, slotId)}},
-                                                  {&forcedExpiration, &expiration, &badAttempts, &salt, &hash}))
+                                                  {&forcedExpiration, &expiration, &badAttempts, &salt, &hash,&lastChange}))
     {
         *authSlotFound = true;
+        ret.lastChange = lastChange.getValue();
         ret.forceExpiration = forcedExpiration.getValue();
         ret.expirationTimestamp = expiration.getValue();
         ret.badAttempts = badAttempts.getValue();
@@ -119,45 +122,87 @@ std::set<std::string> IdentityManager_DB::AuthController_DB::getApplicationRoles
     return ret;
 }
 
-bool IdentityManager_DB::AuthController_DB::changeCredential(const std::string &accountName, Credential passwordData, uint32_t slotId)
+bool IdentityManager_DB::AuthController_DB::changeAccountCredential(const std::string &accountName, Credential passwordData, uint32_t slotId)
 {
-    auto authSlots = listAuthenticationSlots();
-
+    auto authSlots = listAllAuthenticationSlots();
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
 
     if (authSlots.find(slotId) == authSlots.end())
     {
-        // Bad, slot id not found...
         return false;
     }
 
     if (!authSlots[slotId].isCompatible(passwordData.slotDetails))
     {
-        // Bad slotId function...
         return false;
     }
 
     if (passwordData.expirationTimestamp == 1)
     {
-        passwordData.expirationTimestamp = time(nullptr) + authSlots[slotId].defaultExpirationSeconds;
+        if (authSlots[slotId].defaultExpirationSeconds == 0)
+            passwordData.expirationTimestamp = 0;
+        else
+            passwordData.expirationTimestamp = time(nullptr) + authSlots[slotId].defaultExpirationSeconds;
     }
 
-    // Destroy (if exist).
-    _parent->m_sqlConnector->qExecuteEx("DELETE FROM iam.accountCredentials WHERE `f_accountName`=:accountName and `f_AuthSlotId`=:slotId",
-                                        {{":accountName", MAKE_VAR(STRING, accountName)}, {":slotId", MAKE_VAR(UINT32, slotId)}});
+    // Única operación SQL
+    return _parent->m_sqlConnector->qExecuteEx(R"(
+            INSERT OR REPLACE INTO iam.accountCredentials (f_AuthSlotId, f_accountName, hash, expiration, salt, forcedExpiration, usedstrengthJSONValidator)
+            VALUES (:slotId, :account, :hash, :expiration, :salt, :forcedExpiration, :usedValidator);
+        )",
+           {{":slotId", MAKE_VAR(UINT32, slotId)},
+            {":account", MAKE_VAR(STRING, accountName)},
+            {":hash", MAKE_VAR(STRING, passwordData.hash)},
+            {":expiration", MAKE_VAR(DATETIME, passwordData.expirationTimestamp)},
+            {":salt", MAKE_VAR(STRING, Mantids30::Helpers::Encoders::toHex(passwordData.ssalt, 4))},
+            {":forcedExpiration", MAKE_VAR(BOOL, passwordData.forceExpiration)},
+            {":usedValidator", MAKE_VAR(STRING, authSlots[slotId].strengthJSONValidator)}});
+}
 
-    return _parent->m_sqlConnector->qExecuteEx(R"( INSERT INTO iam.accountCredentials (`f_AuthSlotId`,`f_accountName`,`hash`,`expiration`,`salt`,`forcedExpiration`,`usedstrengthJSONValidator`)
-                                                VALUES (:slotId,:account,:hash,:expiration,:salt,:forcedExpiration,:usedValidator);)",
+bool IdentityManager_DB::AuthController_DB::activateAccountCredential(const std::string &accountName, uint32_t slotId, const std::string &hash, const std::string &ssalt)
+{
+    auto authSlots = listAllAuthenticationSlots();
+    // Validate slot exists
+    if (authSlots.find(slotId) == authSlots.end())
+    {
+        return false;
+    }
+
+    Threads::Sync::Lock_RW lock(_parent->m_mutex);
+
+    // Check if credential already exists (already activated)
+    Abstract::UINT32 count;
+    if (_parent->m_sqlConnector->qSelectSingleRow("SELECT COUNT(*) FROM iam.accountCredentials WHERE `f_accountName`=:accountName AND `f_AuthSlotId`=:slotId;",
+                                                  {{":accountName", MAKE_VAR(STRING, accountName)}, {":slotId", MAKE_VAR(UINT32, slotId)}}, {&count}))
+    {
+        if (count.getValue() > 0)
+        {
+            // Credential already activated - return specific error
+            return false;
+        }
+    }
+    else
+    {
+        return false;
+    }
+
+    // Insert the new activated credential (no DELETE needed)
+    time_t expiration = 0;
+    if (authSlots[slotId].defaultExpirationSeconds > 0)
+    {
+        expiration = time(nullptr) + authSlots[slotId].defaultExpirationSeconds;
+    }
+
+    return _parent->m_sqlConnector->qExecuteEx(R"(INSERT INTO iam.accountCredentials
+           (`f_AuthSlotId`, `f_accountName`, `hash`, `expiration`, `salt`, `forcedExpiration`, `usedstrengthJSONValidator`)
+           VALUES (:slotId, :account, :hash, :expiration, :salt, :forcedExpiration, :usedValidator);)",
                                                {{":slotId", MAKE_VAR(UINT32, slotId)},
                                                 {":account", MAKE_VAR(STRING, accountName)},
-                                                {":hash", MAKE_VAR(STRING, passwordData.hash)},
-                                                {":expiration", MAKE_VAR(DATETIME, passwordData.expirationTimestamp)},
-                                                {":salt", MAKE_VAR(STRING, Mantids30::Helpers::Encoders::toHex(passwordData.ssalt, 4))},
-                                                {":forcedExpiration", MAKE_VAR(BOOL, passwordData.forceExpiration)},
+                                                {":hash", MAKE_VAR(STRING, hash)},
+                                                {":expiration", MAKE_VAR(DATETIME, expiration)},
+                                                {":salt", MAKE_VAR(STRING, ssalt)},
+                                                {":forcedExpiration", MAKE_VAR(BOOL, false)},
                                                 {":usedValidator", MAKE_VAR(STRING, authSlots[slotId].strengthJSONValidator)}});
-
-    //                                              {":passwordFunction",MAKE_VAR(UINT32,passwordData.passwordFunction)},
-    //                                               {":totp2FAStepsToleranceWindow",MAKE_VAR(UINT32,passwordData.totp2FAStepsToleranceWindow)}
 }
 
 std::string IdentityManager_DB::AuthController_DB::getAccountConfirmationToken(const std::string &accountName)
@@ -172,23 +217,204 @@ std::string IdentityManager_DB::AuthController_DB::getAccountConfirmationToken(c
     }
     return "";
 }
-
-std::optional<time_t> IdentityManager_DB::AuthController_DB::getAccountLastAccess(const std::string &accountName)
+std::optional<std::pair<time_t, std::string>> IdentityManager_DB::AuthController_DB::getAccountLastAccess(const std::string &accountName)
 {
     Threads::Sync::Lock_RD lock(_parent->m_mutex);
 
     {
         Abstract::DATETIME lastLogin;
+        Abstract::STRING appName;
 
-        if (_parent->m_sqlConnector->qSelectSingleRow("SELECT `lastLogin` FROM logs.accountsLastAccessToApplication WHERE `f_accountName`=:accountName ORDER BY `lastLogin` DESC LIMIT 1;",
-                                                      {{":accountName", MAKE_VAR(STRING, accountName)}}, {&lastLogin}))
+        if (_parent->m_sqlConnector->qSelectSingleRow("SELECT `lastLogin`,`f_appName`  FROM logs.accountsLastAccessToApplication WHERE `f_accountName`=:accountName ORDER BY `lastLogin` DESC LIMIT 1;",
+                                                      {{":accountName", MAKE_VAR(STRING, accountName)}}, {&lastLogin, &appName}))
         {
-            return lastLogin.getValue(); // Asegúrate de convertir a `time_t` si es necesario
+            return std::make_pair(lastLogin.getValue(), appName.getValue());
         }
     }
 
-    // no account? time_t max value...
+    // no account? std::nullopt...
     return std::nullopt;
+}
+
+uint32_t IdentityManager_DB::AuthController_DB::getAccountActiveSessionsCount(const std::string &accountName)
+{
+    Threads::Sync::Lock_RD lock(_parent->m_mutex);
+
+    time_t now = time(nullptr);
+    Abstract::UINT32 count;
+
+    if (_parent->m_sqlConnector->qSelectSingleRow("SELECT COUNT(*) FROM logs.applicationAuthLog "
+                                                  "WHERE `f_accountName`=:accountName "
+                                                  "  AND `logoutDateTime` IS NULL "
+                                                  "  AND `refreshTokenExpiration` > CURRENT_TIMESTAMP; ",
+                                                  {{":accountName", MAKE_VAR(STRING, accountName)}, {":now", MAKE_VAR(DATETIME, now)}}, {&count}))
+    {
+        return count.getValue();
+    }
+    return 0;
+}
+
+Json::Value IdentityManager_DB::AuthController_DB::searchAccountSessions(const std::string &accountName, const json &dataTablesFilters)
+{
+    Json::Value ret;
+    Threads::Sync::Lock_RD lock(_parent->m_mutex);
+
+    ret["draw"] = dataTablesFilters["draw"];
+
+    uint64_t offset = JSON_ASUINT64(dataTablesFilters, "start", 0);
+    uint64_t limit = JSON_ASUINT64(dataTablesFilters, "length", 0);
+
+    std::string orderByStatement = Helpers::DataTables::getOrderByStatement(dataTablesFilters);
+    std::string searchValue = JSON_ASSTRING(dataTablesFilters["search"], "value", "");
+    std::string whereFilters = "`f_accountName` = :ACCOUNTNAME";
+
+    std::string sqlQueryStr = R"(
+           SELECT `f_accountName`, `f_schemeId`, `f_appName`,
+                  `loginDateTime`, `loginIP`, `loginTLSCN`, `loginUserAgent`,
+                  `refresherTokenId`, `accessTokenId`,
+                  `accessTokenExpiration`, `refreshTokenExpiration`,
+                  `logoutDateTime`, `logoutReason`
+           FROM logs.applicationAuthLog
+           )";
+
+    // Build params map
+    std::map<std::string, std::shared_ptr<Abstract::Var>> params;
+    params[":ACCOUNTNAME"] = MAKE_VAR(STRING, accountName);
+
+    if (!searchValue.empty())
+    {
+        searchValue = "%" + searchValue + "%";
+        whereFilters += " AND (`f_appName` LIKE :SEARCH OR `loginIP` LIKE :SEARCH)";
+        params[":SEARCH"] = MAKE_VAR(STRING, searchValue);
+    }
+
+    {
+        Abstract::STRING f_accountName, f_schemeId, f_appName, loginDateTime, loginIP, loginTLSCN, loginUserAgent;
+        Abstract::STRING refresherTokenId, accessTokenId;
+        Abstract::DATETIME accessTokenExpiration, refreshTokenExpiration, logoutDateTime;
+        Abstract::UINT32 logoutReason;
+
+        auto i = _parent->m_sqlConnector->qSelectWithFilters(sqlQueryStr, whereFilters, params,
+                                                             {&f_accountName, &f_schemeId, &f_appName, &loginDateTime, &loginIP, &loginTLSCN, &loginUserAgent, &refresherTokenId, &accessTokenId,
+                                                              &accessTokenExpiration, &refreshTokenExpiration, &logoutDateTime, &logoutReason},
+                                                             orderByStatement, limit, offset);
+
+        while (i && i->isSuccessful() && i->step())
+        {
+            Json::Value row;
+            row["f_accountName"] = f_accountName.toJSON();
+            row["f_schemeId"] = f_schemeId.toJSON();
+            row["f_appName"] = f_appName.toJSON();
+            row["loginDateTime"] = loginDateTime.toJSON();
+            row["loginIP"] = loginIP.toJSON();
+            row["loginTLSCN"] = loginTLSCN.toJSON();
+            row["loginUserAgent"] = loginUserAgent.toJSON();
+            row["refresherTokenId"] = refresherTokenId.toJSON();
+            row["accessTokenId"] = accessTokenId.toJSON();
+            row["accessTokenExpiration"] = accessTokenExpiration.toJSON();
+            row["refreshTokenExpiration"] = refreshTokenExpiration.toJSON();
+            row["logoutDateTime"] = logoutDateTime.toJSON();
+            row["logoutReason"] = logoutReason.toJSON();
+
+            // Flag: session is still active?
+            row["isActive"] = (logoutDateTime.isNull() && accessTokenExpiration.isInFuture() && refreshTokenExpiration.isInFuture());
+
+            ret["data"].append(row);
+        }
+
+        if (i)
+        {
+            ret["recordsTotal"] = i->getTotalRecordsCount();
+            ret["recordsFiltered"] = i->getFilteredRecordsCount();
+        }
+    }
+
+    return ret;
+}
+
+Json::Value IdentityManager_DB::AuthController_DB::searchAccountPasswordActivity(const std::string &accountName, const json &dataTablesFilters)
+{
+    Json::Value ret;
+    Threads::Sync::Lock_RD lock(_parent->m_mutex);
+
+    ret["draw"] = dataTablesFilters["draw"];
+    uint64_t offset = JSON_ASUINT64(dataTablesFilters, "start", 0);
+    uint64_t limit = JSON_ASUINT64(dataTablesFilters, "length", 0);
+    std::string orderByStatement = Helpers::DataTables::getOrderByStatement(dataTablesFilters);
+    std::string searchValue = JSON_ASSTRING(dataTablesFilters["search"], "value", "");
+
+    std::string whereFilters = "`f_accountName` = :ACCOUNTNAME";
+
+    std::string sqlQueryStr = R"(
+        SELECT `f_accountName`, `f_slotId`, `logDateTime`, `logIP`, `logTLSCN`,
+               `logUserAgent`, `logExtraData`, `logStatus`
+        FROM logs.authSlotLog
+    )";
+
+    // Construcción de parámetros
+    std::map<std::string, std::shared_ptr<Abstract::Var>> params;
+    params[":ACCOUNTNAME"] = MAKE_VAR(STRING, accountName);
+
+    if (!searchValue.empty())
+    {
+        searchValue = "%" + searchValue + "%";
+        whereFilters += " AND (`logIP` LIKE :SEARCH OR `logTLSCN` LIKE :SEARCH OR `logUserAgent` LIKE :SEARCH OR `logExtraData` LIKE :SEARCH)";
+        params[":SEARCH"] = MAKE_VAR(STRING, searchValue);
+        params[":SEARCH_SLOT"] = MAKE_VAR(STRING, searchValue);
+    }
+
+    {
+        Abstract::STRING f_accountName, logDateTime, logIP, logTLSCN, logUserAgent, logExtraData;
+        Abstract::INT32 f_slotId, logStatus;
+
+        auto i = _parent->m_sqlConnector->qSelectWithFilters(sqlQueryStr, whereFilters, params, {&f_accountName, &f_slotId, &logDateTime, &logIP, &logTLSCN, &logUserAgent, &logExtraData, &logStatus},
+                                                             orderByStatement, limit, offset);
+
+        while (i && i->isSuccessful() && i->step())
+        {
+            Json::Value row;
+            row["f_accountName"] = f_accountName.toJSON();
+            row["f_slotId"] = f_slotId.toJSON();
+            row["logDateTime"] = logDateTime.toJSON();
+            row["logIP"] = logIP.toJSON();
+            row["logTLSCN"] = logTLSCN.toJSON();
+            row["logUserAgent"] = logUserAgent.toJSON();
+            row["logExtraData"] = logExtraData.toJSON();
+            row["logStatus"] = logStatus.toJSON();
+
+            ret["data"].append(row);
+        }
+
+        if (i)
+        {
+            ret["recordsTotal"] = i->getTotalRecordsCount();
+            ret["recordsFiltered"] = i->getFilteredRecordsCount();
+        }
+    }
+    return ret;
+}
+
+std::pair<uint32_t, uint32_t> IdentityManager_DB::AuthController_DB::getAccountActiveCredentialsCount(const std::string &accountName)
+{
+    Threads::Sync::Lock_RD lock(_parent->m_mutex);
+
+    // Total available slots in the system
+    Abstract::UINT32 totalCount;
+    uint32_t totalSlots = 0;
+    if (_parent->m_sqlConnector->qSelectSingleRow("SELECT COUNT(*) FROM iam.authenticationSlots;", {}, {&totalCount}))
+    {
+        totalSlots = totalCount.getValue();
+    }
+
+    // Configured slots for this account
+    Abstract::UINT32 accountCount;
+    uint32_t accountSlots = 0;
+    if (_parent->m_sqlConnector->qSelectSingleRow("SELECT COUNT(*) FROM iam.accountCredentials WHERE `f_accountName`=:accountName;", {{":accountName", MAKE_VAR(STRING, accountName)}}, {&accountCount}))
+    {
+        accountSlots = accountCount.getValue();
+    }
+
+    return {totalSlots, accountSlots};
 }
 
 std::set<uint32_t> IdentityManager_DB::AuthController_DB::listUsedAuthenticationSlotsOnAccount(const std::string &accountName)
@@ -205,6 +431,63 @@ std::set<uint32_t> IdentityManager_DB::AuthController_DB::listUsedAuthentication
     }
 
     return r;
+}
+
+std::map<uint32_t, std::pair<bool, Credential>> IdentityManager_DB::AuthController_DB::listAllAuthCredentialSlotsPublicDataForAccount(const std::string &accountName)
+{
+    Threads::Sync::Lock_RD lock(_parent->m_mutex);
+    std::map<uint32_t, std::pair<bool, Credential>> r;
+
+    // Get all authentication slots and configured slots.
+    std::map<uint32_t, AuthenticationSlotDetails> allAuthSlots = listAllAuthenticationSlots();
+    auto configuredSlots = listUsedAuthenticationSlotsOnAccount(accountName);
+
+    // For each authentication slot, create a public Credential entry
+    for (const auto &[id, slotDetails] : allAuthSlots)
+    {
+        if (configuredSlots.find(id) != configuredSlots.end())
+        {
+            // Account has this slot configured - provide public info
+            bool accountFound, authSlotFound;
+            Credential cred = retrieveAccountCredential(accountName, id, &accountFound, &authSlotFound);
+            if (!accountFound || !authSlotFound)
+            {
+                // UNEXPECTED ERROR!.
+                return {};
+            }
+            r[id] = std::make_pair(true, cred.getPublicData());
+        }
+        else
+        {
+            // Account does not have this slot configured
+            // we deliver only the slot details instead.
+            Credential cred;
+            cred.slotDetails = slotDetails;
+            r[id] = std::make_pair(false, cred);
+        }
+    }
+
+    return r;
+}
+
+bool IdentityManager_DB::AuthController_DB::doesCredentialSlotExistOnAccount(const std::string &accountName, uint32_t slotId)
+{
+    Threads::Sync::Lock_RD lock(_parent->m_mutex);
+
+    Abstract::UINT32 count;
+    if (_parent->m_sqlConnector->qSelectSingleRow("SELECT COUNT(*) FROM iam.accountCredentials WHERE `f_accountName`=:accountName AND `f_AuthSlotId`=:slotId;",
+                                                  {{":accountName", MAKE_VAR(STRING, accountName)}, {":slotId", MAKE_VAR(UINT32, slotId)}}, {&count}))
+    {
+        return count.getValue() > 0;
+    }
+
+    return false;
+}
+
+bool IdentityManager_DB::AuthController_DB::deleteAccountCredential(const std::string &accountName, uint32_t slotId)
+{
+    return _parent->m_sqlConnector->qExecuteEx("DELETE FROM iam.accountCredentials WHERE `f_accountName` = :accountName and `f_AuthSlotId` = :slotId",
+                                               {{":accountName", MAKE_VAR(STRING, accountName)}, {":slotId", MAKE_VAR(UINT32, slotId)}});
 }
 
 bool IdentityManager_DB::AuthController_DB::updateDefaultAuthScheme(const uint32_t &schemeId)
@@ -268,7 +551,7 @@ bool IdentityManager_DB::AuthController_DB::updateAuthenticationSlotDetails(cons
                                                 {":strengthJSONValidator", MAKE_VAR(STRING, details.strengthJSONValidator)}});
 }
 
-std::map<uint32_t, AuthenticationSlotDetails> IdentityManager_DB::AuthController_DB::listAuthenticationSlots()
+std::map<uint32_t, AuthenticationSlotDetails> IdentityManager_DB::AuthController_DB::listAllAuthenticationSlots()
 {
     Threads::Sync::Lock_RD lock(_parent->m_mutex);
 
@@ -350,7 +633,7 @@ std::map<uint32_t, std::string> IdentityManager_DB::AuthController_DB::listAuthe
 std::vector<AuthenticationSchemeUsedSlot> IdentityManager_DB::AuthController_DB::listAuthenticationSlotsUsedByScheme(const uint32_t &schemeId)
 {
     std::vector<AuthenticationSchemeUsedSlot> slotsList;
-    auto allAuthSlots = listAuthenticationSlots();
+    auto allAuthSlots = listAllAuthenticationSlots();
 
     // Acquire a read lock for thread-safe read operation
     Threads::Sync::Lock_RD lock(_parent->m_mutex);
@@ -413,14 +696,14 @@ bool IdentityManager_DB::AuthController_DB::updateAuthenticationSlotUsedByScheme
     return true; // Return true if deletion and all insert operations succeed
 }
 
-void IdentityManager_DB::AuthController_DB::resetBadAttemptsOnCredential(const std::string &accountName, const uint32_t &slotId)
+void IdentityManager_DB::AuthController_DB::resetBadAttemptsOnAccountCredential(const std::string &accountName, const uint32_t &slotId)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
     _parent->m_sqlConnector->qExecuteEx("UPDATE iam.accountCredentials SET `badAttempts`='0' WHERE `f_accountName`=:accountName and `f_AuthSlotId`=:slotId;",
                                         {{":accountName", MAKE_VAR(STRING, accountName)}, {":slotId", MAKE_VAR(UINT32, slotId)}});
 }
 
-void IdentityManager_DB::AuthController_DB::incrementBadAttemptsOnCredential(const std::string &accountName, const uint32_t &slotId)
+void IdentityManager_DB::AuthController_DB::incrementBadAttemptsOnAccountCredential(const std::string &accountName, const uint32_t &slotId)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
     _parent->m_sqlConnector->qExecuteEx("UPDATE iam.accountCredentials SET `badAttempts`=`badAttempts`+1  WHERE `f_accountName`=:accountName and `f_AuthSlotId`=:slotId;",
@@ -488,7 +771,7 @@ bool IdentityManager_DB::AuthController_DB::logoutApplicationAuthLog(const std::
                                                 {":reason", MAKE_VAR(INT32, static_cast<int>(reason))}});
 }
 
-void IdentityManager_DB::AuthController_DB::insertApplicationAuthLogAccountAccess(const std::string &accountName, const std::string &appName, const uint32_t &schemeId,
+void IdentityManager_DB::AuthController_DB::insertApplicationAccountAccessAuthLog(const std::string &accountName, const std::string &appName, const uint32_t &schemeId,
                                                                                   const ClientDetails &clientDetails, const std::string &refresherTokenId, const std::string &accessTokenId,
                                                                                   const time_t &accessTokenExpiration, const time_t &refreshTokenExpiration)
 {
@@ -517,7 +800,7 @@ void IdentityManager_DB::AuthController_DB::insertApplicationAuthLogAccountAcces
                                          {":refreshTokenExpiration", MAKE_VAR(DATETIME, refreshTokenExpiration)}});
 }
 
-void IdentityManager_DB::AuthController_DB::insertAuthCredentialLog(const std::string &accountName, uint32_t slotId, const ClientDetails &clientDetails, int logStatus)
+void IdentityManager_DB::AuthController_DB::insertAccountAuthCredentialSlotLog(const std::string &accountName, uint32_t slotId, const ClientDetails &clientDetails, int logStatus)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
 
@@ -533,7 +816,7 @@ void IdentityManager_DB::AuthController_DB::insertAuthCredentialLog(const std::s
          {":logStatus", MAKE_VAR(INT32, logStatus)}});
 }
 
-void IdentityManager_DB::AuthController_DB::checkExpiredAuthLogSessionsVirtual()
+void IdentityManager_DB::AuthController_DB::markExpiredAuthLogSessions()
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
 
@@ -543,17 +826,7 @@ void IdentityManager_DB::AuthController_DB::checkExpiredAuthLogSessionsVirtual()
     _parent->m_sqlConnector->qExecuteEx(
         R"(UPDATE logs.applicationAuthLog
            SET logoutReason = 2, logoutDateTime = CURRENT_TIMESTAMP
-           WHERE refreshTokenExpiration < :now
-           AND logoutReason IS NULL)",
-        {{":now", MAKE_VAR(DATETIME, now)}});
-
-    // Mark entries where ONLY accessToken expired (but refresh still valid)
-    _parent->m_sqlConnector->qExecuteEx(
-        R"(UPDATE logs.applicationAuthLog
-           SET logoutReason = 3, logoutDateTime = CURRENT_TIMESTAMP
-           WHERE accessTokenExpiration < :now
-           AND refreshTokenExpiration IS NOT NULL
-           AND refreshTokenExpiration > :now
+           WHERE refreshTokenExpiration < CURRENT_TIMESTAMP
            AND logoutReason IS NULL)",
         {{":now", MAKE_VAR(DATETIME, now)}});
 }
