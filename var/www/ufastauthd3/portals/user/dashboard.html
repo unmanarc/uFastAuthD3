@@ -1,0 +1,345 @@
+<!--<%include:/includes/inc.main.header.html%>-->
+<!--<%include:/includes/inc.layout.leftpanel.header.html%>-->
+<!--<%include:/includes/inc.links.html%>-->
+<!--<%include:/includes/inc.layout.leftpanel.middle.html%>-->
+<script>
+  document.getElementById("apptitle").innerHTML = "My Account ► Dashboard";
+  document.getElementById("menu-dashboard").style.color = "white";
+</script>
+
+<!-- Dashboard Stats Cards -->
+<div class="row mb-4">
+  <!-- Last Login → Success/Green -->
+  <div class="col-md-3">
+    <div class="card text-white bg-success mb-3">
+      <div class="card-body">
+        <h5 class="card-title"><i class="fa-solid fa-clock"></i> Last Login</h5>
+        <p class="card-text display-7" id="dashboardLastLogin">-</p>
+      </div>
+    </div>
+  </div>
+  <!-- Active Sessions → Info/Cyan -->
+  <div class="col-md-3">
+    <div class="card text-white bg-info mb-3">
+      <div class="card-body">
+        <h5 class="card-title"><i class="fa-solid fa-laptop"></i> Active Sessions</h5>
+        <p class="card-text display-7" id="dashboardActiveSessions">-</p>
+      </div>
+    </div>
+  </div>
+  <!-- Password Slots → Primary/Blue -->
+  <div class="col-md-3">
+    <div class="card text-white bg-primary mb-3">
+      <div class="card-body">
+        <h5 class="card-title"><i class="fa-solid fa-key"></i> Password Slots</h5>
+        <p class="card-text display-7" id="dashboardPasswordSlots">-</p>
+      </div>
+    </div>
+  </div>
+  <!-- Applications Assigned → Secondary/Gray -->
+  <div class="col-md-3">
+    <div class="card text-white bg-secondary mb-3">
+      <div class="card-body">
+        <h5 class="card-title"><i class="fa-solid fa-th-list"></i> Applications Assigned</h5>
+        <p class="card-text display-7" id="dashboardApplicationsAssigned">-</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="card-body d-flex justify-content-end">
+  <div class="d-flex flex-wrap gap-2">
+    <!-- Botón 1 -->
+    <button type="button" class="btn btn-outline-primary active" id="btnSessions" onclick="switchView('sessions')">
+      <i class="fa-solid fa-laptop"></i> View Session Activity
+    </button>
+    <!-- Botón 2 -->
+    <button type="button" class="btn btn-outline-secondary" id="btnPassword" onclick="switchView('password')">
+      <i class="fa-solid fa-file-lines"></i> View Password Activity
+    </button>
+  </div>
+</div>
+
+<br>
+
+
+<!-- Recent Session Activity -->
+<div class="row mb-4" id="sessionActivitySection">
+  <div class="col-md-12">
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="fa-solid fa-clock-rotate-left"></i> Recent Session Activity</h5>
+        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="dashboardRefreshActivity()">
+          <i class="fa-solid fa-arrows-rotate"></i> Refresh
+        </button>
+      </div>
+      <div class="card-body">
+        <table id="accountSessions" class="display">
+          <thead>
+            <tr>
+              <th scope="col">Application Name</th>
+              <th scope="col">Login Date</th>
+              <th scope="col">Login IP</th>
+              <th scope="col">Logout Date</th>
+              <th scope="col" style="text-align: center;">Status</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Password Activity -->
+<div class="row mb-4" id="passwordActivitySection">
+  <div class="col-md-12">
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="fa-solid fa-clock-rotate-left"></i> Recent Password Activity</h5>
+        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="dashboardRefreshActivity()">
+          <i class="fa-solid fa-arrows-rotate"></i> Refresh
+        </button>
+      </div>
+      <div class="card-body">
+        <table id="accountPasswordActivity" class="display">
+          <thead>
+            <tr>
+              <th scope="col">Date</th>
+              <th scope="col">Slot ID</th>
+              <th scope="col">IP</th>
+              <th scope="col">User Agent</th>
+              <th scope="col" style="text-align: center;">Status</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Includes -->
+<!-- <%include:/includes/modals/dashboard/inc.modal.changepassword.html%>-->
+<!-- <%include:/includes/modals/dashboard/inc.modal.profilesettings.html%>-->
+<!-- <%include:/includes/modals/dashboard/inc.modal.sessions.html%>-->
+<!-- <%include:/includes/modals/dashboard/inc.modal.activitylogs.html%>-->
+<!-- <%include:/includes/modals/dashboard/inc.modal.ipaddresses.html%>-->
+
+<!-- Dashboard JavaScript -->
+<script>
+  /**
+   * Maps your Reason enum to UI-friendly labels & colors
+   */
+  function getReasonInfo(reasonCode) {
+    const reasons = {
+      0: { label: "Authenticated", color: "#198754" },
+      100: { label: "Authenticated - Expired Password", color: "#ffc107" },
+      102: { label: "Expired Account", color: "#dc3545" },
+      103: { label: "Disabled Account", color: "#dc3545" },
+      104: { label: "Unconfirmed Account", color: "#ffc107" },
+      105: { label: "Bad Account", color: "#dc3545" },
+      106: { label: "Bad Password", color: "#dc3545" },
+      107: { label: "Password Index Not Found", color: "#dc3545" },
+      108: { label: "Auth Scheme Changed", color: "#0dcaf0" },
+      109: { label: "Not in App", color: "#ffc107" },
+      110: { label: "Auth Scheme Empty", color: "#dc3545" },
+      993: { label: "Bad Parameters", color: "#dc3545" },
+      994: { label: "Invalid Domain", color: "#dc3545" },
+      995: { label: "Invalid Authenticator", color: "#dc3545" },
+      996: { label: "Session Limits Exceeded", color: "#ffc107" },
+      997: { label: "Answer Timed Out", color: "#ffc107" },
+      998: { label: "Expired", color: "#dc3545" },
+      999: { label: "Unauthenticated", color: "#dc3545" }
+    };
+    return reasons[reasonCode] || { label: "Unknown Reason", color: "#6c757d" };
+  }
+
+  /**
+   * Session Activity DataTable
+   */
+  const accountSessions = new DataTable('#accountSessions', {
+    ajax: { url: "/api/v1/searchAccountSessions", type: 'GET', data: function (d) { return JSON.stringify(d); } },
+    processing: true,
+    serverSide: true,
+    order: [[1, 'desc']],
+    columns: [
+      {
+        data: "f_appName", title: "Application Name",
+        render: function (data, type, row) {
+          return '<i class="fas fa-window-maximize"></i> &nbsp;&nbsp;' + (data || '');
+        }
+      },
+      {
+        data: "loginDateTime", title: "Login Date",
+        render: function (data, type, row) {
+          return data ? new Date(data).toLocaleString() : '-';
+        }
+      },
+      {
+        data: "loginIP", title: "Login IP",
+        render: function (data, type, row) { return data || '-'; }
+      },
+      {
+        data: "logoutDateTime", title: "Logout Date",
+        render: function (data, type, row) {
+          return data ? new Date(data * 1000).toLocaleString() : '-';
+        }
+      },
+      {
+        data: "isActive", title: "Status", orderable: false, searchable: false, className: "text-center", render: function (data, type, row) {
+          const isActive = row.isActive === true || row.isActive === "true" || row.isActive === 1;
+          const reason = parseInt(row.logoutReason || 0, 10);
+          const tokenExp = new Date(row.accessTokenExpiration);
+          const isTokenPast = !isNaN(tokenExp) && tokenExp < new Date();
+          let label, color;
+          if (isActive) { label = "Active"; color = "#198754"; }
+          else if (reason === 0 && isTokenPast) { label = "Idle"; color = "#ffc107"; }
+          else {
+            switch (reason) {
+              case 2: label = "Token Expired"; break;
+              case 3: label = "User Logout"; break;
+              case 4: label = "Revoked"; break;
+              case 100: label = "Other"; break;
+              default: label = "Inactive"; break;
+            }
+            color = "#dc3545";
+          }
+          return `<div class="d-flex align-items-center justify-content-center gap-2">
+                    <span style="display:inline-block;width:12px;height:12px;border-radius:50%;background-color:${color};"></span>
+                    <span>${label}</span>
+                  </div>`;
+        }
+      }
+    ]
+  });
+
+  /**
+   * Password Activity DataTable (IP Log)
+   */
+  const accountPasswordActivity = new DataTable('#accountPasswordActivity', {
+    ajax: { url: "/api/v1/searchAccountPasswordActivity", type: 'GET', data: function (d) { return JSON.stringify(d); } },
+    processing: true,
+    serverSide: true,
+    order: [[0, 'desc']],
+    columns: [
+      {
+        data: "logDateTime", title: "Date", render: function (data, type, row) {
+          return data ? new Date(data).toLocaleString() : '-';
+        }
+      },
+      { data: "f_slotId", title: "Slot ID", render: function (data, type, row) { return data || '-'; } },
+      { data: "logIP", title: "IP", render: function (data, type, row) { return data || '-'; } },
+      { data: "logUserAgent", title: "User Agent", render: function (data, type, row) { return data || '-'; } },
+      {
+        data: "logStatus", title: "Status", orderable: false, searchable: false, className: "text-center", render: function (data, type, row) {
+          const reason = parseInt(data || 0, 10);
+          const { label, color } = getReasonInfo(reason);
+          return `<div class="d-flex align-items-center justify-content-center gap-2">
+                    <span style="display:inline-block;width:12px;height:12px;border-radius:50%;background-color:${color};"></span>
+                    <span>${label}</span>
+                  </div>`;
+        }
+      }
+    ]
+  });
+
+  /**
+   * Load Dashboard Stats
+   */
+  function loadDashboard() {
+    $.ajax({
+      url: '/api/v1/getDashboardData',
+      type: 'GET',
+      success: function (response) {
+        // Last Login
+        if (response.lastLogin?.timestamp) {
+          $('#dashboardLastLogin').text(new Date(response.lastLogin.timestamp * 1000).toLocaleString());
+        } else {
+          $('#dashboardLastLogin').text('-');
+        }
+        // Active Sessions
+        $('#dashboardActiveSessions').text(response.activeSessionsCount || 0);
+        // Password Slots
+        const used = response.activePasswordSlots?.used || 0;
+        const total = response.activePasswordSlots?.total || 0;
+        $('#dashboardPasswordSlots').text(`${used}/${total}`);
+        // Applications Assigned
+        $('#dashboardApplicationsAssigned').text(response.applicationsCount || 0);
+      },
+      error: commonFunctionError
+    });
+  }
+
+  /**
+   * Clear parameters & reset filters for Session Modal
+   */
+  function sessionsClearParameters() {
+    $('#modalSessions .form-control, #modalSessions .form-select, #modalSessions input[type="search"]').val('');
+    if ($.fn.DataTable.isDataTable('#accountSessions')) {
+      accountSessions.search('').draw();
+    }
+  }
+
+  /**
+   * Clear parameters & reset filters for Password Activity Modal
+   */
+  function activityLogsClearParameters() {
+    $('#modalActivityLogs .form-control, #modalActivityLogs .form-select, #modalActivityLogs input[type="search"]').val('');
+    if ($.fn.DataTable.isDataTable('#accountPasswordActivity')) {
+      accountPasswordActivity.search('').draw();
+    }
+  }
+
+  /**
+   * Refresh both tables and dashboard stats
+   */
+  function dashboardRefreshActivity() {
+    if ($.fn.DataTable.isDataTable('#accountSessions')) {
+      accountSessions.ajax.reload(null, false);
+    }
+    if ($.fn.DataTable.isDataTable('#accountPasswordActivity')) {
+      accountPasswordActivity.ajax.reload(null, false);
+    }
+    loadDashboard();
+  }
+
+
+  function switchView(view) {
+    // 1. Resetear estilos de botones
+    $('#btnSessions, #btnPassword').removeClass('active bg-primary text-white bg-secondary text-white');
+    $('#btnSessions').addClass('btn-outline-primary');
+    $('#btnPassword').addClass('btn-outline-secondary');
+
+    // 2. Ocultar ambas secciones
+    $('#sessionActivitySection, #passwordActivitySection').addClass('d-none');
+
+    // 3. Mostrar la seleccionada y activar botón
+    if (view === 'sessions') {
+      $('#sessionActivitySection').removeClass('d-none');
+      $('#btnSessions').removeClass('btn-outline-primary').addClass('active bg-primary text-white');
+    } else {
+      $('#passwordActivitySection').removeClass('d-none');
+      $('#btnPassword').removeClass('btn-outline-secondary').addClass('active bg-secondary text-white');
+    }
+
+    // 4. Forzar redibujado de DataTable (crucial al mostrar contenedores ocultos)
+    setTimeout(() => {
+      if (view === 'sessions' && $.fn.DataTable.isDataTable('#accountSessions')) {
+        accountSessions.columns.adjust().draw(false);
+      } else if (view === 'password' && $.fn.DataTable.isDataTable('#accountPasswordActivity')) {
+        accountPasswordActivity.columns.adjust().draw(false);
+      }
+    }, 50);
+  }
+
+
+  $(document).ready(function () {
+    loadDashboard();
+    switchView('sessions'); // Carga Session Activity por defecto
+
+  });
+</script>
+<!--<%include:/includes/inc.layout.leftpanel.footer.html%>-->
+<!--<%include:/includes/inc.main.footer.html%>-->

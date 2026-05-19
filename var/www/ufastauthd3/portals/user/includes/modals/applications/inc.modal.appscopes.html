@@ -1,0 +1,115 @@
+<!-- Modal: Examine App Scopes -->
+<div class="modal fade" id="modalAppScopes" tabindex="-1" aria-labelledby="modalAppScopesLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="modalAppScopesLabel">
+          <i class="fa-solid fa-magnifying-glass"></i> <span id="modalAppName">-</span>
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <!-- App Info Row -->
+        <div class="row mb-3">
+          <div class="col-md-6">
+            <p class="mb-1"><strong>Description:</strong></p>
+            <p id="modalAppDescription">-</p>
+          </div>
+          <div class="col-md-6">
+            <p class="mb-1"><strong>Enrolled:</strong></p>
+            <p id="modalAppEnrollment">-</p>
+          </div>
+        </div>
+
+        <!-- Admin Status -->
+        <div class="mb-3">
+          <strong>Access Level: </strong>
+          <span id="modalAppAdminBadge"></span>
+        </div>
+
+        <!-- Roles Section -->
+        <div class="mb-3">
+          <h6><i class="fa-solid fa-user-tag"></i> Roles</h6>
+          <div id="modalAppRoles"></div>
+        </div>
+
+        <!-- All Scopes Section -->
+        <div class="mb-3">
+          <h6><i class="fa-solid fa-list-check"></i> All Scopes (<span id="modalAllScopesCount">0</span>)</h6>
+          <div id="modalAllScopes"></div>
+        </div>
+
+        <!-- Direct Scopes Section -->
+        <div>
+          <h6><i class="fa-solid fa-list"></i> Direct Scopes (<span id="modalDirectScopesCount">0</span>)</h6>
+          <div id="modalDirectScopes"></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  /**
+   * Global array to store app data for modal access
+   */
+  var applicationsList = [];
+
+  /**
+   * Open the scopes modal with data for the given app index
+   */
+  function openAppScopesModal(index) {
+    var app = applicationsList[index];
+    if (!app) return;
+
+    // Safe text injection for static fields
+    $('#modalAppName').text(app.name);
+    $('#modalAppDescription').text(app.description || 'No description');
+    $('#modalAppEnrollment').text(formatTimestamp(app.enrollmentDate));
+
+    // Admin Badge: Contains only hardcoded strings, safe to use .html()
+    $('#modalAppAdminBadge').html(
+      app.isAppAdmin
+        ? '<span class="badge bg-success"><i class="fa-solid fa-shield-halved"></i> Admin</span>'
+        : '<span class="badge bg-info"><i class="fa-solid fa-user"></i> User</span>'
+    );
+
+    // --- SAFE ROLES RENDERING ---
+    var $rolesEl = $('#modalAppRoles').empty();
+    if (app.roles && app.roles.length > 0) {
+      app.roles.forEach(function(role) {
+        $rolesEl.append($('<span>', { class: 'badge bg-primary' }).text(role));
+        $rolesEl.append(' ');
+      });
+    } else {
+      $rolesEl.append('<span class="text-muted">None</span>');
+    }
+
+    // --- SAFE ALL SCOPES RENDERING ---
+    $('#modalAllScopesCount').text(app.allScopes ? app.allScopes.length : 0);
+    var $allScopesEl = $('#modalAllScopes').empty();
+    if (app.allScopes && app.allScopes.length > 0) {
+      app.allScopes.forEach(function(scope) {
+        $allScopesEl.append($('<span>', { class: 'badge bg-success' }).text(scope));
+        $allScopesEl.append(' ');
+      });
+    } else {
+      $allScopesEl.append('<span class="text-muted">No scopes inherited</span>');
+    }
+
+    // --- SAFE DIRECT SCOPES RENDERING ---
+    $('#modalDirectScopesCount').text(app.directScopes ? app.directScopes.length : 0);
+    var $directScopesEl = $('#modalDirectScopes').empty();
+    if (app.directScopes && app.directScopes.length > 0) {
+      app.directScopes.forEach(function(scope) {
+        $directScopesEl.append($('<span>', { class: 'badge bg-warning text-dark' }).text(scope));
+        $directScopesEl.append(' ');
+      });
+    } else {
+      $directScopesEl.append('<span class="text-muted">No direct scopes</span>');
+    }
+  }
+</script>

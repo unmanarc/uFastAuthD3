@@ -1,0 +1,258 @@
+<!--<%include:/includes/inc.main.header.html%>-->
+<!--<%include:/includes/inc.layout.leftpanel.header.html%>-->
+<!--<%include:/includes/inc.links.html%>-->
+<!--<%include:/includes/inc.layout.leftpanel.middle.html%>-->
+<script>
+  document.getElementById("apptitle").innerHTML = "My Account ► Profile";
+  document.getElementById("menu-profile").style.color = "white";
+
+
+  function displayUpdateFunction() {
+    document.getElementById('modifyButtons').style.display = 'block';
+  }
+
+  function realoadAccountDetails() {
+    document.getElementById('modifyButtons').style.display = 'none';
+    loadProfile();
+  }
+</script>
+
+<div class="card">
+  <div class="card-header">
+    <h5 class="mb-0"><i class="fa-solid fa-user-circle"></i> Personal Information</h5>
+  </div>
+  <div class="card-body">
+    <table width="100%" style="border-spacing: 10px; border-collapse: separate;" id="detailsTable">
+      <!-- Dynamic fields will be inserted here -->
+    </table>
+
+    <!-- Botones de acción -->
+    <div class="d-flex justify-content-end gap-2 mt-3">
+      <div id="modifyButtons" style="display: none;">
+        <button type="button" class="btn btn-dark" onclick="realoadAccountDetails()">Discard Changes</button>
+        <button type="button" class="btn btn-primary" onclick="modifyAccountDetails()">Update Account Details</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+
+  function modifyAccountDetails() {
+    var fieldValues = [];
+
+    try {
+      $('#detailsTable tr').each(function () {
+        var $row = $(this);
+
+        // Iterate over each form element in the row
+        $row.find('input, select, textarea').each(function () {
+          var $input = $(this);
+
+          // FIX: Skip read-only or disabled fields
+          if ($input.prop('disabled') || $input.prop('readonly')) {
+            return; // Continue to the next element
+          }
+
+          var id = $input.attr('id');
+          if (id) {
+            // Reverse the hex ID to get the field name
+            var fieldName = '';
+            for (var i = id.length - 2; i >= 0; i -= 2) {
+              var hex = id.substr(i, 2);
+              var char = String.fromCharCode(parseInt(hex, 16));
+              fieldName = char + fieldName;
+            }
+            var value = $input.val();
+
+            // Validate regex if available
+            if (window.fieldRegexpMap && window.fieldRegexpMap[fieldName]) {
+              let ok = false;
+              try {
+                var regexp = new RegExp(window.fieldRegexpMap[fieldName]);
+                ok = true;
+              } catch (e) {
+                // Do nothing...
+              }
+
+              if (ok === true && !regexp.test(value)) {
+                showToastError("Field '" + fieldName + "' does not match the required format.");
+                throw new Error("Validation failed for field '" + fieldName + "'");
+              }
+            }
+
+            if (value !== '') {
+              fieldValues.push({
+                name: fieldName,
+                value: value
+              });
+            } else {
+              fieldValues.push({
+                name: fieldName
+              });
+            }
+          }
+        });
+      });
+    } catch (error) {
+      console.error("An error occurred while collecting field values:", error);
+      return;
+    }
+
+    // Send the updated field values
+    $.ajax({
+      url: '/api/v1/updateAccountDetailFieldsValues',
+      type: 'PUT',
+      contentType: 'application/json',
+      data: JSON.stringify({
+        fieldValues: fieldValues,
+      }),
+      success: function (response, textStatus, xhr) {
+        realoadAccountDetails();
+        showToastSuccess("Account details updated successfully.");
+
+      },
+      error: function (xhr, status, error) {
+        commonFunctionError(xhr, status, error);
+        //realoadAccountDetails();
+      }
+    });
+  }
+
+
+
+  /**
+   * Load Profile Fields
+   */
+  function loadProfile() {
+    document.getElementById('detailsTable').innerHTML = '';
+    $.ajax({
+      url: '/api/v1/getAccountDetailFieldsValues',
+      type: 'GET',
+      contentType: 'application/json',
+      data: JSON.stringify({}),
+      success: function (response, textStatus, xhr) {
+        const table = $('#detailsTable');
+        table.empty(); // Clear any existing rows
+
+        // First loop: create input fields
+        response.forEach(function (field) {
+          let inputField = '';
+          const fieldName = field.name;
+          const fieldType = field.type;
+          const fieldDescription = field.description || '';
+          const encodedFieldName = unescape(encodeURIComponent(fieldName)).split('').map(char => char.charCodeAt(0).toString(16).padStart(2, '0')).join('');
+
+          // Safely read canUserEdit (defaults to true if missing or undefined)
+          const canUserEdit = field.extendedAttribs?.security?.canUserEdit !== false;
+          const disabledAttr = !canUserEdit ? ' disabled' : '';
+
+          switch (fieldType) {
+            case 'TEXTLINE':
+              inputField = `<input type="text" class="form-control" id='${encodedFieldName}'${disabledAttr}>`;
+              break;
+            case 'TEXTAREA':
+              inputField = `<textarea class="form-control" id='${encodedFieldName}'${disabledAttr}></textarea>`;
+              break;
+            case 'PASSWORD':
+              inputField = `<input type="password" class="form-control" id='${encodedFieldName}'${disabledAttr}>`;
+              break;
+            case 'EMAIL':
+              inputField = `<input type="email" class="form-control" id='${encodedFieldName}'${disabledAttr}>`;
+              break;
+            case 'NUMBER':
+              inputField = `<input type="number" class="form-control" id='${encodedFieldName}'${disabledAttr}>`;
+              break;
+            case 'CHECKBOX':
+              inputField = `<input type="checkbox" class="form-check-input" id='${encodedFieldName}'${disabledAttr}>`;
+              break;
+            default:
+              inputField = `<!-- invalid input type -->`;
+          }
+          const row = `
+            <tr>
+              <td align="right"><span id='desc-${encodedFieldName}'></span>: &nbsp;</td>
+              <td align="left">${inputField}</td>
+            </tr>
+          `;
+          table.append(row);
+        });
+
+        window.fieldRegexpMap = {};
+        // Second loop: populate values, apply regex validation, and enforce disabled state
+        response.forEach(function (field) 
+        {
+          const fieldName = field.name;
+          const fieldDescription = field.description || '';
+          const value = field.value;
+          const fieldType = field.type;
+          const fieldRegexp = field.regexpValidator || '';
+          const encodedFieldName = unescape(encodeURIComponent(fieldName)).split('').map(char => char.charCodeAt(0).toString(16).padStart(2, '0')).join('');
+
+          document.getElementById(`desc-${encodedFieldName}`).textContent = fieldDescription;
+          const inputElement = $(`#${encodedFieldName}`);
+
+          // Enforce disabled state via jQuery for safety
+          const canUserEdit = field.extendedAttribs?.security?.canUserEdit !== false;
+          if (!canUserEdit) {
+            inputElement.prop('disabled', true);
+          }
+
+          // Apply regex validation only if the field is editable
+          if (fieldRegexp && canUserEdit) 
+          {
+            try 
+            {
+              const regex = new RegExp(fieldRegexp);
+              if (fieldType === 'TEXTLINE' || fieldType === 'TEXTAREA' || fieldType === 'EMAIL' || fieldType === 'NUMBER') 
+              
+              {
+                window.fieldRegexpMap[fieldName] = fieldRegexp;
+                
+                inputElement.on('input', function () 
+                {
+                  displayUpdateFunction();
+
+                  const currentValue = $(this).val();
+                  if (currentValue !== '' && !regex.test(currentValue)) 
+                  {
+                    $(this).addClass('is-invalid');
+                  } 
+                  else 
+                  {
+                    $(this).removeClass('is-invalid');
+                  }
+                }
+              );
+              }
+            } 
+            catch (e) 
+            {
+              console.error("Invalid regex for field " + fieldName + ": ", e);
+            }
+          }
+
+          if (value === null || value === undefined) return;
+          if (inputElement.length > 0) 
+          {
+            if (fieldType === 'CHECKBOX') 
+            {
+              inputElement.prop('checked', value);
+            } 
+            else 
+            {
+              inputElement.val(value);
+            }
+          }
+        });
+      },
+      error: commonFunctionError
+    });
+  }
+  $(document).ready(function () 
+  {
+    loadProfile();
+  });
+</script>
+<!--<%include:/includes/inc.layout.leftpanel.footer.html%>-->
+<!--<%include:/includes/inc.main.footer.html%>-->
