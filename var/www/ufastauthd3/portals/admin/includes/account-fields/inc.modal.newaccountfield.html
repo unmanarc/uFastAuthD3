@@ -31,6 +31,10 @@
         document.getElementById("canUserEdit").disabled = false;
         document.getElementById("canUserEdit").readOnly = false;
 
+        document.getElementById("canUserView").checked = true;
+        document.getElementById("canUserView").disabled = false;
+        document.getElementById("canUserView").readOnly = false;
+
         // Change modal title to "Create Accounts Field"
         document.getElementById("modalCreateAccountFieldLabel").innerText = "Create Accounts Field";
 
@@ -83,6 +87,7 @@
                 document.getElementById("includeInToken").checked = response.extendedAttributes.visibility.includeInToken ?? false;
                 document.getElementById("includeInAPISync").checked = response.extendedAttributes.visibility.includeInAPISync ?? false;
                 document.getElementById("canUserEdit").checked = response.extendedAttributes.security.canUserEdit ?? false;
+                document.getElementById("canUserView").checked = response.extendedAttributes.security.canUserView ?? false;
                 document.getElementById("isUnique").checked = response.isUnique ?? false;
                 document.getElementById("isUnique").disabled = true;
                 document.getElementById("isUnique").readOnly = true;
@@ -148,6 +153,7 @@
                     },
                     security: {
                         canUserEdit: $("#canUserEdit:checked").length > 0,
+                        canUserView: $("#canUserView:checked").length > 0
                     }
                 }
             }),
@@ -254,6 +260,10 @@
                     <tr>
                         <td align="right">User can edit this field:</td>
                         <td><input type="checkbox" id="canUserEdit"></td>
+                    </tr>
+                    <tr>
+                        <td align="right">User can view this field:</td>
+                        <td><input type="checkbox" id="canUserView"></td>
                     </tr>
 
                 </table>

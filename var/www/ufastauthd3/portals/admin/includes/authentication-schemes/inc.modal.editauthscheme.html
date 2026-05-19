@@ -199,7 +199,7 @@
         document.getElementById('modifyButtons').style.display = 'block';
     }
 
-    function discardAccountDetails() {
+    function realoadAccountDetails() {
         document.getElementById('modifyButtons').style.display = 'none';
         editAuthScheme($('#editSchemeID').val());
     }
@@ -280,7 +280,7 @@
                             <div class="d-flex justify-content-end mt-4">
                                 <div id="modifyButtons" style="display:none;">
                                     <button type="button" class="btn btn-dark  me-2"
-                                        onclick="javascript:discardAccountDetails()">Discard
+                                        onclick="javascript:realoadAccountDetails()">Discard
                                         Changes</button>
                                     <button type="button" class="btn btn-warning"
                                         onclick="javascript:ajaxEditAuthScheme()">Update Account
