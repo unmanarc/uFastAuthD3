@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build-assets": "npm run make-dirs && npm run copy-bootstrap && npm run copy-jquery && npm run copy-datatables && npm run copy-datatables-dt && npm run copy-fontawesome-woff2 && npm run copy-fontawesome-css && npm run copy-fontawesome-solid-css",
+    "build-assets": "npm run make-dirs && npm run copy-bootstrap && npm run copy-jquery && npm run copy-datatables && npm run copy-datatables-dt && npm run copy-fontawesome-woff2 && npm run copy-fontawesome-css && npm run copy-fontawesome-solid-css && npm run copy-jssha && npm run build-qrcode && npm run copy-otplib",
     "make-dirs": "mkdir -pv ufastauthd3/global/assets/js ufastauthd3/global/assets/webfonts ufastauthd3/global/assets/css",
     "copy-bootstrap": "cp -r node_modules/bootstrap/dist/* ufastauthd3/global/assets/",
     "copy-jquery": "cp -r node_modules/jquery/dist/* ufastauthd3/global/assets/js/",
@@ -13,16 +13,26 @@
     "copy-datatables-dt": "cp -r node_modules/datatables.net-dt/js/ ufastauthd3/global/assets/ && cp -r node_modules/datatables.net-dt/css/ ufastauthd3/global/assets/ && cp -r node_modules/datatables.net-dt/types/ ufastauthd3/global/assets/",
     "copy-fontawesome-woff2": "cp node_modules/@fortawesome/fontawesome-free/webfonts/fa-solid-900.woff2 ufastauthd3/global/assets/webfonts/",
     "copy-fontawesome-css": "cp node_modules/@fortawesome/fontawesome-free/css/fontawesome.min.css ufastauthd3/global/assets/css/",
-    "copy-fontawesome-solid-css": "cp node_modules/@fortawesome/fontawesome-free/css/solid.min.css ufastauthd3/global/assets/css/"
+    "copy-fontawesome-solid-css": "cp node_modules/@fortawesome/fontawesome-free/css/solid.min.css ufastauthd3/global/assets/css/",
+    "copy-jssha": "cp node_modules/jssha/dist/sha.js ufastauthd3/global/assets/js/",
+    "build-qrcode": "node build-qrcode.js",
+    "copy-otplib": "cp node_modules/otplib/dist/index.global.js ufastauthd3/global/assets/js/otplib.global.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@fortawesome/fontawesome-free": "^7.0.0",
     "bootstrap": "^5.3.3",
     "datatables.net": "^2.3.2",
     "datatables.net-dt": "^2.3.2",
     "jquery": "^3.7.1",
-    "@fortawesome/fontawesome-free": "^7.0.0"
+    "jssha": "^3.3.1",
+    "otplib": "^13.4.0",
+    "qrcode": "^1.5.4"
+  },
+  "devDependencies": {
+    "browserify": "^17.0.1",
+    "terser": "^5.47.1"
   }
 }
