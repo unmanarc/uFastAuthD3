@@ -35,6 +35,7 @@ void TokensManager::configureAccessToken(Mantids30::DataFormat::JWT::Token &acce
     accessToken.setJwtId(tokenId);
     accessToken.addClaim("parentTokenId", refreshTokenId);
     accessToken.addClaim("app", appName);
+    accessToken.addClaim("type", "access");
     //accessToken.addClaim( "tokensConfig", tokenProperties.tokensConfiguration["accessToken"] );
 
     // Get the user scope if needed for this application...
@@ -128,8 +129,8 @@ void TokensManager::setIAMAccessTokenCookie(APIReturn &response, const RequestPa
     );
     accessToken.setNotBefore(time(nullptr) - 30);
     accessToken.addClaim("slotIds", combinedSlotIds);
-    accessToken.addClaim("type", "IAM");
-    accessToken.addClaim("app", IAM_USRPORTAL_APPNAME);
+    accessToken.addClaim("type", "access");
+    accessToken.addClaim("app", IAM_LOGINPORTAL_APPNAME);
     accessToken.addClaim("apps", Mantids30::Helpers::setToJSON(uniqueAuthApps));
     accessToken.addClaim("keepAuthenticated", keepAuthenticated);
 
