@@ -22,6 +22,7 @@ bool JWTDynamicTokenValidatorFunction(const std::string& accessTokenStr, const s
     IdentityManager *identityManager = Globals::getIdentityManager();
 
     std::string appNameStr = identityManager->applications->getApplicationNameByAPIKey(xAPIKeyStr);
+
     // Now, search the application by the x-api-key:
     if (appNameStr.empty())
     {
@@ -33,7 +34,25 @@ bool JWTDynamicTokenValidatorFunction(const std::string& accessTokenStr, const s
     ApplicationTokenProperties tokenProps = identityManager->applications->getWebLoginJWTConfigFromApplication(appNameStr);
     std::shared_ptr<Mantids30::DataFormat::JWT> validator = identityManager->applications->getAppJWTValidator(appNameStr);
 
-    return validator->verify(accessTokenStr,accessToken);
+    if (!validator->verify(accessTokenStr,accessToken))
+    {
+        LOG_APP->log1(__func__, "", Logs::LEVEL_SECURITY_ALERT, "Invalid Signature for JWT Token at app %s.", appNameStr.c_str());
+        return false;
+    }
+
+    if (JSON_ASSTRING_D(accessToken->getClaim("app"), "") != appNameStr)
+    {
+        LOG_APP->log1(__func__, "", Logs::LEVEL_SECURITY_ALERT, "JWT Token missing app name %s.", appNameStr.c_str());
+        return false;
+    }
+
+    if (JSON_ASSTRING_D(accessToken->getClaim("type"), "") != "access")
+    {
+        LOG_APP->log1(__func__, "", Logs::LEVEL_SECURITY_ALERT, "JWT Token missing app name %s.", appNameStr.c_str());
+        return false;
+    }
+
+    return true;
 }
 
 bool myDynamicOriginValidatorFunction(const std::string& origin, const std::string& xAPIKeyStr)
