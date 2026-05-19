@@ -1,5 +1,7 @@
 #pragma once
 
+#define IAM_LOGINPORTAL_APPNAME "IAM_LOGINPORTAL"
+
 #define IAM_ADMPORTAL_APPNAME "IAM_ADMPORTAL"
 #define IAM_ADMPORTAL_DESCRIPTION "Identity Access Management Administration Portal"
 #define IAM_ADMPORTAL_URL "https://iamadmin.localhost:9443"

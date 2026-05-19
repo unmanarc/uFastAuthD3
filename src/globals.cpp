@@ -7,22 +7,6 @@ std::shared_ptr<Mantids30::Program::Logs::RPCLog> Globals::rpcLog = nullptr;
 boost::property_tree::ptree Globals::pConfig;
 bool Globals::resetAdminPasswd = false;
 Mantids30::Network::Servers::Web::APIEngineCore *Globals::webLoginServer = nullptr;
-//Mantids30::Network::Protocols::FastRPC::FastRPC1 *Globals::fastRPC = nullptr;
-/*
-Mantids30::Program::Logs::AppLog *Globals::getAppLog()
-{
-    return applog;
-}
-
-void Globals::setAppLog(Mantids30::Program::Logs::AppLog *value)
-{
-    applog = value;
-}
-
-boost::property_tree::ptree *Globals::getConfig()
-{
-    return &pConfig;
-}*/
 
 IdentityManager *Globals::getIdentityManager()
 {
@@ -63,24 +47,3 @@ void Globals::setWebLoginServer(Mantids30::Network::Servers::Web::APIEngineCore 
 {
     webLoginServer = newWebLoginServer;
 }
-/*
-Mantids30::Network::Protocols::FastRPC::FastRPC1 *Globals::getFastRPC()
-{
-    return fastRPC;
-}
-
-void Globals::setFastRPC(Mantids30::Network::Protocols::FastRPC::FastRPC1 *newFastRPC)
-{
-    fastRPC = newFastRPC;
-}
-
-Mantids30::Program::Logs::RPCLog *Globals::getRPCLog()
-{
-    return rpclog;
-}
-
-void Globals::setRPCLog(Mantids30::Program::Logs::RPCLog *value)
-{
-    rpclog = value;
-}
-*/
