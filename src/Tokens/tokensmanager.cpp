@@ -107,16 +107,15 @@ void TokensManager::setIAMAccessTokenCookie(APIReturn &response, const RequestPa
         expectedRefresherTokenTimeoutTime = currentIntermediateTokenExpirationTime;
     }
 
-    Json::Value combinedSlotIds;
-    std::set<uint32_t> uniqueSlotIds = Mantids30::Helpers::jsonToUInt32Set(currentAccessToken.getClaim("slotIds"));
-    std::set<uint32_t> intermediateSlotIds = Mantids30::Helpers::jsonToUInt32Set(intermediateToken.getClaim("slotIds"));
-
-    // MIX in unique.
-    for (const auto &i : intermediateSlotIds)
-        uniqueSlotIds.insert(i);
+    std::set<uint32_t> combinedSlotIds;
+    std::set<uint32_t> existingAuthenticatedSlotIds = Mantids30::Helpers::jsonToUInt32Set(currentAccessToken.getClaim("slotIds"));
+    std::set<uint32_t> currentAuthenticationIntermediateSlotIds = Mantids30::Helpers::jsonToUInt32Set(intermediateToken.getClaim("authenticatedSlots"));
 
     // Add all unique slot IDs to the JSON array
-    combinedSlotIds = Mantids30::Helpers::setToJSON(uniqueSlotIds);
+    combinedSlotIds = existingAuthenticatedSlotIds;
+    // MIX in unique.
+    for (const auto &i : currentAuthenticationIntermediateSlotIds)
+        combinedSlotIds.insert(i);
 
     std::set<std::string> uniqueAuthApps = Mantids30::Helpers::jsonToStringSet(currentAccessToken.getClaim("apps"));
 
@@ -128,7 +127,7 @@ void TokensManager::setIAMAccessTokenCookie(APIReturn &response, const RequestPa
                                       std::min(accountExpirationTime, expectedRefresherTokenTimeoutTime) // Token expires, take the min time between two...
     );
     accessToken.setNotBefore(time(nullptr) - 30);
-    accessToken.addClaim("slotIds", combinedSlotIds);
+    accessToken.addClaim("slotIds", Mantids30::Helpers::setToJSON(combinedSlotIds));
     accessToken.addClaim("type", "access");
     accessToken.addClaim("app", IAM_LOGINPORTAL_APPNAME);
     accessToken.addClaim("apps", Mantids30::Helpers::setToJSON(uniqueAuthApps));
@@ -148,8 +147,7 @@ void TokensManager::setIAMAccessTokenCookie(APIReturn &response, const RequestPa
     Json::Value authenticationPublicData;
     authenticationPublicData["exp"] = std::to_string(accessToken.getExpirationTime());
     authenticationPublicData["subject"] = accountName;
-    authenticationPublicData["slotIds"] = combinedSlotIds;
-    //authenticationPublicData["apps"] = accountName;
+    authenticationPublicData["slotIds"] = Mantids30::Helpers::setToJSON(combinedSlotIds);
 
     // TODO: account data?
     if (keepAuthenticated)

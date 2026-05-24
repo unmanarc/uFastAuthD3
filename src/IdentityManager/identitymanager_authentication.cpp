@@ -1,10 +1,11 @@
 #include "IdentityManager/ds_authentication.h"
 #include "identitymanager.h"
 
+#include "json/value.h"
 #include <Mantids30/Helpers/random.h>
 #include <Mantids30/Threads/lock_shared.h>
-#include <cstddef>
 #include <optional>
+#include <string>
 
 using namespace Mantids30;
 
@@ -69,32 +70,24 @@ AuthenticationResult IdentityManager::AuthController::authenticateCredential(con
             }
 
             // Get authentication slots for the scheme id:
-            authContext->authSlots = listAuthenticationSlotsUsedByScheme(authContext->schemeId);
+            std::vector<AuthenticationSchemeUsedSlot> authSlotsUsedByScheme = listAuthenticationSlotsUsedByScheme(authContext->schemeId);
 
             // Empty slots / bad scheme id:
-            if (authContext->authSlots.empty())
+            if (authSlotsUsedByScheme.empty())
             {
                 return AuthenticationResult::AUTH_SCHEME_EMPTY;
             }
 
             // Slots in position 0:
-            if (authContext->currentSlotPosition == 0)
+            if (authContext->firstAuth)
             {
                 //Calc the slot scheme hash
-                authContext->slotSchemeHash = Helpers::Crypto::calcSHA256(authSlotsToJSON(authContext->authSlots).toStyledString());
+                authContext->slotSchemeHash = Helpers::Crypto::calcSHA256(authSlotsToJSON(authSlotsUsedByScheme).toStyledString());
             }
             else
             {
-                // Slot in other position...
-
-                // Validate position:
-                if (authContext->currentSlotPosition >= authContext->authSlots.size())
-                {
-                    return AuthenticationResult::PASSWORD_INDEX_NOTFOUND;
-                }
-
                 // hash is not compatible (slots changed, prevent race condition)
-                if (authContext->slotSchemeHash != Helpers::Crypto::calcSHA256(authSlotsToJSON(authContext->authSlots).toStyledString()))
+                if (authContext->slotSchemeHash != Helpers::Crypto::calcSHA256(authSlotsToJSON(authSlotsUsedByScheme).toStyledString()))
                 {
                     return AuthenticationResult::AUTH_SCHEME_CHANGED;
                 }
@@ -427,7 +420,9 @@ json IdentityManager::AuthController::getApplicableAuthenticationSchemesForAccou
 
     // Initialize the result JSON
     json r;
-    r["defaultScheme"] = UINT32_MAX;
+    r["defaultScheme"] = Json::nullValue;
+    //r["availableSchemes"] = Json::objectValue;
+
     std::map<uint32_t, std::string> allSchemes = listAuthenticationSchemes();
 
     if (!m_parent->applications->validateApplicationAccount(app, accountName))
@@ -442,7 +437,8 @@ json IdentityManager::AuthController::getApplicableAuthenticationSchemesForAccou
             r["availableSchemes"][*defaultSchemeId]["description"] = allSchemes[*defaultSchemeId];
             for (const AuthenticationSchemeUsedSlot &slot : slots)
             {
-                r["availableSchemes"][*defaultSchemeId]["slots"][i++] = slot.toJSON();
+                r["availableSchemes"]["firstSlot"] = slot.toJSON();
+                break;
             }
             // Add default scheme's slots as empty
         }
@@ -463,25 +459,41 @@ json IdentityManager::AuthController::getApplicableAuthenticationSchemesForAccou
         // Check if all required slots are available for the user
         for (const AuthenticationSchemeUsedSlot &slot : slots)
         {
-            if (accountUsedAuthSlots.find(slot.slotId) == accountUsedAuthSlots.end())
+            if (!slot.optional)
             {
-                allSlotsAvailable = false;
-                break;
+                if (accountUsedAuthSlots.find(slot.slotId) == accountUsedAuthSlots.end())
+                {
+                    allSlotsAvailable = false;
+                    break;
+                }
             }
         }
 
         if (allSlotsAvailable)
         {
             int i = 0;
-            r["availableSchemes"][schemeId]["description"] = allSchemes[schemeId];
+            json currentScheme;
+            currentScheme["description"] = allSchemes[schemeId];
+            // Find the first available slot for this scheme
+            json firstSlot = Json::nullValue;
             for (const AuthenticationSchemeUsedSlot &slot : slots)
             {
-                r["availableSchemes"][schemeId]["slots"][i++] = slot.toJSON();
+                if (accountUsedAuthSlots.find(slot.slotId) != accountUsedAuthSlots.end())
+                {
+                    firstSlot = slot.toJSON();
+                    break;
+                }
             }
-
+            // If no slot is found for this scheme, set to null
+            if (firstSlot == Json::nullValue)
+            {
+                firstSlot = Json::nullValue;
+            }
+            currentScheme["firstSlot"] = firstSlot;
+            r["availableSchemes"][std::to_string(schemeId)] = currentScheme;
             if (defaultScheme.has_value() && schemeId == *defaultScheme)
             {
-                r["defaultScheme"] = schemeId;
+                r["defaultScheme"] = std::to_string(schemeId);
             }
         }
     }

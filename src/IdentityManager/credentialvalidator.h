@@ -1,9 +1,11 @@
 #pragma once
 
+#include "json/value.h"
 #include <Mantids30/API_EndpointsAndSessions/session.h>
 #include <Mantids30/Threads/garbagecollector.h>
 
 #include <mutex>
+#include <optional>
 #include <string>
 #include <unordered_map>
 
@@ -84,7 +86,8 @@ struct AppAuthExtras
         slotSchemeHash = JSON_ASSTRING(claims,"slotSchemeHash", "");
         schemeId = JSON_ASUINT(claims,"schemeId", UINT32_MAX);
         keepAuthenticated = JSON_ASBOOL(claims,"keepAuthenticated", false);
-        currentSlotPosition = JSON_ASUINT(claims,"currentSlotPosition", UINT32_MAX);
+        currentSlotId = JSON_ASUINT(claims,"currentSlotId", 0);
+        authenticatedSlots = Mantids30::Helpers::jsonToUInt32Set(claims,"authenticatedSlots");
     }
 
     void fillFromInitialJSONPOST( const json & inputJSON )
@@ -92,16 +95,17 @@ struct AppAuthExtras
         keepAuthenticated = JSON_ASBOOL(inputJSON, "keepAuthenticated", false);
         appName = JSON_ASSTRING(inputJSON, "app", "");
         schemeId = JSON_ASUINT(inputJSON, "schemeId", UINT32_MAX);
-        currentSlotPosition = 0;
-
+        currentSlotId = JSON_ASUINT(inputJSON, "currentSlotId", 0);
+        firstAuth = true;
     }
 
+    bool firstAuth = false;
     bool keepAuthenticated = false;
     std::string appName;
     uint32_t schemeId = UINT32_MAX;
-    uint32_t currentSlotPosition = UINT32_MAX;
+    std::optional<uint32_t> currentSlotId = 0;
     std::string slotSchemeHash;
-    std::vector<AuthenticationSchemeUsedSlot> authSlots;
+    std::set<uint32_t> authenticatedSlots;
 };
 
 class CredentialValidator
