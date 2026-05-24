@@ -38,7 +38,8 @@ function createAndSubmitRedirectForm(actionUrl, data, method = 'POST') {
 let decodedRedirectURI = "";
 let loggedIn = false;
 let loggedInGETParsedParam = true;
-
+let currentScheme = null;
+let schemesAvailable = [];
 const urlParams = new URLSearchParams(window.location.search);
 
 // Retrieve the 'redirectURI' and 'app' parameter from the URL
@@ -73,9 +74,9 @@ function loadTokenAndRedirect() {
         data: JSON.stringify(
             {
                 redirectURI: decodedRedirectURI,
-                schemeId: 1,
                 activity: "LOGIN",
-                appName: appName
+                app: appName,
+                schemeId: parseInt($("#currentSchemeId").val())
             }
         ),
         headers: {
@@ -91,8 +92,8 @@ function loadTokenAndRedirect() {
 }
 
 $(document).ready(function () {
-    let currentSlotIndex = 0;
-    let schemes = [];
+    let currentSlot = null;
+    let intermediateToken = null;
 
     $("#version").text(softwareVersion);
 
@@ -156,16 +157,17 @@ $(document).ready(function () {
             }),
             success: function (response) {
                 const defaultSchemeIndex = response.defaultScheme;
-                const scheme = response.availableSchemes[defaultSchemeIndex];
-
-                if (!scheme) {
-                    updateMessage('ERROR: No available authentication scheme found.');
+                if (defaultSchemeIndex == null) {
+                    updateMessage('ERROR: No available authentication scheme found for this user.');
                     return;
                 }
+                schemesAvailable = response.availableSchemes;
 
-                schemes = scheme.slots;
-                $("#schemeDescription").text(scheme.description).css("font-weight", "bold");
+                currentScheme = response.availableSchemes[defaultSchemeIndex];
+                currentSlot = currentScheme.firstSlot;
 
+                $("#schemeDescription").text(currentScheme.description).css("font-weight", "bold");
+                $("#currentSchemeId").val(defaultSchemeIndex);
                 showNextSlot();
             },
             error: showErrorWithXHR
@@ -178,24 +180,27 @@ $(document).ready(function () {
             url: "/api/v1/authorize",
             type: "POST",
             contentType: "application/json",
+            headers: {
+                'Authorization': 'Bearer ' + intermediateToken
+            },
             data: JSON.stringify({
                 preAuthUser: username,
                 keepAuthenticated: $("#keepAuthenticated").is(":checked"),
                 app: appName,
-                schemeId: schemeId,
+                schemeId: parseInt($("#currentSchemeId").val()),
                 password: password,
                 authMode: "MODE_PLAIN",
+                currentSlotId: currentSlot.slotId,
                 challengeSalt: ""
             }),
             success: function (response) {
-                console.log("Authorization success:", response);
-
-                if (response.isFullyAuthenticated) {
+                intermediateToken = response.intermediateToken;
+                if (response.nextSlot == null) {
                     loggedIn = true;
                     updateMessage("Authenticated! Redirecting...");
                     loadTokenAndRedirect();
                 } else {
-                    currentSlotIndex++;
+                    currentSlot = response.nextSlot;
                     showNextSlot();
                 }
             },
@@ -203,10 +208,8 @@ $(document).ready(function () {
                 // Clear password and OTP fields on authorization error
                 $("#genericPassword").val('');
                 $("#otp").val('');
-
                 // Focus on generic password field after clearing it
                 $("#genericPassword").focus();
-
                 // Show the error message
                 showErrorWithXHR(xhr, status, error);
                 loggedIn = false;
@@ -216,15 +219,14 @@ $(document).ready(function () {
 
     // Update the content based on the current slot
     function showNextSlot() {
-        if (currentSlotIndex >= schemes.length) {
+        if (currentSlot == null) {
             updateMessage("Authenticated! Redirecting...");
             loadTokenAndRedirect();
             // Here we have to get the application token
             return;
         }
 
-        const slot = schemes[currentSlotIndex];
-        const { description, passwordFunction } = slot.details;
+        const { description, passwordFunction } = currentSlot.details;
 
         updateMessage("Please enter your " + description);
 
@@ -255,7 +257,7 @@ $(document).ready(function () {
     $("#genericPasswordForm").on("submit", function (e) {
         e.preventDefault();
         const username = $("#username").val();
-        const schemeId = 1;
+        const schemeId = $("#currentSchemeId").val();
         const password = $("#genericPassword").val();
 
         authorizeUser(username, schemeId, password);
@@ -265,7 +267,7 @@ $(document).ready(function () {
     $("#otpForm").on("submit", function (e) {
         e.preventDefault();
         const username = $("#username").val();
-        const schemeId = 1;
+        const schemeId = $("#currentSchemeId").val();
         const otp = $("#otp").val();
 
         authorizeUser(username, schemeId, otp);

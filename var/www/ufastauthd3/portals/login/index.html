@@ -28,7 +28,10 @@
                                     <img src="assets/images/logo.jpg" alt="logo" class="logo" width="300">
                                 </div>
                                 <p class="login-card-header-text" id="version"></p>
-                                <p id="schemeDescription" class="text-center"></p>
+                                <div class="d-flex justify-content-center">
+                                    <p id="schemeDescription" class="text-center"></p>
+                                </div>
+                                <input type="hidden" id="currentSchemeId">
                                 <p class="login-card-header-message" id="message">_</p>
                             </div>
 
@@ -70,7 +73,7 @@
                                     <!-- <h6 id="slotDescription" class="text-center mb-3">Enter OTP</h6> -->
                                     <div class="mb-2">
                                         <input type="text" class="form-control text-center" id="otp" name="otp"
-                                            placeholder="Enter your OTP" required>
+                                            placeholder="Enter your OTP" required maxlength="6" pattern="[0-9]{6}">
                                     </div>
                                     <hr>
                                     <div class="mb-2">
