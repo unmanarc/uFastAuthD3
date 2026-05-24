@@ -68,9 +68,9 @@ private:
     static bool token_validateRedirectURI(IdentityManager *identityManager, const std::string &app, const std::string &redirectURI, const std::string &user, const std::string &ipAddress);
     static bool token_createAndSignApplicationsJWTs(IdentityManager *identityManager, const JWT::Token *jwtToken, const std::string &app, const std::string &user, const uint32_t & schemeId, const std::string &redirectURI, APIReturn &response, ClientDetails &authClientDetails);
     static bool token_validateJwtClaims(const JWT::Token* jwtToken, const std::string& user, const std::string& ipAddress);
-    static bool token_validateAuthenticationScheme(IdentityManager* identityManager, const JWT::Token* jwtToken,
+/*    static bool token_validateAuthenticationScheme(IdentityManager* identityManager, const JWT::Token* jwtToken,
                                              const std::string& app, const std::string& activity, uint32_t schemeId,
-                                             const std::string& user, const std::string& ipAddress);
+                                             const std::string& user, const std::string& ipAddress);*/
     static std::optional<std::string> token_signApplicationJWT(JWT::Token &accessToken, const ApplicationTokenProperties &tokenProperties);
     static bool token_validateAppAuthorization(IdentityManager* identityManager, const JWT::Token* jwtToken,
                                          const std::string& app, const std::string& user, const std::string& ipAddress);
