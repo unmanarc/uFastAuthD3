@@ -369,7 +369,7 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::deleteCredential(void *con
         return response;
     }
 
-    if (!Globals::getIdentityManager()->authController->deleteAccountCredential(accountName, slotId))
+    if (!Globals::getIdentityManager()->authController->removeAccountCredential(accountName, slotId))
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "deletion_failed", "Failed to delete credential");
         return response;

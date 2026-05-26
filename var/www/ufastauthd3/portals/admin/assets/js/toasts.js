@@ -1,3 +1,7 @@
+// ==========================================================================================
+// Unified toast and dialogs helpers (bootstrap 5 compatible)
+// ==========================================================================================
+
 function showToast(htmlMessage, type) {
     // Sanitize htmlMessage to prevent XSS
     const sanitizedMessage = htmlMessage
@@ -36,8 +40,6 @@ function showToastSuccess(htmlMessage) {
 function showToastError(htmlMessage) {
     showToast(htmlMessage, 'error');
 }
-
-
 
 function showYesNoDialog(message, callback) {
     const dialog = $(`

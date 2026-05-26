@@ -5,6 +5,7 @@ using namespace Mantids30;
 
 void AdminPortal_Endpoints::addEndpoints(std::shared_ptr<Endpoints> endpoints)
 {
+    addEndpoints_AccountCredentials(endpoints);
     addEndpoints_Accounts(endpoints);
     addEndpoints_Scopes(endpoints);
     addEndpoints_Applications(endpoints);

@@ -3,6 +3,7 @@
 #include "IdentityManager/credentialvalidator.h"
 
 #include "Web/AdminPortal/adminportal_endpoints_accounts.h"
+#include "Web/AdminPortal/adminportal_endpoints_account_credentials.h"
 #include "Web/AdminPortal/adminportal_endpoints_applications.h"
 #include "Web/AdminPortal/adminportal_endpoints_application_scopes.h"
 #include "Web/AdminPortal/adminportal_endpoints_application_roles.h"
@@ -15,7 +16,7 @@
 #include <Mantids30/Helpers/json.h>
 #include <Mantids30/Protocol_HTTP/httpv1_base.h>
 
-class AdminPortal_Endpoints : private AdminPortalMethods_Accounts, private AdminPortalMethods_Applications, private AdminPortalMethods_ApplicationsScopes, private AdminPortalMethods_ApplicationRoles, private AdminPortal_Endpoints_AuthController, private AdminPortalMethods_ApplicationActivities
+class AdminPortal_Endpoints : private AdminPortalMethods_Accounts, private AdminPortalMethods_AccountCredentials, private AdminPortalMethods_Applications, private AdminPortalMethods_ApplicationsScopes, private AdminPortalMethods_ApplicationRoles, private AdminPortal_Endpoints_AuthController, private AdminPortalMethods_ApplicationActivities
 {
 public:
     using Endpoints = Mantids30::API::RESTful::Endpoints;
