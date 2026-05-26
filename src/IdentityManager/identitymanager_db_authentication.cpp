@@ -27,7 +27,7 @@ Credential IdentityManager_DB::AuthController_DB::retrieveAccountCredential(cons
     Threads::Sync::Lock_RD lock(_parent->m_mutex);
 
     Abstract::UINT32 badAttempts;
-    Abstract::BOOL forcedExpiration;
+    Abstract::BOOL mustChange,isLocked;
     Abstract::DATETIME expiration,lastChange;
     Abstract::STRING salt, hash;
 
@@ -48,16 +48,17 @@ Credential IdentityManager_DB::AuthController_DB::retrieveAccountCredential(cons
         return ret;
     }
 
-    if (_parent->m_sqlConnector->qSelectSingleRow(R"(SELECT `forcedExpiration`,`expiration`,`badAttempts`,`salt`,`hash`,`lastChange`
+    if (_parent->m_sqlConnector->qSelectSingleRow(R"(SELECT `mustChange`,`expiration`,`badAttempts`,`salt`,`hash`,`lastChange`,`isLocked`
                                                                         FROM iam.accountCredentials
                                                                         WHERE `f_accountName`=:accountName AND `f_AuthSlotId`=:slotId LIMIT 1;
                                                                         )",
                                                   {{":accountName", MAKE_VAR(STRING, accountName)}, {":slotId", MAKE_VAR(UINT32, slotId)}},
-                                                  {&forcedExpiration, &expiration, &badAttempts, &salt, &hash,&lastChange}))
+                                                  {&mustChange, &expiration, &badAttempts, &salt, &hash,&lastChange,&isLocked}))
     {
         *authSlotFound = true;
+        ret.isLocked = isLocked.getValue();
         ret.lastChange = lastChange.getValue();
-        ret.forceExpiration = forcedExpiration.getValue();
+        ret.mustChange = mustChange.getValue();
         ret.expirationTimestamp = expiration.getValue();
         ret.badAttempts = badAttempts.getValue();
         Mantids30::Helpers::Encoders::fromHex(salt.getValue(), ret.ssalt, 4);
@@ -147,15 +148,15 @@ bool IdentityManager_DB::AuthController_DB::changeAccountCredential(const std::s
 
     // Única operación SQL
     return _parent->m_sqlConnector->qExecuteEx(R"(
-            INSERT OR REPLACE INTO iam.accountCredentials (f_AuthSlotId, f_accountName, hash, expiration, salt, forcedExpiration, usedstrengthJSONValidator)
-            VALUES (:slotId, :account, :hash, :expiration, :salt, :forcedExpiration, :usedValidator);
+            INSERT OR REPLACE INTO iam.accountCredentials (f_AuthSlotId, f_accountName, hash, expiration, salt, mustChange, usedstrengthJSONValidator)
+            VALUES (:slotId, :account, :hash, :expiration, :salt, :mustChange, :usedValidator);
         )",
            {{":slotId", MAKE_VAR(UINT32, slotId)},
             {":account", MAKE_VAR(STRING, accountName)},
             {":hash", MAKE_VAR(STRING, passwordData.hash)},
             {":expiration", MAKE_VAR(DATETIME, passwordData.expirationTimestamp)},
             {":salt", MAKE_VAR(STRING, Mantids30::Helpers::Encoders::toHex(passwordData.ssalt, 4))},
-            {":forcedExpiration", MAKE_VAR(BOOL, passwordData.forceExpiration)},
+            {":mustChange", MAKE_VAR(BOOL, passwordData.mustChange)},
             {":usedValidator", MAKE_VAR(STRING, authSlots[slotId].strengthJSONValidator)}});
 }
 
@@ -194,14 +195,14 @@ bool IdentityManager_DB::AuthController_DB::activateAccountCredential(const std:
     }
 
     return _parent->m_sqlConnector->qExecuteEx(R"(INSERT INTO iam.accountCredentials
-           (`f_AuthSlotId`, `f_accountName`, `hash`, `expiration`, `salt`, `forcedExpiration`, `usedstrengthJSONValidator`)
-           VALUES (:slotId, :account, :hash, :expiration, :salt, :forcedExpiration, :usedValidator);)",
+           (`f_AuthSlotId`, `f_accountName`, `hash`, `expiration`, `salt`, `mustChange`, `usedstrengthJSONValidator`)
+           VALUES (:slotId, :account, :hash, :expiration, :salt, :mustChange, :usedValidator);)",
                                                {{":slotId", MAKE_VAR(UINT32, slotId)},
                                                 {":account", MAKE_VAR(STRING, accountName)},
                                                 {":hash", MAKE_VAR(STRING, hash)},
                                                 {":expiration", MAKE_VAR(DATETIME, expiration)},
                                                 {":salt", MAKE_VAR(STRING, ssalt)},
-                                                {":forcedExpiration", MAKE_VAR(BOOL, false)},
+                                                {":mustChange", MAKE_VAR(BOOL, false)},
                                                 {":usedValidator", MAKE_VAR(STRING, authSlots[slotId].strengthJSONValidator)}});
 }
 
@@ -455,7 +456,7 @@ std::map<uint32_t, std::pair<bool, Credential>> IdentityManager_DB::AuthControll
                 // UNEXPECTED ERROR!.
                 return {};
             }
-            r[id] = std::make_pair(true, cred.getPublicData());
+            r[id] = std::make_pair(true, cred.getPublicData(m_authenticationPolicy));
         }
         else
         {
@@ -484,10 +485,33 @@ bool IdentityManager_DB::AuthController_DB::doesCredentialSlotExistOnAccount(con
     return false;
 }
 
-bool IdentityManager_DB::AuthController_DB::deleteAccountCredential(const std::string &accountName, uint32_t slotId)
+bool IdentityManager_DB::AuthController_DB::removeAccountCredential(const std::string &accountName, uint32_t slotId)
 {
     return _parent->m_sqlConnector->qExecuteEx("DELETE FROM iam.accountCredentials WHERE `f_accountName` = :accountName and `f_AuthSlotId` = :slotId",
                                                {{":accountName", MAKE_VAR(STRING, accountName)}, {":slotId", MAKE_VAR(UINT32, slotId)}});
+}
+
+bool IdentityManager_DB::AuthController_DB::setCredentialMustChange(const std::string &accountName, uint32_t slotId, bool mustChange)
+{
+    Threads::Sync::Lock_RW lock(_parent->m_mutex);
+
+    return _parent->m_sqlConnector->qExecuteEx("UPDATE iam.accountCredentials SET `mustChange` = :mustChange "
+                                               "WHERE `f_accountName` = :accountName AND `f_AuthSlotId` = :slotId;",
+                                               {{":accountName", MAKE_VAR(STRING, accountName)},
+                                                {":slotId", MAKE_VAR(UINT32, slotId)},
+                                                {":mustChange", MAKE_VAR(BOOL, mustChange)}});
+}
+
+bool IdentityManager_DB::AuthController_DB::setCredentialLockedStatus(const std::string &accountName, uint32_t slotId, bool isLocked)
+{
+    Threads::Sync::Lock_RW lock(_parent->m_mutex);
+
+    return _parent->m_sqlConnector->qExecuteEx("UPDATE iam.accountCredentials SET `isLocked` = :isLocked "
+                                               "WHERE `f_accountName` = :accountName AND `f_AuthSlotId` = :slotId;",
+                                               {{":accountName", MAKE_VAR(STRING, accountName)},
+                                                {":slotId", MAKE_VAR(UINT32, slotId)},
+                                                {":isLocked", MAKE_VAR(BOOL, isLocked)}});
+
 }
 
 bool IdentityManager_DB::AuthController_DB::updateDefaultAuthScheme(const uint32_t &schemeId)

@@ -212,8 +212,9 @@ bool IdentityManager_DB::initializeDatabase()
                                              `hash`                         VARCHAR(256)    NOT NULL,
                                              `expiration`                   DATETIME        DEFAULT NULL,
                                              `salt`                         VARCHAR(256)            ,
-                                             `forcedExpiration`             BOOLEAN         DEFAULT 0,
-                                             `badAttempts`                  INTEGER         DEFAULT 0,
+                                             `mustChange`             BOOLEAN         NOT NULL DEFAULT 0,
+                                             `isLocked`             BOOLEAN         NOT NULL DEFAULT 0,
+                                             `badAttempts`                  INTEGER         NOT NULL DEFAULT 0,
                                              `usedstrengthJSONValidator`    TEXT            NOT NULL,
                                              `lastChange`                   DATETIME        DEFAULT CURRENT_TIMESTAMP NOT NULL,
 
