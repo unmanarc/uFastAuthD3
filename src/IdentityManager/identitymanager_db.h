@@ -221,14 +221,16 @@ public:
         void incrementBadAttemptsOnAccountCredential(const std::string &accountName, const uint32_t &slotId) override;
         bool changeAccountCredential(const std::string &accountName, Credential passwordData, uint32_t slotId) override;
         bool activateAccountCredential(const std::string &accountName, uint32_t slotId, const std::string &hash, const std::string &ssalt) override;
+        bool setCredentialMustChange(const std::string &accountName, uint32_t slotId, bool mustChange) override;
 
+        bool setCredentialLockedStatus(const std::string &accountName, uint32_t slotId, bool isLocked) override;
 
         std::pair<uint32_t, uint32_t> getAccountActiveCredentialsCount(const std::string &accountName) override;
         std::set<uint32_t> listUsedAuthenticationSlotsOnAccount(const std::string &accountName) override;
         std::map<uint32_t,std::pair<bool,Credential>> listAllAuthCredentialSlotsPublicDataForAccount(const std::string &accountName) override;
 
         bool doesCredentialSlotExistOnAccount(const std::string &accountName, uint32_t slotId) override;
-        bool deleteAccountCredential(const std::string &accountName, uint32_t slotId) override;
+        bool removeAccountCredential(const std::string &accountName, uint32_t slotId) override;
 
         // Auth Slot Management
         std::optional<uint32_t> addNewAuthenticationSlot(const AuthenticationSlotDetails &details) override;

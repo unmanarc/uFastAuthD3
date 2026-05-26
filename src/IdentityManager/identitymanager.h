@@ -262,7 +262,13 @@ public:
 
         // Account Credentials:
         virtual bool changeAccountCredential(const std::string &accountName, Credential passwordData, uint32_t slotId) = 0;
+        // TODO: the slotId of the master password should be configured in a configuration file.
+        bool recoverAccountMasterCredential( const std::string & accountName, std::string * password );
+
         virtual bool activateAccountCredential(const std::string &accountName, uint32_t slotId, const std::string &hash, const std::string &ssalt) = 0;
+        virtual bool setCredentialMustChange(const std::string &accountName, uint32_t slotId, bool mustChange) = 0;
+        virtual bool setCredentialLockedStatus(const std::string &accountName, uint32_t slotId, bool isLocked)  = 0;
+
 
         // Account last login:
         virtual void insertApplicationAccountAccessAuthLog(const std::string &accountName, const std::string &appName, const uint32_t &schemeId, const ClientDetails &clientDetails,
@@ -356,7 +362,7 @@ public:
         virtual bool doesCredentialSlotExistOnAccount(const std::string &accountName, uint32_t slotId) = 0;
 
 
-        virtual bool deleteAccountCredential(const std::string &accountName, uint32_t slotId) = 0;
+        virtual bool removeAccountCredential(const std::string &accountName, uint32_t slotId) = 0;
 
 
         /////////////////////////////////////////////////////////////////////////////////
@@ -379,7 +385,7 @@ public:
         virtual bool updateDefaultAuthScheme(const uint32_t &schemeId) = 0;
         virtual std::optional<uint32_t> getDefaultAuthScheme() = 0;
 
-        Credential createNewCredential(const uint32_t &slotId, const std::string &passwordInput, bool forceExpiration = false);
+        Credential createNewCredential(const uint32_t &slotId, const std::string &passwordInput, bool mustChange = false);
 
         /**
          * @brief Retrieves the applicable authentication schemes for a user for a specific application activity.

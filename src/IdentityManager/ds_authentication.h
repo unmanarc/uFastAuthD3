@@ -1,5 +1,6 @@
 #pragma once
 
+#include "json/value.h"
 #include <stdint.h>
 #include <string>
 
@@ -61,6 +62,15 @@ static std::string getStringFromAuthMode(const Mode &mode)
 
 struct AuthenticationPolicy
 {
+    Json::Value toJSON() const
+    {
+        Json::Value root;
+        root["maxTries"] = maxTries;
+        root["abandonedAccountExpirationSeconds"] = abandonedAccountExpirationSeconds;
+        root["blockTokenTimeout"] = blockTokenTimeout;
+        return root;
+    }
+
     uint32_t maxTries = 4;
     uint32_t abandonedAccountExpirationSeconds = 180 * 24 * 3600; // 6 Months..
 
@@ -125,7 +135,7 @@ struct Credential
     void fromJSON(const json &j)
     {
         slotDetails.fromJSON(j["slotDetails"]);
-        forceExpiration = JSON_ASBOOL(j, "forceExpiration", true);
+        mustChange = JSON_ASBOOL(j, "mustChange", true);
         badAttempts = JSON_ASUINT(j, "badAttempts", 0);
         lastChange = (time_t) JSON_ASUINT64(j, "lastChange", 0);
         expirationTimestamp = (time_t) JSON_ASUINT64(j, "expirationTimestamp", 0);
@@ -137,14 +147,15 @@ struct Credential
     {
         json jRet;
         jRet["slotDetails"] = slotDetails.toJSON();
-        jRet["forceExpiration"] = forceExpiration;
+        jRet["mustChange"] = mustChange;
         jRet["badAttempts"] = badAttempts;
         jRet["expirationTimestamp"] = expirationTimestamp;
         jRet["hash"] = hash;
         jRet["ssalt"] = Mantids30::Helpers::Encoders::toHex(ssalt, 4);
         jRet["lastChange"] = lastChange;
         jRet["isExpired"] = isAccountExpired();
-        jRet["isLocked"] = isLocked(authPolicy);
+        jRet["hasExceededMaxAttempts"] = hasExceededMaxAttempts(authPolicy);
+        jRet["isLocked"] = isLocked;
 
         return jRet;
     }
@@ -157,23 +168,26 @@ struct Credential
         return cred;
     }
 
-    Credential getPublicData() const
+    Credential getPublicData(const AuthenticationPolicy &authPolicy) const
     {
         Credential credPubData = *this;
         credPubData.hash = "";
+        credPubData.currentAuthPolicy = authPolicy;
         return credPubData;
     }
 
-    bool isLocked(const AuthenticationPolicy &authPolicy) const { return (badAttempts + 1) >= authPolicy.maxTries; }
-    bool isAccountExpired() const { return (time(nullptr) > expirationTimestamp && expirationTimestamp != 0) || forceExpiration; }
+    bool hasExceededMaxAttempts(const AuthenticationPolicy &authPolicy) const { return (badAttempts + 1) >= authPolicy.maxTries; }
+    bool isAccountExpired() const { return (time(nullptr) > expirationTimestamp && expirationTimestamp != 0) || mustChange; }
 
-    bool forceExpiration = true;
+    bool isLocked = false;
+    bool mustChange = true;
     uint32_t badAttempts = 0;
     // 0 means that the password does not expire... 1 means that it's expired unless and when you change the password, the expiration will be set to current time + slot default time...
     time_t expirationTimestamp = 1, lastChange=0;
     std::string hash;
     unsigned char ssalt[4] = {0xFF, 0xFF, 0xFF, 0xFF};
     AuthenticationSlotDetails slotDetails;
+    AuthenticationPolicy currentAuthPolicy;
 };
 
 enum class AuthenticationResult : uint16_t
