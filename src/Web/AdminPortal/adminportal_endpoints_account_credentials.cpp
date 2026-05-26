@@ -1,0 +1,190 @@
+#include "adminportal_endpoints_account_credentials.h"
+
+#include "globals.h"
+#include <json/value.h>
+#include <Mantids30/Program_Logs/applog.h>
+
+using namespace Mantids30::Program;
+using namespace Mantids30;
+using namespace Mantids30::Network::Protocols;
+
+void AdminPortalMethods_AccountCredentials::addEndpoints_AccountCredentials(std::shared_ptr<Endpoints> endpoints)
+{
+    using SecurityOptions = Mantids30::API::RESTful::Endpoints::SecurityOptions;
+
+    // Account Credential Slots:
+    endpoints->addEndpoint(Endpoints::GET,    "getAccountCredentialSlots",        SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_READ"},    nullptr, &getAccountCredentialSlots);
+    endpoints->addEndpoint(Endpoints::DELETE, "removeAccountCredentialSlot",      SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"},  nullptr, &removeAccountCredentialSlot);
+    endpoints->addEndpoint(Endpoints::PUT,   "setCredentialLockedStatus",        SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"},  nullptr, &setCredentialLockedStatus);
+    endpoints->addEndpoint(Endpoints::PUT,   "setMustChangeCredential",         SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"},  nullptr, &setMustChangeCredential);
+    endpoints->addEndpoint(Endpoints::POST,   "generateMasterPassword",            SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"},  nullptr, &generateMasterPassword);
+}
+
+API::APIReturn AdminPortalMethods_AccountCredentials::getAccountCredentialSlots(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+{
+    API::APIReturn response;
+    json jResponse;
+
+    // Extract and validate input
+    std::string accountName = JSON_ASSTRING(*request.inputJSON, "accountName", "");
+
+    if (accountName.empty())
+    {
+        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Account name is required");
+        return response;
+    }
+
+    // Get credential slots for the account
+    std::map<uint32_t, AuthenticationSlotDetails> allSlots = Globals::getIdentityManager()->authController->listAllAuthenticationSlots();
+
+    // Get account credential data
+    std::map<uint32_t, Credential> credentialData = Globals::getIdentityManager()->authController->getAccountAllCredentialsPublicData(accountName);
+
+    jResponse["slots"] = Json::arrayValue;
+    jResponse["currentAuthPolicy"] = Json::nullValue;
+
+    for (const auto &slot : allSlots)
+    {
+        json rSlot;
+        rSlot["slotId"] = slot.first;
+        rSlot["slotInfo"] = slot.second.toJSON();
+        rSlot["slotData"] = Json::nullValue;
+        if (credentialData.find(slot.first) != credentialData.end())
+        {
+            auto slotData = credentialData[slot.first];
+            rSlot["slotData"] = slotData.toJSON(slotData.currentAuthPolicy);
+            jResponse["currentAuthPolicy"] = slotData.currentAuthPolicy.toJSON();
+        }
+
+        jResponse["slots"].append(rSlot);
+    }
+
+
+    return jResponse;
+}
+
+API::APIReturn AdminPortalMethods_AccountCredentials::removeAccountCredentialSlot(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+{
+    API::APIReturn response;
+
+    // Extract and validate input
+    std::string accountName = JSON_ASSTRING(*request.inputJSON, "accountName", "");
+    uint32_t slotId = JSON_ASUINT(*request.inputJSON, "slotId", 0);
+
+    if (accountName.empty())
+    {
+        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Account name is required");
+        return response;
+    }
+
+    if (slotId == 0)
+    {
+        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Slot ID is required");
+        return response;
+    }
+
+    if (slotId == 1)
+    {
+        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Can´t remove the credential slot 1 (Master Password)");
+        return response;
+    }
+
+    // Delete the credential slot for the account
+    if (!Globals::getIdentityManager()->authController->removeAccountCredential(accountName, slotId))
+    {
+        response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to delete the credential slot");
+        return response;
+    }
+
+    return response;
+}
+
+API::APIReturn AdminPortalMethods_AccountCredentials::setCredentialLockedStatus(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+{
+    API::APIReturn response;
+
+    // Extract and validate input
+    std::string accountName = JSON_ASSTRING(*request.inputJSON, "accountName", "");
+    uint32_t slotId = JSON_ASUINT(*request.inputJSON, "slotId", 0);
+    bool lockedStatus = JSON_ASBOOL(*request.inputJSON, "lockedStatus", false);
+
+    if (accountName.empty())
+    {
+        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Account name is required");
+        return response;
+    }
+
+    if (slotId == 0)
+    {
+        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Slot ID is required");
+        return response;
+    }
+
+    // Block the credential slot for the account
+    if (!Globals::getIdentityManager()->authController->setCredentialLockedStatus(accountName, slotId, lockedStatus))
+    {
+        response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to set the lock state on the credential slot");
+        return response;
+    }
+
+    return response;
+}
+
+
+API::APIReturn AdminPortalMethods_AccountCredentials::setMustChangeCredential(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+{
+    API::APIReturn response;
+
+    // Extract and validate input
+    std::string accountName = JSON_ASSTRING(*request.inputJSON, "accountName", "");
+    uint32_t slotId = JSON_ASUINT(*request.inputJSON, "slotId", 0);
+    bool mustChange = JSON_ASBOOL(*request.inputJSON, "mustChange",true);
+
+    if (accountName.empty())
+    {
+        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Account name is required");
+        return response;
+    }
+
+    if (slotId == 0)
+    {
+        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Slot ID is required");
+        return response;
+    }
+
+    // Force credential expiration for the account slot
+    if (!Globals::getIdentityManager()->authController->setCredentialMustChange(accountName, slotId, mustChange))
+    {
+        response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to change credential flag to change");
+        return response;
+    }
+
+    return response;
+}
+
+API::APIReturn AdminPortalMethods_AccountCredentials::generateMasterPassword(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+{
+    API::APIReturn response;
+
+    // Extract and validate input
+    std::string accountName = JSON_ASSTRING(*request.inputJSON, "accountName", "");
+
+    if (accountName.empty())
+    {
+        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Account name is required");
+        return response;
+    }
+
+    // Generate a new master password for the account
+    std::string newTempPassword;
+    bool ok = Globals::getIdentityManager()->authController->recoverAccountMasterCredential(accountName,&newTempPassword);
+
+    if (!ok)
+    {
+        response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to generate new master password");
+        return response;
+    }
+
+    (*response.responseJSON())["password"] = newTempPassword;
+    return response;
+}
