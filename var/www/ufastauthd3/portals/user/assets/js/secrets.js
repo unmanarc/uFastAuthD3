@@ -183,8 +183,8 @@ function drawPasswordList(inputPasswords) {
         // Determine status
         var statusClass = "text-success";
         var status = "Operational";
-        if (input.isLocked) {
-            status = "Locked (Bad Attempts)";
+        if (input.hasExceededMaxAttempts) {
+            status = "Locked (Max Attempts Exceeded)";
             statusClass = "text-danger";
         } else if (input.isExpired) {
             status = "Expired";
