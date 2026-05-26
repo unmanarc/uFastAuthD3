@@ -322,7 +322,7 @@ bool AuthStorageImpl::resetAdminPwd(IdentityManager_DB *identityManager, std::st
 
     credentialData.
     credentialData.passwordFunction = FN_SHA256;
-    credentialData.forceExpiration = true; // Expired (to be changed on the first login).
+    credentialData.mustChange = true; // Expired (to be changed on the first login).
 
     return identityManager->authController->changeCredential("admin", credentialData);
 }*/

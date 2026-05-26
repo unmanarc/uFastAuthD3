@@ -115,10 +115,10 @@ AuthenticationResult IdentityManager::AuthController::authenticateCredential(con
 
                 // Use current time. (don't invalidate accounts if the log does not prove recent access)... altough it will prevent exposure, will block/mess everything if the log is moved or corrupted.
                 lastLogin->first = time(nullptr);
-                if (lastLogin == std::nullopt)
+/*                if (lastLogin == std::nullopt)
                 {
                     lastLogin->first = 0;
-                }
+                }*/
             }
 
             auto flags = m_parent->accounts->getAccountFlags(accountName);
@@ -138,7 +138,10 @@ AuthenticationResult IdentityManager::AuthController::authenticateCredential(con
             else if (lastLogin->first + m_authenticationPolicy.abandonedAccountExpirationSeconds < time(nullptr))
                 return AuthenticationResult::INACTIVE_ACCOUNT;
 
-            else if ( pStoredCredentialData.isLocked(m_authenticationPolicy) )
+            else if ( pStoredCredentialData.hasExceededMaxAttempts(m_authenticationPolicy) )
+                return AuthenticationResult::LOCKED_PASSWORD;
+
+            else if ( pStoredCredentialData.isLocked )
                 return AuthenticationResult::LOCKED_PASSWORD;
 
             else
@@ -176,7 +179,7 @@ Credential IdentityManager::AuthController::getAccountCredentialPublicData(const
     bool bAccountFound = false;
     bool bSlotIdFound = false;
     Credential credential = retrieveAccountCredential(accountName, slotId, &bAccountFound, &bSlotIdFound);
-    return credential.getPublicData();
+    return credential.getPublicData(m_authenticationPolicy);
 }
 
 std::map<uint32_t, Credential> IdentityManager::AuthController::getAccountAllCredentialsPublicData(const std::string &accountName)
@@ -191,7 +194,7 @@ std::map<uint32_t, Credential> IdentityManager::AuthController::getAccountAllCre
         Credential credential = retrieveAccountCredential(accountName, slotId, &accountFound, &authSlotFound);
         if (accountFound && authSlotFound)
         {
-            r[slotId] = credential.getPublicData();
+            r[slotId] = credential.getPublicData(m_authenticationPolicy);
         }
     }
     return r;
@@ -305,6 +308,40 @@ std::set<ApplicationScope> IdentityManager::AuthController::getAccountUsableAppl
     return x;
 }
 
+bool IdentityManager::AuthController::recoverAccountMasterCredential(const std::string &accountName, std::string *sInitPW)
+{
+    *sInitPW = "";
+    std::map<uint32_t, AuthenticationSlotDetails> authSlots;
+    std::string newPass;
+    Credential credentialData;
+
+    {
+        Threads::Sync::Lock_RD lock(m_parent->m_mutex);
+
+        authSlots = m_parent->authController->listAllAuthenticationSlots();
+        // not any slot assigned to this scheme
+        if (authSlots.empty())
+        {
+            return false;
+        }
+
+        // not a password...
+        if (!authSlots.begin()->second.isTextPasswordFunction())
+        {
+            return false;
+        }
+        newPass = Mantids30::Helpers::Random::createRandomString(16);
+        credentialData = m_parent->authController->createNewCredential(authSlots.begin()->first, newPass, true);
+    }
+
+    bool r = m_parent->authController->changeAccountCredential(accountName, credentialData, authSlots.begin()->first);
+
+    if (r)
+        *sInitPW = newPass;
+
+    return r;
+}
+
 bool IdentityManager::AuthController::setAccountPasswordOnScheme(const std::string &accountName, std::string *sInitPW, const uint32_t &schemeId)
 {
     *sInitPW = "";
@@ -343,22 +380,22 @@ bool IdentityManager::AuthController::setAccountPasswordOnScheme(const std::stri
 
             &&
            _parent->m_sqlConnector->qExecuteEx("INSERT INTO iam.accountCredentials "
-                                "(`f_AuthSlotId`,`f_accountName`,`hash`,`expiration`,`salt`,`forcedExpiration`)"
+                                "(`f_AuthSlotId`,`f_accountName`,`hash`,`expiration`,`salt`,`mustChange`)"
                                 " VALUES"
-                                "('0',:account,:hash,:expiration,:salt,:forcedExpiration);",
+                                "('0',:account,:hash,:expiration,:salt,:mustChange);",
                                 {
                                     {":account",MAKE_VAR(STRING,accountName)},
                                     {":hash",MAKE_VAR(STRING,credentialData.hash)},
                                     {":expiration",MAKE_VAR(DATETIME,credentialData.expirationTimestamp)},
                                     {":salt",MAKE_VAR(STRING,Mantids30::Helpers::Encoders::toHex(credentialData.ssalt,4))},
-                                    {":forcedExpiration",MAKE_VAR(BOOL,credentialData.forceExpiration)}
+                                    {":mustChange",MAKE_VAR(BOOL,credentialData.mustChange)}
                                 }
                                 );*/
     // TODO: pasar esto a slot
     //`totp2FAStepsToleranceWindow`,`function`
 }
 
-Credential IdentityManager::AuthController::createNewCredential(const uint32_t &slotId, const std::string &passwordInput, bool forceExpiration)
+Credential IdentityManager::AuthController::createNewCredential(const uint32_t &slotId, const std::string &passwordInput, bool mustChange)
 {
     Credential r;
 
@@ -370,7 +407,7 @@ Credential IdentityManager::AuthController::createNewCredential(const uint32_t &
     }
 
     r.slotDetails = authSlots[slotId];
-    r.forceExpiration = forceExpiration;
+    r.mustChange = mustChange;
     r.expirationTimestamp = time(nullptr) + r.slotDetails.defaultExpirationSeconds;
 
     switch (r.slotDetails.passwordFunction)
