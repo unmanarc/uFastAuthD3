@@ -47,12 +47,15 @@ std::optional<uint32_t> IdentityManager_DB::AuthController_DB::addAuthentication
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
 
-    auto i = _parent->m_sqlConnector->qExecute("INSERT INTO iam.authenticationSchemes (`description`) VALUES(:description);", {{":description", MAKE_VAR(STRING, description)}});
+    uint32_t newSchemeId = 0;
+    {
+        auto i = _parent->m_sqlConnector->qExecute("INSERT INTO iam.authenticationSchemes (`description`) VALUES(:description);", {{":description", MAKE_VAR(STRING, description)}});
 
-    if (!i || !i->isSuccessful())
-        return std::nullopt;
+        if (!i || !i->isSuccessful())
+            return std::nullopt;
 
-    uint32_t newSchemeId = i->getLastInsertRowID();
+        newSchemeId = i->getLastInsertRowID();
+    }
 
     _parent->logAuthenticationSchemeSecurityEvent(newSchemeId, SecurityEventAction::CREATE, "New authentication scheme created", performedBy, clientDetails);
 

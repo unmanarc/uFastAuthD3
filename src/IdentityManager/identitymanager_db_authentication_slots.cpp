@@ -19,17 +19,20 @@ std::optional<uint32_t> IdentityManager_DB::AuthController_DB::addNewAuthenticat
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
 
-    auto i = _parent->m_sqlConnector->qExecute("INSERT INTO iam.authenticationSlots (`description`,`function`,`defaultExpirationSeconds`,`strengthJSONValidator`,`totp2FAStepsToleranceWindow`) "
-                                               "VALUES(:description,:function,:defaultExpirationSeconds,:strengthJSONValidator,:totp2FAStepsToleranceWindow);",
-                                               {{":description", MAKE_VAR(STRING, details.description)},
-                                                {":function", MAKE_VAR(UINT32, details.passwordFunction)},
-                                                {":defaultExpirationSeconds", MAKE_VAR(UINT32, details.defaultExpirationSeconds)},
-                                                {":totp2FAStepsToleranceWindow", MAKE_VAR(UINT32, details.totp2FAStepsToleranceWindow)},
-                                                {":strengthJSONValidator", MAKE_VAR(STRING, details.strengthJSONValidator)}});
-    if (!i || !i->isSuccessful())
-        return std::nullopt;
+    uint32_t newSlotId = 0;
+    {
+        auto i = _parent->m_sqlConnector->qExecute("INSERT INTO iam.authenticationSlots (`description`,`function`,`defaultExpirationSeconds`,`strengthJSONValidator`,`totp2FAStepsToleranceWindow`) "
+                                                   "VALUES(:description,:function,:defaultExpirationSeconds,:strengthJSONValidator,:totp2FAStepsToleranceWindow);",
+                                                   {{":description", MAKE_VAR(STRING, details.description)},
+                                                    {":function", MAKE_VAR(UINT32, details.passwordFunction)},
+                                                    {":defaultExpirationSeconds", MAKE_VAR(UINT32, details.defaultExpirationSeconds)},
+                                                    {":totp2FAStepsToleranceWindow", MAKE_VAR(UINT32, details.totp2FAStepsToleranceWindow)},
+                                                    {":strengthJSONValidator", MAKE_VAR(STRING, details.strengthJSONValidator)}});
+        if (!i || !i->isSuccessful())
+            return std::nullopt;
 
-    uint32_t newSlotId = i->getLastInsertRowID();
+        newSlotId = i->getLastInsertRowID();
+    }
 
     _parent->logAuthenticationSlotSecurityEvent(newSlotId, SecurityEventAction::CREATE, "New authentication slot created", performedBy, clientDetails);
 
