@@ -175,7 +175,7 @@ $(document).ready(function () {
     }
 
     // Function to send authorization request for each slot
-    function authorizeUser(username, schemeId, password) {
+    function authorizeCredential(username, schemeId, password) {
         $.ajax({
             url: "/api/v1/authorize",
             type: "POST",
@@ -206,13 +206,21 @@ $(document).ready(function () {
             },
             error: function (xhr, status, error) {
                 // Clear password and OTP fields on authorization error
-                $("#genericPassword").val('');
+                $("#genericPassword").val('').trigger('input');
                 $("#otp").val('');
                 // Focus on generic password field after clearing it
                 $("#genericPassword").focus();
                 // Show the error message
                 showErrorWithXHR(xhr, status, error);
                 loggedIn = false;
+
+                // MUST CHANGE CREDENTIAL.
+                if (xhr.responseJSON["error"] == 'AUTH_ERR_113')
+                {
+                    // TODO:
+                    alert('MUST CHANGE CREDENTIAL');
+                }
+
             }
         });
     }
@@ -260,7 +268,7 @@ $(document).ready(function () {
         const schemeId = $("#currentSchemeId").val();
         const password = $("#genericPassword").val();
 
-        authorizeUser(username, schemeId, password);
+        authorizeCredential(username, schemeId, password);
     });
 
     // Event listener for OTP submission
@@ -270,6 +278,6 @@ $(document).ready(function () {
         const schemeId = $("#currentSchemeId").val();
         const otp = $("#otp").val();
 
-        authorizeUser(username, schemeId, otp);
+        authorizeCredential(username, schemeId, otp);
     });
 });
