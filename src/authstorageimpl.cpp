@@ -1,4 +1,5 @@
 #include "authstorageimpl.h"
+#include "Mantids30/API_EndpointsAndSessions/session.h"
 #include "Mantids30/Program_Logs/loglevels.h"
 #include "globals.h"
 
@@ -259,7 +260,10 @@ bool AuthStorageImpl::createAuth()
     {
         LOG_APP->log0(__func__, Logs::LEVEL_WARN, "Password marked to be reseted...");
         std::string sInitPW;
-        if (!schemeId.has_value() || !identityManager->authController->setAccountPasswordOnScheme(sDefaultUser, &sInitPW, *schemeId))
+        IdentityManager::ClientDetails clientDetails;
+        std::string performedBy = "";
+
+        if (!schemeId.has_value() || !identityManager->authController->setAccountPasswordOnScheme(clientDetails, performedBy, sDefaultUser, &sInitPW, *schemeId))
         {
             LOG_APP->log0(__func__, Logs::LEVEL_ERR, "Password not resetted (Maybe the account '%s' does not have admin privileges?)...", sDefaultUser.c_str());
             return false;
@@ -433,11 +437,14 @@ bool AuthStorageImpl::configureAdminPortalApplication(IdentityManager_DB *identi
     )") );
 
 
+    Sessions::ClientDetails clientDetails;
+    std::string performedBy = "%SYS:INIT";
+
     if (!identityManager->applications->validateApplicationAccount(IAM_ADMPORTAL_APPNAME, adminUser))
     {
         LOG_APP->log0(__func__, Logs::LEVEL_WARN, "Setting up '%s' user as application '%s' user.", adminUser.c_str(), IAM_ADMPORTAL_APPNAME);
 
-        if (!identityManager->applications->addAccountToApplication(IAM_ADMPORTAL_APPNAME, adminUser))
+        if (!identityManager->applications->addAccountToApplication(clientDetails,performedBy,IAM_ADMPORTAL_APPNAME, adminUser))
         {
             LOG_APP->log0(__func__, Logs::LEVEL_CRITICAL, "Failed to set the '%s' account as application '%s' user.", adminUser.c_str(), IAM_ADMPORTAL_APPNAME);
             return false;
@@ -448,7 +455,7 @@ bool AuthStorageImpl::configureAdminPortalApplication(IdentityManager_DB *identi
     {
         LOG_APP->log0(__func__, Logs::LEVEL_WARN, "Setting up '%s' user as application '%s' admin.", adminUser.c_str(), IAM_ADMPORTAL_APPNAME);
 
-        if (!identityManager->applications->changeApplicationAdmin(IAM_ADMPORTAL_APPNAME, adminUser,true))
+        if (!identityManager->applications->changeApplicationAdmin(clientDetails,performedBy,IAM_ADMPORTAL_APPNAME, adminUser,true))
         {
             LOG_APP->log0(__func__, Logs::LEVEL_CRITICAL, "Failed to set the '%s' account as application '%s' admin.", adminUser.c_str(), IAM_ADMPORTAL_APPNAME);
             return false;
@@ -529,11 +536,16 @@ bool AuthStorageImpl::configureUserPortalApplication(IdentityManager_DB *identit
     ]
     )") );
 
+
+    Sessions::ClientDetails clientDetails;
+    std::string performedBy = "%SYS:INIT";
+
+
     if (!identityManager->applications->validateApplicationAccount(IAM_USRPORTAL_APPNAME, adminUser))
     {
         LOG_APP->log0(__func__, Logs::LEVEL_WARN, "Setting up '%s' user as application '%s' user.", adminUser.c_str(), IAM_USRPORTAL_APPNAME);
 
-        if (!identityManager->applications->addAccountToApplication(IAM_USRPORTAL_APPNAME, adminUser))
+        if (!identityManager->applications->addAccountToApplication(clientDetails,performedBy,IAM_USRPORTAL_APPNAME, adminUser))
         {
             LOG_APP->log0(__func__, Logs::LEVEL_CRITICAL, "Failed to set the '%s' account as application '%s' user.", adminUser.c_str(), IAM_USRPORTAL_APPNAME);
             return false;
@@ -545,7 +557,8 @@ bool AuthStorageImpl::configureUserPortalApplication(IdentityManager_DB *identit
     {
         LOG_APP->log0(__func__, Logs::LEVEL_WARN, "Setting up '%s' user with role 'GENERIC_USER' in application '%s'.", adminUser.c_str(), IAM_USRPORTAL_APPNAME);
 
-        if (!identityManager->applicationRoles->addAccountToRole(IAM_USRPORTAL_APPNAME, "GENERIC_USER", adminUser))
+
+        if (!identityManager->applicationRoles->addAccountToRole(clientDetails,performedBy,IAM_USRPORTAL_APPNAME, "GENERIC_USER", adminUser))
         {
             LOG_APP->log0(__func__, Logs::LEVEL_CRITICAL, "Failed to set up '%s' user with role 'GENERIC_USER' in application '%s'.", adminUser.c_str(), IAM_USRPORTAL_APPNAME);
             return false;

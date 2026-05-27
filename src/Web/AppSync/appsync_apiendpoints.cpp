@@ -39,6 +39,10 @@ void AppSync_Endpoints::addAPIEndpoints(std::shared_ptr<Endpoints> endpoints)
 
 void AppSync_Endpoints::updateAppScopes( const std::string & appName, const std::string & ipAddress,  const json & proposedScopes )
 {
+    ClientDetails clientDetails;
+    clientDetails.ipAddress = ipAddress;
+    std::string performedBy = "%APP:" +appName;
+
     // Current elements...
     std::set<ApplicationScope> currentScopes = Globals::getIdentityManager()->authController->listApplicationScopes(appName);
     if (proposedScopes.isArray())
@@ -63,14 +67,14 @@ void AppSync_Endpoints::updateAppScopes( const std::string & appName, const std:
                     if (existingScope->description != newScope.description)
                     {
                         LOG_APP->log2(__func__, "", ipAddress, Logs::LEVEL_INFO, "Updating description for scope '%s' in application '%s'.", id.c_str(), appName.c_str());
-                        Globals::getIdentityManager()->authController->updateApplicationScopeDescription(newScope);
+                        Globals::getIdentityManager()->authController->updateApplicationScopeDescription(clientDetails,performedBy,newScope);
                     }
                 }
                 else
                 {
                     // Add new scope
                     LOG_APP->log2(__func__, "", ipAddress, Logs::LEVEL_INFO, "Adding new scope '%s' to application '%s'.", id.c_str(), appName.c_str());
-                    Globals::getIdentityManager()->authController->addApplicationScope(newScope);
+                    Globals::getIdentityManager()->authController->addApplicationScope(clientDetails,performedBy,newScope);
                 }
             }
         }
@@ -81,7 +85,7 @@ void AppSync_Endpoints::updateAppScopes( const std::string & appName, const std:
             if (proposedScopeIds.find(currentScope.id) == proposedScopeIds.end())
             {
                 LOG_APP->log2(__func__, "", ipAddress, Logs::LEVEL_INFO, "Removing scope '%s' from application '%s'.", currentScope.id.c_str(), appName.c_str());
-                Globals::getIdentityManager()->authController->removeApplicationScope(currentScope);
+                Globals::getIdentityManager()->authController->removeApplicationScope(clientDetails,performedBy,currentScope);
             }
         }
     }
@@ -89,6 +93,10 @@ void AppSync_Endpoints::updateAppScopes( const std::string & appName, const std:
 
 void AppSync_Endpoints::updateAppRoles( const std::string & appName, const std::string & ipAddress,  const json & proposedRoles )
 {
+    ClientDetails clientDetails;
+    clientDetails.ipAddress = ipAddress;
+    std::string performedBy = "%APP:" +appName;
+
     std::set<ApplicationRole> currentRoles = Globals::getIdentityManager()->applicationRoles->getApplicationRolesList(appName);
 
     // Store proposed role data for scope processing later
@@ -118,14 +126,14 @@ void AppSync_Endpoints::updateAppRoles( const std::string & appName, const std::
                 if (existingRole->description != newRole.description)
                 {
                     LOG_APP->log2(__func__, "", ipAddress, Logs::LEVEL_INFO, "Updating description for role '%s' in application '%s'.", id.c_str(), appName.c_str());
-                    Globals::getIdentityManager()->applicationRoles->updateRoleDescription(appName, id, description);
+                    Globals::getIdentityManager()->applicationRoles->updateRoleDescription(clientDetails,performedBy,appName, id, description);
                 }
             }
             else
             {
                 // Add new role
                 LOG_APP->log2(__func__, "", ipAddress, Logs::LEVEL_INFO, "Adding new role '%s' to application '%s'.", id.c_str(), appName.c_str());
-                Globals::getIdentityManager()->applicationRoles->addRole(appName, id, description);
+                Globals::getIdentityManager()->applicationRoles->addRole(clientDetails,performedBy,appName, id, description);
             }
         }
         // Remove roles that are not in proposed list
@@ -134,7 +142,7 @@ void AppSync_Endpoints::updateAppRoles( const std::string & appName, const std::
             if (proposedRoleIds.find(currentRole.id) == proposedRoleIds.end())
             {
                 LOG_APP->log2(__func__, "", ipAddress, Logs::LEVEL_INFO, "Removing role '%s' from application '%s'.", currentRole.id.c_str(), appName.c_str());
-                Globals::getIdentityManager()->applicationRoles->removeRole(appName, currentRole.id);
+                Globals::getIdentityManager()->applicationRoles->removeRole(clientDetails,performedBy,appName, currentRole.id);
             }
         }
     }
@@ -169,7 +177,7 @@ void AppSync_Endpoints::updateAppRoles( const std::string & appName, const std::
                         appScope.id = scopeId;
                         LOG_APP->log2(__func__, "", ipAddress, Logs::LEVEL_INFO, "Adding scope '%s' to role '%s' in application '%s'.", scopeId.c_str(), roleId.c_str(),
                                       appName.c_str());
-                        Globals::getIdentityManager()->authController->addApplicationScopeToRole(appScope, roleId);
+                        Globals::getIdentityManager()->authController->addApplicationScopeToRole(clientDetails, performedBy, appScope, roleId);
                     }
                 }
             }
@@ -184,7 +192,7 @@ void AppSync_Endpoints::updateAppRoles( const std::string & appName, const std::
                     appScope.id = currentScopeId;
                     LOG_APP->log2(__func__, "", ipAddress, Logs::LEVEL_INFO, "Removing scope '%s' from role '%s' in application '%s'.", currentScopeId.c_str(), roleId.c_str(),
                                   appName.c_str());
-                    Globals::getIdentityManager()->authController->removeApplicationScopeFromRole(appScope, roleId);
+                    Globals::getIdentityManager()->authController->removeApplicationScopeFromRole(clientDetails, performedBy,appScope, roleId);
                 }
             }
         }
@@ -193,6 +201,10 @@ void AppSync_Endpoints::updateAppRoles( const std::string & appName, const std::
 
 void AppSync_Endpoints::updateAppActivities( const std::string & appName, const std::string & ipAddress,  const json & proposedActivities )
 {
+    ClientDetails clientDetails;
+    clientDetails.ipAddress = ipAddress;
+    std::string performedBy = "%APP:" +appName;
+
     std::map<std::string, IdentityManager::ApplicationActivities::ActivityData> currentActivities = Globals::getIdentityManager()->applicationActivities->listApplicationActivities(appName);
 
     if (proposedActivities.isArray())
@@ -219,13 +231,13 @@ void AppSync_Endpoints::updateAppActivities( const std::string & appName, const 
                 if (currentData.description != activityData.description)
                 {
                     LOG_APP->log2(__func__, "", ipAddress, Logs::LEVEL_INFO, "Updating description for activity '%s' in application '%s'.", name.c_str(), appName.c_str());
-                    Globals::getIdentityManager()->applicationActivities->setApplicationActivityDescription(appName, name, activityData.description);
+                    Globals::getIdentityManager()->applicationActivities->setApplicationActivityDescription(clientDetails,performedBy,appName, name, activityData.description);
                 }
 
                 if (currentData.parentActivity != activityData.parentActivity)
                 {
                     LOG_APP->log2(__func__, "", ipAddress, Logs::LEVEL_INFO, "Setting parent activity for activity '%s' in application '%s'.", name.c_str(), appName.c_str());
-                    Globals::getIdentityManager()->applicationActivities->setApplicationActivityParentActivity(appName, name, activityData.parentActivity);
+                    Globals::getIdentityManager()->applicationActivities->setApplicationActivityParentActivity(clientDetails,performedBy,appName, name, activityData.parentActivity);
                 }
             }
             else
@@ -234,12 +246,12 @@ void AppSync_Endpoints::updateAppActivities( const std::string & appName, const 
                 LOG_APP->log2(__func__, "", ipAddress, Logs::LEVEL_INFO, "Adding new activity '%s' to application '%s'.", name.c_str(), appName.c_str());
 
                 // First register basic activity data
-                Globals::getIdentityManager()->applicationActivities->addApplicationActivity(appName, name, activityData.description);
+                Globals::getIdentityManager()->applicationActivities->addApplicationActivity(clientDetails,performedBy,appName, name, activityData.description);
 
                 // Then apply remaining metadata
                 if (!activityData.parentActivity.empty())
                 {
-                    Globals::getIdentityManager()->applicationActivities->setApplicationActivityParentActivity(appName, name, activityData.parentActivity);
+                    Globals::getIdentityManager()->applicationActivities->setApplicationActivityParentActivity(clientDetails,performedBy,appName, name, activityData.parentActivity);
                 }
             }
         }
@@ -251,7 +263,7 @@ void AppSync_Endpoints::updateAppActivities( const std::string & appName, const 
             if (proposedActivityNames.find(existingActivityName) == proposedActivityNames.end())
             {
                 LOG_APP->log2(__func__, "", ipAddress, Logs::LEVEL_INFO, "Removing obsolete activity '%s' from application '%s'.", existingActivityName.c_str(), appName.c_str());
-                Globals::getIdentityManager()->applicationActivities->removeApplicationActivity(appName, existingActivityName);
+                Globals::getIdentityManager()->applicationActivities->removeApplicationActivity(clientDetails,performedBy,appName, existingActivityName);
             }
         }
     }

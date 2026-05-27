@@ -23,14 +23,14 @@ public:
 
     static APIReturn getDashboardData(void *context, const RequestParameters &request, ClientDetails &clientDetails);
     static APIReturn searchAccountSessions(void *context, const RequestParameters &request, ClientDetails &clientDetails);
-    static APIReturn searchAccountPasswordActivity(void *context, const RequestParameters &request, ClientDetails &clientDetails);
+    static APIReturn searchAccountCredentialsActivity(void *context, const RequestParameters &request, ClientDetails &clientDetails);
     static APIReturn getAccountDetailFieldsValues(void *context, const RequestParameters &request, ClientDetails &clientDetails);
     static APIReturn updateAccountDetailFieldsValues(void *context, const RequestParameters &request, ClientDetails &clientDetails);
     static APIReturn listAccountApplicationsFullInfo(void *context, const RequestParameters &request, ClientDetails &clientDetails);
     static APIReturn listAllAuthCredentialSlotsPublicData(void *context, const RequestParameters &request, ClientDetails &clientDetails);
     static APIReturn activateCredential(void *context, const RequestParameters &request, ClientDetails &clientDetails);
     static APIReturn activateOTP(void *context, const RequestParameters &request, ClientDetails &clientDetails);
-    static APIReturn deleteCredential(void *context, const RequestParameters &request, ClientDetails &clientDetails);
+    static APIReturn removeCredential(void *context, const RequestParameters &request, ClientDetails &clientDetails);
     static APIReturn createChallengeToken(void *context, const RequestParameters &request, ClientDetails &clientDetails);
     static APIReturn changeCredential(void *context, const RequestParameters &request, ClientDetails &clientDetails);
 
