@@ -268,7 +268,7 @@ API::APIReturn LoginPortal_AuthMethods::authorize(void *context, const RequestPa
                   "Account Authorization Result: %" PRIu32 " - %s, for application '%s', scheme '%" PRIu32 "' and slotId = %'" PRIu32 "'", authRetCode, authResultToString(authRetCode),
                   authContext->appName.c_str(), authContext->schemeId, authContext->currentSlotId.value());
 
-    if (IS_AUTH_SUCCESSFUL(authRetCode))
+    if (IS_LOGIN_AUTHORIZED(authRetCode))
     {
         if (!setupNewIntermediateAuthToken(request, response, identityManager, authContext, requiredAuthSlots, oldIntermediateAuthToken.getExpirationTime(), accountName))
         {
