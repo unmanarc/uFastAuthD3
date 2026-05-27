@@ -55,7 +55,7 @@ API::APIReturn AdminPortalMethods_ApplicationActivities::updateDefaultSchemeOnAp
         return response;
     }
 
-    if (!Globals::getIdentityManager()->applicationActivities->setApplicationActivityDefaultScheme(appName, activityName, schemeId))
+    if (!Globals::getIdentityManager()->applicationActivities->setApplicationActivityDefaultScheme(authClientDetails, request.jwtToken->getSubject(),appName, activityName, schemeId))
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to set the default authentication scheme on the activity.");
     }
@@ -89,7 +89,7 @@ API::APIReturn AdminPortalMethods_ApplicationActivities::addSchemeToApplicationA
         return response;
     }
 
-    if (!Globals::getIdentityManager()->applicationActivities->addAuthenticationSchemeToApplicationActivity(appName, activityName, schemeId))
+    if (!Globals::getIdentityManager()->applicationActivities->addAuthenticationSchemeToApplicationActivity(authClientDetails, request.jwtToken->getSubject(),appName, activityName, schemeId))
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to add the authentication scheme to the activity.");
     }
@@ -122,7 +122,7 @@ API::APIReturn AdminPortalMethods_ApplicationActivities::removeSchemeFromApplica
         return response;
     }
 
-    if (!Globals::getIdentityManager()->applicationActivities->removeAuthenticationSchemeFromApplicationActivity(appName, activityName, schemeId))
+    if (!Globals::getIdentityManager()->applicationActivities->removeAuthenticationSchemeFromApplicationActivity(authClientDetails, request.jwtToken->getSubject(),appName, activityName, schemeId))
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to remove the authentication scheme from the activity.");
     }
@@ -156,7 +156,7 @@ API::APIReturn AdminPortalMethods_ApplicationActivities::updateActivityDescripti
         return response;
     }
 
-    if (!Globals::getIdentityManager()->applicationActivities->setApplicationActivityDescription(appName, activityName, activityDescription))
+    if (!Globals::getIdentityManager()->applicationActivities->setApplicationActivityDescription(authClientDetails, request.jwtToken->getSubject(),appName, activityName, activityDescription))
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to update the activity description.");
     }
@@ -183,7 +183,7 @@ API::APIReturn AdminPortalMethods_ApplicationActivities::updateActivityParentAct
         return response;
     }
 
-    if (!Globals::getIdentityManager()->applicationActivities->setApplicationActivityParentActivity(appName, activityName, parentActivityName))
+    if (!Globals::getIdentityManager()->applicationActivities->setApplicationActivityParentActivity(authClientDetails, request.jwtToken->getSubject(),appName, activityName, parentActivityName))
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to update the activity parent activity.");
     }
@@ -316,7 +316,7 @@ API::APIReturn AdminPortalMethods_ApplicationActivities::addApplicationActivity(
         return response;
     }
 
-    if (!Globals::getIdentityManager()->applicationActivities->addApplicationActivity(appName, activityName, activityDescription))
+    if (!Globals::getIdentityManager()->applicationActivities->addApplicationActivity(authClientDetails, request.jwtToken->getSubject(),appName, activityName, activityDescription))
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to create the new activity.\nThe activity ID may already exist.");
     }
@@ -342,7 +342,7 @@ API::APIReturn AdminPortalMethods_ApplicationActivities::removeApplicationActivi
         return response;
     }
 
-    if (!Globals::getIdentityManager()->applicationActivities->removeApplicationActivity(appName, activityName))
+    if (!Globals::getIdentityManager()->applicationActivities->removeApplicationActivity(authClientDetails, request.jwtToken->getSubject(),appName, activityName))
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to remove the activity.");
     }

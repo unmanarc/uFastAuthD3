@@ -20,25 +20,6 @@ void AdminPortalMethods_ApplicationsScopes::addEndpoints_Scopes(std::shared_ptr<
     endpoints->addEndpoint(Endpoints::PUT, "addApplicationScopeToRole", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"}, nullptr, &addApplicationScopeToRole);
     endpoints->addEndpoint(Endpoints::DELETE, "removeApplicationScopeFromRole", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"}, nullptr, &removeApplicationScopeFromRole);
     endpoints->addEndpoint(Endpoints::GET, "searchApplicationScopes", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"}, nullptr, &searchApplicationScopes);
-
-    // Application Scopes
-/*
-    endpoints->addEndpoint(Endpoints::POST, "updateApplicationScopeDescription", &updateApplicationScopeDescription, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"});
-    endpoints->addEndpoint(Endpoints::GET, "getApplicationScopeDescription", &getApplicationScopeDescription, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
-    endpoints->addEndpoint(Endpoints::GET, "listApplicationScopes", &listApplicationScopes, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
-    endpoints->addEndpoint(Endpoints::GET, "getApplicationRolesForScope", &getApplicationRolesForScope, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
-    endpoints->addEndpoint(Endpoints::GET, "listAccountsOnApplicationScope", &listAccountsOnApplicationScope, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
-    endpoints->addEndpoint(Endpoints::GET, "scopesLeftListForRole", &scopesLeftListForRole, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
-    endpoints->addEndpoint(Endpoints::POST, "addApplicationScope", &addApplicationScope, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"});
-    endpoints->addEndpoint(Endpoints::DELETE, "removeApplicationScope", &removeApplicationScope, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"});
-    endpoints->addEndpoint(Endpoints::POST, "addApplicationScopeToRole", &addApplicationScopeToRole, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"});
-    endpoints->addEndpoint(Endpoints::PATCH, "updateApplicationScopeDescription", &updateApplicationScopeDescription, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"});
-    endpoints->addEndpoint(Endpoints::GET, "getApplicationScopeDescription", &getApplicationScopeDescription, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
-    endpoints->addEndpoint(Endpoints::GET, "listApplicationScopes", &listApplicationScopes, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
-    endpoints->addEndpoint(Endpoints::GET, "getApplicationRolesForScope", &getApplicationRolesForScope, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
-    endpoints->addEndpoint(Endpoints::GET, "listAccountsOnApplicationScope", &listAccountsOnApplicationScope, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
-    endpoints->addEndpoint(Endpoints::GET, "searchApplicationScopes", &searchApplicationScopes, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
-    endpoints->addEndpoint(Endpoints::GET, "scopesLeftListForRole", &scopesLeftListForRole, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});*/
 }
 
 API::APIReturn AdminPortalMethods_ApplicationsScopes::addApplicationScopeToAccount(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
@@ -57,7 +38,8 @@ API::APIReturn AdminPortalMethods_ApplicationsScopes::addApplicationScopeToAccou
     }
 
     // Perform the operation
-    if (!Globals::getIdentityManager()->authController->addApplicationScopeToAccount({appName, scopeId}, accountName))
+    if (!Globals::getIdentityManager()->authController->addApplicationScopeToAccount(authClientDetails, request.jwtToken->getSubject(),
+                                                                                     {appName, scopeId}, accountName))
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Internal Error");
     }
@@ -80,7 +62,8 @@ API::APIReturn AdminPortalMethods_ApplicationsScopes::removeApplicationScopeFrom
     }
 
     // Perform the operation
-    if (!Globals::getIdentityManager()->authController->removeApplicationScopeFromAccount({appName, scopeId}, accountName))
+    if (!Globals::getIdentityManager()->authController->removeApplicationScopeFromAccount(authClientDetails, request.jwtToken->getSubject(),
+                                                                                          {appName, scopeId}, accountName))
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Internal Error");
     }
@@ -122,7 +105,8 @@ API::APIReturn AdminPortalMethods_ApplicationsScopes::addApplicationScope(void *
         return response;
     }
 
-    if (!Globals::getIdentityManager()->authController->addApplicationScope({appName, scopeId,scopeDescription}))
+    if (!Globals::getIdentityManager()->authController->addApplicationScope(authClientDetails, request.jwtToken->getSubject(),
+                                                                            {appName, scopeId,scopeDescription}))
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "The application scope may already exist.");
     }
@@ -157,7 +141,7 @@ API::APIReturn AdminPortalMethods_ApplicationsScopes::removeApplicationScope(voi
         return response;
     }
 
-    if (!Globals::getIdentityManager()->authController->removeApplicationScope({appName, scopeId}))
+    if (!Globals::getIdentityManager()->authController->removeApplicationScope(authClientDetails, request.jwtToken->getSubject(),{appName, scopeId}))
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Internal Error");
     }
@@ -169,7 +153,8 @@ API::APIReturn AdminPortalMethods_ApplicationsScopes::addApplicationScopeToRole(
 {
     API::APIReturn response;
 
-    if (!Globals::getIdentityManager()->authController->addApplicationScopeToRole({JSON_ASSTRING(*request.inputJSON, "appName", ""), JSON_ASSTRING(*request.inputJSON, "scopeId", "")},
+    if (!Globals::getIdentityManager()->authController->addApplicationScopeToRole(authClientDetails, request.jwtToken->getSubject(),
+                                                                                  {JSON_ASSTRING(*request.inputJSON, "appName", ""), JSON_ASSTRING(*request.inputJSON, "scopeId", "")},
                                                                                   JSON_ASSTRING(*request.inputJSON, "roleId", "")))
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to add the application scope to the role.");
@@ -181,7 +166,8 @@ API::APIReturn AdminPortalMethods_ApplicationsScopes::removeApplicationScopeFrom
 {
     API::APIReturn response;
 
-    if (!Globals::getIdentityManager()->authController->removeApplicationScopeFromRole({JSON_ASSTRING(*request.inputJSON, "appName", ""), JSON_ASSTRING(*request.inputJSON, "scopeId", "")},
+    if (!Globals::getIdentityManager()->authController->removeApplicationScopeFromRole(authClientDetails, request.jwtToken->getSubject(),
+                                                                                       {JSON_ASSTRING(*request.inputJSON, "appName", ""), JSON_ASSTRING(*request.inputJSON, "scopeId", "")},
                                                                                        JSON_ASSTRING(*request.inputJSON, "roleId", "")))
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Internal Error");
@@ -195,54 +181,3 @@ API::APIReturn AdminPortalMethods_ApplicationsScopes::searchApplicationScopes(vo
 {
     return Globals::getIdentityManager()->authController->searchApplicationScopes(*request.inputJSON);
 }
-
-/*
-
-
-
-
-void AdminPortalMethods_ApplicationsScopes::updateApplicationScopeDescription(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
-{
-    std::string appName = JSON_ASSTRING(*request.inputJSON, "appName", "");
-
-    // Don't modify scopes from our directory.
-    if (appName == IAM_ADMPORTAL_APPNAME)
-    {
-        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Can't update application scope to the IAM");
-    }
-
-    if (!Globals::getIdentityManager()->authController->removeApplicationScopeFromAccount({appName, JSON_ASSTRING(*request.inputJSON, "id", "")},
-                                                                                               JSON_ASSTRING(*request.inputJSON, "getApplicationScopeDescription", "")))
-    {
-        response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Internal Error");
-    }
-}
-
-void AdminPortalMethods_ApplicationsScopes::listApplicationScopes(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
-{
-    (*response.responseJSON()) = AdminPortal_Endpoints::scopeListToJSON(Globals::getIdentityManager()->authController->listApplicationScopes(JSON_ASSTRING(*request.inputJSON, "appName", "")));
-}
-
-void AdminPortalMethods_ApplicationsScopes::getApplicationRolesForScope(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
-{
-    (*response.responseJSON()) = Helpers::setToJSON(
-        Globals::getIdentityManager()->authController->getApplicationRolesForScope({JSON_ASSTRING(*request.inputJSON, "appName", ""), JSON_ASSTRING(*request.inputJSON, "id", "")}));
-}
-
-void AdminPortalMethods_ApplicationsScopes::listAccountsOnApplicationScope(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
-{
-    (*response.responseJSON()) = Helpers::setToJSON(
-        Globals::getIdentityManager()->authController->listAccountsOnApplicationScope({JSON_ASSTRING(*request.inputJSON, "appName", ""), JSON_ASSTRING(*request.inputJSON, "id", "")}));
-}
-
-void AdminPortalMethods_ApplicationsScopes::getApplicationScopeDescription(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
-{
-    (*response.responseJSON()) = Globals::getIdentityManager()->authController->getApplicationScopeDescription(
-        {JSON_ASSTRING(*request.inputJSON, "appName", ""), JSON_ASSTRING(*request.inputJSON, "id", "")});
-}
-
-void AdminPortalMethods_ApplicationsScopes::scopesLeftListForRole(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
-{
-    auto scopesLeft = AdminPortal_Endpoints::iScopesLeftListForRole(JSON_ASSTRING(*request.inputJSON, "appName", ""), JSON_ASSTRING(*request.inputJSON, "roleName", ""));
-    (*response.responseJSON()) = AdminPortal_Endpoints::scopeListToJSON(scopesLeft);
-}*/

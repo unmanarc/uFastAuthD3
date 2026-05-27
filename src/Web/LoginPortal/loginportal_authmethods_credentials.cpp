@@ -83,7 +83,7 @@ API::APIReturn LoginPortal_AuthMethods::changeCredential(void *context, const Re
     if (identityManager->applications->validateApplicationAccount(appName, jwtAccountName))
     {
         //const std::string &accountName, uint32_t slotId, const std::string &sCurrentPassword, const Credential &passwordData, const ClientDetails &clientInfo, Mode authMode, const std::string &challengeSalt)
-        if (identityManager->authController->changeAccountAuthenticatedCredential(jwtAccountName, slotId, oldPassword, newCredential, authClientDetails, getAuthModeFromString(authMode), challengeSalt))
+        if (identityManager->authController->changeAccountAuthenticatedCredential( authClientDetails, jwtAccountName, jwtAccountName, slotId, oldPassword, newCredential, getAuthModeFromString(authMode), challengeSalt))
         {
             changed = true;
             // response with 200.

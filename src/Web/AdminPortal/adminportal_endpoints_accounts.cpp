@@ -47,34 +47,7 @@ void AdminPortalMethods_Accounts::addEndpoints_Accounts(std::shared_ptr<Endpoint
     endpoints->addEndpoint(Endpoints::PUT, "updateAccountDetailField", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"CONFIG_WRITE"},   nullptr, &updateAccountDetailField);
     endpoints->addEndpoint(Endpoints::DELETE, "removeAccountDetailField", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"CONFIG_WRITE"},   nullptr, &removeAccountDetailField);
     endpoints->addEndpoint(Endpoints::GET,  "getAccountDetailField", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"CONFIG_READ"},    nullptr, &getAccountDetailField);
-
-
-    // Accounts
-    /* endpoints->addEndpoint(Endpoints::POST, "addAccount", &addAccount, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"});
-    endpoints->addEndpoint(Endpoints::POST, "changeAccountExpiration", &changeAccountExpiration, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"});
-    endpoints->addEndpoint(Endpoints::POST, "changeCredential", &changeCredential, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_PWDDCHANGE"});
-    endpoints->addEndpoint(Endpoints::POST, "confirmAccount", &confirmAccount, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"});
-    endpoints->addEndpoint(Endpoints::POST, "disableAccount", &disableAccount, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_DISABLE"});
-    endpoints->addEndpoint(Endpoints::GET, "doesAccountExist", &doesAccountExist, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_READ"});
-    endpoints->addEndpoint(Endpoints::GET, "getAccountBlockToken", &getAccountBlockToken, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"});
-    endpoints->addEndpoint(Endpoints::GET, "getAccountDirectApplicationScopes", &getAccountDirectApplicationScopes, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_READ"});
-    endpoints->addEndpoint(Endpoints::GET, "getAccountDetails", &getAccountDetails, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_READ"});
-    endpoints->addEndpoint(Endpoints::GET, "getAccountExpirationTime", &getAccountExpirationTime, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_READ"});
-    endpoints->addEndpoint(Endpoints::GET, "getAccountInfo", &getAccountInfo, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_READ"});
-    endpoints->addEndpoint(Endpoints::GET, "getAccountLastAccess", &getAccountLastAccess, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_READ"});
-    endpoints->addEndpoint(Endpoints::GET, "getAccountApplicationRoles", &getAccountApplicationRoles, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_READ"});
-    endpoints->addEndpoint(Endpoints::GET, "getAccountUsableApplicationScopes", &getAccountUsableApplicationScopes, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_READ"});
-    endpoints->addEndpoint(Endpoints::GET, "isAccountExpired", &isAccountExpired, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_READ"});
-    endpoints->addEndpoint(Endpoints::GET, "listAccounts", &listAccounts, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_READ"});
-    endpoints->addEndpoint(Endpoints::POST, "resetBadAttemptsOnCredential", &resetBadAttemptsOnCredential, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"});
-    endpoints->addEndpoint(Endpoints::GET, "searchAccounts", &searchAccounts, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_READ"});
-    endpoints->addEndpoint(Endpoints::POST, "updateAccountInfo", &updateAccountInfo, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"});
-    endpoints->addEndpoint(Endpoints::POST, "updateAccountApplicationRoles", &updateAccountApplicationRoles, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"});
-    endpoints->addEndpoint(Endpoints::GET, "validateAccountApplicationScope", &validateAccountApplicationScope, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_READ"});
-    endpoints->addEndpoint(Endpoints::POST, "blockAccountUsingToken", &blockAccountUsingToken, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"});*/
 }
-
-
 
 API::APIReturn AdminPortalMethods_Accounts::addAccount(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
@@ -109,7 +82,7 @@ API::APIReturn AdminPortalMethods_Accounts::addAccount(void *context, const Requ
     accountFlags.fromJSON(request.inputJSON);
 
     // Add the new account to the system with specified expiration and flags
-    if (!Globals::getIdentityManager()->accounts->addAccount(accountName, JSON_ASUINT64(*request.inputJSON, "expirationDate", 0), accountFlags,
+    if (!Globals::getIdentityManager()->accounts->addAccount(accountName, JSON_ASUINT64(*request.inputJSON, "expirationDate", 0), accountFlags,authClientDetails,
                                                              request.jwtToken->getSubject()))
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to add the new account. Check if user already exists");
@@ -139,7 +112,7 @@ API::APIReturn AdminPortalMethods_Accounts::addAccount(void *context, const Requ
     }
 
     // Apply the credential to the new account
-    if (!Globals::getIdentityManager()->authController->changeAccountCredential(accountName, newCredentialData, slotId))
+    if (!Globals::getIdentityManager()->authController->changeAccountCredential(authClientDetails, request.jwtToken->getSubject(),accountName, newCredentialData, slotId))
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to change the credential on the new user.");
         return response;
@@ -149,19 +122,19 @@ API::APIReturn AdminPortalMethods_Accounts::addAccount(void *context, const Requ
     flags.fromJSON((*request.inputJSON)["flags"]);
 
     // Apply the credential to the new account
-    if (!Globals::getIdentityManager()->accounts->changeAccountFlags(accountName, flags))
+    if (!Globals::getIdentityManager()->accounts->changeAccountFlags(authClientDetails, request.jwtToken->getSubject(),accountName, flags))
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to change the credential on the new user.");
         return response;
     }
 
-    if (!Globals::getIdentityManager()->applications->addAccountToApplication(IAM_USRPORTAL_APPNAME, accountName))
+    if (!Globals::getIdentityManager()->applications->addAccountToApplication(authClientDetails, request.jwtToken->getSubject(),IAM_USRPORTAL_APPNAME, accountName))
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to assign user with GENERIC_USER in app '" IAM_USRPORTAL_APPNAME "'.");
         return response;
     }
 
-    if (!Globals::getIdentityManager()->applicationRoles->addAccountToRole(IAM_USRPORTAL_APPNAME, "GENERIC_USER", accountName))
+    if (!Globals::getIdentityManager()->applicationRoles->addAccountToRole(authClientDetails, request.jwtToken->getSubject(), IAM_USRPORTAL_APPNAME, "GENERIC_USER", accountName))
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to assign user with GENERIC_USER in app '" IAM_USRPORTAL_APPNAME "'.");
         return response;
@@ -205,7 +178,7 @@ API::APIReturn AdminPortalMethods_Accounts::changeAccountFlags(void *context, co
     AccountFlags flags;
     flags.fromJSON((*request.inputJSON)["flags"]);
 
-    bool changed = Globals::getIdentityManager()->accounts->changeAccountFlags(accountName, flags);
+    bool changed = Globals::getIdentityManager()->accounts->changeAccountFlags(authClientDetails, request.jwtToken->getSubject(),accountName, flags);
 
     if (!changed)
     {
@@ -347,7 +320,7 @@ API::APIReturn AdminPortalMethods_Accounts::addAccountToApplication(void *contex
         return response;
     }
 
-    if (!Globals::getIdentityManager()->applications->addAccountToApplication(appName, accountName))
+    if (!Globals::getIdentityManager()->applications->addAccountToApplication(authClientDetails, request.jwtToken->getSubject(), appName, accountName))
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to add the account to the application.");
         return response;
@@ -375,7 +348,7 @@ API::APIReturn AdminPortalMethods_Accounts::removeAccountFromApplication(void *c
         return response;
     }
 
-    if (!Globals::getIdentityManager()->applications->removeAccountFromApplication(appName, accountName))
+    if (!Globals::getIdentityManager()->applications->removeAccountFromApplication(authClientDetails, request.jwtToken->getSubject(),appName, accountName))
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to remove the account from the application.");
     }
@@ -399,7 +372,7 @@ API::APIReturn AdminPortalMethods_Accounts::addAccountDetailField(void *context,
         response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Field Name is Empty");
         return response;
     }
-    if (!Globals::getIdentityManager()->accounts->addAccountDetailField(fieldName, fieldDetails))
+    if (!Globals::getIdentityManager()->accounts->addAccountDetailField(authClientDetails, request.jwtToken->getSubject(),fieldName, fieldDetails))
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "field_already_exists", "Field already exists");
     }
@@ -417,7 +390,7 @@ AdminPortalMethods_Accounts::APIReturn AdminPortalMethods_Accounts::updateAccoun
     {
         return API::APIReturn(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Field Name is Empty");
     }
-    if (!Globals::getIdentityManager()->accounts->updateAccountDetailField(fieldName, fieldDetails))
+    if (!Globals::getIdentityManager()->accounts->updateAccountDetailField(authClientDetails, request.jwtToken->getSubject(),fieldName, fieldDetails))
     {
         return API::APIReturn(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "field_already_exists", "Field already exists");
     }
@@ -435,7 +408,7 @@ API::APIReturn AdminPortalMethods_Accounts::removeAccountDetailField(void *conte
         response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Field Name is Empty");
         return response;
     }
-    if (!Globals::getIdentityManager()->accounts->removeAccountDetailField(fieldName))
+    if (!Globals::getIdentityManager()->accounts->removeAccountDetailField(authClientDetails, request.jwtToken->getSubject(),fieldName))
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "field_not_found", "Field not found");
     }
@@ -517,7 +490,7 @@ API::APIReturn AdminPortalMethods_Accounts::updateAccountDetailFieldsValues(void
     }
 
     // Update account detail fields values
-    if (!Globals::getIdentityManager()->accounts->updateAccountDetailFieldValues(accountName, fieldValues,true))
+    if (!Globals::getIdentityManager()->accounts->updateAccountDetailFieldValues(authClientDetails, request.jwtToken->getSubject(),accountName, fieldValues,true))
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to update account detail fields values");
         return response;
@@ -538,7 +511,7 @@ API::APIReturn AdminPortalMethods_Accounts::removeAccount(void *context, const R
         return response;
     }
 
-    if (!Globals::getIdentityManager()->accounts->removeAccount(accountName))
+    if (!Globals::getIdentityManager()->accounts->removeAccount(authClientDetails, request.jwtToken->getSubject(),accountName))
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to remove the account.");
     }
@@ -547,209 +520,3 @@ API::APIReturn AdminPortalMethods_Accounts::removeAccount(void *context, const R
 }
 
 
-/*
-API::APIReturn AdminPortalMethods_Accounts::updateAccountInfo(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
-{
-    AccountFlags accountFlags;
-    accountFlags.fromJSON(request.inputJSON);
-    // TODO: set account details granularly...
-    if (!Globals::getIdentityManager()->accounts->changeAccountFlags(JSON_ASSTRING(*request.inputJSON, "accountName", ""), accountFlags))
-    {
-        response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Internal Error");
-    }
-
-    //  Globals::getIdentityManager()->accounts->changeAccountDescription(JSON_ASSTRING(*request.inputJSON,"accountName",""), JSON_ASSTRING(*request.inputJSON,"description","")) &&
-      //  Globals::getIdentityManager()->accounts->changeAccoungGivenName(JSON_ASSTRING(*request.inputJSON,"accountName",""), JSON_ASSTRING(*request.inputJSON,"givenName","")) &&
-      //  Globals::getIdentityManager()->accounts->changeAccountLastName(JSON_ASSTRING(*request.inputJSON,"accountName",""), JSON_ASSTRING(*request.inputJSON,"lastName","")) &&
-      //  Globals::getIdentityManager()->accounts->changeAccountEmail(JSON_ASSTRING(*request.inputJSON,"accountName",""), JSON_ASSTRING(*request.inputJSON,"email","")) &&
-      //  Globals::getIdentityManager()->accounts->changeAccountExtraData(JSON_ASSTRING(*request.inputJSON,"accountName",""), JSON_ASSTRING(*request.inputJSON,"extraData","")) &&
-}*/
-
-/*
-API::APIReturn AdminPortalMethods_Accounts::changeAccountDescription(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
-{
-
-    return Globals::getIdentityManager()->accounts->changeAccountDescription(JSON_ASSTRING(*request.inputJSON,"accountName",""), JSON_ASSTRING(*request.inputJSON,"description",""));
-}
-
-API::APIReturn AdminPortalMethods_Accounts::changeAccoungGivenName(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
-{
-
-    return Globals::getIdentityManager()->accounts->changeAccoungGivenName(JSON_ASSTRING(*request.inputJSON,"accountName",""), JSON_ASSTRING(*request.inputJSON,"givenName",""));
-}
-
-API::APIReturn AdminPortalMethods_Accounts::changeAccountLastName(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
-{
-
-    return Globals::getIdentityManager()->accounts->changeAccountLastName(JSON_ASSTRING(*request.inputJSON,"accountName",""), JSON_ASSTRING(*request.inputJSON,"lastName",""));
-}
-
-API::APIReturn AdminPortalMethods_Accounts::changeAccountEmail(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
-{
-
-    return Globals::getIdentityManager()->accounts->changeAccountEmail(JSON_ASSTRING(*request.inputJSON,"accountName",""), JSON_ASSTRING(*request.inputJSON,"email",""));
-}
-
-API::APIReturn AdminPortalMethods_Accounts::changeAccountExtraData(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
-{
-
-    return Globals::getIdentityManager()->accounts->changeAccountExtraData(JSON_ASSTRING(*request.inputJSON,"accountName",""), JSON_ASSTRING(*request.inputJSON,"extraData",""));
-}*/
-/*
-API::APIReturn AdminPortalMethods_Accounts::updateAccountApplicationRoles(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
-{
-    std::set<std::string> roleSet;
-
-    if (!(*request.inputJSON)["roles"].isArray())
-    {
-        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Invalid Parameters");
-        return response;
-    }
-
-    for (size_t i = 0; i < (*request.inputJSON)["roles"].size(); i++)
-    {
-        roleSet.insert((*request.inputJSON)["roles"][(int) i].asString());
-    }
-
-    if (!Globals::getIdentityManager()->accounts->updateAccountApplicationRoles(JSON_ASSTRING(*request.inputJSON, "accountName", ""), roleSet))
-    {
-        response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Internal Error");
-        return response;
-    }
-}
-
-API::APIReturn AdminPortalMethods_Accounts::validateAccountApplicationScope(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
-{
-    (*response.responseJSON()) = Globals::getIdentityManager()->authController->validateAccountApplicationScope(JSON_ASSTRING(*request.inputJSON, "accountName", ""),
-                                                                                                                     {JSON_ASSTRING(*request.inputJSON, "appName", ""),
-                                                                                                                      JSON_ASSTRING(*request.inputJSON, "id", "")});
-}
-
-API::APIReturn AdminPortalMethods_Accounts::blockAccountUsingToken(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
-{
-    if (!Globals::getIdentityManager()->accounts->blockAccountUsingToken(JSON_ASSTRING(*request.inputJSON, "accountName", ""), JSON_ASSTRING(*request.inputJSON, "blockToken", "")))
-    {
-        response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Internal Error");
-    }
-}*/
-
-/*
-API::APIReturn AdminPortalMethods_Accounts::changeAccountExpiration(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
-{
-    if (!Globals::getIdentityManager()->accounts->changeAccountExpiration(JSON_ASSTRING(*request.inputJSON, "accountName", ""), JSON_ASUINT64(*request.inputJSON, "expiration", 0)))
-    {
-        response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Internal Error");
-    }
-}
-
-API::APIReturn AdminPortalMethods_Accounts::changeCredential(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
-{
-    Credential credentialData;
-    credentialData.fromJSON((*request.inputJSON)["credentialData"]);
-    if (!Globals::getIdentityManager()->authController->changeCredential(JSON_ASSTRING(*request.inputJSON, "accountName", ""), credentialData, JSON_ASUINT(*request.inputJSON, "slotId", 0)))
-    {
-        response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Internal Error");
-    }
-}
-
-API::APIReturn AdminPortalMethods_Accounts::confirmAccount(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
-{
-    if (!Globals::getIdentityManager()->accounts->disableAccount(JSON_ASSTRING(*request.inputJSON, "accountName", ""), JSON_ASBOOL(*request.inputJSON, "disabled", false)))
-    {
-        response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Internal Error");
-    }
-}
-
-API::APIReturn AdminPortalMethods_Accounts::disableAccount(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
-{
-    if (!Globals::getIdentityManager()->accounts->disableAccount(JSON_ASSTRING(*request.inputJSON, "accountName", ""), JSON_ASBOOL(*request.inputJSON, "disabled", false)))
-    {
-        response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Internal Error");
-    }
-}*/
-/*
-API::APIReturn AdminPortalMethods_Accounts::getAccountBlockToken(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
-{
-    (*response.responseJSON()) = Globals::getIdentityManager()->accounts->getAccountBlockToken(JSON_ASSTRING(*request.inputJSON, "accountName", ""));
-}
-
-API::APIReturn AdminPortalMethods_Accounts::getAccountDirectApplicationScopes(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
-{
-    (*response.responseJSON()) = AdminPortal_Endpoints::scopeListToJSON(
-        Globals::getIdentityManager()->authController->getAccountDirectApplicationScopes(JSON_ASSTRING(*request.inputJSON, "accountName", "")));
-}
-
-API::APIReturn AdminPortalMethods_Accounts::getAccountDetails(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
-{
-    auto getAccountDetails = Globals::getIdentityManager()->accounts->getAccountDetails(JSON_ASSTRING(*request.inputJSON, "accountName", ""));
-    // Llenar el payloadOut con los detalles de la cuenta
-    (*response.responseJSON()) = getAccountDetails.toJSON();
-}
-
-API::APIReturn AdminPortalMethods_Accounts::getAccountExpirationTime(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
-{
-    (*response.responseJSON()) = Json::Int64(Globals::getIdentityManager()->accounts->getAccountExpirationTime(JSON_ASSTRING(*request.inputJSON, "accountName", "")));
-}
-
-
-
-API::APIReturn AdminPortalMethods_Accounts::getAccountInfo(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
-{
-    getAccountDetails(context, response, request, authClientDetails);
-
-    int i = 0;
-    auto getAccountApplicationRoles = Globals::getIdentityManager()->accounts->getAccountApplicationRoles(JSON_ASSTRING(*request.inputJSON, "accountName", ""));
-    for (const auto &roleName : getAccountApplicationRoles)
-    {
-        (*response.responseJSON())["roles"][i]["name"] = roleName;
-        // TODO: optimize:
-        (*response.responseJSON())["roles"][i]["description"] = Globals::getIdentityManager()->roles->getApplicationRoleDescription(roleName);
-        i++;
-    }
-
-    i = 0;
-    for (const auto &roleName : Globals::getIdentityManager()->roles->getApplicationRolesList())
-    {
-        if (getAccountApplicationRoles.find(roleName) == getAccountApplicationRoles.end())
-        {
-            (*response.responseJSON())["rolesLeft"][i]["name"] = roleName;
-            (*response.responseJSON())["rolesLeft"][i]["description"] = Globals::getIdentityManager()->roles->getApplicationRoleDescription(roleName);
-            i++;
-        }
-    }
-
-
-}
-
-API::APIReturn AdminPortalMethods_Accounts::getAccountLastAccess(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
-{
-    (*response.responseJSON()) = Globals::getIdentityManager()->authController->getAccountLastAccess(JSON_ASSTRING(*request.inputJSON, "accountName", ""));
-}
-
-API::APIReturn AdminPortalMethods_Accounts::getAccountApplicationRoles(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
-{
-    (*response.responseJSON()) = Helpers::setToJSON(Globals::getIdentityManager()->accounts->getAccountApplicationRoles(JSON_ASSTRING(*request.inputJSON, "accountName", "")));
-}
-
-API::APIReturn AdminPortalMethods_Accounts::getAccountUsableApplicationScopes(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
-{
-    (*response.responseJSON()) = AdminPortal_Endpoints::scopeListToJSON(
-        Globals::getIdentityManager()->authController->getAccountUsableApplicationScopes(JSON_ASSTRING(*request.inputJSON, "accountName", "")));
-}
-
-API::APIReturn AdminPortalMethods_Accounts::isAccountExpired(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
-{
-    (*response.responseJSON()) = Globals::getIdentityManager()->accounts->isAccountExpired(JSON_ASSTRING(*request.inputJSON, "accountName", ""));
-}
-
-API::APIReturn AdminPortalMethods_Accounts::listAccounts(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
-{
-    (*response.responseJSON()) = Helpers::setToJSON(Globals::getIdentityManager()->accounts->listAccounts());
-}
-
-
-API::APIReturn AdminPortalMethods_Accounts::resetBadAttemptsOnCredential(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
-{
-    Globals::getIdentityManager()->authController->resetBadAttemptsOnCredential(JSON_ASSTRING(*request.inputJSON, "accountName", ""), JSON_ASUINT(*request.inputJSON, "slotId", 0));
-}
-*/

@@ -1,5 +1,3 @@
-#include "Mantids30/Memory/a_bool.h"
-#include "Mantids30/Memory/a_datetime.h"
 #include "identitymanager_db.h"
 #include <Mantids30/Memory/a_string.h>
 #include <Mantids30/Memory/a_uint64.h>
@@ -10,18 +8,32 @@ using namespace Mantids30::Memory;
 using namespace Mantids30::Database;
 using namespace Mantids30;
 
-bool IdentityManager_DB::ApplicationRoles_DB::addRole(const std::string &appName, const std::string &roleName, const std::string &roleDescription)
+bool IdentityManager_DB::ApplicationRoles_DB::addRole(const ClientDetails &clientDetails, const std::string &performedBy,const std::string &appName, const std::string &roleName, const std::string &roleDescription)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
-    return _parent->m_sqlConnector->qExecuteEx("INSERT INTO iam.applicationRoles (`f_appName`,`roleName`,`roleDescription`) VALUES(:appName,:roleName,:roleDescription);",
+    bool success = _parent->m_sqlConnector->qExecuteEx("INSERT INTO iam.applicationRoles (`f_appName`,`roleName`,`roleDescription`) VALUES(:appName,:roleName,:roleDescription);",
                                                {{":appName", MAKE_VAR(STRING, appName)}, {":roleName", MAKE_VAR(STRING, roleName)}, {":roleDescription", MAKE_VAR(STRING, roleDescription)}});
+
+    if (success)
+    {
+        _parent->logApplicationRoleSecurityEvent(appName, roleName,"", SecurityEventAction::CREATE, "New application role added", performedBy, clientDetails);
+    }
+
+    return success;
 }
 
-bool IdentityManager_DB::ApplicationRoles_DB::removeRole(const std::string &appName, const std::string &roleName)
+bool IdentityManager_DB::ApplicationRoles_DB::removeRole(const ClientDetails &clientDetails, const std::string &performedBy,const std::string &appName, const std::string &roleName)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
-    return _parent->m_sqlConnector->qExecuteEx("DELETE FROM iam.applicationRoles WHERE `roleName`=:roleName AND `f_appName`=:appName;",
+    bool success = _parent->m_sqlConnector->qExecuteEx("DELETE FROM iam.applicationRoles WHERE `roleName`=:roleName AND `f_appName`=:appName;",
                                                {{":roleName", MAKE_VAR(STRING, roleName)}, {":appName", MAKE_VAR(STRING, appName)}});
+
+    if (success)
+    {
+        _parent->logApplicationRoleSecurityEvent(appName, roleName,"", SecurityEventAction::DELETE, "Application role removed", performedBy, clientDetails);
+    }
+
+    return success;
 }
 
 bool IdentityManager_DB::ApplicationRoles_DB::doesRoleExist(const std::string &appName, const std::string &roleName)
@@ -31,14 +43,21 @@ bool IdentityManager_DB::ApplicationRoles_DB::doesRoleExist(const std::string &a
                                                      {{":roleName", MAKE_VAR(STRING, roleName)}, {":appName", MAKE_VAR(STRING, appName)}}, {});
 }
 
-bool IdentityManager_DB::ApplicationRoles_DB::addAccountToRole(const std::string &appName, const std::string &roleName, const std::string &accountName)
+bool IdentityManager_DB::ApplicationRoles_DB::addAccountToRole(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &roleName, const std::string &accountName)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
-    return _parent->m_sqlConnector->qExecuteEx("INSERT INTO iam.applicationRolesAccounts (`f_roleName`,`f_accountName`,`f_appName`) VALUES(:roleName,:accountName,:appName);",
+    bool success = _parent->m_sqlConnector->qExecuteEx("INSERT INTO iam.applicationRolesAccounts (`f_roleName`,`f_accountName`,`f_appName`) VALUES(:roleName,:accountName,:appName);",
                                                {{":roleName", MAKE_VAR(STRING, roleName)}, {":appName", MAKE_VAR(STRING, appName)}, {":accountName", MAKE_VAR(STRING, accountName)}});
+
+    if (success)
+    {
+        _parent->logApplicationRoleSecurityEvent(appName, roleName,accountName, SecurityEventAction::ASSIGN_ACCOUNT, "Account added to role", performedBy, clientDetails);
+    }
+
+    return success;
 }
 
-bool IdentityManager_DB::ApplicationRoles_DB::removeAccountFromRole(const std::string &appName, const std::string &roleName, const std::string &accountName, bool lock)
+bool IdentityManager_DB::ApplicationRoles_DB::removeAccountFromRole(const ClientDetails &clientDetails, const std::string &performedBy,const std::string &appName, const std::string &roleName, const std::string &accountName, bool lock)
 {
     bool ret = false;
 
@@ -48,16 +67,28 @@ bool IdentityManager_DB::ApplicationRoles_DB::removeAccountFromRole(const std::s
     ret = _parent->m_sqlConnector->qExecuteEx("DELETE FROM iam.applicationRolesAccounts WHERE `f_roleName`=:roleName AND `f_appName`=:appName AND `f_accountName`=:accountName;",
                                               {{":roleName", MAKE_VAR(STRING, roleName)}, {":appName", MAKE_VAR(STRING, appName)}, {":accountName", MAKE_VAR(STRING, accountName)}});
 
+    if (ret)
+    {
+        _parent->logApplicationRoleSecurityEvent(appName, roleName, accountName, SecurityEventAction::REVOKE_ACCOUNT, "Account removed from role", performedBy, clientDetails);
+    }
+
     if (lock)
         _parent->m_mutex.unlock();
     return ret;
 }
 
-bool IdentityManager_DB::ApplicationRoles_DB::updateRoleDescription(const std::string &appName, const std::string &roleName, const std::string &roleDescription)
+bool IdentityManager_DB::ApplicationRoles_DB::updateRoleDescription(const ClientDetails &clientDetails, const std::string &performedBy,const std::string &appName, const std::string &roleName, const std::string &roleDescription)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
-    return _parent->m_sqlConnector->qExecuteEx("UPDATE iam.applicationRoles SET `roleDescription`=:roleDescription WHERE `roleName`=:roleName AND `f_appName`=:appName;",
+    bool success = _parent->m_sqlConnector->qExecuteEx("UPDATE iam.applicationRoles SET `roleDescription`=:roleDescription WHERE `roleName`=:roleName AND `f_appName`=:appName;",
                                                {{":roleName", MAKE_VAR(STRING, roleName)}, {":roleDescription", MAKE_VAR(STRING, roleDescription)}, {":appName", MAKE_VAR(STRING, appName)}});
+
+    if (success)
+    {
+        _parent->logApplicationRoleSecurityEvent(appName, roleName,"", SecurityEventAction::UPDATE, "Application role description updated", performedBy, clientDetails);
+    }
+
+    return success;
 }
 
 std::set<std::string> IdentityManager_DB::ApplicationRoles_DB::listApplicationScopesOnApplicationRole(const std::string &appName, const std::string &roleName)

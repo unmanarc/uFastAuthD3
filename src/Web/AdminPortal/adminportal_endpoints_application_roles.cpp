@@ -21,17 +21,6 @@ void AdminPortalMethods_ApplicationRoles::addEndpoints_Roles(std::shared_ptr<End
     // Accounts roles:
     endpoints->addEndpoint(Endpoints::POST,   "addApplicationRoleToAccount", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"}, nullptr, &addApplicationRoleToAccount);
     endpoints->addEndpoint(Endpoints::DELETE, "removeApplicationRoleFromAccount", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"}, nullptr, &removeApplicationRoleFromAccount);
-
-
-    // Roles
-    /*
-    endpoints->addEndpoint(Endpoints::GET, "doesRoleExist", &doesRoleExist, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
-    endpoints->addEndpoint(Endpoints::GET, "validateApplicationScopeOnRole", &validateApplicationScopeOnRole, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
-    endpoints->addEndpoint(Endpoints::GET, "getApplicationRoleDescription", &getApplicationRoleDescription, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
-    endpoints->addEndpoint(Endpoints::GET, "getApplicationRolesList", &getApplicationRolesList, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
-    endpoints->addEndpoint(Endpoints::GET, "getRoleApplicationScopes", &getRoleApplicationScopes, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
-    endpoints->addEndpoint(Endpoints::GET, "getApplicationRoleAccounts", &getApplicationRoleAccounts, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
-    */
 }
 
 
@@ -66,7 +55,7 @@ API::APIReturn AdminPortalMethods_ApplicationRoles::updateRoleDescription(void *
         return response;
     }
 
-    if (!Globals::getIdentityManager()->applicationRoles->updateRoleDescription(appName, roleName, roleDescription))
+    if (!Globals::getIdentityManager()->applicationRoles->updateRoleDescription(authClientDetails, request.jwtToken->getSubject(), appName, roleName, roleDescription))
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to update the role description.");
     }
@@ -100,7 +89,7 @@ API::APIReturn AdminPortalMethods_ApplicationRoles::addRole(void *context, const
         return response;
     }
 
-    if (!Globals::getIdentityManager()->applicationRoles->addRole(appName, roleName, roleDescription))
+    if (!Globals::getIdentityManager()->applicationRoles->addRole(authClientDetails, request.jwtToken->getSubject(),appName, roleName, roleDescription))
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to create the new role.\nThe role ID may already exist.");
     }
@@ -182,7 +171,7 @@ API::APIReturn AdminPortalMethods_ApplicationRoles::removeRole(void *context, co
         return response;
     }
 
-    if (!Globals::getIdentityManager()->applicationRoles->removeRole(appName,roleName))
+    if (!Globals::getIdentityManager()->applicationRoles->removeRole(authClientDetails, request.jwtToken->getSubject(),appName,roleName))
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to remove the role");
     }
@@ -215,7 +204,7 @@ API::APIReturn AdminPortalMethods_ApplicationRoles::addApplicationRoleToAccount(
         return response;
     }
 
-    if (!Globals::getIdentityManager()->applicationRoles->addAccountToRole(appName, roleName, accountName))
+    if (!Globals::getIdentityManager()->applicationRoles->addAccountToRole(authClientDetails, request.jwtToken->getSubject(),appName, roleName, accountName))
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to assign the role to the account.");
     }
@@ -248,64 +237,10 @@ API::APIReturn AdminPortalMethods_ApplicationRoles::removeApplicationRoleFromAcc
         return response;
     }
 
-    if (!Globals::getIdentityManager()->applicationRoles->removeAccountFromRole(appName, roleName, accountName))
+    if (!Globals::getIdentityManager()->applicationRoles->removeAccountFromRole(authClientDetails, request.jwtToken->getSubject(),appName, roleName, accountName))
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to remove the role from the account.");
     }
 
     return response;
 }
-
-/*
-
-
-void AdminPortalMethods_ApplicationRoles::doesRoleExist(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
-{
-    (*response.responseJSON()) = Globals::getIdentityManager()->roles->doesRoleExist(JSON_ASSTRING(*request.inputJSON, "roleName", ""));
-}
-
-
-
-
-
-void AdminPortalMethods_ApplicationRoles::validateApplicationScopeOnRole(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
-{
-    (*response.responseJSON()) = Globals::getIdentityManager()->authController->validateApplicationScopeOnRole(JSON_ASSTRING(*request.inputJSON, "roleName", ""),
-                                                                                                                    {JSON_ASSTRING(*request.inputJSON, "appName", ""),
-                                                                                                                     JSON_ASSTRING(*request.inputJSON, "id", "")});
-}
-
-void AdminPortalMethods_ApplicationRoles::getApplicationRoleDescription(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
-{
-    (*response.responseJSON()) = Globals::getIdentityManager()->roles->getApplicationRoleDescription(JSON_ASSTRING(*request.inputJSON, "roleName", ""));
-}
-
-void AdminPortalMethods_ApplicationRoles::getApplicationRolesList(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
-{
-    (*response.responseJSON()) = Helpers::setToJSON(Globals::getIdentityManager()->roles->getApplicationRolesList());
-}
-
-void AdminPortalMethods_ApplicationRoles::getRoleApplicationScopes(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
-{
-    (*response.responseJSON()) = AdminPortal_Endpoints::scopeListToJSON(Globals::getIdentityManager()->authController->getRoleApplicationScopes(JSON_ASSTRING(*request.inputJSON, "roleName", "")));
-}
-
-void AdminPortalMethods_ApplicationRoles::getApplicationRoleAccounts(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
-{
-    (*response.responseJSON()) = Helpers::setToJSON(Globals::getIdentityManager()->roles->getApplicationRoleAccounts(JSON_ASSTRING(*request.inputJSON, "roleName", "")));
-}
-
-void AdminPortalMethods_ApplicationRoles::searchApplicationRoles(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
-{
-    json x;
-    int i = 0;
-    for (const auto &strVal : Globals::getIdentityManager()->roles->searchApplicationRoles(JSON_ASSTRING(*request.inputJSON, "searchWords", ""), JSON_ASUINT64(*request.inputJSON, "limit", 0),
-                                                                                JSON_ASUINT64(*request.inputJSON, "offset", 0)))
-    {
-        x[i]["description"] = strVal.description;
-        x[i]["roleName"] = strVal.roleName;
-        i++;
-    }
-    (*response.responseJSON()) = x;
-}
-*/

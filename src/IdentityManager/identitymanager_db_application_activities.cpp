@@ -17,7 +17,7 @@ using namespace Mantids30::Database;
 using namespace Mantids30::Helpers;
 using namespace Mantids30;
 
-bool IdentityManager_DB::ApplicationActivities_DB::addApplicationActivity(const std::string &appName, const std::string &activityName, const std::string &activityDescription)
+bool IdentityManager_DB::ApplicationActivities_DB::addApplicationActivity(const ClientDetails &clientDetails, const std::string &performedBy,const std::string &appName, const std::string &activityName, const std::string &activityDescription)
 {
     std::optional<uint32_t> defaultAuthScheme = _parent->authController->getDefaultAuthScheme();
 
@@ -39,7 +39,7 @@ bool IdentityManager_DB::ApplicationActivities_DB::addApplicationActivity(const 
             return false;
         }
 
-        addAuthenticationSchemeToApplicationActivity(appName, activityName, defaultSchemeId, false);
+        addAuthenticationSchemeToApplicationActivity(clientDetails,performedBy,appName, activityName, defaultSchemeId, false);
     }
     else
     {
@@ -51,23 +51,27 @@ bool IdentityManager_DB::ApplicationActivities_DB::addApplicationActivity(const 
         }
     }
 
+    _parent->logApplicationActivitiesSecurityEvent(appName, activityName,std::nullopt, SecurityEventAction::CREATE, "New application activity added", performedBy, clientDetails);
+
     return true;
 }
 
-bool IdentityManager_DB::ApplicationActivities_DB::removeApplicationActivity(const std::string &appName, const std::string &activityName)
+bool IdentityManager_DB::ApplicationActivities_DB::removeApplicationActivity(const ClientDetails &clientDetails, const std::string &performedBy,const std::string &appName, const std::string &activityName)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
 
-    if (!_parent->m_sqlConnector->qExecuteEx("DELETE FROM iam.applicationActivities WHERE `f_appName` = :appName AND `activityName` = :activityName;",
-                                             {{":appName", MAKE_VAR(STRING, appName)}, {":activityName", MAKE_VAR(STRING, activityName)}}))
+    bool success = _parent->m_sqlConnector->qExecuteEx("DELETE FROM iam.applicationActivities WHERE `f_appName` = :appName AND `activityName` = :activityName;",
+                                             {{":appName", MAKE_VAR(STRING, appName)}, {":activityName", MAKE_VAR(STRING, activityName)}});
+    
+    if (success)
     {
-        return false;
+        _parent->logApplicationActivitiesSecurityEvent(appName, activityName, std::nullopt, SecurityEventAction::DELETE, "Application activity removed", performedBy, clientDetails);
     }
 
-    return true;
+    return success;
 }
 
-bool IdentityManager_DB::ApplicationActivities_DB::setApplicationActivities(const std::string &appName, const std::map<std::string, ActivityData> &activities)
+bool IdentityManager_DB::ApplicationActivities_DB::setApplicationActivities(const ClientDetails &clientDetails, const std::string &performedBy,const std::string &appName, const std::map<std::string, ActivityData> &activities)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
 
@@ -139,44 +143,65 @@ bool IdentityManager_DB::ApplicationActivities_DB::setApplicationActivities(cons
     return true;
 }
 
-bool IdentityManager_DB::ApplicationActivities_DB::removeApplicationActivities(const std::string &appName)
+bool IdentityManager_DB::ApplicationActivities_DB::removeAllApplicationActivities(const ClientDetails &clientDetails, const std::string &performedBy,const std::string &appName)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
 
     // Delete all activities for the specified application
-    if (!_parent->m_sqlConnector->qExecuteEx("DELETE FROM iam.applicationActivities WHERE `f_appName` = :appName;", {{":appName", MAKE_VAR(STRING, appName)}}))
+    bool success = _parent->m_sqlConnector->qExecuteEx("DELETE FROM iam.applicationActivities WHERE `f_appName` = :appName;", {{":appName", MAKE_VAR(STRING, appName)}});
+    
+    if (success)
     {
-        return false;
+        _parent->logApplicationActivitiesSecurityEvent(appName, "", std::nullopt, SecurityEventAction::DELETE, "All application activities removed", performedBy, clientDetails);
     }
 
-    return true;
+    return success;
 }
 
-bool IdentityManager_DB::ApplicationActivities_DB::setApplicationActivityParentActivity(const std::string &appName, const std::string &activityName, const std::string &parentActivityName)
+bool IdentityManager_DB::ApplicationActivities_DB::setApplicationActivityParentActivity(const ClientDetails &clientDetails, const std::string &performedBy,const std::string &appName, const std::string &activityName, const std::string &parentActivityName)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
 
+    bool success;
+    
     if (parentActivityName.empty())
     {
         // Update the parent activity for the specified application activity
-        return _parent->m_sqlConnector->qExecuteEx("UPDATE iam.applicationActivities SET `parentActivity`=NULL WHERE `f_appName`=:appName AND `activityName`=:activityName;",
+        success = _parent->m_sqlConnector->qExecuteEx("UPDATE iam.applicationActivities SET `parentActivity`=NULL WHERE `f_appName`=:appName AND `activityName`=:activityName;",
                                                    {{":appName", MAKE_VAR(STRING, appName)}, {":activityName", MAKE_VAR(STRING, activityName)}});
     }
-
-    // Update the parent activity for the specified application activity
-    return _parent->m_sqlConnector->qExecuteEx("UPDATE iam.applicationActivities SET `parentActivity`=:parentActivityName WHERE `f_appName`=:appName AND `activityName`=:activityName;",
+    else
+    {
+        // Update the parent activity for the specified application activity
+        success = _parent->m_sqlConnector->qExecuteEx("UPDATE iam.applicationActivities SET `parentActivity`=:parentActivityName WHERE `f_appName`=:appName AND `activityName`=:activityName;",
                                                {{":parentActivityName", MAKE_VAR(STRING, parentActivityName)},
                                                 {":appName", MAKE_VAR(STRING, appName)},
                                                 {":activityName", MAKE_VAR(STRING, activityName)}});
+    }
+    
+    if (success)
+    {
+        std::string desc = parentActivityName.empty() ? "Parent activity cleared" : ("Parent activity set to: " + parentActivityName);
+        _parent->logApplicationActivitiesSecurityEvent(appName, activityName, std::nullopt,  SecurityEventAction::UPDATE, desc, performedBy, clientDetails);
+    }
+    
+    return success;
 }
 
-bool IdentityManager_DB::ApplicationActivities_DB::setApplicationActivityDescription(const std::string &appName, const std::string &activityName, const std::string &description)
+bool IdentityManager_DB::ApplicationActivities_DB::setApplicationActivityDescription(const ClientDetails &clientDetails, const std::string &performedBy,const std::string &appName, const std::string &activityName, const std::string &description)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
 
     // Update the description for the specified application activity
-    return _parent->m_sqlConnector->qExecuteEx("UPDATE iam.applicationActivities SET `description`=:description WHERE `f_appName`=:appName AND `activityName`=:activityName;",
+    bool success = _parent->m_sqlConnector->qExecuteEx("UPDATE iam.applicationActivities SET `description`=:description WHERE `f_appName`=:appName AND `activityName`=:activityName;",
                                                {{":description", MAKE_VAR(STRING, description)}, {":appName", MAKE_VAR(STRING, appName)}, {":activityName", MAKE_VAR(STRING, activityName)}});
+    
+    if (success)
+    {
+        _parent->logApplicationActivitiesSecurityEvent(appName, activityName,std::nullopt,SecurityEventAction::UPDATE, "Application activity description updated", performedBy, clientDetails);
+    }
+    
+    return success;
 }
 
 std::optional<IdentityManager::ApplicationActivities::ActivityData> IdentityManager_DB::ApplicationActivities_DB::getApplicationActivityInfo(const std::string &appName, const std::string &activityName)
@@ -262,13 +287,20 @@ std::optional<uint32_t> IdentityManager_DB::ApplicationActivities_DB::getApplica
     return std::nullopt;
 }
 
-bool IdentityManager_DB::ApplicationActivities_DB::setApplicationActivityDefaultScheme(const std::string &appName, const std::string &activityName, const uint32_t &schemeId)
+bool IdentityManager_DB::ApplicationActivities_DB::setApplicationActivityDefaultScheme(const ClientDetails &clientDetails, const std::string &performedBy,const std::string &appName, const std::string &activityName, const uint32_t &schemeId)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
 
     // Update the default scheme ID for the specified application activity
-    return _parent->m_sqlConnector->qExecuteEx("UPDATE iam.applicationActivities SET `defaultSchemeId`=:schemeId WHERE `f_appName`=:appName AND `activityName`=:activityName;",
+    bool success = _parent->m_sqlConnector->qExecuteEx("UPDATE iam.applicationActivities SET `defaultSchemeId`=:schemeId WHERE `f_appName`=:appName AND `activityName`=:activityName;",
                                                {{":schemeId", MAKE_VAR(UINT32, schemeId)}, {":appName", MAKE_VAR(STRING, appName)}, {":activityName", MAKE_VAR(STRING, activityName)}});
+    
+    if (success)
+    {
+        _parent->logApplicationActivitiesSecurityEvent(appName, activityName,schemeId, SecurityEventAction::SET_DEFAULT_ACTIVITY, "Application activity default scheme updated", performedBy, clientDetails);
+    }
+    
+    return success;
 }
 
 std::set<uint32_t> IdentityManager_DB::ApplicationActivities_DB::listAuthenticationSchemesForApplicationActivity(const std::string &appName, const std::string &activityName)
@@ -292,7 +324,7 @@ std::set<uint32_t> IdentityManager_DB::ApplicationActivities_DB::listAuthenticat
     return ret;
 }
 
-bool IdentityManager_DB::ApplicationActivities_DB::addAuthenticationSchemeToApplicationActivity(const std::string &appName, const std::string &activityName, const uint32_t &schemeId, bool lock)
+bool IdentityManager_DB::ApplicationActivities_DB::addAuthenticationSchemeToApplicationActivity(const ClientDetails &clientDetails, const std::string &performedBy,const std::string &appName, const std::string &activityName, const uint32_t &schemeId, bool lock)
 {
     // Acquire a write lock since we are modifying the database
     if (lock)
@@ -303,18 +335,30 @@ bool IdentityManager_DB::ApplicationActivities_DB::addAuthenticationSchemeToAppl
                                                  "VALUES (:appName, :activityName, :schemeId);",
                                                  {{":appName", MAKE_VAR(STRING, appName)}, {":activityName", MAKE_VAR(STRING, activityName)}, {":schemeId", MAKE_VAR(UINT32, schemeId)}});
 
+    if (r)
+    {
+        _parent->logApplicationActivitiesSecurityEvent(appName, activityName, schemeId,  SecurityEventAction::ASSIGN_SCHEME, "Authentication scheme added to application activity", performedBy, clientDetails);
+    }
+
     if (lock)
         _parent->m_mutex.unlock();
     return r;
 }
 
-bool IdentityManager_DB::ApplicationActivities_DB::removeAuthenticationSchemeFromApplicationActivity(const std::string &appName, const std::string &activityName, const uint32_t &schemeId)
+bool IdentityManager_DB::ApplicationActivities_DB::removeAuthenticationSchemeFromApplicationActivity(const ClientDetails &clientDetails, const std::string &performedBy,const std::string &appName, const std::string &activityName, const uint32_t &schemeId)
 {
     // Acquire a write lock since we are modifying the database
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
 
     // Execute the query with direct parameter passing
-    return _parent->m_sqlConnector->qExecuteEx("DELETE FROM iam.applicationActivitiesAuthSchemes "
+    bool success = _parent->m_sqlConnector->qExecuteEx("DELETE FROM iam.applicationActivitiesAuthSchemes "
                                                "WHERE `f_appName` = :appName AND `f_activityName` = :activityName AND `f_schemeId` = :schemeId;",
                                                {{":appName", MAKE_VAR(STRING, appName)}, {":activityName", MAKE_VAR(STRING, activityName)}, {":schemeId", MAKE_VAR(UINT32, schemeId)}});
+    
+    if (success)
+    {
+        _parent->logApplicationActivitiesSecurityEvent(appName, activityName, schemeId, SecurityEventAction::REVOKE_SCHEME, "Authentication scheme removed from application activity", performedBy, clientDetails);
+    }
+    
+    return success;
 }

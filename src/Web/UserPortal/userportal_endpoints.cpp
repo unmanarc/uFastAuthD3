@@ -21,14 +21,14 @@ void UserPortal_Endpoints::addEndpoints(std::shared_ptr<Endpoints> endpoints)
     endpoints->addEndpoint(Endpoints::GET, "getLastLogin", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {}, nullptr, &getLastLogin);
     endpoints->addEndpoint(Endpoints::GET, "getDashboardData", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {}, nullptr, &getDashboardData);
     endpoints->addEndpoint(Endpoints::GET, "searchAccountSessions", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {}, nullptr, &searchAccountSessions);
-    endpoints->addEndpoint(Endpoints::GET, "searchAccountPasswordActivity", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {}, nullptr, &searchAccountPasswordActivity);
+    endpoints->addEndpoint(Endpoints::GET, "searchAccountCredentialsActivity", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {}, nullptr, &searchAccountCredentialsActivity);
     endpoints->addEndpoint(Endpoints::GET, "getAccountDetailFieldsValues", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {}, nullptr, &getAccountDetailFieldsValues);
     endpoints->addEndpoint(Endpoints::PUT, "updateAccountDetailFieldsValues", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {}, nullptr, &updateAccountDetailFieldsValues);
     endpoints->addEndpoint(Endpoints::GET, "listAccountApplicationsFullInfo", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {}, nullptr, &listAccountApplicationsFullInfo);
     endpoints->addEndpoint(Endpoints::GET, "listAllAuthCredentialSlotsPublicData", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {}, nullptr, &listAllAuthCredentialSlotsPublicData);
     endpoints->addEndpoint(Endpoints::POST, "activateCredential", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {}, nullptr, &activateCredential);
     endpoints->addEndpoint(Endpoints::POST, "activateOTPCredential", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {}, nullptr, &activateOTP);
-    endpoints->addEndpoint(Endpoints::DELETE, "deleteCredential", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {}, nullptr, &deleteCredential);
+    endpoints->addEndpoint(Endpoints::DELETE, "removeCredential", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {}, nullptr, &removeCredential);
     endpoints->addEndpoint(Endpoints::POST, "createChallengeToken", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {}, nullptr, &createChallengeToken);
     endpoints->addEndpoint(Endpoints::POST, "changeCredential", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {}, nullptr, &changeCredential);
 }
@@ -72,7 +72,7 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::changeCredential(void *con
     cred.fromJSON((*request.inputJSON)["credential"]);
     cred.expirationTimestamp = 1; // Default expiration timestamp.
 
-    if (!Globals::getIdentityManager()->authController->changeAccountCredential(accountName, cred, slotId))
+    if (!Globals::getIdentityManager()->authController->changeAccountCredential(clientDetails,accountName, accountName, cred, slotId))
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "change_credential_failed", "Failed to change credential");
     }
@@ -187,7 +187,7 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::updateAccountDetailFieldsV
     }
 
     // Update account detail fields values
-    if (!Globals::getIdentityManager()->accounts->updateAccountDetailFieldValues(accountName, fieldValues, false))
+    if (!Globals::getIdentityManager()->accounts->updateAccountDetailFieldValues(clientDetails,accountName,accountName, fieldValues, false))
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to update account detail fields values");
         return response;
@@ -214,10 +214,10 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::getAccountDetailFieldsValu
     return result;
 }
 
-UserPortal_Endpoints::APIReturn UserPortal_Endpoints::searchAccountPasswordActivity(void *context, const RequestParameters &request, ClientDetails &clientDetails)
+UserPortal_Endpoints::APIReturn UserPortal_Endpoints::searchAccountCredentialsActivity(void *context, const RequestParameters &request, ClientDetails &clientDetails)
 {
     std::string accountName = request.jwtToken->getSubject();
-    return Globals::getIdentityManager()->authController->searchAccountPasswordActivity(accountName, *request.inputJSON);
+    return Globals::getIdentityManager()->authController->searchAccountCredentialsActivity(accountName, *request.inputJSON);
 }
 
 UserPortal_Endpoints::APIReturn UserPortal_Endpoints::searchAccountSessions(void *context, const RequestParameters &request, ClientDetails &clientDetails)
@@ -297,7 +297,7 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::activateCredential(void *c
         return response;
     }
 
-    if (!Globals::getIdentityManager()->authController->activateAccountCredential(accountName, slotId, hash, ssalt))
+    if (!Globals::getIdentityManager()->authController->activateAccountCredential(clientDetails,accountName,accountName, slotId, hash, ssalt))
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "activation_failed", "Failed to activate credential");
         return response;
@@ -328,7 +328,7 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::activateOTP(void *context,
         return response;
     }
 
-    if (!Globals::getIdentityManager()->authController->activateAccountCredential(accountName, slotId, seed, ""))
+    if (!Globals::getIdentityManager()->authController->activateAccountCredential(clientDetails,accountName,accountName, slotId, seed, ""))
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "activation_failed", "Failed to activate OTP credential");
         return response;
@@ -337,7 +337,7 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::activateOTP(void *context,
     return response;
 }
 
-UserPortal_Endpoints::APIReturn UserPortal_Endpoints::deleteCredential(void *context, const RequestParameters &request, ClientDetails &clientDetails)
+UserPortal_Endpoints::APIReturn UserPortal_Endpoints::removeCredential(void *context, const RequestParameters &request, ClientDetails &clientDetails)
 {
     API::APIReturn response;
 
@@ -369,7 +369,7 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::deleteCredential(void *con
         return response;
     }
 
-    if (!Globals::getIdentityManager()->authController->removeAccountCredential(accountName, slotId))
+    if (!Globals::getIdentityManager()->authController->removeAccountCredential(clientDetails,accountName,accountName, slotId))
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "deletion_failed", "Failed to delete credential");
         return response;

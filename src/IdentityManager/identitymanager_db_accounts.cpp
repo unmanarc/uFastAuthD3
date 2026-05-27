@@ -20,7 +20,8 @@ using namespace Mantids30;
 using namespace Mantids30::Memory;
 using namespace Mantids30::Database;
 
-bool IdentityManager_DB::Accounts_DB::addAccount(const std::string &accountName, time_t expirationDate, const AccountFlags &accountFlags, const std::string &sCreatorAccountName)
+bool IdentityManager_DB::Accounts_DB::addAccount(const std::string &accountName, time_t expirationDate, const AccountFlags &accountFlags, const ClientDetails &clientDetails,
+                                                 const std::string &sCreatorAccountName)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
 
@@ -46,16 +47,27 @@ bool IdentityManager_DB::Accounts_DB::addAccount(const std::string &accountName,
         }
     }
 
+    if (r)
+    {
+        _parent->logAccountSecurityEvent(accountName, SecurityEventAction::CREATE, "New account created",
+                                  sCreatorAccountName.empty() ? accountName : sCreatorAccountName, clientDetails);
+    }
+
     return r;
 }
 
-bool IdentityManager_DB::Accounts_DB::removeAccount(const std::string &accountName)
+bool IdentityManager_DB::Accounts_DB::removeAccount(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountName)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
 
     if (isThereAnotherAdmin(accountName))
     {
-        return _parent->m_sqlConnector->qExecuteEx("DELETE FROM iam.accounts WHERE `accountName`=:accountName;", {{":accountName", MAKE_VAR(STRING, accountName)}});
+        bool result = _parent->m_sqlConnector->qExecuteEx("DELETE FROM iam.accounts WHERE `accountName`=:accountName;", {{":accountName", MAKE_VAR(STRING, accountName)}});
+        if (result)
+        {
+            _parent->logAccountSecurityEvent(accountName, SecurityEventAction::DELETE, "Account removed", performedBy, clientDetails);
+        }
+        return result;
     }
     return false;
 }
@@ -68,7 +80,7 @@ bool IdentityManager_DB::Accounts_DB::doesAccountExist(const std::string &accoun
     return ret;
 }
 
-bool IdentityManager_DB::Accounts_DB::disableAccount(const std::string &accountName, bool disabled)
+bool IdentityManager_DB::Accounts_DB::disableAccount(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountName, bool disabled)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
 
@@ -77,11 +89,17 @@ bool IdentityManager_DB::Accounts_DB::disableAccount(const std::string &accountN
         return false;
     }
 
-    return _parent->m_sqlConnector->qExecuteEx("UPDATE iam.accounts SET `isEnabled`=:enabled WHERE `accountName`=:accountName;",
-                                               {{":enabled", MAKE_VAR(BOOL, !disabled)}, {":accountName", MAKE_VAR(STRING, accountName)}});
+    bool result = _parent->m_sqlConnector->qExecuteEx("UPDATE iam.accounts SET `isEnabled`=:enabled WHERE `accountName`=:accountName;",
+                                                      {{":enabled", MAKE_VAR(BOOL, !disabled)}, {":accountName", MAKE_VAR(STRING, accountName)}});
+    if (result)
+    {
+        _parent->logAccountSecurityEvent(accountName, disabled ? SecurityEventAction::DISABLE : SecurityEventAction::ENABLE,
+                                  disabled ? "Account disabled" : "Account enabled", performedBy, clientDetails);
+    }
+    return result;
 }
 
-bool IdentityManager_DB::Accounts_DB::confirmAccount(const std::string &accountName, const std::string &confirmationToken)
+bool IdentityManager_DB::Accounts_DB::confirmAccount(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountName, const std::string &confirmationToken)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
 
@@ -92,18 +110,28 @@ bool IdentityManager_DB::Accounts_DB::confirmAccount(const std::string &accountN
     {
         if (!token.getValue().empty() && token.getValue() == confirmationToken)
         {
-            return _parent->m_sqlConnector->qExecuteEx("UPDATE iam.accounts SET `isAccountConfirmed`='1' WHERE `accountName`=:accountName;", {{":accountName", MAKE_VAR(STRING, accountName)}});
+            bool result = _parent->m_sqlConnector->qExecuteEx("UPDATE iam.accounts SET `isAccountConfirmed`='1' WHERE `accountName`=:accountName;", {{":accountName", MAKE_VAR(STRING, accountName)}});
+            if (result)
+            {
+                _parent->logAccountSecurityEvent(accountName, SecurityEventAction::CONFIRM, "Account confirmed", performedBy, clientDetails);
+            }
+            return result;
         }
     }
     return false;
 }
 
-bool IdentityManager_DB::Accounts_DB::changeAccountExpiration(const std::string &accountName, time_t expiration)
+bool IdentityManager_DB::Accounts_DB::changeAccountExpiration(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountName, time_t expiration)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
 
-    return _parent->m_sqlConnector->qExecuteEx("UPDATE iam.accounts SET `expiration`=:expiration WHERE `accountName`=:accountName;",
-                                               {{":expiration", MAKE_VAR(DATETIME, expiration)}, {":accountName", MAKE_VAR(STRING, accountName)}});
+    bool result = _parent->m_sqlConnector->qExecuteEx("UPDATE iam.accounts SET `expiration`=:expiration WHERE `accountName`=:accountName;",
+                                                      {{":expiration", MAKE_VAR(DATETIME, expiration)}, {":accountName", MAKE_VAR(STRING, accountName)}});
+    if (result)
+    {
+        _parent->logAccountSecurityEvent(accountName, SecurityEventAction::UPDATE, "Account expiration changed", performedBy, clientDetails);
+    }
+    return result;
 }
 
 AccountFlags IdentityManager_DB::Accounts_DB::getAccountFlags(const std::string &accountName)
@@ -124,7 +152,8 @@ AccountFlags IdentityManager_DB::Accounts_DB::getAccountFlags(const std::string 
     return r;
 }
 
-bool IdentityManager_DB::Accounts_DB::updateAccountApplicationRoles(const std::string &appName, const std::string &accountName, const std::set<std::string> &roleSet)
+bool IdentityManager_DB::Accounts_DB::updateAccountApplicationRoles(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &accountName,
+                                                                    const std::set<std::string> &roleSet)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
 
@@ -138,10 +167,13 @@ bool IdentityManager_DB::Accounts_DB::updateAccountApplicationRoles(const std::s
                                                  {{":roleName", MAKE_VAR(STRING, role)}, {":accountName", MAKE_VAR(STRING, accountName)}, {":appName", MAKE_VAR(STRING, appName)}}))
             return false;
     }
+
+    _parent->logAccountSecurityEvent(accountName, SecurityEventAction::UPDATE, "Application roles updated to account", performedBy, clientDetails);
+
     return true;
 }
 
-bool IdentityManager_DB::Accounts_DB::changeAccountFlags(const std::string &accountName, const AccountFlags &accountFlags)
+bool IdentityManager_DB::Accounts_DB::changeAccountFlags(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountName, const AccountFlags &accountFlags)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
 
@@ -150,12 +182,18 @@ bool IdentityManager_DB::Accounts_DB::changeAccountFlags(const std::string &acco
         return false;
     }
 
-    return _parent->m_sqlConnector->qExecuteEx("UPDATE iam.accounts SET `isEnabled`=:enabled,`isAccountConfirmed`=:confirmed,`isAdmin`=:admin,`isBlocked`=:blocked WHERE `accountName`=:accountName;",
-                                               {{":enabled", MAKE_VAR(BOOL, accountFlags.enabled)},
-                                                {":confirmed", MAKE_VAR(BOOL, accountFlags.confirmed)},
-                                                {":admin", MAKE_VAR(BOOL, accountFlags.admin)},
-                                                {":blocked", MAKE_VAR(BOOL, accountFlags.blocked)},
-                                                {":accountName", MAKE_VAR(STRING, accountName)}});
+    bool result = _parent->m_sqlConnector
+                      ->qExecuteEx("UPDATE iam.accounts SET `isEnabled`=:enabled,`isAccountConfirmed`=:confirmed,`isAdmin`=:admin,`isBlocked`=:blocked WHERE `accountName`=:accountName;",
+                                   {{":enabled", MAKE_VAR(BOOL, accountFlags.enabled)},
+                                    {":confirmed", MAKE_VAR(BOOL, accountFlags.confirmed)},
+                                    {":admin", MAKE_VAR(BOOL, accountFlags.admin)},
+                                    {":blocked", MAKE_VAR(BOOL, accountFlags.blocked)},
+                                    {":accountName", MAKE_VAR(STRING, accountName)}});
+    if (result)
+    {
+        _parent->logAccountSecurityEvent(accountName, SecurityEventAction::UPDATE, "Account flags changed", performedBy, clientDetails);
+    }
+    return result;
 }
 
 std::optional<AccountDetails> IdentityManager_DB::Accounts_DB::getAccountDetails(const std::string &accountName, const AccountDetailsToShow &detailsToShow)
@@ -329,7 +367,7 @@ Json::Value IdentityManager_DB::Accounts_DB::searchAccounts(const json &dataTabl
     FROM iam.accounts
     LEFT JOIN (
         SELECT f_accountName, MAX(lastLogin) as lastLogin
-        FROM logs.accountsLastAccessToApplication
+        FROM logs.applicationAccess_accountLastLogin
         GROUP BY f_accountName
     ) last_login_agg
         ON last_login_agg.f_accountName = iam.accounts.accountName
@@ -522,7 +560,7 @@ std::string IdentityManager_DB::Accounts_DB::getAccountBlockToken(const std::str
     return "";
 }
 
-bool IdentityManager_DB::Accounts_DB::blockAccountUsingToken(const std::string &accountName, const std::string &blockToken)
+bool IdentityManager_DB::Accounts_DB::blockAccountUsingToken(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountName, const std::string &blockToken)
 {
     std::string dbBlockToken;
     if (getAccountBlockTokenNoRenew(accountName, dbBlockToken) == 0)
@@ -530,32 +568,38 @@ bool IdentityManager_DB::Accounts_DB::blockAccountUsingToken(const std::string &
         if (dbBlockToken == blockToken)
         {
             // everything in place to block this account:
-            return disableAccount(accountName);
+            bool result = disableAccount(clientDetails, performedBy, accountName);
+            if (result)
+            {
+                _parent->logAccountSecurityEvent(accountName, SecurityEventAction::LOCK, "Account blocked via token", performedBy, clientDetails);
+            }
+            return result;
         }
     }
     return false;
 }
 
-bool IdentityManager_DB::Accounts_DB::addAccountDetailField(const std::string &fieldName, const AccountDetailField &details)
+bool IdentityManager_DB::Accounts_DB::addAccountDetailField(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &fieldName, const AccountDetailField &details)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
 
-    if (!_parent->m_sqlConnector->qExecuteEx("INSERT INTO iam.accountDetailFields (`fieldName`, `fieldDescription`, `fieldType`, `isOptionalField`, `isUnique`, `jsonExtendedAttribs`)"
-                                             " VALUES (:fieldName, :fieldDescription, :fieldType, :isOptionalField, :isUnique, :jsonExtendedAttribs);",
-                                             {{":fieldName", MAKE_VAR(STRING, fieldName)},
-                                              {":fieldDescription", MAKE_VAR(STRING, details.description)},
-                                              {":fieldType", MAKE_VAR(STRING, details.fieldType)},
-                                              {":isOptionalField", MAKE_VAR(BOOL, details.isOptionalField)},
-                                              {":isUnique", MAKE_VAR(BOOL, details.isUnique)},
-                                              {":jsonExtendedAttribs", MAKE_VAR(STRING, details.extendedAttributes.toStyledString())}}))
+    if (_parent->m_sqlConnector->qExecuteEx("INSERT INTO iam.accountDetailFields (`fieldName`, `fieldDescription`, `fieldType`, `isOptionalField`, `isUnique`, `jsonExtendedAttribs`)"
+                                            " VALUES (:fieldName, :fieldDescription, :fieldType, :isOptionalField, :isUnique, :jsonExtendedAttribs);",
+                                            {{":fieldName", MAKE_VAR(STRING, fieldName)},
+                                             {":fieldDescription", MAKE_VAR(STRING, details.description)},
+                                             {":fieldType", MAKE_VAR(STRING, details.fieldType)},
+                                             {":isOptionalField", MAKE_VAR(BOOL, details.isOptionalField)},
+                                             {":isUnique", MAKE_VAR(BOOL, details.isUnique)},
+                                             {":jsonExtendedAttribs", MAKE_VAR(STRING, details.extendedAttributes.toStyledString())}}))
     {
-        return false;
+        _parent->logAccountFieldsSecurityEvent(fieldName, SecurityEventAction::CREATE, "Account detail field created", performedBy, clientDetails);
+        return true;
     }
 
-    return true;
+    return false;
 }
 
-bool IdentityManager_DB::Accounts_DB::updateAccountDetailField(const std::string &fieldName, const AccountDetailField &details)
+bool IdentityManager_DB::Accounts_DB::updateAccountDetailField(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &fieldName, const AccountDetailField &details)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
 
@@ -571,10 +615,12 @@ bool IdentityManager_DB::Accounts_DB::updateAccountDetailField(const std::string
         return false;
     }
 
+    _parent->logAccountFieldsSecurityEvent(fieldName, SecurityEventAction::UPDATE, "Account detail field updated", performedBy, clientDetails);
+
     return true;
 }
 
-bool IdentityManager_DB::Accounts_DB::removeAccountDetailField(const std::string &fieldName)
+bool IdentityManager_DB::Accounts_DB::removeAccountDetailField(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &fieldName)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
 
@@ -582,6 +628,8 @@ bool IdentityManager_DB::Accounts_DB::removeAccountDetailField(const std::string
     {
         return false;
     }
+
+    _parent->logAccountFieldsSecurityEvent(fieldName, SecurityEventAction::DELETE, "Account detail field removed", performedBy, clientDetails);
 
     return true;
 }
@@ -651,7 +699,8 @@ std::optional<AccountDetailField> IdentityManager_DB::Accounts_DB::getAccountDet
     return std::nullopt;
 }
 
-bool IdentityManager_DB::Accounts_DB::changeAccountDetails(const std::string &accountName, const std::map<std::string, std::string> &fieldsValues, bool resetAllValues)
+bool IdentityManager_DB::Accounts_DB::changeAccountDetails(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountName,
+                                                           const std::map<std::string, std::string> &fieldsValues, bool resetAllValues)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
 
@@ -694,17 +743,27 @@ bool IdentityManager_DB::Accounts_DB::changeAccountDetails(const std::string &ac
         }
     }
 
+    _parent->logAccountSecurityEvent(accountName, SecurityEventAction::UPDATE, resetAllValues ? "All account details reset" : "Account details updated", performedBy,
+                              clientDetails);
+
     return true;
 }
 
-bool IdentityManager_DB::Accounts_DB::removeAccountDetail(const std::string &accountName, const std::string &fieldName)
+bool IdentityManager_DB::Accounts_DB::removeAccountDetail(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountName, const std::string &fieldName)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
-    return _parent->m_sqlConnector->qExecuteEx("DELETE FROM iam.accountDetailValues WHERE `f_accountName` = :accountName AND `f_fieldName` = :fieldName;",
-                                               {{":accountName", MAKE_VAR(STRING, accountName)}, {":fieldName", MAKE_VAR(STRING, fieldName)}});
+
+    bool result = _parent->m_sqlConnector->qExecuteEx("DELETE FROM iam.accountDetailValues WHERE `f_accountName` = :accountName AND `f_fieldName` = :fieldName;",
+                                                      {{":accountName", MAKE_VAR(STRING, accountName)}, {":fieldName", MAKE_VAR(STRING, fieldName)}});
+    if (result)
+    {
+        _parent->logAccountSecurityEvent(accountName, SecurityEventAction::DELETE, "Account detail removed", performedBy, clientDetails);
+    }
+    return result;
 }
 
-bool IdentityManager_DB::Accounts_DB::updateAccountDetailFieldValues(const std::string &accountName, const std::list<AccountDetailFieldValue> &inputFieldValues, bool isAdmin)
+bool IdentityManager_DB::Accounts_DB::updateAccountDetailFieldValues(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountName,
+                                                                     const std::list<AccountDetailFieldValue> &inputFieldValues, bool isAdmin)
 {
     std::map<std::string, AccountDetailField> dbFieldsScheme = listAccountDetailFields();
 
@@ -796,6 +855,9 @@ bool IdentityManager_DB::Accounts_DB::updateAccountDetailFieldValues(const std::
             }
         }
     }
+
+    _parent->logAccountSecurityEvent(accountName, SecurityEventAction::UPDATE,
+                              "Account detail field values updated", performedBy, clientDetails);
 
     _parent->m_sqlConnector->commitTransaction();
     return true;

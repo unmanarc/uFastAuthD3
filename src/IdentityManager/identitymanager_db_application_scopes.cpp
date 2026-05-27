@@ -9,20 +9,34 @@ using namespace Mantids30;
 using namespace Mantids30::Memory;
 using namespace Mantids30::Database;
 
-bool IdentityManager_DB::AuthController_DB::addApplicationScope(const ApplicationScope &applicationScope)
+bool IdentityManager_DB::AuthController_DB::addApplicationScope(const ClientDetails &clientDetails, const std::string &performedBy,const ApplicationScope &applicationScope)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
-    return _parent->m_sqlConnector->qExecuteEx("INSERT INTO iam.applicationScopes (`f_appName`,`scopeId`,`description`) VALUES(:appName,:scopeId,:description);",
+    bool success = _parent->m_sqlConnector->qExecuteEx("INSERT INTO iam.applicationScopes (`f_appName`,`scopeId`,`description`) VALUES(:appName,:scopeId,:description);",
                                                {{":appName", MAKE_VAR(STRING, applicationScope.appName)},
                                                 {":scopeId", MAKE_VAR(STRING, applicationScope.id)},
                                                 {":description", MAKE_VAR(STRING, applicationScope.description)}});
+
+    if (success)
+    {
+        _parent->logApplicationScopesSecurityEvent(applicationScope.appName, applicationScope.id,"", SecurityEventAction::CREATE, "New application scope added", performedBy, clientDetails);
+    }
+
+    return success;
 }
 
-bool IdentityManager_DB::AuthController_DB::removeApplicationScope(const ApplicationScope &applicationScope)
+bool IdentityManager_DB::AuthController_DB::removeApplicationScope(const ClientDetails &clientDetails, const std::string &performedBy,const ApplicationScope &applicationScope)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
-    return _parent->m_sqlConnector->qExecuteEx("DELETE FROM iam.applicationScopes WHERE `scopeId`=:scopeId and `f_appName`=:appName;",
+    bool success = _parent->m_sqlConnector->qExecuteEx("DELETE FROM iam.applicationScopes WHERE `scopeId`=:scopeId and `f_appName`=:appName;",
                                                {{":appName", MAKE_VAR(STRING, applicationScope.appName)}, {":scopeId", MAKE_VAR(STRING, applicationScope.id)}});
+
+    if (success)
+    {
+        _parent->logApplicationScopesSecurityEvent(applicationScope.appName, applicationScope.id,"", SecurityEventAction::DELETE, "Application scope removed", performedBy, clientDetails);
+    }
+
+    return success;
 }
 
 bool IdentityManager_DB::AuthController_DB::doesApplicationScopeExist(const ApplicationScope &applicationScope)
@@ -38,17 +52,24 @@ bool IdentityManager_DB::AuthController_DB::doesApplicationScopeExist(const Appl
     return ret;
 }
 
-bool IdentityManager_DB::AuthController_DB::addApplicationScopeToRole(const ApplicationScope &applicationScope, const std::string &roleName)
+bool IdentityManager_DB::AuthController_DB::addApplicationScopeToRole(const ClientDetails &clientDetails, const std::string &performedBy,const ApplicationScope &applicationScope, const std::string &roleName)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
 
-    return _parent->m_sqlConnector->qExecuteEx("INSERT INTO iam.applicationRolesScopes (`f_appName`,`f_scopeId`,`f_roleName`) VALUES(:appName,:scopeId,:roleName);",
+    bool success = _parent->m_sqlConnector->qExecuteEx("INSERT INTO iam.applicationRolesScopes (`f_appName`,`f_scopeId`,`f_roleName`) VALUES(:appName,:scopeId,:roleName);",
                                                {{":appName", MAKE_VAR(STRING, applicationScope.appName)},
                                                 {":scopeId", MAKE_VAR(STRING, applicationScope.id)},
                                                 {":roleName", MAKE_VAR(STRING, roleName)}});
+
+    if (success)
+    {
+        _parent->logApplicationScopesSecurityEvent(applicationScope.appName, applicationScope.id,roleName, SecurityEventAction::ASSIGN_ROLE, "Application scope added to role", performedBy, clientDetails);
+    }
+
+    return success;
 }
 
-bool IdentityManager_DB::AuthController_DB::removeApplicationScopeFromRole(const ApplicationScope &applicationScope, const std::string &roleName, bool lock)
+bool IdentityManager_DB::AuthController_DB::removeApplicationScopeFromRole(const ClientDetails &clientDetails, const std::string &performedBy,const ApplicationScope &applicationScope, const std::string &roleName, bool lock)
 {
     bool ret = false;
     if (lock)
@@ -57,21 +78,34 @@ bool IdentityManager_DB::AuthController_DB::removeApplicationScopeFromRole(const
                                               {{":appName", MAKE_VAR(STRING, applicationScope.appName)},
                                                {":scopeId", MAKE_VAR(STRING, applicationScope.id)},
                                                {":roleName", MAKE_VAR(STRING, roleName)}});
+
+    if (ret)
+    {
+        _parent->logApplicationScopesSecurityEvent(applicationScope.appName, applicationScope.id,roleName, SecurityEventAction::REVOKE_ROLE, "Application scope removed from role", performedBy, clientDetails);
+    }
+
     if (lock)
         _parent->m_mutex.unlock();
     return ret;
 }
 
-bool IdentityManager_DB::AuthController_DB::addApplicationScopeToAccount(const ApplicationScope &applicationScope, const std::string &accountName)
+bool IdentityManager_DB::AuthController_DB::addApplicationScopeToAccount(const ClientDetails &clientDetails, const std::string &performedBy,const ApplicationScope &applicationScope, const std::string &accountName)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
-    return _parent->m_sqlConnector->qExecuteEx("INSERT INTO iam.applicationScopeAccounts (`f_appName`,`f_scopeId`,`f_accountName`) VALUES(:appName,:scopeId,:accountName);",
+    bool success = _parent->m_sqlConnector->qExecuteEx("INSERT INTO iam.applicationScopeAccounts (`f_appName`,`f_scopeId`,`f_accountName`) VALUES(:appName,:scopeId,:accountName);",
                                                {{":appName", MAKE_VAR(STRING, applicationScope.appName)},
                                                 {":scopeId", MAKE_VAR(STRING, applicationScope.id)},
                                                 {":accountName", MAKE_VAR(STRING, accountName)}});
+
+    if (success)
+    {
+        _parent->logApplicationScopesSecurityEvent(applicationScope.appName, applicationScope.id,accountName, SecurityEventAction::ASSIGN_ACCOUNT, "Application scope added to account", performedBy, clientDetails);
+    }
+
+    return success;
 }
 
-bool IdentityManager_DB::AuthController_DB::removeApplicationScopeFromAccount(const ApplicationScope &applicationScope, const std::string &accountName, bool lock)
+bool IdentityManager_DB::AuthController_DB::removeApplicationScopeFromAccount(const ClientDetails &clientDetails, const std::string &performedBy,const ApplicationScope &applicationScope, const std::string &accountName, bool lock)
 {
     bool ret = false;
     if (lock)
@@ -80,18 +114,31 @@ bool IdentityManager_DB::AuthController_DB::removeApplicationScopeFromAccount(co
                                               {{":appName", MAKE_VAR(STRING, applicationScope.appName)},
                                                {":scopeId", MAKE_VAR(STRING, applicationScope.id)},
                                                {":accountName", MAKE_VAR(STRING, accountName)}});
+
+    if (ret)
+    {
+        _parent->logApplicationScopesSecurityEvent(applicationScope.appName, applicationScope.id,accountName, SecurityEventAction::REVOKE_ACCOUNT, "Application scope removed from account", performedBy, clientDetails);
+    }
+
     if (lock)
         _parent->m_mutex.unlock();
     return ret;
 }
 
-bool IdentityManager_DB::AuthController_DB::updateApplicationScopeDescription(const ApplicationScope &applicationScope)
+bool IdentityManager_DB::AuthController_DB::updateApplicationScopeDescription(const ClientDetails &clientDetails, const std::string &performedBy,const ApplicationScope &applicationScope)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
-    return _parent->m_sqlConnector->qExecuteEx("UPDATE iam.applicationScopes SET `description`=:description WHERE `scopeId`=:scopeId AND `f_appName`=:appName;",
+    bool success = _parent->m_sqlConnector->qExecuteEx("UPDATE iam.applicationScopes SET `description`=:description WHERE `scopeId`=:scopeId AND `f_appName`=:appName;",
                                                {{":appName", MAKE_VAR(STRING, applicationScope.appName)},
                                                 {":scopeId", MAKE_VAR(STRING, applicationScope.id)},
                                                 {":description", MAKE_VAR(STRING, applicationScope.description)}});
+
+    if (success)
+    {
+        _parent->logApplicationScopesSecurityEvent(applicationScope.appName, applicationScope.id,"", SecurityEventAction::UPDATE, "Application scope description updated", performedBy, clientDetails);
+    }
+
+    return success;
 }
 
 std::string IdentityManager_DB::AuthController_DB::getApplicationScopeDescription(const ApplicationScope &applicationScope)

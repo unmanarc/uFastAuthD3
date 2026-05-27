@@ -5,7 +5,6 @@
 using namespace Mantids30;
 using namespace Mantids30::DataFormat;
 
-IdentityManager::IdentityManager() {}
 
 IdentityManager::~IdentityManager()
 {
@@ -55,11 +54,14 @@ bool IdentityManager::validateAccountForNewAccess(const std::string &accountName
 
 bool IdentityManager::initializeAdminAccountWithPassword(const std::string &accountName, std::string *adminPW, const uint32_t &schemeId, bool *alreadyExist)
 {
+    ClientDetails clientDetails;
+    std::string performedBy = "$SYS:INIT"; // nobody (initialization)
+
     bool r = true;
     if (!accounts->doesAccountExist(accountName))
     {
         r = r && accounts->createAdminAccount(accountName);
-        r = r && authController->setAccountPasswordOnScheme(accountName, adminPW, schemeId);
+        r = r && authController->setAccountPasswordOnScheme(clientDetails,performedBy, accountName, adminPW, schemeId);
         *alreadyExist = false;
     }
     else
@@ -72,10 +74,12 @@ bool IdentityManager::initializeAdminAccountWithPassword(const std::string &acco
 bool IdentityManager::initializeApplicationWithScheme(const std::string &appName, const std::string &appDescription, const std::string &appURL, const uint32_t &schemeId, const std::string &owner, bool *alreadyExist)
 {
     bool r = true;
+    ClientDetails clientDetails;
+    std::string performedBy = "$SYS:INIT"; // nobody (initialization)
 
     if (!applications->doesApplicationExist(appName))
     {
-        r = r && applications->addApplication(appName, appDescription, appURL, Mantids30::Helpers::Random::createRandomString(32), owner, Applications::ApplicationAttributes(), true);
+        r = r && applications->addApplication(clientDetails,performedBy, appName, appDescription, appURL, Mantids30::Helpers::Random::createRandomString(32), owner, Applications::ApplicationAttributes(), true);
         *alreadyExist = false;
     }
     else

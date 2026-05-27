@@ -90,7 +90,7 @@ API::APIReturn AdminPortalMethods_AccountCredentials::removeAccountCredentialSlo
     }
 
     // Delete the credential slot for the account
-    if (!Globals::getIdentityManager()->authController->removeAccountCredential(accountName, slotId))
+    if (!Globals::getIdentityManager()->authController->removeAccountCredential(authClientDetails,request.jwtToken->getSubject(),accountName, slotId))
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to delete the credential slot");
         return response;
@@ -121,7 +121,7 @@ API::APIReturn AdminPortalMethods_AccountCredentials::setCredentialLockedStatus(
     }
 
     // Block the credential slot for the account
-    if (!Globals::getIdentityManager()->authController->setCredentialLockedStatus(accountName, slotId, lockedStatus))
+    if (!Globals::getIdentityManager()->authController->setCredentialLockedStatus(authClientDetails,request.jwtToken->getSubject(), accountName, slotId, lockedStatus))
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to set the lock state on the credential slot");
         return response;
@@ -153,7 +153,7 @@ API::APIReturn AdminPortalMethods_AccountCredentials::setMustChangeCredential(vo
     }
 
     // Force credential expiration for the account slot
-    if (!Globals::getIdentityManager()->authController->setCredentialMustChange(accountName, slotId, mustChange))
+    if (!Globals::getIdentityManager()->authController->setCredentialMustChange(authClientDetails,request.jwtToken->getSubject(),accountName, slotId, mustChange))
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to change credential flag to change");
         return response;
@@ -177,7 +177,8 @@ API::APIReturn AdminPortalMethods_AccountCredentials::generateMasterPassword(voi
 
     // Generate a new master password for the account
     std::string newTempPassword;
-    bool ok = Globals::getIdentityManager()->authController->recoverAccountMasterCredential(accountName,&newTempPassword);
+    bool ok = Globals::getIdentityManager()->authController->recoverAccountMasterCredential(authClientDetails,request.jwtToken->getSubject(),
+                                                                                            accountName,&newTempPassword);
 
     if (!ok)
     {

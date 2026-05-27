@@ -33,21 +33,6 @@ void AdminPortalMethods_Applications::addEndpoints_Applications(std::shared_ptr<
     endpoints->addEndpoint(Endpoints::DELETE, "removeApplicationLoginRedirectURI",              SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"},   nullptr, &removeApplicationLoginRedirectURI);
     endpoints->addEndpoint(Endpoints::PATCH,  "updateWebLoginDefaultRedirectURIForApplication", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"},   nullptr, &updateWebLoginDefaultRedirectURIForApplication);
     endpoints->addEndpoint(Endpoints::PATCH,  "changeApplicationAdmin",                         SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"},   nullptr, &changeApplicationAdmin);
-
-    // Applications
-   /*
-    endpoints->addEndpoint(Endpoints::GET, "getApplicationDescription", &getApplicationDescription, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
-    endpoints->addEndpoint(Endpoints::GET, "listApplications", &listApplications, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
-    endpoints->addEndpoint(Endpoints::GET, "validateApplicationAccount", &validateApplicationAccount, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
-    endpoints->addEndpoint(Endpoints::GET, "listApplicationAccounts", &listApplicationAccounts, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
-    endpoints->addEndpoint(Endpoints::GET, "listAccountApplications", &listAccountApplications, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
-    endpoints->addEndpoint(Endpoints::GET, "getWebLoginJWTConfigFromApplication", &getWebLoginJWTConfigFromApplication, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
-    endpoints->addEndpoint(Endpoints::POST, "setWebLoginJWTSigningKeyForApplication", &setWebLoginJWTSigningKeyForApplication, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"});
-    endpoints->addEndpoint(Endpoints::GET, "getWebLoginJWTSigningKeyForApplication", &getWebLoginJWTSigningKeyForApplication, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
-    endpoints->addEndpoint(Endpoints::POST, "addWebLoginAllowedRedirectURIToApplication", &addWebLoginAllowedRedirectURIToApplication, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"});
-    endpoints->addEndpoint(Endpoints::POST, "removeWebLoginAllowedRedirectURIToApplication", &removeWebLoginAllowedRedirectURIToApplication, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"});
-    endpoints->addEndpoint(Endpoints::GET, "listWebLoginAllowedRedirectURIsFromApplication", &listWebLoginAllowedRedirectURIsFromApplication, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});
-    endpoints->addEndpoint(Endpoints::GET, "listWebLoginOriginUrlsFromApplication", &listWebLoginOriginUrlsFromApplication, nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"});*/
 }
 
 API::APIReturn AdminPortalMethods_Applications::searchApplications(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
@@ -74,7 +59,7 @@ API::APIReturn AdminPortalMethods_Applications::removeApplication(void *context,
         return response;
     }
 
-    if (!Globals::getIdentityManager()->applications->removeApplication(appName))
+    if (!Globals::getIdentityManager()->applications->removeApplication(authClientDetails, request.jwtToken->getSubject(),appName))
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Internal Error");
         return response;
@@ -121,7 +106,10 @@ API::APIReturn AdminPortalMethods_Applications::addApplication(void *context, co
     attribs.fromJSON((*request.inputJSON)["applicationAttributes"]);
 
     // Attempt to create the new application
-    if (!Globals::getIdentityManager()->applications->addApplication(JSON_ASSTRING(*request.inputJSON, "appName", ""),
+    if (!Globals::getIdentityManager()->applications->addApplication(
+                                                                        authClientDetails, request.jwtToken->getSubject(),
+
+                                                                     JSON_ASSTRING(*request.inputJSON, "appName", ""),
                                                                      JSON_ASSTRING(*request.inputJSON, "description", ""),
                                                                      JSON_ASSTRING(*request.inputJSON, "appURL", ""),
                                                                      JSON_ASSTRING(*request.inputJSON, "appKey", ""),
@@ -176,7 +164,7 @@ AdminPortalMethods_Applications::APIReturn AdminPortalMethods_Applications::chan
         return response;
     }
 
-    if (!Globals::getIdentityManager()->applications->changeApplicationAdmin(appName,accountName, JSON_ASBOOL(*request.inputJSON, "isAppAdmin", false) ))
+    if (!Globals::getIdentityManager()->applications->changeApplicationAdmin(authClientDetails, request.jwtToken->getSubject(),appName,accountName, JSON_ASBOOL(*request.inputJSON, "isAppAdmin", false) ))
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Internal Error");
         return getApplicationAccountDetails(appName);
@@ -258,13 +246,13 @@ API::APIReturn AdminPortalMethods_Applications::updateApplicationDetails(void *c
         return response;
     }
 
-    if (!Globals::getIdentityManager()->applications->updateApplicationAttributes(appName, attribs))
+    if (!Globals::getIdentityManager()->applications->updateApplicationAttributes(authClientDetails, request.jwtToken->getSubject(),appName, attribs))
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to update some application attributes.");
         return response;
     }
 
-    if (!Globals::getIdentityManager()->applications->updateApplicationDescription(appName, JSON_ASSTRING(*request.inputJSON, "description", "")))
+    if (!Globals::getIdentityManager()->applications->updateApplicationDescription(authClientDetails, request.jwtToken->getSubject(),appName, JSON_ASSTRING(*request.inputJSON, "description", "")))
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to update application description.");
     }
@@ -284,7 +272,7 @@ API::APIReturn AdminPortalMethods_Applications::updateApplicationAPIKey(void *co
         return response;
     }
 
-    if (!Globals::getIdentityManager()->applications->updateApplicationAPIKey(appName, JSON_ASSTRING(*request.inputJSON, "appKey", "")))
+    if (!Globals::getIdentityManager()->applications->updateApplicationAPIKey(authClientDetails, request.jwtToken->getSubject(),appName, JSON_ASSTRING(*request.inputJSON, "appKey", "")))
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to update application API key.");
     }
@@ -305,7 +293,7 @@ API::APIReturn AdminPortalMethods_Applications::updateWebLoginJWTConfigForApplic
         return response;
     }
 
-    if (!Globals::getIdentityManager()->applications->updateWebLoginJWTConfigForApplication(tokenInfo))
+    if (!Globals::getIdentityManager()->applications->updateWebLoginJWTConfigForApplication(authClientDetails, request.jwtToken->getSubject(),tokenInfo))
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to update web login JWT configuration.");
         return response;
@@ -329,7 +317,7 @@ API::APIReturn AdminPortalMethods_Applications::updateApplicationLoginCallbackUR
         return response;
     }
 
-    if (!Globals::getIdentityManager()->applications->setApplicationWebLoginCallbackURI(appName, callbackURI))
+    if (!Globals::getIdentityManager()->applications->setApplicationWebLoginCallbackURI(authClientDetails, request.jwtToken->getSubject(),appName, callbackURI))
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to update the callback URI.");
         return response;
@@ -352,7 +340,7 @@ API::APIReturn AdminPortalMethods_Applications::addApplicationLoginOrigin(void *
     }
 
 
-    if (!Globals::getIdentityManager()->applications->addWebLoginOriginURLToApplication(appName, JSON_ASSTRING(*request.inputJSON, "loginOrigin", "")))
+    if (!Globals::getIdentityManager()->applications->addWebLoginOriginURLToApplication(authClientDetails, request.jwtToken->getSubject(),appName, JSON_ASSTRING(*request.inputJSON, "loginOrigin", "")))
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to add login origin. Please check if the database is accessible or if the value already exists.");
         return response;
@@ -375,7 +363,7 @@ API::APIReturn AdminPortalMethods_Applications::removeApplicationLoginOrigin(voi
         return response;
     }
 
-    if (!Globals::getIdentityManager()->applications->removeWebLoginOriginURLToApplication(appName, JSON_ASSTRING(*request.inputJSON, "loginOrigin", "")))
+    if (!Globals::getIdentityManager()->applications->removeWebLoginOriginURLToApplication(authClientDetails, request.jwtToken->getSubject(),appName, JSON_ASSTRING(*request.inputJSON, "loginOrigin", "")))
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to remove login origin. Refresh and try again.");
         return response;
@@ -398,7 +386,7 @@ API::APIReturn AdminPortalMethods_Applications::addApplicationLoginRedirectURI(v
         return response;
     }
 
-    if (!Globals::getIdentityManager()->applications->addWebLoginAllowedRedirectURIToApplication(appName, JSON_ASSTRING(*request.inputJSON, "redirectURI", "")))
+    if (!Globals::getIdentityManager()->applications->addWebLoginAllowedRedirectURIToApplication(authClientDetails, request.jwtToken->getSubject(),appName, JSON_ASSTRING(*request.inputJSON, "redirectURI", "")))
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to add redirect URI. Please check if the database is accessible or if the value already exists.");
         return response;
@@ -421,7 +409,7 @@ API::APIReturn AdminPortalMethods_Applications::removeApplicationLoginRedirectUR
         return response;
     }
 
-    if (!Globals::getIdentityManager()->applications->removeWebLoginAllowedRedirectURIToApplication(appName,
+    if (!Globals::getIdentityManager()->applications->removeWebLoginAllowedRedirectURIToApplication(authClientDetails, request.jwtToken->getSubject(),appName,
                                                                                              JSON_ASSTRING(*request.inputJSON, "redirectURI", "")))
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to remove redirect URI. Refresh and try again.");
@@ -444,7 +432,7 @@ AdminPortalMethods_Applications::APIReturn AdminPortalMethods_Applications::upda
         return response;
     }
 
-    if (!Globals::getIdentityManager()->applications->updateWebLoginDefaultRedirectURIForApplication(appName,JSON_ASSTRING(*request.inputJSON, "redirectURI", "")))
+    if (!Globals::getIdentityManager()->applications->updateWebLoginDefaultRedirectURIForApplication(authClientDetails, request.jwtToken->getSubject(),appName,JSON_ASSTRING(*request.inputJSON, "redirectURI", "")))
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to set default redirect URI. Please verify the application name and URI are valid.");
         return response;
@@ -494,90 +482,3 @@ json AdminPortalMethods_Applications::getApplicationAccountDetails(const std::st
     }
     return payloadOut;
 }
-
-/*
-void AdminPortalMethods_Applications::getApplicationDescription(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
-{
-    (*response.responseJSON()) = Globals::getIdentityManager()->applications->getApplicationDescription(JSON_ASSTRING(*request.inputJSON, "appName", ""));
-}
-
-void AdminPortalMethods_Applications::getApplicationAPIKey(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
-{
-
-    payloadOut["appKey"] = Globals::getIdentityManager()->getApplicationAPIKey( JSON_ASSTRING(*request.inputJSON,"appName",""));
-    return payloadOut;
-}
-
-
-void AdminPortalMethods_Applications::listApplications(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
-{
-    (*response.responseJSON()) = Helpers::setToJSON(Globals::getIdentityManager()->applications->listApplications());
-}
-
-
-void AdminPortalMethods_Applications::validateApplicationAccount(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
-{
-    if (!Globals::getIdentityManager()->applications->validateApplicationAccount(JSON_ASSTRING(*request.inputJSON, "appName", ""), JSON_ASSTRING(*request.inputJSON, "accountName", "")))
-    {
-        response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Internal Error");
-    }
-}
-
-void AdminPortalMethods_Applications::listApplicationAccounts(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
-{
-    (*response.responseJSON()) = Helpers::setToJSON(Globals::getIdentityManager()->applications->listApplicationAccounts(JSON_ASSTRING(*request.inputJSON, "applicationName", "")));
-}
-
-void AdminPortalMethods_Applications::listAccountApplications(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
-{
-    (*response.responseJSON()) = Helpers::setToJSON(Globals::getIdentityManager()->applications->listAccountApplications(JSON_ASSTRING(*request.inputJSON, "accountName", "")));
-}
-
-void AdminPortalMethods_Applications::listWebLoginAllowedRedirectURIsFromApplication(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
-{
-    (*response.responseJSON()) = Helpers::listToJSON(Globals::getIdentityManager()->applications->listWebLoginAllowedRedirectURIsFromApplication(JSON_ASSTRING(*request.inputJSON, "appName", "")));
-}
-
-void AdminPortalMethods_Applications::listWebLoginOriginUrlsFromApplication(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
-{
-    (*response.responseJSON()) = Helpers::listToJSON(Globals::getIdentityManager()->applications->listWebLoginOriginUrlsFromApplication(JSON_ASSTRING(*request.inputJSON, "appName", "")));
-}
-
-
-void AdminPortalMethods_Applications::getWebLoginJWTConfigFromApplication(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
-{
-    json payloadOut;
-    std::string appName = JSON_ASSTRING(*request.inputJSON, "appName", "");
-
-    ApplicationTokenProperties tokenInfo = Globals::getIdentityManager()->applications->getWebLoginJWTConfigFromApplication(appName);
-
-    payloadOut["appName"] = tokenInfo.appName;
-    payloadOut["tokensConfiguration"] = tokenInfo.tokensConfiguration;
-    payloadOut["sessionInactivityTimeout"] = tokenInfo.sessionInactivityTimeout;
-    payloadOut["tokenType"] = tokenInfo.tokenType;
-    payloadOut["includeApplicationScopes"] = tokenInfo.includeApplicationScopes;
-    payloadOut["includeBasicAccountInfo"] = tokenInfo.includeBasicAccountInfo;
-    payloadOut["maintainRevocationAndLogoutInfo"] = tokenInfo.maintainRevocationAndLogoutInfo;
-    payloadOut["allowRefreshTokenRenovation"] = tokenInfo.allowRefreshTokenRenovation;
-
-    (*response.responseJSON()) = payloadOut;
-}
-
-void AdminPortalMethods_Applications::setWebLoginJWTSigningKeyForApplication(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
-{
-    std::string appName = JSON_ASSTRING(*request.inputJSON, "appName", "");
-    std::string signingKey = JSON_ASSTRING(*request.inputJSON, "signingKey", "");
-
-    if (!Globals::getIdentityManager()->applications->setWebLoginJWTSigningKeyForApplication(appName, signingKey))
-    {
-        response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Internal Error");
-    }
-}
-
-void AdminPortalMethods_Applications::getWebLoginJWTSigningKeyForApplication(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
-{
-    std::string appName = JSON_ASSTRING(*request.inputJSON, "appName", "");
-    std::string signingKey = Globals::getIdentityManager()->applications->getWebLoginJWTSigningKeyForApplication(appName);
-    (*response.responseJSON()) = signingKey;
-}
-*/

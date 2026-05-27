@@ -17,7 +17,7 @@ using namespace Mantids30::Memory;
 using namespace Mantids30::Database;
 using namespace Mantids30::Helpers;
 using namespace Mantids30;
-bool IdentityManager_DB::Applications_DB::addApplication(const std::string &appName, const std::string &applicationDescription, const std::string &appURL, const std::string &apiKey,
+bool IdentityManager_DB::Applications_DB::addApplication(const ClientDetails &clientDetails, const std::string &performedBy,const std::string &appName, const std::string &applicationDescription, const std::string &appURL, const std::string &apiKey,
                                                          const std::string &creatorAccountName, const ApplicationAttributes &appAttributes, bool initializeDefaultValues)
 {
     std::optional<uint32_t> defaultSchemeId = _parent->authController->getDefaultAuthScheme();
@@ -63,29 +63,39 @@ bool IdentityManager_DB::Applications_DB::addApplication(const std::string &appN
 
     if (tokenInsertSuccess && initializeDefaultValues)
     {
-        if (!setApplicationWebLoginCallbackURI(appName, appURL + "/auth/api/v1/callback"))
+        if (!setApplicationWebLoginCallbackURI(clientDetails, performedBy, appName, appURL + "/auth/api/v1/callback"))
             return false;
-        if (!addWebLoginOriginURLToApplication(appName, appURL))
+        if (!addWebLoginOriginURLToApplication(clientDetails, performedBy,appName, appURL))
             return false;
-        if (!addWebLoginAllowedRedirectURIToApplication(appName, appURL + "/"))
+        if (!addWebLoginAllowedRedirectURIToApplication(clientDetails, performedBy,appName, appURL + "/"))
             return false;
-        if (!updateWebLoginDefaultRedirectURIForApplication(appName, appURL + "/"))
+        if (!updateWebLoginDefaultRedirectURIForApplication(clientDetails, performedBy,appName, appURL + "/"))
             return false;
-        if (!_parent->applicationActivities->setApplicationActivities(appName, {{"LOGIN", {.description = "Main Login", .parentActivity = ""}}}))
+        if (!_parent->applicationActivities->setApplicationActivities(clientDetails, performedBy,appName, {{"LOGIN", {.description = "Main Login", .parentActivity = ""}}}))
             return false;
-        if (!_parent->applicationActivities->addAuthenticationSchemeToApplicationActivity(appName, "LOGIN", *defaultSchemeId))
+        if (!_parent->applicationActivities->addAuthenticationSchemeToApplicationActivity(clientDetails, performedBy,appName, "LOGIN", *defaultSchemeId))
             return false;
-        if (!_parent->applicationActivities->setApplicationActivityDefaultScheme(appName, "LOGIN", *defaultSchemeId))
+        if (!_parent->applicationActivities->setApplicationActivityDefaultScheme(clientDetails, performedBy,appName, "LOGIN", *defaultSchemeId))
             return false;
+    }
+
+    if (tokenInsertSuccess)
+    {
+        _parent->logApplicationSecurityEvent(appName, SecurityEventAction::CREATE, "Created application", performedBy, clientDetails);
     }
 
     return tokenInsertSuccess;
 }
 
-bool IdentityManager_DB::Applications_DB::removeApplication(const std::string &appName)
+bool IdentityManager_DB::Applications_DB::removeApplication(const ClientDetails &clientDetails, const std::string &performedBy,const std::string &appName)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
-    return _parent->m_sqlConnector->qExecuteEx("DELETE FROM iam.applications WHERE `appName`=:appName;", {{":appName", MAKE_VAR(STRING, appName)}});
+    bool result = _parent->m_sqlConnector->qExecuteEx("DELETE FROM iam.applications WHERE `appName`=:appName;", {{":appName", MAKE_VAR(STRING, appName)}});
+    if (result)
+    {
+        _parent->logApplicationSecurityEvent(appName, SecurityEventAction::DELETE, "Removed application", performedBy, clientDetails);
+    }
+    return result;
 }
 
 bool IdentityManager_DB::Applications_DB::doesApplicationExist(const std::string &appName)
@@ -96,16 +106,21 @@ bool IdentityManager_DB::Applications_DB::doesApplicationExist(const std::string
     return ret;
 }
 
-bool IdentityManager_DB::Applications_DB::updateApplicationAttributes(const std::string &appName, const ApplicationAttributes &appAttributes)
+bool IdentityManager_DB::Applications_DB::updateApplicationAttributes(const ClientDetails &clientDetails, const std::string &performedBy,const std::string &appName, const ApplicationAttributes &appAttributes)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
-    return _parent->m_sqlConnector->qExecuteEx("UPDATE iam.applications SET "
+    bool result = _parent->m_sqlConnector->qExecuteEx("UPDATE iam.applications SET "
                                                "`canUserAutoRegister`=:canUserAutoRegister, `appSyncEnabled`=:appSyncEnabled, "
                                                "`appSyncCanRetrieveAppAccountsList`=:appSyncCanRetrieveAppAccountsList WHERE `appName`=:appName;",
                                                {{":appName", MAKE_VAR(STRING, appName)},
                                                 {":canUserAutoRegister", MAKE_VAR(BOOL, appAttributes.canUserAutoRegister)},
                                                 {":appSyncEnabled", MAKE_VAR(BOOL, appAttributes.appSyncEnabled)},
                                                 {":appSyncCanRetrieveAppAccountsList", MAKE_VAR(BOOL, appAttributes.appSyncCanRetrieveAppAccountsList)}});
+    if (result)
+    {
+        _parent->logApplicationSecurityEvent(appName, SecurityEventAction::UPDATE, "Updated attributes: autoRegister=" + std::to_string(appAttributes.canUserAutoRegister) + ", syncEnabled=" + std::to_string(appAttributes.appSyncEnabled) + ", syncCanRetrieveAccounts=" + std::to_string(appAttributes.appSyncCanRetrieveAppAccountsList), performedBy, clientDetails);
+    }
+    return result;
 }
 
 std::optional<IdentityManager::Applications::ApplicationAttributes> IdentityManager_DB::Applications_DB::getApplicationAttributes(const std::string &appName)
@@ -157,18 +172,28 @@ std::string IdentityManager_DB::Applications_DB::getApplicationAPIKey(const std:
     return "";
 }
 
-bool IdentityManager_DB::Applications_DB::updateApplicationAPIKey(const std::string &appName, const std::string &apiKey)
+bool IdentityManager_DB::Applications_DB::updateApplicationAPIKey(const ClientDetails &clientDetails, const std::string &performedBy,const std::string &appName, const std::string &apiKey)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
-    return _parent->m_sqlConnector->qExecuteEx("UPDATE iam.applications SET `apiKey`=:apiKey WHERE `appName`=:appName;",
+    bool result = _parent->m_sqlConnector->qExecuteEx("UPDATE iam.applications SET `apiKey`=:apiKey WHERE `appName`=:appName;",
                                                {{":appName", MAKE_VAR(STRING, appName)}, {":apiKey", MAKE_VAR(STRING, Encoders::encodeToBase64Obf(apiKey))}});
+    if (result)
+    {
+        _parent->logApplicationSecurityEvent(appName, SecurityEventAction::UPDATE, "Updated API key", performedBy, clientDetails);
+    }
+    return result;
 }
 
-bool IdentityManager_DB::Applications_DB::updateApplicationDescription(const std::string &appName, const std::string &applicationDescription)
+bool IdentityManager_DB::Applications_DB::updateApplicationDescription(const ClientDetails &clientDetails, const std::string &performedBy,const std::string &appName, const std::string &applicationDescription)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
-    return _parent->m_sqlConnector->qExecuteEx("UPDATE iam.applications SET `appDescription`=:description WHERE `appName`=:appName;",
+    bool result = _parent->m_sqlConnector->qExecuteEx("UPDATE iam.applications SET `appDescription`=:description WHERE `appName`=:appName;",
                                                {{":appName", MAKE_VAR(STRING, appName)}, {":description", MAKE_VAR(STRING, applicationDescription)}});
+    if (result)
+    {
+        _parent->logApplicationSecurityEvent(appName, SecurityEventAction::UPDATE, "Updated description", performedBy, clientDetails);
+    }
+    return result;
 }
 
 std::string IdentityManager_DB::Applications_DB::getApplicationNameByAPIKey(const std::string &apiKey)
@@ -266,29 +291,42 @@ std::set<std::string> IdentityManager_DB::Applications_DB::listAccountApplicatio
     return ret;
 }
 
-bool IdentityManager_DB::Applications_DB::addAccountToApplication(const std::string &appName, const std::string &accountName)
+bool IdentityManager_DB::Applications_DB::addAccountToApplication(const ClientDetails &clientDetails, const std::string &performedBy,const std::string &appName, const std::string &accountName)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
-    return _parent->m_sqlConnector->qExecuteEx("INSERT INTO iam.applicationAccounts (`f_accountName`,`f_appName`) VALUES(:accountName,:appName);",
+    bool result = _parent->m_sqlConnector->qExecuteEx("INSERT INTO iam.applicationAccounts (`f_accountName`,`f_appName`) VALUES(:accountName,:appName);",
                                                {{":appName", MAKE_VAR(STRING, appName)}, {":accountName", MAKE_VAR(STRING, accountName)}});
+    if (result)
+    {
+        _parent->logApplicationSecurityEvent(appName, SecurityEventAction::ASSIGN_ACCOUNT, "Assigned account '" + accountName + "'", performedBy, clientDetails);
+    }
+    return result;
 }
 
-bool IdentityManager_DB::Applications_DB::removeAccountFromApplication(const std::string &appName, const std::string &accountName)
+bool IdentityManager_DB::Applications_DB::removeAccountFromApplication(const ClientDetails &clientDetails, const std::string &performedBy,const std::string &appName, const std::string &accountName)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
 
-    bool ret = false;
-    ret = _parent->m_sqlConnector->qExecuteEx("DELETE FROM iam.applicationAccounts WHERE `f_appName`=:appName AND `f_accountName`=:accountName;",
+    bool ret = _parent->m_sqlConnector->qExecuteEx("DELETE FROM iam.applicationAccounts WHERE `f_appName`=:appName AND `f_accountName`=:accountName;",
                                               {{":appName", MAKE_VAR(STRING, appName)}, {":accountName", MAKE_VAR(STRING, accountName)}});
+    if (ret)
+    {
+        _parent->logApplicationSecurityEvent(appName, SecurityEventAction::REVOKE_ACCOUNT, "Revoked account '" + accountName + "'", performedBy, clientDetails);
+    }
     return ret;
 }
 
-bool IdentityManager_DB::Applications_DB::changeApplicationAdmin(const std::string &appName, const std::string &accountName, bool isAppAdmin)
+bool IdentityManager_DB::Applications_DB::changeApplicationAdmin(const ClientDetails &clientDetails, const std::string &performedBy,const std::string &appName, const std::string &accountName, bool isAppAdmin)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
 
-    return _parent->m_sqlConnector->qExecuteEx("UPDATE iam.applicationAccounts SET `isAppAdmin`=:isAppAdmin WHERE `f_accountName`=:accountName AND `f_appName`=:appName;",
+    bool result = _parent->m_sqlConnector->qExecuteEx("UPDATE iam.applicationAccounts SET `isAppAdmin`=:isAppAdmin WHERE `f_accountName`=:accountName AND `f_appName`=:appName;",
                                                {{":appName", MAKE_VAR(STRING, appName)}, {":accountName", MAKE_VAR(STRING, accountName)}, {":isAppAdmin", MAKE_VAR(BOOL, isAppAdmin)}});
+    if (result)
+    {
+        _parent->logApplicationSecurityEvent(appName, SecurityEventAction::UPDATE, "Set account '" + accountName + "' as admin=" + std::to_string(isAppAdmin), performedBy, clientDetails);
+    }
+    return result;
 }
 
 Json::Value IdentityManager_DB::Applications_DB::searchApplications(const json &dataTablesFilters)
@@ -436,18 +474,28 @@ std::vector<AccountApplicationInfo> IdentityManager_DB::Applications_DB::listAcc
     return ret;
 }
 
-bool IdentityManager_DB::Applications_DB::addWebLoginAllowedRedirectURIToApplication(const std::string &appName, const std::string &loginRedirectURI)
+bool IdentityManager_DB::Applications_DB::addWebLoginAllowedRedirectURIToApplication(const ClientDetails &clientDetails, const std::string &performedBy,const std::string &appName, const std::string &loginRedirectURI)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
-    return _parent->m_sqlConnector->qExecuteEx("INSERT INTO iam.applicationsWebLoginAllowedRedirectURIs (`f_appName`, `loginRedirectURI`) VALUES (:appName, :loginRedirectURI);",
+    bool result = _parent->m_sqlConnector->qExecuteEx("INSERT INTO iam.applicationsWebLoginAllowedRedirectURIs (`f_appName`, `loginRedirectURI`) VALUES (:appName, :loginRedirectURI);",
                                                {{":appName", MAKE_VAR(STRING, appName)}, {":loginRedirectURI", MAKE_VAR(STRING, loginRedirectURI)}});
+    if (result)
+    {
+        _parent->logApplicationSecurityEvent(appName, SecurityEventAction::CREATE, "Added redirect URI '" + loginRedirectURI + "'", performedBy, clientDetails);
+    }
+    return result;
 }
 
-bool IdentityManager_DB::Applications_DB::removeWebLoginAllowedRedirectURIToApplication(const std::string &appName, const std::string &loginRedirectURI)
+bool IdentityManager_DB::Applications_DB::removeWebLoginAllowedRedirectURIToApplication(const ClientDetails &clientDetails, const std::string &performedBy,const std::string &appName, const std::string &loginRedirectURI)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
-    return _parent->m_sqlConnector->qExecuteEx("DELETE FROM iam.applicationsWebLoginAllowedRedirectURIs WHERE `f_appName`=:appName AND `loginRedirectURI`=:loginRedirectURI;",
+    bool result = _parent->m_sqlConnector->qExecuteEx("DELETE FROM iam.applicationsWebLoginAllowedRedirectURIs WHERE `f_appName`=:appName AND `loginRedirectURI`=:loginRedirectURI;",
                                                {{":appName", MAKE_VAR(STRING, appName)}, {":loginRedirectURI", MAKE_VAR(STRING, loginRedirectURI)}});
+    if (result)
+    {
+        _parent->logApplicationSecurityEvent(appName, SecurityEventAction::DELETE, "Removed redirect URI '" + loginRedirectURI + "'", performedBy, clientDetails);
+    }
+    return result;
 }
 
 std::list<std::string> IdentityManager_DB::Applications_DB::listWebLoginAllowedRedirectURIsFromApplication(const std::string &appName)
@@ -466,11 +514,16 @@ std::list<std::string> IdentityManager_DB::Applications_DB::listWebLoginAllowedR
     return redirectURIs;
 }
 
-bool IdentityManager_DB::Applications_DB::updateWebLoginDefaultRedirectURIForApplication(const std::string &appName, const std::string &loginRedirectURI)
+bool IdentityManager_DB::Applications_DB::updateWebLoginDefaultRedirectURIForApplication(const ClientDetails &clientDetails, const std::string &performedBy,const std::string &appName, const std::string &loginRedirectURI)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
-    return _parent->m_sqlConnector->qExecuteEx("INSERT OR REPLACE INTO iam.applicationsWebLoginDefaultRedirectURI (`f_appName`, `f_loginRedirectURI`) VALUES (:appName, :loginRedirectURI);",
+    bool result = _parent->m_sqlConnector->qExecuteEx("INSERT OR REPLACE INTO iam.applicationsWebLoginDefaultRedirectURI (`f_appName`, `f_loginRedirectURI`) VALUES (:appName, :loginRedirectURI);",
                                                {{":appName", MAKE_VAR(STRING, appName)}, {":loginRedirectURI", MAKE_VAR(STRING, loginRedirectURI)}});
+    if (result)
+    {
+        _parent->logApplicationSecurityEvent(appName, SecurityEventAction::UPDATE, "Set default redirect URI '" + loginRedirectURI + "'", performedBy, clientDetails);
+    }
+    return result;
 }
 
 std::string IdentityManager_DB::Applications_DB::getWebLoginDefaultRedirectURIForApplication(const std::string &appName)
@@ -486,7 +539,7 @@ std::string IdentityManager_DB::Applications_DB::getWebLoginDefaultRedirectURIFo
     return "";
 }
 
-bool IdentityManager_DB::Applications_DB::setApplicationWebLoginCallbackURI(const std::string &appName, const std::string &callbackURI)
+bool IdentityManager_DB::Applications_DB::setApplicationWebLoginCallbackURI(const ClientDetails &clientDetails, const std::string &performedBy,const std::string &appName, const std::string &callbackURI)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
 
@@ -498,6 +551,11 @@ bool IdentityManager_DB::Applications_DB::setApplicationWebLoginCallbackURI(cons
     // Insert new callback URI
     ret = _parent->m_sqlConnector->qExecuteEx("INSERT INTO iam.applicationsLoginCallbackURI (`f_appName`, `callbackURI`) VALUES (:appName, :callbackURI);",
                                               {{":appName", MAKE_VAR(STRING, appName)}, {":callbackURI", MAKE_VAR(STRING, callbackURI)}});
+
+    if (ret)
+    {
+        _parent->logApplicationSecurityEvent(appName, SecurityEventAction::UPDATE, "Set callback URI '" + callbackURI + "'", performedBy, clientDetails);
+    }
 
     return ret;
 }
@@ -517,18 +575,28 @@ std::string IdentityManager_DB::Applications_DB::getApplicationCallbackURI(const
     return "";
 }
 
-bool IdentityManager_DB::Applications_DB::addWebLoginOriginURLToApplication(const std::string &appName, const std::string &originUrl)
+bool IdentityManager_DB::Applications_DB::addWebLoginOriginURLToApplication(const ClientDetails &clientDetails, const std::string &performedBy,const std::string &appName, const std::string &originUrl)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
-    return _parent->m_sqlConnector->qExecuteEx("INSERT INTO iam.applicationsWebLoginOrigins (`f_appName`, `originUrl`) VALUES (:appName, :originUrl);",
+    bool result = _parent->m_sqlConnector->qExecuteEx("INSERT INTO iam.applicationsWebLoginOrigins (`f_appName`, `originUrl`) VALUES (:appName, :originUrl);",
                                                {{":appName", MAKE_VAR(STRING, appName)}, {":originUrl", MAKE_VAR(STRING, originUrl)}});
+    if (result)
+    {
+        _parent->logApplicationSecurityEvent(appName, SecurityEventAction::CREATE, "Added origin URL '" + originUrl + "'", performedBy, clientDetails);
+    }
+    return result;
 }
 
-bool IdentityManager_DB::Applications_DB::removeWebLoginOriginURLToApplication(const std::string &appName, const std::string &originUrl)
+bool IdentityManager_DB::Applications_DB::removeWebLoginOriginURLToApplication(const ClientDetails &clientDetails, const std::string &performedBy,const std::string &appName, const std::string &originUrl)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
-    return _parent->m_sqlConnector->qExecuteEx("DELETE FROM iam.applicationsWebLoginOrigins WHERE `f_appName`=:appName AND `originUrl`=:originUrl;",
+    bool result = _parent->m_sqlConnector->qExecuteEx("DELETE FROM iam.applicationsWebLoginOrigins WHERE `f_appName`=:appName AND `originUrl`=:originUrl;",
                                                {{":appName", MAKE_VAR(STRING, appName)}, {":originUrl", MAKE_VAR(STRING, originUrl)}});
+    if (result)
+    {
+        _parent->logApplicationSecurityEvent(appName, SecurityEventAction::DELETE, "Removed origin URL '" + originUrl + "'", performedBy, clientDetails);
+    }
+    return result;
 }
 
 std::list<std::string> IdentityManager_DB::Applications_DB::listWebLoginOriginUrlsFromApplication(const std::string &appName)
@@ -546,10 +614,10 @@ std::list<std::string> IdentityManager_DB::Applications_DB::listWebLoginOriginUr
     return originUrls;
 }
 
-bool IdentityManager_DB::Applications_DB::updateWebLoginJWTConfigForApplication(const ApplicationTokenProperties &tokenInfo)
+bool IdentityManager_DB::Applications_DB::updateWebLoginJWTConfigForApplication(const ClientDetails &clientDetails, const std::string &performedBy,const ApplicationTokenProperties &tokenInfo)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
-    return _parent->m_sqlConnector->qExecuteEx("UPDATE iam.applicationsJWTTokenConfig SET "
+    bool result = _parent->m_sqlConnector->qExecuteEx("UPDATE iam.applicationsJWTTokenConfig SET "
                                                "sessionInactivityTimeout=:sessionInactivityTimeout, "
                                                "tokenType=:tokenType, includeApplicationScopes=:includeApplicationScopes, "
                                                "includeBasicAccountInfo=:includeBasicAccountInfo, allowRefreshTokenRenovation=:allowRefreshTokenRenovation, "
@@ -564,6 +632,11 @@ bool IdentityManager_DB::Applications_DB::updateWebLoginJWTConfigForApplication(
                                                 {":allowRefreshTokenRenovation", MAKE_VAR(BOOL, tokenInfo.allowRefreshTokenRenovation)},
                                                 {":tokensConfigJSON", MAKE_VAR(STRING, tokenInfo.tokensConfiguration.toStyledString())},
                                                 {":maintainRevocationAndLogoutInfo", MAKE_VAR(BOOL, tokenInfo.maintainRevocationAndLogoutInfo)}});
+    if (result)
+    {
+        _parent->logApplicationSecurityEvent(tokenInfo.appName, SecurityEventAction::UPDATE, "Updated JWT token config", performedBy, clientDetails);
+    }
+    return result;
 }
 
 ApplicationTokenProperties IdentityManager_DB::Applications_DB::getWebLoginJWTConfigFromApplication(const std::string &appName)
@@ -598,7 +671,7 @@ ApplicationTokenProperties IdentityManager_DB::Applications_DB::getWebLoginJWTCo
     return tokenInfo;
 }
 
-bool IdentityManager_DB::Applications_DB::setWebLoginJWTSigningKeyForApplication(const std::string &appName, const std::string &signingKey)
+bool IdentityManager_DB::Applications_DB::setWebLoginJWTSigningKeyForApplication(const ClientDetails &clientDetails, const std::string &performedBy,const std::string &appName, const std::string &signingKey)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
     return _parent->m_sqlConnector->qExecuteEx("UPDATE iam.applicationsJWTTokenConfig SET accessTokenSigningKey=:signingKey WHERE f_appName=:appName;",
@@ -619,7 +692,7 @@ std::string IdentityManager_DB::Applications_DB::getWebLoginJWTSigningKeyForAppl
     return "";
 }
 
-bool IdentityManager_DB::Applications_DB::setWebLoginJWTValidationKeyForApplication(const std::string &appName, const std::string &validationKey)
+bool IdentityManager_DB::Applications_DB::setWebLoginJWTValidationKeyForApplication(const ClientDetails &clientDetails, const std::string &performedBy,const std::string &appName, const std::string &validationKey)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
     return _parent->m_sqlConnector->qExecuteEx("UPDATE iam.applicationsJWTTokenConfig SET accessTokenValidationKey=:validationKey WHERE f_appName=:appName;",
