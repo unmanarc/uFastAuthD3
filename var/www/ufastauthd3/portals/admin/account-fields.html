@@ -100,7 +100,7 @@
           let b64FieldName = window.btoa(row.fieldName);
           return `<div style="text-align: right;">
                       <button type="button" class="btn btn-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#modalEditField" onclick="editAccoundField('${b64FieldName}')"><i class="fas fa-edit"></i></button>
-                      <button type="button" class="btn btn-secondary btn-sm" onclick="javascript:deleteField(${b64FieldName});"><i class="fas fa-trash"></i></button>
+                      <button type="button" class="btn btn-secondary btn-sm" onclick="javascript:deleteField('${b64FieldName}');"><i class="fas fa-trash"></i></button>
                   </div>`;
         }
       }

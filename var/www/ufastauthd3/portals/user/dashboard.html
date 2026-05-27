@@ -219,7 +219,7 @@
    * Password Activity DataTable (IP Log)
    */
   const accountPasswordActivity = new DataTable('#accountPasswordActivity', {
-    ajax: { url: "/api/v1/searchAccountPasswordActivity", type: 'GET', data: function (d) { return JSON.stringify(d); } },
+    ajax: { url: "/api/v1/searchAccountCredentialsActivity", type: 'GET', data: function (d) { return JSON.stringify(d); } },
     processing: true,
     serverSide: true,
     order: [[0, 'desc']],
