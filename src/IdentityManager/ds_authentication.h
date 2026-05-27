@@ -197,19 +197,19 @@ enum class AuthenticationResult : uint16_t
     NOT_IMPLEMENTED = 501,         // AUTHENTICATION NOT IMPLEMENTED YET :(
     DUPLICATED_SESSION = 502,      // DUPLICATED SESSION ID
 
-    EXPIRED_CREDENTIAL = 100,      // VALIDATE, HOWEVER MUST CHANGE PASSWORD NOW!
-    EXPIRED_ACCOUNT = 102,         // ACCOUNT EXPIRED. NOT USABLE
-    DISABLED_ACCOUNT = 103,        // ACCOUNT DISABLED BY ADMIN.
-    UNCONFIRMED_ACCOUNT = 104,     // ACCOUNT NOT CONFIRMED YET.
-    BAD_ACCOUNT = 105,             // INVALID OR NON-EXISTENT ACCOUNT
-    BAD_PASSWORD = 106,            // AUTHENTICATION FAILED.
-    PASSWORD_INDEX_NOTFOUND = 107, // Authentication Slot SlotId not found.
-    AUTH_SCHEME_CHANGED = 108,     // Authentication scheme changed.
-    ACCOUNT_NOT_IN_APP = 109,      // Account is not registered on the application
-    AUTH_SCHEME_EMPTY = 110,       // Authentication scheme is empty.
-    INACTIVE_ACCOUNT = 111,        // ACCOUNT INACTIVE. NOT USABLE
-    LOCKED_PASSWORD = 112,         // AUTHENTICATION FAILED (LOCKED PASSWORD).
-
+    EXPIRED_CREDENTIAL = 100,         // VALID, user is just warned about.
+    EXPIRED_ACCOUNT = 102,            // ACCOUNT EXPIRED. NOT USABLE
+    DISABLED_ACCOUNT = 103,           // ACCOUNT DISABLED BY ADMIN.
+    UNCONFIRMED_ACCOUNT = 104,        // ACCOUNT NOT CONFIRMED YET.
+    BAD_ACCOUNT = 105,                // INVALID OR NON-EXISTENT ACCOUNT
+    AUTHENTICATION_FAILED = 106,      // AUTHENTICATION FAILED (Bad Password).
+    CREDENTIAL_INDEX_NOT_FOUND = 107, // Authentication Slot SlotId not found.
+    AUTH_SCHEME_CHANGED = 108,        // Authentication scheme changed.
+    ACCOUNT_NOT_IN_APP = 109,         // Account is not registered on the application
+    AUTH_SCHEME_EMPTY = 110,          // Authentication scheme is empty.
+    INACTIVE_ACCOUNT = 111,           // ACCOUNT INACTIVE. NOT USABLE
+    LOCKED_CREDENTIAL = 112,          // AUTHENTICATION FAILED (LOCKED CREDENTIAL).
+    MUST_CHANGE_CREDENTIAL = 113,     // AUTHENTICATION OK, but CREDENTIAL NEED TO BE CHANGED NOW TO UNLOCK.
 
     BAD_PARAMETERS = 993,          // BAD PARAMETERS.
     INVALID_DOMAIN = 994,          // AUTHENTICATION FAILED.
@@ -231,30 +231,31 @@ enum class AuthenticationResult : uint16_t
 {
     switch (result)
     {
-    case AuthenticationResult::AUTHENTICATED:            return "Authenticated";
-    case AuthenticationResult::INTERNAL_ERROR:           return "Authentication Internal Error";
-    case AuthenticationResult::NOT_IMPLEMENTED:          return "Authentication not implemented yet";
-    case AuthenticationResult::DUPLICATED_SESSION:       return "Session ID Duplicated Error";
-    case AuthenticationResult::EXPIRED_CREDENTIAL:         return "Password Expired";
-    case AuthenticationResult::EXPIRED_ACCOUNT:          return "Account Expired";
-    case AuthenticationResult::INACTIVE_ACCOUNT:         return "Account is inactive";
-    case AuthenticationResult::DISABLED_ACCOUNT:         return "Account Disabled";
-    case AuthenticationResult::UNCONFIRMED_ACCOUNT:      return "Account Unconfirmed";
-    case AuthenticationResult::BAD_ACCOUNT:              return "Invalid Account";
-    case AuthenticationResult::BAD_PASSWORD:             return "Invalid Password";
-    case AuthenticationResult::LOCKED_PASSWORD:          return "Password Locked";
-    case AuthenticationResult::PASSWORD_INDEX_NOTFOUND:  return "Authentication Slot ID Not Found";
-    case AuthenticationResult::AUTH_SCHEME_CHANGED:      return "Authentication Scheme Changed";
-    case AuthenticationResult::ACCOUNT_NOT_IN_APP:       return "Account not registered in the application";
-    case AuthenticationResult::AUTH_SCHEME_EMPTY:        return "Authentication Scheme is Empty";
-    case AuthenticationResult::BAD_PARAMETERS:           return "Bad Parameters";
-    case AuthenticationResult::INVALID_DOMAIN:           return "Invalid domain name";
-    case AuthenticationResult::INVALID_AUTHENTICATOR:    return "Invalid or undefined authenticator";
-    case AuthenticationResult::SESSIONLIMITS_EXCEEDED:   return "Sessions limits exceeded";
-    case AuthenticationResult::ANSWER_TIMEDOUT:          return "Answer timed out";
-    case AuthenticationResult::EXPIRED:                  return "Expired authentication";
-    case AuthenticationResult::UNAUTHENTICATED:          return "Not authenticated yet";
-    default:                                             return "Unknown authentication result";
+    case AuthenticationResult::AUTHENTICATED:               return "Authenticated";
+    case AuthenticationResult::INTERNAL_ERROR:              return "Authentication Internal Error";
+    case AuthenticationResult::NOT_IMPLEMENTED:             return "Authentication not implemented yet";
+    case AuthenticationResult::DUPLICATED_SESSION:          return "Session ID Duplicated Error";
+    case AuthenticationResult::EXPIRED_CREDENTIAL:          return "Credential Expired";
+    case AuthenticationResult::EXPIRED_ACCOUNT:             return "Account Expired";
+    case AuthenticationResult::INACTIVE_ACCOUNT:            return "Account is inactive";
+    case AuthenticationResult::DISABLED_ACCOUNT:            return "Account Disabled";
+    case AuthenticationResult::UNCONFIRMED_ACCOUNT:         return "Account Unconfirmed";
+    case AuthenticationResult::BAD_ACCOUNT:                 return "Invalid Account";
+    case AuthenticationResult::AUTHENTICATION_FAILED:       return "Authentication Failed";
+    case AuthenticationResult::LOCKED_CREDENTIAL:           return "Credential Locked";
+    case AuthenticationResult::CREDENTIAL_INDEX_NOT_FOUND:  return "Authentication Slot ID Not Found";
+    case AuthenticationResult::AUTH_SCHEME_CHANGED:         return "Authentication Scheme Changed";
+    case AuthenticationResult::ACCOUNT_NOT_IN_APP:          return "Account not registered in the application";
+    case AuthenticationResult::AUTH_SCHEME_EMPTY:           return "Authentication Scheme is Empty";
+    case AuthenticationResult::BAD_PARAMETERS:              return "Bad Parameters";
+    case AuthenticationResult::INVALID_DOMAIN:              return "Invalid domain name";
+    case AuthenticationResult::INVALID_AUTHENTICATOR:       return "Invalid or undefined authenticator";
+    case AuthenticationResult::SESSIONLIMITS_EXCEEDED:      return "Sessions limits exceeded";
+    case AuthenticationResult::ANSWER_TIMEDOUT:             return "Answer timed out";
+    case AuthenticationResult::EXPIRED:                     return "Expired authentication";
+    case AuthenticationResult::UNAUTHENTICATED:             return "Not authenticated yet";
+    case AuthenticationResult::MUST_CHANGE_CREDENTIAL:      return "Credential Authenticated and must be changed.";
+    default:                                                return "Unknown authentication result";
     }
 }
 
