@@ -200,32 +200,6 @@ std::map<uint32_t, Credential> IdentityManager::AuthController::getAccountAllCre
     return r;
 }
 
-/*
-std::map<uint32_t,AuthenticationSlotDetails> IdentityManager::AuthController::getAccountAuthenticationSlotsUsedForLogin(const std::string &accountName)
-{
-    std::map<uint32_t,AuthenticationSlotDetails> r;
-    std::set<uint32_t> slotIdsRequiredForLogin = getAuthenticationSlotsRequiredForLogin();
-
-    if (slotIdsRequiredForLogin.empty())
-    {
-        // Weird... could even be a database error... add impossible's r.
-        r[0xFFFFFFFF] = AuthenticationSlotDetails();
-        return r;
-    }
-
-    std::map<uint32_t,AuthenticationSlotDetails> authenticationSlots = listAuthenticationSlots();
-
-    for (const auto & slotId : listUsedAuthenticationSlotsOnAccount(accountName))
-    {
-        if (slotIdsRequiredForLogin.find(slotId)!=slotIdsRequiredForLogin.end() && authenticationSlots.find(slotId)!=authenticationSlots.end())
-        {
-            r[slotId] = authenticationSlots[slotId];
-        }
-    }
-
-    return r;
-}*/
-
 // TODO: this can only be called when authenticated.
 bool IdentityManager::AuthController::changeAccountAuthenticatedCredential(const ClientDetails &clientInfo, const std::string &performedBy, const std::string &accountName, uint32_t slotId, const std::string &sCurrentPassword, const Credential &passwordData,
                                                                            Mode authMode, const std::string &challengeSalt)
@@ -424,7 +398,7 @@ json IdentityManager::AuthController::getApplicableAuthenticationSchemesForAccou
     // Initialize the result JSON
     json r;
     r["defaultScheme"] = Json::nullValue;
-    //r["availableSchemes"] = Json::objectValue;
+    r["availableSchemes"] = Json::objectValue;
 
     std::map<uint32_t, std::string> allSchemes = listAuthenticationSchemes();
 
@@ -435,15 +409,19 @@ json IdentityManager::AuthController::getApplicableAuthenticationSchemesForAccou
         if (defaultSchemeId.has_value())
         {
             std::vector<AuthenticationSchemeUsedSlot> slots = listAuthenticationSlotsUsedByScheme(*defaultSchemeId);
-            int i = 0;
-            r["defaultScheme"] = *defaultSchemeId;
-            r["availableSchemes"][*defaultSchemeId]["description"] = allSchemes[*defaultSchemeId];
-            for (const AuthenticationSchemeUsedSlot &slot : slots)
+            r["defaultScheme"] = std::to_string(*defaultSchemeId);
+
+            // Create the scheme as a properly structured object
+            json currentScheme;
+            currentScheme["description"] = allSchemes[*defaultSchemeId];
+
+            // Find the first available slot for this scheme
+            if (!slots.empty())
             {
-                r["availableSchemes"]["firstSlot"] = slot.toJSON();
-                break;
+                currentScheme["firstSlot"] = slots.begin()->toJSON();
             }
-            // Add default scheme's slots as empty
+
+            r["availableSchemes"][std::to_string(*defaultSchemeId)] = currentScheme;
         }
         return r;
     }
