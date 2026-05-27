@@ -77,7 +77,7 @@ AuthenticationResult CredentialValidator::validateStoredCredential(const std::st
     switch (authMode)
     {
     case MODE_PLAIN:
-        r = storedCredential.hash == toCompare ? AuthenticationResult::AUTHENTICATED : AuthenticationResult::BAD_PASSWORD; // 1-1 comparisson
+        r = storedCredential.hash == toCompare ? AuthenticationResult::AUTHENTICATED : AuthenticationResult::AUTHENTICATION_FAILED; // 1-1 comparisson
         break;
     case MODE_CHALLENGE:
         r = validateChallenge(storedCredential.hash, passwordInput, challengeSalt);
@@ -94,7 +94,7 @@ skipAuthMode:;
 
 AuthenticationResult CredentialValidator::validateChallenge(const std::string &passwordFromDB, const std::string &challengeInput, const std::string &challengeSalt)
 {
-    return challengeInput == Mantids30::Helpers::Crypto::calcSHA256(passwordFromDB + challengeSalt) ? AuthenticationResult::AUTHENTICATED : AuthenticationResult::BAD_PASSWORD;
+    return challengeInput == Mantids30::Helpers::Crypto::calcSHA256(passwordFromDB + challengeSalt) ? AuthenticationResult::AUTHENTICATED : AuthenticationResult::AUTHENTICATION_FAILED;
 }
 
 AuthenticationResult CredentialValidator::validateGAuth(const std::string &accountName, const std::string &seed, const std::string &tokenInput)
@@ -117,7 +117,7 @@ AuthenticationResult CredentialValidator::validateGAuth(const std::string &accou
             if (elapsedSeconds < 90)
             {
                 // Token Already Used.
-                return AuthenticationResult::BAD_PASSWORD;
+                return AuthenticationResult::AUTHENTICATION_FAILED;
             }
         }
     }
@@ -136,7 +136,7 @@ AuthenticationResult CredentialValidator::validateGAuth(const std::string &accou
     }
     else
     {
-        return AuthenticationResult::BAD_PASSWORD;
+        return AuthenticationResult::AUTHENTICATION_FAILED;
     }
 }
 

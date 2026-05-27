@@ -216,8 +216,8 @@ API::APIReturn LoginPortal_AuthMethods::authorize(void *context, const RequestPa
     if (authContext->currentSlotId == std::nullopt || request.clientRequest->getCookie("AccessToken") != "")
     {
         // You don´t need to authorize anything else! it's already authenticated.
-        response.setError(HTTP::Status::S_401_UNAUTHORIZED, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::BAD_PASSWORD)),
-                          authResultToString(AuthenticationResult::BAD_PASSWORD));
+        response.setError(HTTP::Status::S_401_UNAUTHORIZED, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::AUTHENTICATION_FAILED)),
+                          authResultToString(AuthenticationResult::AUTHENTICATION_FAILED));
         return response;
     }
 
@@ -282,7 +282,7 @@ API::APIReturn LoginPortal_AuthMethods::authorize(void *context, const RequestPa
         if (authRetCode == AuthenticationResult::ACCOUNT_NOT_IN_APP)
         {
             // Prevent user/app enumeration:
-            authRetCode = AuthenticationResult::BAD_PASSWORD;
+            authRetCode = AuthenticationResult::AUTHENTICATION_FAILED;
         }
 
         // Use the same auth... don't go to the next.

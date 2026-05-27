@@ -156,7 +156,7 @@ public:
      *         - `ACCOUNT_NOT_IN_APP`: Account is not registered for the specified application.
      *         - `AUTH_SCHEME_EMPTY`: The authentication scheme has no associated slots.
      *         - `AUTH_SCHEME_CHANGED`: The slot scheme has changed, indicating a possible race condition.
-     *         - `PASSWORD_INDEX_NOTFOUND`: The specified slot ID or index is invalid.
+     *         - `CREDENTIAL_INDEX_NOT_FOUND`: The specified slot ID or index is invalid.
      *         - `BAD_ACCOUNT`: The account does not exist or is invalid.
      *         - `UNCONFIRMED_ACCOUNT`: The account is not confirmed.
      *         - `DISABLED_ACCOUNT`: The account is disabled or blocked.

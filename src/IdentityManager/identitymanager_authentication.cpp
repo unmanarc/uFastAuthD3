@@ -100,7 +100,7 @@ AuthenticationResult IdentityManager::AuthController::authenticateCredential(con
         if (accountFound == false)
             ret = AuthenticationResult::BAD_ACCOUNT;
         else if (authSlotFound == false)
-            ret = AuthenticationResult::PASSWORD_INDEX_NOTFOUND;
+            ret = AuthenticationResult::CREDENTIAL_INDEX_NOT_FOUND;
         else
         {
             std::optional<std::pair<time_t, std::string>> lastLogin = getAccountLastAccess(accountName);
@@ -139,10 +139,10 @@ AuthenticationResult IdentityManager::AuthController::authenticateCredential(con
                 return AuthenticationResult::INACTIVE_ACCOUNT;
 
             else if ( pStoredCredentialData.hasExceededMaxAttempts(m_authenticationPolicy) )
-                return AuthenticationResult::LOCKED_PASSWORD;
+                return AuthenticationResult::LOCKED_CREDENTIAL;
 
             else if ( pStoredCredentialData.isLocked )
-                return AuthenticationResult::LOCKED_PASSWORD;
+                return AuthenticationResult::LOCKED_CREDENTIAL;
 
             else
             {
