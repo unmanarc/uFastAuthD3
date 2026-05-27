@@ -196,18 +196,21 @@ enum class AuthenticationResult : uint16_t
     INTERNAL_ERROR = 500,          // INTERNAL ERROR (OTHER)
     NOT_IMPLEMENTED = 501,         // AUTHENTICATION NOT IMPLEMENTED YET :(
     DUPLICATED_SESSION = 502,      // DUPLICATED SESSION ID
-    EXPIRED_PASSWORD = 100,        // VALIDATE, HOWEVER MUST CHANGE PASSWORD NOW!
+
+    EXPIRED_CREDENTIAL = 100,      // VALIDATE, HOWEVER MUST CHANGE PASSWORD NOW!
     EXPIRED_ACCOUNT = 102,         // ACCOUNT EXPIRED. NOT USABLE
-    INACTIVE_ACCOUNT = 111,        // ACCOUNT INACTIVE. NOT USABLE
     DISABLED_ACCOUNT = 103,        // ACCOUNT DISABLED BY ADMIN.
     UNCONFIRMED_ACCOUNT = 104,     // ACCOUNT NOT CONFIRMED YET.
     BAD_ACCOUNT = 105,             // INVALID OR NON-EXISTENT ACCOUNT
     BAD_PASSWORD = 106,            // AUTHENTICATION FAILED.
-    LOCKED_PASSWORD = 112,         // AUTHENTICATION FAILED (LOCKED PASSWORD).
     PASSWORD_INDEX_NOTFOUND = 107, // Authentication Slot SlotId not found.
     AUTH_SCHEME_CHANGED = 108,     // Authentication scheme changed.
     ACCOUNT_NOT_IN_APP = 109,      // Account is not registered on the application
     AUTH_SCHEME_EMPTY = 110,       // Authentication scheme is empty.
+    INACTIVE_ACCOUNT = 111,        // ACCOUNT INACTIVE. NOT USABLE
+    LOCKED_PASSWORD = 112,         // AUTHENTICATION FAILED (LOCKED PASSWORD).
+
+
     BAD_PARAMETERS = 993,          // BAD PARAMETERS.
     INVALID_DOMAIN = 994,          // AUTHENTICATION FAILED.
     INVALID_AUTHENTICATOR = 995,
@@ -218,10 +221,10 @@ enum class AuthenticationResult : uint16_t
 };
 
 
-[[nodiscard]] inline bool IS_PASSWORD_AUTHENTICATED(AuthenticationResult result) noexcept
+[[nodiscard]] inline bool IS_AUTH_SUCCESSFUL(AuthenticationResult result) noexcept
 {
     return result == AuthenticationResult::AUTHENTICATED ||
-           result == AuthenticationResult::EXPIRED_PASSWORD;
+           result == AuthenticationResult::EXPIRED_CREDENTIAL;
 }
 
 [[nodiscard]] inline const char * authResultToString(AuthenticationResult result) noexcept
@@ -232,7 +235,7 @@ enum class AuthenticationResult : uint16_t
     case AuthenticationResult::INTERNAL_ERROR:           return "Authentication Internal Error";
     case AuthenticationResult::NOT_IMPLEMENTED:          return "Authentication not implemented yet";
     case AuthenticationResult::DUPLICATED_SESSION:       return "Session ID Duplicated Error";
-    case AuthenticationResult::EXPIRED_PASSWORD:         return "Password Expired";
+    case AuthenticationResult::EXPIRED_CREDENTIAL:         return "Password Expired";
     case AuthenticationResult::EXPIRED_ACCOUNT:          return "Account Expired";
     case AuthenticationResult::INACTIVE_ACCOUNT:         return "Account is inactive";
     case AuthenticationResult::DISABLED_ACCOUNT:         return "Account Disabled";

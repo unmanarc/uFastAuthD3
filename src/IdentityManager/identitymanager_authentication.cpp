@@ -23,7 +23,7 @@ void IdentityManager::AuthController::updateCredentialAuthStatus(const Authentic
                                                                    const ClientDetails &clientDetails)
 {
     // Register the change for max attempts...
-    if (!IS_PASSWORD_AUTHENTICATED(authResult))
+    if (!IS_AUTH_SUCCESSFUL(authResult))
     {
         // Increment the counter and disable the account according to the policy.
         if ((storedCredentialData.badAttempts + 1) >= m_authenticationPolicy.maxTries)
@@ -236,7 +236,7 @@ bool IdentityManager::AuthController::changeAccountAuthenticatedCredential(const
             // If the slotId has been initialized, authenticate the current credential.
             auto i = authenticateCredential(clientInfo, accountName, sCurrentPassword, slotId, authMode, challengeSalt);
             // Now take the authentication and add/change the credential
-            if (!(IS_PASSWORD_AUTHENTICATED(i)))
+            if (!(IS_AUTH_SUCCESSFUL(i)))
             {
                 // Change the requested index.
                 return false;
