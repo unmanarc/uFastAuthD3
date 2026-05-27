@@ -51,7 +51,7 @@ bool IdentityManager_DB::ApplicationActivities_DB::addApplicationActivity(const 
         }
     }
 
-    _parent->logApplicationActivitiesSecurityEvent(appName, activityName,std::nullopt, SecurityEventAction::CREATE, "New application activity added", performedBy, clientDetails);
+    _parent->logSecurityEventOnApplicationActivities(appName, activityName,std::nullopt, SecurityEventAction::CREATE, "New application activity added", performedBy, clientDetails);
 
     return true;
 }
@@ -65,7 +65,7 @@ bool IdentityManager_DB::ApplicationActivities_DB::removeApplicationActivity(con
     
     if (success)
     {
-        _parent->logApplicationActivitiesSecurityEvent(appName, activityName, std::nullopt, SecurityEventAction::DELETE, "Application activity removed", performedBy, clientDetails);
+        _parent->logSecurityEventOnApplicationActivities(appName, activityName, std::nullopt, SecurityEventAction::DELETE, "Application activity removed", performedBy, clientDetails);
     }
 
     return success;
@@ -152,7 +152,7 @@ bool IdentityManager_DB::ApplicationActivities_DB::removeAllApplicationActivitie
     
     if (success)
     {
-        _parent->logApplicationActivitiesSecurityEvent(appName, "", std::nullopt, SecurityEventAction::DELETE, "All application activities removed", performedBy, clientDetails);
+        _parent->logSecurityEventOnApplicationActivities(appName, "", std::nullopt, SecurityEventAction::DELETE, "All application activities removed", performedBy, clientDetails);
     }
 
     return success;
@@ -182,7 +182,7 @@ bool IdentityManager_DB::ApplicationActivities_DB::setApplicationActivityParentA
     if (success)
     {
         std::string desc = parentActivityName.empty() ? "Parent activity cleared" : ("Parent activity set to: " + parentActivityName);
-        _parent->logApplicationActivitiesSecurityEvent(appName, activityName, std::nullopt,  SecurityEventAction::UPDATE, desc, performedBy, clientDetails);
+        _parent->logSecurityEventOnApplicationActivities(appName, activityName, std::nullopt,  SecurityEventAction::UPDATE, desc, performedBy, clientDetails);
     }
     
     return success;
@@ -198,7 +198,7 @@ bool IdentityManager_DB::ApplicationActivities_DB::setApplicationActivityDescrip
     
     if (success)
     {
-        _parent->logApplicationActivitiesSecurityEvent(appName, activityName,std::nullopt,SecurityEventAction::UPDATE, "Application activity description updated", performedBy, clientDetails);
+        _parent->logSecurityEventOnApplicationActivities(appName, activityName,std::nullopt,SecurityEventAction::UPDATE, "Application activity description updated", performedBy, clientDetails);
     }
     
     return success;
@@ -297,7 +297,7 @@ bool IdentityManager_DB::ApplicationActivities_DB::setApplicationActivityDefault
     
     if (success)
     {
-        _parent->logApplicationActivitiesSecurityEvent(appName, activityName,schemeId, SecurityEventAction::SET_DEFAULT_ACTIVITY, "Application activity default scheme updated", performedBy, clientDetails);
+        _parent->logSecurityEventOnApplicationActivities(appName, activityName,schemeId, SecurityEventAction::SET_DEFAULT_ACTIVITY, "Application activity default scheme updated", performedBy, clientDetails);
     }
     
     return success;
@@ -337,7 +337,7 @@ bool IdentityManager_DB::ApplicationActivities_DB::addAuthenticationSchemeToAppl
 
     if (r)
     {
-        _parent->logApplicationActivitiesSecurityEvent(appName, activityName, schemeId,  SecurityEventAction::ASSIGN_SCHEME, "Authentication scheme added to application activity", performedBy, clientDetails);
+        _parent->logSecurityEventOnApplicationActivities(appName, activityName, schemeId,  SecurityEventAction::ASSIGN_SCHEME, "Authentication scheme added to application activity", performedBy, clientDetails);
     }
 
     if (lock)
@@ -357,7 +357,7 @@ bool IdentityManager_DB::ApplicationActivities_DB::removeAuthenticationSchemeFro
     
     if (success)
     {
-        _parent->logApplicationActivitiesSecurityEvent(appName, activityName, schemeId, SecurityEventAction::REVOKE_SCHEME, "Authentication scheme removed from application activity", performedBy, clientDetails);
+        _parent->logSecurityEventOnApplicationActivities(appName, activityName, schemeId, SecurityEventAction::REVOKE_SCHEME, "Authentication scheme removed from application activity", performedBy, clientDetails);
     }
     
     return success;

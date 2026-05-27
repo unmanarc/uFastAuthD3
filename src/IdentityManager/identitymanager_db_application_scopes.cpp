@@ -19,7 +19,7 @@ bool IdentityManager_DB::AuthController_DB::addApplicationScope(const ClientDeta
 
     if (success)
     {
-        _parent->logApplicationScopesSecurityEvent(applicationScope.appName, applicationScope.id,"", SecurityEventAction::CREATE, "New application scope added", performedBy, clientDetails);
+        _parent->logSecurityEventApplicationScopes(applicationScope.appName, applicationScope.id,"", SecurityEventAction::CREATE, "New application scope added", performedBy, clientDetails);
     }
 
     return success;
@@ -33,7 +33,7 @@ bool IdentityManager_DB::AuthController_DB::removeApplicationScope(const ClientD
 
     if (success)
     {
-        _parent->logApplicationScopesSecurityEvent(applicationScope.appName, applicationScope.id,"", SecurityEventAction::DELETE, "Application scope removed", performedBy, clientDetails);
+        _parent->logSecurityEventApplicationScopes(applicationScope.appName, applicationScope.id,"", SecurityEventAction::DELETE, "Application scope removed", performedBy, clientDetails);
     }
 
     return success;
@@ -63,7 +63,7 @@ bool IdentityManager_DB::AuthController_DB::addApplicationScopeToRole(const Clie
 
     if (success)
     {
-        _parent->logApplicationScopesSecurityEvent(applicationScope.appName, applicationScope.id,roleName, SecurityEventAction::ASSIGN_ROLE, "Application scope added to role", performedBy, clientDetails);
+        _parent->logSecurityEventApplicationScopes(applicationScope.appName, applicationScope.id,roleName, SecurityEventAction::ASSIGN_ROLE, "Application scope added to role", performedBy, clientDetails);
     }
 
     return success;
@@ -81,7 +81,7 @@ bool IdentityManager_DB::AuthController_DB::removeApplicationScopeFromRole(const
 
     if (ret)
     {
-        _parent->logApplicationScopesSecurityEvent(applicationScope.appName, applicationScope.id,roleName, SecurityEventAction::REVOKE_ROLE, "Application scope removed from role", performedBy, clientDetails);
+        _parent->logSecurityEventApplicationScopes(applicationScope.appName, applicationScope.id,roleName, SecurityEventAction::REVOKE_ROLE, "Application scope removed from role", performedBy, clientDetails);
     }
 
     if (lock)
@@ -99,7 +99,7 @@ bool IdentityManager_DB::AuthController_DB::addApplicationScopeToAccount(const C
 
     if (success)
     {
-        _parent->logApplicationScopesSecurityEvent(applicationScope.appName, applicationScope.id,accountName, SecurityEventAction::ASSIGN_ACCOUNT, "Application scope added to account", performedBy, clientDetails);
+        _parent->logSecurityEventApplicationScopes(applicationScope.appName, applicationScope.id,accountName, SecurityEventAction::ASSIGN_ACCOUNT, "Application scope added to account", performedBy, clientDetails);
     }
 
     return success;
@@ -117,7 +117,7 @@ bool IdentityManager_DB::AuthController_DB::removeApplicationScopeFromAccount(co
 
     if (ret)
     {
-        _parent->logApplicationScopesSecurityEvent(applicationScope.appName, applicationScope.id,accountName, SecurityEventAction::REVOKE_ACCOUNT, "Application scope removed from account", performedBy, clientDetails);
+        _parent->logSecurityEventApplicationScopes(applicationScope.appName, applicationScope.id,accountName, SecurityEventAction::REVOKE_ACCOUNT, "Application scope removed from account", performedBy, clientDetails);
     }
 
     if (lock)
@@ -135,7 +135,7 @@ bool IdentityManager_DB::AuthController_DB::updateApplicationScopeDescription(co
 
     if (success)
     {
-        _parent->logApplicationScopesSecurityEvent(applicationScope.appName, applicationScope.id,"", SecurityEventAction::UPDATE, "Application scope description updated", performedBy, clientDetails);
+        _parent->logSecurityEventApplicationScopes(applicationScope.appName, applicationScope.id,"", SecurityEventAction::UPDATE, "Application scope description updated", performedBy, clientDetails);
     }
 
     return success;

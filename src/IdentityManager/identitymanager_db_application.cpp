@@ -81,7 +81,7 @@ bool IdentityManager_DB::Applications_DB::addApplication(const ClientDetails &cl
 
     if (tokenInsertSuccess)
     {
-        _parent->logApplicationSecurityEvent(appName, SecurityEventAction::CREATE, "Created application", performedBy, clientDetails);
+        _parent->logSecurityEventOnApplications(appName, SecurityEventAction::CREATE, "Created application", performedBy, clientDetails);
     }
 
     return tokenInsertSuccess;
@@ -93,7 +93,7 @@ bool IdentityManager_DB::Applications_DB::removeApplication(const ClientDetails 
     bool result = _parent->m_sqlConnector->qExecuteEx("DELETE FROM iam.applications WHERE `appName`=:appName;", {{":appName", MAKE_VAR(STRING, appName)}});
     if (result)
     {
-        _parent->logApplicationSecurityEvent(appName, SecurityEventAction::DELETE, "Removed application", performedBy, clientDetails);
+        _parent->logSecurityEventOnApplications(appName, SecurityEventAction::DELETE, "Removed application", performedBy, clientDetails);
     }
     return result;
 }
@@ -118,7 +118,7 @@ bool IdentityManager_DB::Applications_DB::updateApplicationAttributes(const Clie
                                                 {":appSyncCanRetrieveAppAccountsList", MAKE_VAR(BOOL, appAttributes.appSyncCanRetrieveAppAccountsList)}});
     if (result)
     {
-        _parent->logApplicationSecurityEvent(appName, SecurityEventAction::UPDATE, "Updated attributes: autoRegister=" + std::to_string(appAttributes.canUserAutoRegister) + ", syncEnabled=" + std::to_string(appAttributes.appSyncEnabled) + ", syncCanRetrieveAccounts=" + std::to_string(appAttributes.appSyncCanRetrieveAppAccountsList), performedBy, clientDetails);
+        _parent->logSecurityEventOnApplications(appName, SecurityEventAction::UPDATE, "Updated attributes: autoRegister=" + std::to_string(appAttributes.canUserAutoRegister) + ", syncEnabled=" + std::to_string(appAttributes.appSyncEnabled) + ", syncCanRetrieveAccounts=" + std::to_string(appAttributes.appSyncCanRetrieveAppAccountsList), performedBy, clientDetails);
     }
     return result;
 }
@@ -179,7 +179,7 @@ bool IdentityManager_DB::Applications_DB::updateApplicationAPIKey(const ClientDe
                                                {{":appName", MAKE_VAR(STRING, appName)}, {":apiKey", MAKE_VAR(STRING, Encoders::encodeToBase64Obf(apiKey))}});
     if (result)
     {
-        _parent->logApplicationSecurityEvent(appName, SecurityEventAction::UPDATE, "Updated API key", performedBy, clientDetails);
+        _parent->logSecurityEventOnApplications(appName, SecurityEventAction::UPDATE, "Updated API key", performedBy, clientDetails);
     }
     return result;
 }
@@ -191,7 +191,7 @@ bool IdentityManager_DB::Applications_DB::updateApplicationDescription(const Cli
                                                {{":appName", MAKE_VAR(STRING, appName)}, {":description", MAKE_VAR(STRING, applicationDescription)}});
     if (result)
     {
-        _parent->logApplicationSecurityEvent(appName, SecurityEventAction::UPDATE, "Updated description", performedBy, clientDetails);
+        _parent->logSecurityEventOnApplications(appName, SecurityEventAction::UPDATE, "Updated description", performedBy, clientDetails);
     }
     return result;
 }
@@ -298,7 +298,7 @@ bool IdentityManager_DB::Applications_DB::addAccountToApplication(const ClientDe
                                                {{":appName", MAKE_VAR(STRING, appName)}, {":accountName", MAKE_VAR(STRING, accountName)}});
     if (result)
     {
-        _parent->logApplicationSecurityEvent(appName, SecurityEventAction::ASSIGN_ACCOUNT, "Assigned account '" + accountName + "'", performedBy, clientDetails);
+        _parent->logSecurityEventOnApplications(appName, SecurityEventAction::ASSIGN_ACCOUNT, "Assigned account '" + accountName + "'", performedBy, clientDetails);
     }
     return result;
 }
@@ -311,7 +311,7 @@ bool IdentityManager_DB::Applications_DB::removeAccountFromApplication(const Cli
                                               {{":appName", MAKE_VAR(STRING, appName)}, {":accountName", MAKE_VAR(STRING, accountName)}});
     if (ret)
     {
-        _parent->logApplicationSecurityEvent(appName, SecurityEventAction::REVOKE_ACCOUNT, "Revoked account '" + accountName + "'", performedBy, clientDetails);
+        _parent->logSecurityEventOnApplications(appName, SecurityEventAction::REVOKE_ACCOUNT, "Revoked account '" + accountName + "'", performedBy, clientDetails);
     }
     return ret;
 }
@@ -324,7 +324,7 @@ bool IdentityManager_DB::Applications_DB::changeApplicationAdmin(const ClientDet
                                                {{":appName", MAKE_VAR(STRING, appName)}, {":accountName", MAKE_VAR(STRING, accountName)}, {":isAppAdmin", MAKE_VAR(BOOL, isAppAdmin)}});
     if (result)
     {
-        _parent->logApplicationSecurityEvent(appName, SecurityEventAction::UPDATE, "Set account '" + accountName + "' as admin=" + std::to_string(isAppAdmin), performedBy, clientDetails);
+        _parent->logSecurityEventOnApplications(appName, SecurityEventAction::UPDATE, "Set account '" + accountName + "' as admin=" + std::to_string(isAppAdmin), performedBy, clientDetails);
     }
     return result;
 }
@@ -481,7 +481,7 @@ bool IdentityManager_DB::Applications_DB::addWebLoginAllowedRedirectURIToApplica
                                                {{":appName", MAKE_VAR(STRING, appName)}, {":loginRedirectURI", MAKE_VAR(STRING, loginRedirectURI)}});
     if (result)
     {
-        _parent->logApplicationSecurityEvent(appName, SecurityEventAction::CREATE, "Added redirect URI '" + loginRedirectURI + "'", performedBy, clientDetails);
+        _parent->logSecurityEventOnApplications(appName, SecurityEventAction::CREATE, "Added redirect URI '" + loginRedirectURI + "'", performedBy, clientDetails);
     }
     return result;
 }
@@ -493,7 +493,7 @@ bool IdentityManager_DB::Applications_DB::removeWebLoginAllowedRedirectURIToAppl
                                                {{":appName", MAKE_VAR(STRING, appName)}, {":loginRedirectURI", MAKE_VAR(STRING, loginRedirectURI)}});
     if (result)
     {
-        _parent->logApplicationSecurityEvent(appName, SecurityEventAction::DELETE, "Removed redirect URI '" + loginRedirectURI + "'", performedBy, clientDetails);
+        _parent->logSecurityEventOnApplications(appName, SecurityEventAction::DELETE, "Removed redirect URI '" + loginRedirectURI + "'", performedBy, clientDetails);
     }
     return result;
 }
@@ -521,7 +521,7 @@ bool IdentityManager_DB::Applications_DB::updateWebLoginDefaultRedirectURIForApp
                                                {{":appName", MAKE_VAR(STRING, appName)}, {":loginRedirectURI", MAKE_VAR(STRING, loginRedirectURI)}});
     if (result)
     {
-        _parent->logApplicationSecurityEvent(appName, SecurityEventAction::UPDATE, "Set default redirect URI '" + loginRedirectURI + "'", performedBy, clientDetails);
+        _parent->logSecurityEventOnApplications(appName, SecurityEventAction::UPDATE, "Set default redirect URI '" + loginRedirectURI + "'", performedBy, clientDetails);
     }
     return result;
 }
@@ -554,7 +554,7 @@ bool IdentityManager_DB::Applications_DB::setApplicationWebLoginCallbackURI(cons
 
     if (ret)
     {
-        _parent->logApplicationSecurityEvent(appName, SecurityEventAction::UPDATE, "Set callback URI '" + callbackURI + "'", performedBy, clientDetails);
+        _parent->logSecurityEventOnApplications(appName, SecurityEventAction::UPDATE, "Set callback URI '" + callbackURI + "'", performedBy, clientDetails);
     }
 
     return ret;
@@ -582,7 +582,7 @@ bool IdentityManager_DB::Applications_DB::addWebLoginOriginURLToApplication(cons
                                                {{":appName", MAKE_VAR(STRING, appName)}, {":originUrl", MAKE_VAR(STRING, originUrl)}});
     if (result)
     {
-        _parent->logApplicationSecurityEvent(appName, SecurityEventAction::CREATE, "Added origin URL '" + originUrl + "'", performedBy, clientDetails);
+        _parent->logSecurityEventOnApplications(appName, SecurityEventAction::CREATE, "Added origin URL '" + originUrl + "'", performedBy, clientDetails);
     }
     return result;
 }
@@ -594,7 +594,7 @@ bool IdentityManager_DB::Applications_DB::removeWebLoginOriginURLToApplication(c
                                                {{":appName", MAKE_VAR(STRING, appName)}, {":originUrl", MAKE_VAR(STRING, originUrl)}});
     if (result)
     {
-        _parent->logApplicationSecurityEvent(appName, SecurityEventAction::DELETE, "Removed origin URL '" + originUrl + "'", performedBy, clientDetails);
+        _parent->logSecurityEventOnApplications(appName, SecurityEventAction::DELETE, "Removed origin URL '" + originUrl + "'", performedBy, clientDetails);
     }
     return result;
 }
@@ -634,7 +634,7 @@ bool IdentityManager_DB::Applications_DB::updateWebLoginJWTConfigForApplication(
                                                 {":maintainRevocationAndLogoutInfo", MAKE_VAR(BOOL, tokenInfo.maintainRevocationAndLogoutInfo)}});
     if (result)
     {
-        _parent->logApplicationSecurityEvent(tokenInfo.appName, SecurityEventAction::UPDATE, "Updated JWT token config", performedBy, clientDetails);
+        _parent->logSecurityEventOnApplications(tokenInfo.appName, SecurityEventAction::UPDATE, "Updated JWT token config", performedBy, clientDetails);
     }
     return result;
 }

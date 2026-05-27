@@ -292,7 +292,7 @@ bool IdentityManager_DB::AuthController_DB::changeAccountCredential(const Client
 
     if (success)
     {
-        _parent->logAccountCredentialSecurityEvent(accountName, slotId, SecurityEventAction::UPDATE, "Credential changed for authentication slot", performedBy, clientDetails);
+        _parent->logSecurityEventOnAccountCredentials(accountName, slotId, SecurityEventAction::UPDATE, "Credential changed for authentication slot", performedBy, clientDetails);
     }
 
     return success;
@@ -346,7 +346,7 @@ bool IdentityManager_DB::AuthController_DB::activateAccountCredential(const Clie
 
     if (success)
     {
-        _parent->logAccountCredentialSecurityEvent(accountName, slotId, SecurityEventAction::CREATE, "New credential activated for authentication slot", performedBy, clientDetails);
+        _parent->logSecurityEventOnAccountCredentials(accountName, slotId, SecurityEventAction::CREATE, "New credential activated for authentication slot", performedBy, clientDetails);
     }
 
     return success;
@@ -359,7 +359,7 @@ bool IdentityManager_DB::AuthController_DB::removeAccountCredential(const Client
 
     if (success)
     {
-        _parent->logAccountCredentialSecurityEvent(accountName, slotId, SecurityEventAction::DELETE, "Credential removed from authentication slot", performedBy, clientDetails);
+        _parent->logSecurityEventOnAccountCredentials(accountName, slotId, SecurityEventAction::DELETE, "Credential removed from authentication slot", performedBy, clientDetails);
     }
 
     return success;
@@ -376,7 +376,7 @@ bool IdentityManager_DB::AuthController_DB::setCredentialMustChange(const Client
     if (success)
     {
         std::string desc = mustChange ? "Credential marked as must-change on next use for slot" : "Credential must-change flag cleared for slot";
-        _parent->logAccountCredentialSecurityEvent(accountName, slotId, mustChange ? SecurityEventAction::FORCE_CHANGE : SecurityEventAction::CANCEL_FORCE_CHANGE, desc, performedBy, clientDetails);
+        _parent->logSecurityEventOnAccountCredentials(accountName, slotId, mustChange ? SecurityEventAction::FORCE_CHANGE : SecurityEventAction::CANCEL_FORCE_CHANGE, desc, performedBy, clientDetails);
     }
 
     return success;
@@ -393,7 +393,7 @@ bool IdentityManager_DB::AuthController_DB::setCredentialLockedStatus(const Clie
     if (success)
     {
         std::string desc = isLocked ? "Credential locked (authentication disabled) on slot" : "Credential unlocked (authentication re-enabled) on slot";
-        _parent->logAccountCredentialSecurityEvent(accountName, slotId, isLocked ? SecurityEventAction::LOCK : SecurityEventAction::UNLOCK, desc, performedBy, clientDetails);
+        _parent->logSecurityEventOnAccountCredentials(accountName, slotId, isLocked ? SecurityEventAction::LOCK : SecurityEventAction::UNLOCK, desc, performedBy, clientDetails);
     }
 
     return success;

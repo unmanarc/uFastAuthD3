@@ -49,7 +49,7 @@ bool IdentityManager_DB::Accounts_DB::addAccount(const std::string &accountName,
 
     if (r)
     {
-        _parent->logAccountSecurityEvent(accountName, SecurityEventAction::CREATE, "New account created",
+        _parent->logSecurityEventOnAccounts(accountName, SecurityEventAction::CREATE, "New account created",
                                   sCreatorAccountName.empty() ? accountName : sCreatorAccountName, clientDetails);
     }
 
@@ -65,7 +65,7 @@ bool IdentityManager_DB::Accounts_DB::removeAccount(const ClientDetails &clientD
         bool result = _parent->m_sqlConnector->qExecuteEx("DELETE FROM iam.accounts WHERE `accountName`=:accountName;", {{":accountName", MAKE_VAR(STRING, accountName)}});
         if (result)
         {
-            _parent->logAccountSecurityEvent(accountName, SecurityEventAction::DELETE, "Account removed", performedBy, clientDetails);
+            _parent->logSecurityEventOnAccounts(accountName, SecurityEventAction::DELETE, "Account removed", performedBy, clientDetails);
         }
         return result;
     }
@@ -93,7 +93,7 @@ bool IdentityManager_DB::Accounts_DB::disableAccount(const ClientDetails &client
                                                       {{":enabled", MAKE_VAR(BOOL, !disabled)}, {":accountName", MAKE_VAR(STRING, accountName)}});
     if (result)
     {
-        _parent->logAccountSecurityEvent(accountName, disabled ? SecurityEventAction::DISABLE : SecurityEventAction::ENABLE,
+        _parent->logSecurityEventOnAccounts(accountName, disabled ? SecurityEventAction::DISABLE : SecurityEventAction::ENABLE,
                                   disabled ? "Account disabled" : "Account enabled", performedBy, clientDetails);
     }
     return result;
@@ -113,7 +113,7 @@ bool IdentityManager_DB::Accounts_DB::confirmAccount(const ClientDetails &client
             bool result = _parent->m_sqlConnector->qExecuteEx("UPDATE iam.accounts SET `isAccountConfirmed`='1' WHERE `accountName`=:accountName;", {{":accountName", MAKE_VAR(STRING, accountName)}});
             if (result)
             {
-                _parent->logAccountSecurityEvent(accountName, SecurityEventAction::CONFIRM, "Account confirmed", performedBy, clientDetails);
+                _parent->logSecurityEventOnAccounts(accountName, SecurityEventAction::CONFIRM, "Account confirmed", performedBy, clientDetails);
             }
             return result;
         }
@@ -129,7 +129,7 @@ bool IdentityManager_DB::Accounts_DB::changeAccountExpiration(const ClientDetail
                                                       {{":expiration", MAKE_VAR(DATETIME, expiration)}, {":accountName", MAKE_VAR(STRING, accountName)}});
     if (result)
     {
-        _parent->logAccountSecurityEvent(accountName, SecurityEventAction::UPDATE, "Account expiration changed", performedBy, clientDetails);
+        _parent->logSecurityEventOnAccounts(accountName, SecurityEventAction::UPDATE, "Account expiration changed", performedBy, clientDetails);
     }
     return result;
 }
@@ -168,7 +168,7 @@ bool IdentityManager_DB::Accounts_DB::updateAccountApplicationRoles(const Client
             return false;
     }
 
-    _parent->logAccountSecurityEvent(accountName, SecurityEventAction::UPDATE, "Application roles updated to account", performedBy, clientDetails);
+    _parent->logSecurityEventOnAccounts(accountName, SecurityEventAction::UPDATE, "Application roles updated to account", performedBy, clientDetails);
 
     return true;
 }
@@ -191,7 +191,7 @@ bool IdentityManager_DB::Accounts_DB::changeAccountFlags(const ClientDetails &cl
                                     {":accountName", MAKE_VAR(STRING, accountName)}});
     if (result)
     {
-        _parent->logAccountSecurityEvent(accountName, SecurityEventAction::UPDATE, "Account flags changed", performedBy, clientDetails);
+        _parent->logSecurityEventOnAccounts(accountName, SecurityEventAction::UPDATE, "Account flags changed", performedBy, clientDetails);
     }
     return result;
 }
@@ -571,7 +571,7 @@ bool IdentityManager_DB::Accounts_DB::blockAccountUsingToken(const ClientDetails
             bool result = disableAccount(clientDetails, performedBy, accountName);
             if (result)
             {
-                _parent->logAccountSecurityEvent(accountName, SecurityEventAction::LOCK, "Account blocked via token", performedBy, clientDetails);
+                _parent->logSecurityEventOnAccounts(accountName, SecurityEventAction::LOCK, "Account blocked via token", performedBy, clientDetails);
             }
             return result;
         }
@@ -592,7 +592,7 @@ bool IdentityManager_DB::Accounts_DB::addAccountDetailField(const ClientDetails 
                                              {":isUnique", MAKE_VAR(BOOL, details.isUnique)},
                                              {":jsonExtendedAttribs", MAKE_VAR(STRING, details.extendedAttributes.toStyledString())}}))
     {
-        _parent->logAccountFieldsSecurityEvent(fieldName, SecurityEventAction::CREATE, "Account detail field created", performedBy, clientDetails);
+        _parent->logSecurityEventOnAccountDetailFields(fieldName, SecurityEventAction::CREATE, "Account detail field created", performedBy, clientDetails);
         return true;
     }
 
@@ -615,7 +615,7 @@ bool IdentityManager_DB::Accounts_DB::updateAccountDetailField(const ClientDetai
         return false;
     }
 
-    _parent->logAccountFieldsSecurityEvent(fieldName, SecurityEventAction::UPDATE, "Account detail field updated", performedBy, clientDetails);
+    _parent->logSecurityEventOnAccountDetailFields(fieldName, SecurityEventAction::UPDATE, "Account detail field updated", performedBy, clientDetails);
 
     return true;
 }
@@ -629,7 +629,7 @@ bool IdentityManager_DB::Accounts_DB::removeAccountDetailField(const ClientDetai
         return false;
     }
 
-    _parent->logAccountFieldsSecurityEvent(fieldName, SecurityEventAction::DELETE, "Account detail field removed", performedBy, clientDetails);
+    _parent->logSecurityEventOnAccountDetailFields(fieldName, SecurityEventAction::DELETE, "Account detail field removed", performedBy, clientDetails);
 
     return true;
 }
@@ -743,7 +743,7 @@ bool IdentityManager_DB::Accounts_DB::changeAccountDetails(const ClientDetails &
         }
     }
 
-    _parent->logAccountSecurityEvent(accountName, SecurityEventAction::UPDATE, resetAllValues ? "All account details reset" : "Account details updated", performedBy,
+    _parent->logSecurityEventOnAccounts(accountName, SecurityEventAction::UPDATE, resetAllValues ? "All account details reset" : "Account details updated", performedBy,
                               clientDetails);
 
     return true;
@@ -757,7 +757,7 @@ bool IdentityManager_DB::Accounts_DB::removeAccountDetail(const ClientDetails &c
                                                       {{":accountName", MAKE_VAR(STRING, accountName)}, {":fieldName", MAKE_VAR(STRING, fieldName)}});
     if (result)
     {
-        _parent->logAccountSecurityEvent(accountName, SecurityEventAction::DELETE, "Account detail removed", performedBy, clientDetails);
+        _parent->logSecurityEventOnAccounts(accountName, SecurityEventAction::DELETE, "Account detail removed", performedBy, clientDetails);
     }
     return result;
 }
@@ -856,7 +856,7 @@ bool IdentityManager_DB::Accounts_DB::updateAccountDetailFieldValues(const Clien
         }
     }
 
-    _parent->logAccountSecurityEvent(accountName, SecurityEventAction::UPDATE,
+    _parent->logSecurityEventOnAccounts(accountName, SecurityEventAction::UPDATE,
                               "Account detail field values updated", performedBy, clientDetails);
 
     _parent->m_sqlConnector->commitTransaction();

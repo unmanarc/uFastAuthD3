@@ -28,7 +28,7 @@ bool IdentityManager_DB::AuthController_DB::updateDefaultAuthScheme(const Client
 
     if (success)
     {
-        _parent->logAuthenticationSchemeSecurityEvent(schemeId, SecurityEventAction::UPDATE, "Set as default scheme", performedBy, clientDetails);
+        _parent->logSecurityEventOnAuthenticationSchemes(schemeId, SecurityEventAction::UPDATE, "Set as default scheme", performedBy, clientDetails);
     }
 
     return success;
@@ -57,7 +57,7 @@ std::optional<uint32_t> IdentityManager_DB::AuthController_DB::addAuthentication
         newSchemeId = i->getLastInsertRowID();
     }
 
-    _parent->logAuthenticationSchemeSecurityEvent(newSchemeId, SecurityEventAction::CREATE, "New authentication scheme created", performedBy, clientDetails);
+    _parent->logSecurityEventOnAuthenticationSchemes(newSchemeId, SecurityEventAction::CREATE, "New authentication scheme created", performedBy, clientDetails);
 
     return newSchemeId;
 }
@@ -74,7 +74,7 @@ bool IdentityManager_DB::AuthController_DB::updateAuthenticationScheme(const Cli
 
     if (success)
     {
-        _parent->logAuthenticationSchemeSecurityEvent(schemeId, SecurityEventAction::UPDATE, "Authentication scheme updated", performedBy, clientDetails);
+        _parent->logSecurityEventOnAuthenticationSchemes(schemeId, SecurityEventAction::UPDATE, "Authentication scheme updated", performedBy, clientDetails);
     }
 
     return success;
@@ -88,7 +88,7 @@ bool IdentityManager_DB::AuthController_DB::removeAuthenticationScheme(const Cli
 
     if (success)
     {
-        _parent->logAuthenticationSchemeSecurityEvent(schemeId, SecurityEventAction::DELETE, "Authentication scheme removed", performedBy, clientDetails);
+        _parent->logSecurityEventOnAuthenticationSchemes(schemeId, SecurityEventAction::DELETE, "Authentication scheme removed", performedBy, clientDetails);
     }
 
     return success;
@@ -181,7 +181,7 @@ bool IdentityManager_DB::AuthController_DB::updateAuthenticationSlotUsedByScheme
 
     if (true)
     {
-        _parent->logAuthenticationSchemeSecurityEvent(schemeId, SecurityEventAction::UPDATE, "Authentication scheme slots configuration updated", performedBy, clientDetails);
+        _parent->logSecurityEventOnAuthenticationSchemes(schemeId, SecurityEventAction::UPDATE, "Authentication scheme slots configuration updated", performedBy, clientDetails);
     }
 
     return true; // Return true if deletion and all insert operations succeed

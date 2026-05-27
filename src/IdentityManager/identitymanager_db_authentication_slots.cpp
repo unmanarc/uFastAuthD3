@@ -34,7 +34,7 @@ std::optional<uint32_t> IdentityManager_DB::AuthController_DB::addNewAuthenticat
         newSlotId = i->getLastInsertRowID();
     }
 
-    _parent->logAuthenticationSlotSecurityEvent(newSlotId, SecurityEventAction::CREATE, "New authentication slot created", performedBy, clientDetails);
+    _parent->logSecurityEventOnAuthenticationSlots(newSlotId, SecurityEventAction::CREATE, "New authentication slot created", performedBy, clientDetails);
 
     return newSlotId;
 }
@@ -47,7 +47,7 @@ bool IdentityManager_DB::AuthController_DB::removeAuthenticationSlot(const Clien
 
     if (success)
     {
-        _parent->logAuthenticationSlotSecurityEvent(slotId, SecurityEventAction::DELETE, "Authentication slot removed", performedBy, clientDetails);
+        _parent->logSecurityEventOnAuthenticationSlots(slotId, SecurityEventAction::DELETE, "Authentication slot removed", performedBy, clientDetails);
     }
 
     return success;
@@ -73,7 +73,7 @@ bool IdentityManager_DB::AuthController_DB::updateAuthenticationSlotDetails(cons
 
     if (success)
     {
-        _parent->logAuthenticationSlotSecurityEvent(slotId, SecurityEventAction::UPDATE, "Authentication slot details updated", performedBy, clientDetails);
+        _parent->logSecurityEventOnAuthenticationSlots(slotId, SecurityEventAction::UPDATE, "Authentication slot details updated", performedBy, clientDetails);
     }
 
     return success;

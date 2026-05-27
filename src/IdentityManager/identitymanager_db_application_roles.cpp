@@ -16,7 +16,7 @@ bool IdentityManager_DB::ApplicationRoles_DB::addRole(const ClientDetails &clien
 
     if (success)
     {
-        _parent->logApplicationRoleSecurityEvent(appName, roleName,"", SecurityEventAction::CREATE, "New application role added", performedBy, clientDetails);
+        _parent->logSecurityEventOnApplicationRoles(appName, roleName,"", SecurityEventAction::CREATE, "New application role added", performedBy, clientDetails);
     }
 
     return success;
@@ -30,7 +30,7 @@ bool IdentityManager_DB::ApplicationRoles_DB::removeRole(const ClientDetails &cl
 
     if (success)
     {
-        _parent->logApplicationRoleSecurityEvent(appName, roleName,"", SecurityEventAction::DELETE, "Application role removed", performedBy, clientDetails);
+        _parent->logSecurityEventOnApplicationRoles(appName, roleName,"", SecurityEventAction::DELETE, "Application role removed", performedBy, clientDetails);
     }
 
     return success;
@@ -51,7 +51,7 @@ bool IdentityManager_DB::ApplicationRoles_DB::addAccountToRole(const ClientDetai
 
     if (success)
     {
-        _parent->logApplicationRoleSecurityEvent(appName, roleName,accountName, SecurityEventAction::ASSIGN_ACCOUNT, "Account added to role", performedBy, clientDetails);
+        _parent->logSecurityEventOnApplicationRoles(appName, roleName,accountName, SecurityEventAction::ASSIGN_ACCOUNT, "Account added to role", performedBy, clientDetails);
     }
 
     return success;
@@ -69,7 +69,7 @@ bool IdentityManager_DB::ApplicationRoles_DB::removeAccountFromRole(const Client
 
     if (ret)
     {
-        _parent->logApplicationRoleSecurityEvent(appName, roleName, accountName, SecurityEventAction::REVOKE_ACCOUNT, "Account removed from role", performedBy, clientDetails);
+        _parent->logSecurityEventOnApplicationRoles(appName, roleName, accountName, SecurityEventAction::REVOKE_ACCOUNT, "Account removed from role", performedBy, clientDetails);
     }
 
     if (lock)
@@ -85,7 +85,7 @@ bool IdentityManager_DB::ApplicationRoles_DB::updateRoleDescription(const Client
 
     if (success)
     {
-        _parent->logApplicationRoleSecurityEvent(appName, roleName,"", SecurityEventAction::UPDATE, "Application role description updated", performedBy, clientDetails);
+        _parent->logSecurityEventOnApplicationRoles(appName, roleName,"", SecurityEventAction::UPDATE, "Application role description updated", performedBy, clientDetails);
     }
 
     return success;
