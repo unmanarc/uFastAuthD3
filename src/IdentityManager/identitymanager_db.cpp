@@ -1,4 +1,5 @@
 #include "identitymanager_db.h"
+#include "ds_security_events.h"
 #include "Mantids30/Memory/a_int32.h"
 #include "Mantids30/Memory/a_string.h"
 #include "Mantids30/Memory/a_uint32.h"
@@ -531,9 +532,13 @@ void IdentityManager_DB::clearSQLErrorList()
     m_sqlErrorList.clear();
 }
 
-void IdentityManager_DB::logAccountSecurityEvent(const std::string &accountName, SecurityEventAction eventAction, const std::string &description, const std::string &performedBy,
+void IdentityManager_DB::logSecurityEventOnAccounts(const std::string &accountName, SecurityEventAction eventAction, const std::string &description, const std::string &performedBy,
                                                  const ClientDetails &clientDetails)
 {
+    LOG_APP->log2(__func__, performedBy, clientDetails.ipAddress, SecurityEventActionToLogLevel(eventAction),
+        "account='%s', action='%s', desc='%s'",
+        accountName.c_str(), SecurityEventActionToString(eventAction), description.c_str());
+
     m_sqlConnector->qExecuteEx(
         R"(INSERT INTO logs.securityEvents_accounts
                (`f_accountName`, `f_performedBy`, `eventAction`, `eventDescription`,
@@ -550,9 +555,13 @@ void IdentityManager_DB::logAccountSecurityEvent(const std::string &accountName,
          {":clientExtraData", MAKE_VAR(STRING, clientDetails.extraData)}});
 }
 
-void IdentityManager_DB::logAccountCredentialSecurityEvent(const std::string &accountName, uint32_t slotId, SecurityEventAction eventAction, const std::string &eventDescription,
+void IdentityManager_DB::logSecurityEventOnAccountCredentials(const std::string &accountName, uint32_t slotId, SecurityEventAction eventAction, const std::string &eventDescription,
                                                           const std::string &performedBy, const ClientDetails &clientDetails)
 {
+    LOG_APP->log2(__func__, performedBy, clientDetails.ipAddress, SecurityEventActionToLogLevel(eventAction),
+        "account='%s', slot=%u, action='%s', desc='%s'",
+        accountName.c_str(), slotId, SecurityEventActionToString(eventAction), eventDescription.c_str());
+
     m_sqlConnector->qExecuteEx(
         R"(INSERT INTO logs.securityEvents_accountCredentials
                (`f_accountName`, `f_slotId`, `f_performedBy`, `eventAction`, `eventDescription`,
@@ -570,9 +579,13 @@ void IdentityManager_DB::logAccountCredentialSecurityEvent(const std::string &ac
          {":clientExtraData", MAKE_VAR(STRING, clientDetails.extraData)}});
 }
 
-void IdentityManager_DB::logAuthenticationSlotSecurityEvent(uint32_t slotId, SecurityEventAction eventAction, const std::string &eventDescription,const std::string &performedBy,
+void IdentityManager_DB::logSecurityEventOnAuthenticationSlots(uint32_t slotId, SecurityEventAction eventAction, const std::string &eventDescription,const std::string &performedBy,
                                                             const ClientDetails &clientDetails)
 {
+    LOG_APP->log2(__func__, performedBy, clientDetails.ipAddress, SecurityEventActionToLogLevel(eventAction),
+        "slot=%u, action='%s', desc='%s'",
+        slotId, SecurityEventActionToString(eventAction), eventDescription.c_str());
+
     m_sqlConnector->qExecuteEx(
         R"(INSERT INTO logs.securityEvents_authenticationSlots
                (`f_slotId`, `f_performedBy`, `eventAction`, `eventDescription`,
@@ -589,9 +602,13 @@ void IdentityManager_DB::logAuthenticationSlotSecurityEvent(uint32_t slotId, Sec
          {":clientExtraData", MAKE_VAR(STRING, clientDetails.extraData)}});
 }
 
-void IdentityManager_DB::logAccountFieldsSecurityEvent(const std::string &fieldName, SecurityEventAction eventAction, const std::string &eventDescription,const std::string &performedBy,
+void IdentityManager_DB::logSecurityEventOnAccountDetailFields(const std::string &fieldName, SecurityEventAction eventAction, const std::string &eventDescription,const std::string &performedBy,
                                                        const ClientDetails &clientDetails)
 {
+    LOG_APP->log2(__func__, performedBy, clientDetails.ipAddress, SecurityEventActionToLogLevel(eventAction),
+        "field='%s', action='%s', desc='%s'",
+        fieldName.c_str(), SecurityEventActionToString(eventAction), eventDescription.c_str());
+
     m_sqlConnector->qExecuteEx(
         R"(INSERT INTO logs.securityEvents_accountFields
                (`f_fieldName`, `f_performedBy`, `eventAction`, `eventDescription`,
@@ -608,9 +625,13 @@ void IdentityManager_DB::logAccountFieldsSecurityEvent(const std::string &fieldN
          {":clientExtraData", MAKE_VAR(STRING, clientDetails.extraData)}});
 }
 
-void IdentityManager_DB::logAuthenticationSchemeSecurityEvent(uint32_t schemeId, SecurityEventAction eventAction, const std::string &eventDescription,const std::string &performedBy,
+void IdentityManager_DB::logSecurityEventOnAuthenticationSchemes(uint32_t schemeId, SecurityEventAction eventAction, const std::string &eventDescription,const std::string &performedBy,
                                                               const ClientDetails &clientDetails)
 {
+    LOG_APP->log2(__func__, performedBy, clientDetails.ipAddress, SecurityEventActionToLogLevel(eventAction),
+        "scheme=%u, action='%s', desc='%s'",
+        schemeId, SecurityEventActionToString(eventAction), eventDescription.c_str());
+
     m_sqlConnector->qExecuteEx(
         R"(INSERT INTO logs.securityEvents_authenticationSchemes
                (`f_schemeId`, `f_performedBy`, `eventAction`, `eventDescription`,
@@ -627,9 +648,13 @@ void IdentityManager_DB::logAuthenticationSchemeSecurityEvent(uint32_t schemeId,
          {":clientExtraData", MAKE_VAR(STRING, clientDetails.extraData)}});
 }
 
-void IdentityManager_DB::logApplicationSecurityEvent(const std::string &applicationName, SecurityEventAction eventAction, const std::string &eventDescription,const std::string &performedBy,
+void IdentityManager_DB::logSecurityEventOnApplications(const std::string &applicationName, SecurityEventAction eventAction, const std::string &eventDescription,const std::string &performedBy,
                                                      const ClientDetails &clientDetails)
 {
+    LOG_APP->log2(__func__, performedBy, clientDetails.ipAddress, SecurityEventActionToLogLevel(eventAction),
+        "app='%s', action='%s', desc='%s'",
+        applicationName.c_str(), SecurityEventActionToString(eventAction), eventDescription.c_str());
+
     m_sqlConnector->qExecuteEx(
         R"(INSERT INTO logs.securityEvents_applications
                (`f_appName`, `f_performedBy`, `eventAction`, `eventDescription`,
@@ -646,9 +671,13 @@ void IdentityManager_DB::logApplicationSecurityEvent(const std::string &applicat
          {":clientExtraData", MAKE_VAR(STRING, clientDetails.extraData)}});
 }
 
-void IdentityManager_DB::logApplicationRoleSecurityEvent(const std::string &applicationName, const std::string &roleName, const std::string &accountName, SecurityEventAction eventAction, const std::string &eventDescription,
+void IdentityManager_DB::logSecurityEventOnApplicationRoles(const std::string &applicationName, const std::string &roleName, const std::string &accountName, SecurityEventAction eventAction, const std::string &eventDescription,
     const std::string &performedBy, const ClientDetails &clientDetails)
 {
+    LOG_APP->log2(__func__, performedBy, clientDetails.ipAddress, SecurityEventActionToLogLevel(eventAction),
+        "app='%s', role='%s', account='%s', action='%s', desc='%s'",
+        applicationName.c_str(), roleName.c_str(), accountName.c_str(), SecurityEventActionToString(eventAction), eventDescription.c_str());
+
     m_sqlConnector->qExecuteEx(
         R"(INSERT INTO logs.securityEvents_applicationRole
                (`f_appName`, `f_roleName`, `f_accountName`, `f_performedBy`, `eventAction`, `eventDescription`,
@@ -667,9 +696,13 @@ void IdentityManager_DB::logApplicationRoleSecurityEvent(const std::string &appl
          {":clientExtraData", MAKE_VAR(STRING, clientDetails.extraData)}});
 }
 
-void IdentityManager_DB::logApplicationScopesSecurityEvent(const std::string &applicationName, const std::string &scopeName, const std::string &accountName, SecurityEventAction eventAction, const std::string &eventDescription,
+void IdentityManager_DB::logSecurityEventApplicationScopes(const std::string &applicationName, const std::string &scopeName, const std::string &accountName, SecurityEventAction eventAction, const std::string &eventDescription,
     const std::string &performedBy, const ClientDetails &clientDetails)
 {
+    LOG_APP->log2(__func__, performedBy, clientDetails.ipAddress, SecurityEventActionToLogLevel(eventAction),
+        "app='%s', scope='%s', account='%s', action='%s', desc='%s'",
+        applicationName.c_str(), scopeName.c_str(), accountName.c_str(), SecurityEventActionToString(eventAction), eventDescription.c_str());
+
     m_sqlConnector->qExecuteEx(
         R"(INSERT INTO logs.securityEvents_applicationScopes
                (`f_appName`, `f_scopeId`, `f_accountName`, `f_performedBy`, `eventAction`, `eventDescription`,
@@ -689,9 +722,22 @@ void IdentityManager_DB::logApplicationScopesSecurityEvent(const std::string &ap
 }
 
 
-void IdentityManager_DB::logApplicationActivitiesSecurityEvent(const std::string &applicationName, const std::string &activityName, std::optional<uint32_t> schemeId , SecurityEventAction eventAction,
+void IdentityManager_DB::logSecurityEventOnApplicationActivities(const std::string &applicationName, const std::string &activityName, std::optional<uint32_t> schemeId , SecurityEventAction eventAction,
                                                                const std::string &eventDescription,const std::string &performedBy, const ClientDetails &clientDetails)
 {
+    if (schemeId.has_value())
+    {
+        LOG_APP->log2(__func__, performedBy, clientDetails.ipAddress, SecurityEventActionToLogLevel(eventAction),
+            "app='%s', activity='%s', scheme=%u, action='%s', desc='%s'",
+            applicationName.c_str(), activityName.c_str(), schemeId.value(), SecurityEventActionToString(eventAction), eventDescription.c_str());
+    }
+    else
+    {
+        LOG_APP->log2(__func__, performedBy, clientDetails.ipAddress, SecurityEventActionToLogLevel(eventAction),
+            "app='%s', activity='%s', scheme=null, action='%s', desc='%s'",
+            applicationName.c_str(), activityName.c_str(), SecurityEventActionToString(eventAction), eventDescription.c_str());
+    }
+
     std::string sql = std::string("INSERT INTO logs.securityEvents_applicationActivities "
                                   "(`f_appName`, `f_activityName`, `f_schemeId`, `f_performedBy`, `eventAction`, `eventDescription`, `clientIP`, `clientTLSCN`, `clientUserAgent`, `clientExtraData`)"
                                   " VALUES (:f_appName, :f_activityName, ") +

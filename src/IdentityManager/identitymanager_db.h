@@ -11,16 +11,16 @@ public:
     IdentityManager_DB(Mantids30::Database::SQLConnector *_SQLDirConnection);
     bool initializeDatabase() override;
 
-    void logAccountSecurityEvent(const std::string &accountName, SecurityEventAction eventAction, const std::string &description, const std::string &performedBy, const ClientDetails &clientDetails);
-    void logAccountFieldsSecurityEvent(const std::string &fieldName, SecurityEventAction eventAction, const std::string &eventDescription,const std::string &performedBy, const ClientDetails &clientDetails);
-    void logAccountCredentialSecurityEvent(const std::string &accountName, uint32_t slotId, SecurityEventAction eventAction, const std::string &eventDescription,const std::string &performedBy, const ClientDetails &clientDetails);
-    void logAuthenticationSlotSecurityEvent(uint32_t slotId, SecurityEventAction eventAction, const std::string &eventDescription,const std::string &performedBy, const ClientDetails &clientDetails);
-    void logAuthenticationSchemeSecurityEvent(uint32_t schemeId, SecurityEventAction eventAction, const std::string &eventDescription,const std::string &performedBy, const ClientDetails &clientDetails);
+    void logSecurityEventOnAccounts(const std::string &accountName, SecurityEventAction eventAction, const std::string &description, const std::string &performedBy, const ClientDetails &clientDetails);
+    void logSecurityEventOnAccountDetailFields(const std::string &fieldName, SecurityEventAction eventAction, const std::string &eventDescription,const std::string &performedBy, const ClientDetails &clientDetails);
+    void logSecurityEventOnAccountCredentials(const std::string &accountName, uint32_t slotId, SecurityEventAction eventAction, const std::string &eventDescription,const std::string &performedBy, const ClientDetails &clientDetails);
+    void logSecurityEventOnAuthenticationSlots(uint32_t slotId, SecurityEventAction eventAction, const std::string &eventDescription,const std::string &performedBy, const ClientDetails &clientDetails);
+    void logSecurityEventOnAuthenticationSchemes(uint32_t schemeId, SecurityEventAction eventAction, const std::string &eventDescription,const std::string &performedBy, const ClientDetails &clientDetails);
 
-    void logApplicationSecurityEvent(const std::string &applicationName, SecurityEventAction eventAction, const std::string &eventDescription,const std::string &performedBy, const ClientDetails &clientDetails);
-    void logApplicationRoleSecurityEvent(const std::string &applicationName, const std::string &roleName,const std::string &accountName, SecurityEventAction eventAction, const std::string &eventDescription,const std::string &performedBy, const ClientDetails &clientDetails);
-    void logApplicationScopesSecurityEvent(const std::string &applicationName, const std::string &scopeName,const std::string &accountName, SecurityEventAction eventAction, const std::string &eventDescription,const std::string &performedBy, const ClientDetails &clientDetails);
-    void logApplicationActivitiesSecurityEvent(const std::string &applicationName, const std::string &activityName, std::optional<uint32_t> schemeId, SecurityEventAction eventAction, const std::string &eventDescription, const std::string &performedBy, const ClientDetails &clientDetails);
+    void logSecurityEventOnApplications(const std::string &applicationName, SecurityEventAction eventAction, const std::string &eventDescription,const std::string &performedBy, const ClientDetails &clientDetails);
+    void logSecurityEventOnApplicationRoles(const std::string &applicationName, const std::string &roleName,const std::string &accountName, SecurityEventAction eventAction, const std::string &eventDescription,const std::string &performedBy, const ClientDetails &clientDetails);
+    void logSecurityEventApplicationScopes(const std::string &applicationName, const std::string &scopeName,const std::string &accountName, SecurityEventAction eventAction, const std::string &eventDescription,const std::string &performedBy, const ClientDetails &clientDetails);
+    void logSecurityEventOnApplicationActivities(const std::string &applicationName, const std::string &activityName, std::optional<uint32_t> schemeId, SecurityEventAction eventAction, const std::string &eventDescription, const std::string &performedBy, const ClientDetails &clientDetails);
 
 
 
