@@ -381,7 +381,7 @@ bool IdentityManager_DB::initializeDatabase()
 
         R"(CREATE TABLE IF NOT EXISTS `logs`.`securityEvents_authenticationSchemes` (
                                              `id`                   INTEGER         PRIMARY KEY AUTOINCREMENT,
-                                             `f_slotId`             INTEGER         NOT NULL,
+                                             `f_schemeId`           INTEGER         NOT NULL,
                                              `f_performedBy`        VARCHAR(256)    NOT NULL,
                                              `eventDateTime`        DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
                                              `eventAction`              INTEGER         NOT NULL,
@@ -392,7 +392,7 @@ bool IdentityManager_DB::initializeDatabase()
                                              `clientExtraData`       TEXT            DEFAULT NULL
                                                                         );
                                     )",
-        R"(CREATE INDEX IF NOT EXISTS `logs`.idx_securityEvents_authenticationSchemes_slotId ON securityEvents_authenticationSchemes (f_slotId);)",
+        R"(CREATE INDEX IF NOT EXISTS `logs`.idx_securityEvents_authenticationSchemes_schemeId ON securityEvents_authenticationSchemes (f_schemeId);)",
         R"(CREATE INDEX IF NOT EXISTS `logs`.idx_securityEvents_authenticationSchemes_eventDateTime ON securityEvents_authenticationSchemes (eventDateTime);)",
         R"(CREATE INDEX IF NOT EXISTS `logs`.idx_securityEvents_authenticationSchemes_eventAction ON securityEvents_authenticationSchemes (eventAction);)",
         R"(CREATE INDEX IF NOT EXISTS `logs`.idx_securityEvents_authenticationSchemes_clientIP ON securityEvents_authenticationSchemes (clientIP);)",
