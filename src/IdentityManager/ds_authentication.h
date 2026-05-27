@@ -153,7 +153,7 @@ struct Credential
         jRet["hash"] = hash;
         jRet["ssalt"] = Mantids30::Helpers::Encoders::toHex(ssalt, 4);
         jRet["lastChange"] = lastChange;
-        jRet["isExpired"] = isAccountExpired();
+        jRet["isExpired"] = isExpired();
         jRet["hasExceededMaxAttempts"] = hasExceededMaxAttempts(authPolicy);
         jRet["isLocked"] = isLocked;
 
@@ -177,7 +177,7 @@ struct Credential
     }
 
     bool hasExceededMaxAttempts(const AuthenticationPolicy &authPolicy) const { return (badAttempts + 1) >= authPolicy.maxTries; }
-    bool isAccountExpired() const { return (time(nullptr) > expirationTimestamp && expirationTimestamp != 0) || mustChange; }
+    bool isExpired() const { return (time(nullptr) > expirationTimestamp && expirationTimestamp != 0); }
 
     bool isLocked = false;
     bool mustChange = true;
@@ -221,10 +221,17 @@ enum class AuthenticationResult : uint16_t
 };
 
 
-[[nodiscard]] inline bool IS_AUTH_SUCCESSFUL(AuthenticationResult result) noexcept
+
+
+[[nodiscard]] inline bool IS_LOGIN_AUTHORIZED(AuthenticationResult result) noexcept
 {
     return result == AuthenticationResult::AUTHENTICATED ||
            result == AuthenticationResult::EXPIRED_CREDENTIAL;
+}
+
+[[nodiscard]] inline bool IS_CREDENTIAL_AUTHENTICATED(AuthenticationResult result) noexcept
+{
+    return IS_LOGIN_AUTHORIZED(result) || result == AuthenticationResult::MUST_CHANGE_CREDENTIAL;
 }
 
 [[nodiscard]] inline const char * authResultToString(AuthenticationResult result) noexcept

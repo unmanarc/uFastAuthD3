@@ -1,4 +1,5 @@
 #include "credentialvalidator.h"
+#include "IdentityManager/ds_authentication.h"
 #include <Mantids30/Helpers/totp.h>
 
 #include <Mantids30/Helpers/crypto.h>
@@ -86,8 +87,11 @@ AuthenticationResult CredentialValidator::validateStoredCredential(const std::st
 
 skipAuthMode:;
 
-    if (storedCredential.isAccountExpired() && r == AuthenticationResult::AUTHENTICATED)
+    if (storedCredential.isExpired() && r == AuthenticationResult::AUTHENTICATED)
         r = AuthenticationResult::EXPIRED_CREDENTIAL;
+
+    if (storedCredential.mustChange && r == AuthenticationResult::AUTHENTICATED)
+        r = AuthenticationResult::MUST_CHANGE_CREDENTIAL;
 
     return r;
 }
