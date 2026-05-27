@@ -107,7 +107,7 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::createChallengeToken(void 
                   request.jwtToken->getClaim("app").asString().c_str(),
                   slotId);
 
-    if (!IS_PASSWORD_AUTHENTICATED(authResult))
+    if (!IS_AUTH_SUCCESSFUL(authResult))
     {
         response.setError(HTTP::Status::S_401_UNAUTHORIZED, "auth_failed", authResultToString(authResult));
         return response;
@@ -363,7 +363,7 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::removeCredential(void *con
                   request.jwtToken->getClaim("app").asString().c_str(),
                   slotId);
 
-    if (!IS_PASSWORD_AUTHENTICATED(authResult))
+    if (!IS_AUTH_SUCCESSFUL(authResult))
     {
         response.setError(HTTP::Status::S_401_UNAUTHORIZED, "deletion_failed", authResultToString(authResult));
         return response;
