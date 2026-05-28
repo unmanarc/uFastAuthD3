@@ -7,10 +7,21 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Authentication Login Page</title>
     <link rel="stylesheet" href="/assets/css/bootstrap.min.css" type="text/css">
-    <script src="/assets/js/jquery.min.js" type="text/javascript"></script>
+    <script src="assets/js/jquery.min.js" type="text/javascript"></script>
 
     <link rel="stylesheet" href="assets/css/login.css" type="text/css">
+
+    <!-- Include jsSHA library -->
+    <script src="assets/js/sha.js"></script>
+    <!-- Include IAM credentials local helpers -->
+    <script src="local/js/credentials.js"></script>
+    <!-- Required libraries for OTP QR code generation -->
+    <script src="assets/js/otplib.global.js"></script>
+    <script src="assets/js/qrcode.min.js"></script>
+
+    <!-- Local Login functions -->
     <script src="assets/js/login.js" type="text/javascript"></script>
+
 </head>
 
 <!--<%jvar/softwareVersion:softwareVersion%>-->
@@ -54,7 +65,6 @@
 
                                 <!-- Screen 2: Generic Input -->
                                 <form id="genericPasswordForm" class="d-none">
-                                    <!-- <h6 id="slotDescription" class="text-center mb-3"></h6> -->
                                     <div class="mb-2">
                                         <input type="password" class="form-control text-center" id="genericPassword"
                                             name="genericPassword" placeholder="" required>
@@ -70,7 +80,6 @@
 
                                 <!-- Screen 3: OTP Token Input -->
                                 <form id="otpForm" class="d-none">
-                                    <!-- <h6 id="slotDescription" class="text-center mb-3">Enter OTP</h6> -->
                                     <div class="mb-2">
                                         <input type="text" class="form-control text-center" id="otp" name="otp"
                                             placeholder="Enter your OTP" required maxlength="6" pattern="[0-9]{6}">
@@ -109,6 +118,69 @@
                                             onclick="ajaxLogout()">Logout</button>
                                     </div>
                                 </div>
+
+                                <!-- Screen 6: Change Password -->
+                                <div id="changePasswordScreen" class="d-none">
+                                    <div class="mb-2">
+                                        <label for="changeNewPassword" class="form-label">
+                                            <i class="fa-solid fa-plus"></i> New Password
+                                        </label>
+                                        <input type="password" class="form-control text-center" id="changeNewPassword"
+                                            placeholder="Enter new password" autocomplete="new-password">
+                                    </div>
+                                    <div class="mb-2">
+                                        <label for="changeConfirmPassword" class="form-label">
+                                            <i class="fa-solid fa-check-double"></i> Confirm New Password
+                                        </label>
+                                        <input type="password" class="form-control text-center"
+                                            id="changeConfirmPassword" placeholder="Confirm new password"
+                                            autocomplete="new-password">
+                                    </div>
+                                    <hr>
+                                    <div class="mb-2">
+                                        <button type="button" id="changePasswordSubmitBtn"
+                                            class="btn btn-dark w-100">
+                                            <i class="fa-solid fa-save"></i> Change Password
+                                        </button>
+                                    </div>
+                                    <div class="mb-2">
+                                        <button type="button" id="changePasswordCancelBtn"
+                                            class="btn btn-warning w-100">Cancel</button>
+                                    </div>
+                                </div>
+
+                                <!-- Screen 7: Change OTP -->
+                                <div id="changeOtpScreen" class="d-none">
+                                    <div class="alert alert-info mb-3">
+                                        <i class="fa-solid fa-circle-info"></i> Scan the QR code with your TOTP
+                                        Authenticator app, then enter the 6-digit code below.
+                                    </div>
+                                    <div class="text-center mb-3">
+                                        <canvas id="changeOtpQrCanvas" class="d-none"
+                                            style="max-width: 200px;"></canvas>
+                                        <div id="changeOtpSecretText"
+                                            class="bg-light p-2 rounded text-break font-monospace d-none"
+                                            style="font-size: 0.9rem;"></div>
+                                    </div>
+                                    <div class="mb-2">
+                                        <label for="changeOtpVerificationCode" class="form-label">
+                                            <i class="fa-solid fa-shield-halved"></i> New OTP Code
+                                        </label>
+                                        <input type="text" class="form-control text-center"
+                                            id="changeOtpVerificationCode" placeholder="XXXXXX" maxlength="6"
+                                            pattern="[0-9]{6}" autocomplete="off">
+                                    </div>
+                                    <hr>
+                                    <div class="mb-2">
+                                        <button type="button" id="changeOtpSubmitBtn" class="btn btn-dark w-100">
+                                            <i class="fa-solid fa-check"></i> Verify & Change
+                                        </button>
+                                    </div>
+                                    <div class="mb-2">
+                                        <button type="button" id="changeOtpCancelBtn"
+                                            class="btn btn-warning w-100">Cancel</button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -126,6 +198,7 @@
                 </div>
             </div>
 
+
             <script>
                 $('#username').keypress(function (e) {
                     if (e.which === 13) { // Enter key
@@ -140,7 +213,7 @@
                     }
                 });
             </script>
-            <script src="/assets/js/bootstrap.min.js" type="text/javascript"></script>
+            <script src="assets/js/bootstrap.min.js" type="text/javascript"></script>
 </body>
 
 </html>
