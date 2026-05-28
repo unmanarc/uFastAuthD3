@@ -21,36 +21,7 @@ using namespace API::RESTful;
 using namespace Network::Protocols;
 using namespace Mantids30::DataFormat;
 
-// Validate user and get authorization flow:
-API::APIReturn LoginPortal_AuthMethods::preAuthorize(void *context, const API::RESTful::RequestParameters &request, ClientDetails &authClientDetails)
-{
-    API::APIReturn response;
-    // Environment:
-    JWT::Token token;
-    IdentityManager *identityManager = Globals::getIdentityManager();
-
-    //  Configuration parameters:
-    auto config = Globals::pConfig;
-    uint32_t loginAuthenticationTimeout = config.get<uint32_t>("LoginPortal.AuthenticationTimeout", 300);
-
-    // Input parameters:
-    std::string app = JSON_ASSTRING(*request.inputJSON, "app", "");                 // APPNAME.
-    std::string accountName = JSON_ASSTRING(*request.inputJSON, "accountName", ""); // ACCOUNT ID.
-    std::string activity = JSON_ASSTRING(*request.inputJSON, "activity", "");       // APP ACTIVITY NAME.
-
-    if (!identityManager->applications->doesApplicationExist(app))
-    {
-        response.setError(HTTP::Status::S_404_NOT_FOUND, "not_found", "Invalid Application");
-        return response;
-    }
-
-    (*response.responseJSON()) = identityManager->authController->getApplicableAuthenticationSchemesForAccount(app, activity, accountName);
-    (*response.responseJSON())["loginAuthenticationTimeout"] = loginAuthenticationTimeout;
-    return response;
-}
-
-bool validateIAMAccessTokenCookieProperties(const RequestParameters &request, LoginPortal_AuthMethods::APIReturn &response, JWT::Token *token, const std::string &accountName,
-                                            const std::string &appName)
+bool LoginPortal_AuthMethods::decodeAndValidateAccessTokenIfExist(const RequestParameters &request, LoginPortal_AuthMethods::APIReturn &response, JWT::Token *token, const std::string &currentAccountName,std::shared_ptr<AppAuthExtras> authContext)
 {
     std::string cookieAccessTokenStr = request.clientRequest->getCookie("AccessToken");
 
@@ -70,7 +41,7 @@ bool validateIAMAccessTokenCookieProperties(const RequestParameters &request, Lo
                               authResultToString(AuthenticationResult::UNAUTHENTICATED));
             return false;
         }
-        if (token->getSubject() != accountName)
+        if (token->getSubject() != currentAccountName)
         {
             // This Token is not for this cookie... (other username... logout first please!)
             response.setError(HTTP::Status::S_403_FORBIDDEN, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::UNAUTHENTICATED)),
@@ -78,50 +49,22 @@ bool validateIAMAccessTokenCookieProperties(const RequestParameters &request, Lo
             return false;
         }
 
-        if (token->getClaim("apps").isMember(appName))
+        // We have an access token!
+        std::set<uint32_t> authenticatedSlotsOnAccessToken = Mantids30::Helpers::jsonToUInt32Set( token->getClaim("slotIds") );
+        // Merge.
+        for (const auto & i  : authenticatedSlotsOnAccessToken)
         {
-            // Already authenticated within this APP...
-            response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::INTERNAL_ERROR)),
-                              authResultToString(AuthenticationResult::INTERNAL_ERROR));
-            return false;
+            authContext->authenticatedSlots.insert(i);
         }
-    }
-    return true;
-}
-
-bool validateAndDecodeBearerAccessTokenProperties(const RequestParameters &request, LoginPortal_AuthMethods::APIReturn &response, JWT::Token *oldIntermediateAuthToken, std::string *accountName,
-                                                  std::shared_ptr<AppAuthExtras> authContext)
-{
-    std::string oldIntermediateAuthTokenStr = request.clientRequest->getAuthorizationBearer();
-
-    // Validate the token
-    if (!oldIntermediateAuthTokenStr.empty() && oldIntermediateAuthTokenStr != "null")
-    {
-        if (!request.jwtValidator->verify(oldIntermediateAuthTokenStr, oldIntermediateAuthToken))
-        {
-            response.setError(HTTP::Status::S_403_FORBIDDEN, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::UNAUTHENTICATED)),
-                              authResultToString(AuthenticationResult::UNAUTHENTICATED));
-            return false;
-        }
-    }
-
-    // Extract JWT Signed Parameters:
-    *accountName = JSON_ASSTRING_D(oldIntermediateAuthToken->getClaim("preAuthUser"), "");
-    authContext->fillFromTokenClaims(oldIntermediateAuthToken->getAllClaimsAsJSON());
-
-    // Using the first slot where the intermediate token does not exist:
-    if (oldIntermediateAuthToken->getJwtId().empty())
-    {
-        // When there is no token, override initial token parameters with the input parameters...
-        *accountName = JSON_ASSTRING((*request.inputJSON), "preAuthUser", "");
-        authContext->fillFromInitialJSONPOST(*request.inputJSON);
     }
 
     return true;
 }
 
-bool setupNewIntermediateAuthToken(const RequestParameters &request, Mantids30::API::APIReturn &response, IdentityManager *identityManager, std::shared_ptr<AppAuthExtras> authContext,
-                                   const std::vector<AuthenticationSchemeUsedSlot> &requiredAuthSlots, const time_t &oldIntermediateTokenExpirationTime, const std::string &accountName)
+
+void LoginPortal_AuthMethods::setupNewIntermediateAuthToken(const RequestParameters &request, Mantids30::API::APIReturn &response, IdentityManager *identityManager, std::shared_ptr<AppAuthExtras> authContext,
+                                   const std::vector<AuthenticationSchemeUsedSlot> &requiredAuthSlots, const time_t &oldIntermediateTokenExpirationTime, const std::string &accountName,
+                                   bool mustChange)
 {
     // Retrieve configuration parameters from global settings.
     auto config = Globals::pConfig;
@@ -148,34 +91,38 @@ bool setupNewIntermediateAuthToken(const RequestParameters &request, Mantids30::
     newIntermediateAuthToken.addClaim("type", "intermediate");
 
     std::set<uint32_t> authSlots = authContext->authenticatedSlots;
-    authSlots.insert(authContext->currentSlotId.value());
+    if (authContext->currentSlotId.has_value())
+        authSlots.insert(authContext->currentSlotId.value());
     newIntermediateAuthToken.addClaim("authenticatedSlots", Mantids30::Helpers::setToJSON(authSlots));
+
+    std::set<uint32_t> currentMustChangeSlots = authContext->mustChangeSlots;
+    if (mustChange)
+        currentMustChangeSlots.insert(authContext->currentSlotId.value());
+    else
+        currentMustChangeSlots.erase(authContext->currentSlotId.value());
+
+    newIntermediateAuthToken.addClaim("mustChangeSlots", Mantids30::Helpers::setToJSON(currentMustChangeSlots));
+
+    (*response.responseJSON())["changeCredential"] = mustChange;
 
     if (requiredAuthSlots.empty())
     {
-        JWT::Token cookieAccessToken;
-
-        // Obtained accountName and appName in the POST Token (if exist) should match the decoded bearer token:
-        if (!validateIAMAccessTokenCookieProperties(request, response, &cookieAccessToken, accountName, authContext->appName))
+        if (currentMustChangeSlots.empty())
         {
-            // Use the same auth... don't go to the next.
-            (*response.responseJSON())["nextSlot"] = authContext->currentSlotId.value();
-
-            return false;
+            // Set the IAM Access Token into the Cookie ONLY if mustchangeslots is empty...
+            TokensManager::setIAMAccessTokenCookie(response, request, newIntermediateAuthToken,
+                                                   authContext->keepAuthenticated,              // Keep authenticated will use the current authentication proccess
+                                                   newIntermediateAuthToken.getExpirationTime() // Get current JWT expiration time (if keep autneticated is false)
+                                                   );
         }
-
-        // Set the IAM Access Token into the Cookie...
-        TokensManager::setIAMAccessTokenCookie(response, request, newIntermediateAuthToken, cookieAccessToken,
-                                               authContext->keepAuthenticated,              // Keep authenticated will use the current authentication proccess
-                                               newIntermediateAuthToken.getExpirationTime() // Get current JWT expiration time (if keep autneticated is false)
-        );
 
         // DONE!
         (*response.responseJSON())["nextSlot"] = Json::nullValue;
+        (*response.responseJSON())["intermediateToken"] = request.jwtSigner->signFromToken(newIntermediateAuthToken, false);
     }
     else
     {
-        auto nextSlotId = requiredAuthSlots[0].slotId;
+        auto nextSlotId = requiredAuthSlots.begin()->slotId;
         newIntermediateAuthToken.addClaim("currentSlotId", nextSlotId); // Enforce this with authentication.
 
         // We can give the credential public data for the next credential:
@@ -189,44 +136,69 @@ bool setupNewIntermediateAuthToken(const RequestParameters &request, Mantids30::
         (*response.responseJSON())["publicData"].removeMember("slotDetails");
         (*response.responseJSON())["intermediateToken"] = request.jwtSigner->signFromToken(newIntermediateAuthToken, false);
     }
-    return true;
 }
 
-// Validate credential:
-API::APIReturn LoginPortal_AuthMethods::authorize(void *context, const RequestParameters &request, ClientDetails &clientDetails)
+// Validate user and get authorization flow:
+API::APIReturn LoginPortal_AuthMethods::preAuthorize(void *context, const API::RESTful::RequestParameters &request, ClientDetails &authClientDetails)
 {
+    json r;
     API::APIReturn response;
-
-    // Get the identity manager from global settings to handle authentication.
+    // Environment:
+    JWT::Token authenticatedAccessToken;
     IdentityManager *identityManager = Globals::getIdentityManager();
-    // Vector to store the authentication slots used by a particular scheme.
-    std::vector<AuthenticationSchemeUsedSlot> requiredAuthSlots;
-
     std::shared_ptr<AppAuthExtras> authContext = std::make_shared<AppAuthExtras>();
 
-    JWT::Token oldIntermediateAuthToken;
-    std::string accountName;
+    //  Configuration parameters:
+    auto config = Globals::pConfig;
+    uint32_t loginAuthenticationTimeout = config.get<uint32_t>("LoginPortal.AuthenticationTimeout", 300);
 
-    // Decode the bearer intermediate token... (and get the Account Name)
-    if (!validateAndDecodeBearerAccessTokenProperties(request, response, &oldIntermediateAuthToken, &accountName, authContext))
+    // Input parameters:
+    std::string appName = JSON_ASSTRING(*request.inputJSON, "app", "");                      // APPNAME.
+    std::string inputAccountName = JSON_ASSTRING(*request.inputJSON, "accountName", ""); // ACCOUNT ID.
+    std::string activity = JSON_ASSTRING(*request.inputJSON, "activity", "");            // APP ACTIVITY NAME.
+
+    if (!identityManager->applications->doesApplicationExist(appName))
     {
+        response.setError(HTTP::Status::S_404_NOT_FOUND, "not_found", "Invalid Application");
         return response;
     }
 
-    if (authContext->currentSlotId == std::nullopt || request.clientRequest->getCookie("AccessToken") != "")
+    if (!decodeAndValidateAccessTokenIfExist(request, response, &authenticatedAccessToken, inputAccountName, authContext))
     {
-        // You don´t need to authorize anything else! it's already authenticated.
-        response.setError(HTTP::Status::S_401_UNAUTHORIZED, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::AUTHENTICATION_FAILED)),
-                          authResultToString(AuthenticationResult::AUTHENTICATION_FAILED));
+        // Should logout first.
         return response;
     }
 
-    requiredAuthSlots = identityManager->authController->listAuthenticationSlotsUsedByScheme(authContext->schemeId);
+    r = identityManager->authController->getApplicableAuthenticationSchemesForAccount(appName, activity, inputAccountName, authContext->authenticatedSlots);
+
+    if (r["defaultScheme"] == Json::nullValue)
+    {
+        // Member not found.
+        response.setError(HTTP::Status::S_404_NOT_FOUND, "not_found", "There is no Authentication Scheme Available For This User/Application.");
+        return response;
+    }
+
+    r["loginAuthenticationTimeout"] = loginAuthenticationTimeout;
+    return r;
+}
+
+
+bool LoginPortal_AuthMethods::calculateRequiredAuthSlotsLeftForTheNewIntermediateAuthToken(std::shared_ptr<AppAuthExtras> authContext,
+                                                                                           std::string accountName,
+                                                                                            API::APIReturn *response,
+                                                                                            std::vector<AuthenticationSchemeUsedSlot> *requiredAuthSlotsOnScheme,
+                                                                                            const JWT::Token & accessToken
+                                                                                            )
+{
+    // Get the identity manager from global settings to handle authentication.
+    IdentityManager *identityManager = Globals::getIdentityManager();
+
+    *requiredAuthSlotsOnScheme = identityManager->authController->listAuthenticationSlotsUsedByScheme(authContext->schemeId);
     std::set<uint32_t> usedAuthSlotsOnAccount = identityManager->authController->listUsedAuthenticationSlotsOnAccount(accountName);
 
     // Remove unused requiredAuthSlots if they are optional (eg. requiredAuthSlots[0].optional) and don't exist in usedAuthSlotsOnAccount
     std::vector<AuthenticationSchemeUsedSlot> filteredAuthSlots;
-    for (const auto &slot : requiredAuthSlots)
+    for (const auto &slot : *requiredAuthSlotsOnScheme)
     {
         // Skip slots that are optional and not used by the account
         if (!slot.optional || usedAuthSlotsOnAccount.find(slot.slotId) != usedAuthSlotsOnAccount.end())
@@ -238,26 +210,45 @@ API::APIReturn LoginPortal_AuthMethods::authorize(void *context, const RequestPa
             }
         }
     }
-    requiredAuthSlots = filteredAuthSlots;
 
-    if (requiredAuthSlots.empty())
+    *requiredAuthSlotsOnScheme = filteredAuthSlots;
+
+
+    return true;
+}
+
+// Validate credential:
+API::APIReturn LoginPortal_AuthMethods::authorize(void *context, const RequestParameters &request, ClientDetails &clientDetails)
+{
+    API::APIReturn response;
+
+    // Get the identity manager from global settings to handle authentication.
+    IdentityManager *identityManager = Globals::getIdentityManager();
+    // Vector to store the authentication slots used by a particular scheme.
+
+    std::shared_ptr<AppAuthExtras> authContext = std::make_shared<AppAuthExtras>();
+    JWT::Token oldIntermediateAuthToken;
+    std::string accountName;
+
+    // Decode the bearer intermediate token... (and get the Account Name)
+    // If the token does not exist, it will get the data from the USER INPUT JSON
+    if (!authContext->validateAndDecodeBearerAccessTokenProperties(request.clientRequest->getAuthorizationBearer(), request.inputJSON, &oldIntermediateAuthToken, request.jwtValidator, &accountName))
     {
-        // Why...? at least should exist 1 left.
-        response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::INTERNAL_ERROR)),
-                          authResultToString(AuthenticationResult::INTERNAL_ERROR));
+        response.setError(HTTP::Status::S_403_FORBIDDEN, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::UNAUTHENTICATED)),
+                          authResultToString(AuthenticationResult::UNAUTHENTICATED));
         return response;
     }
 
-    // The current slot should be the first.
-    if ( requiredAuthSlots[0].slotId != authContext->currentSlotId )
+    if (authContext->currentSlotId == std::nullopt)
     {
-        response.setError(HTTP::Status::S_400_BAD_REQUEST, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::BAD_PARAMETERS)),
-                          authResultToString(AuthenticationResult::BAD_PARAMETERS));
+        // You don´t need to authorize anything else! it's already authenticated.
+        // code warning: this nullopt check prevent usage of .value() after.
+        response.setError(HTTP::Status::S_401_UNAUTHORIZED, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::AUTHENTICATION_FAILED)),
+                          authResultToString(AuthenticationResult::AUTHENTICATION_FAILED));
         return response;
     }
 
-    // Remove the first element from requiredAuthSlots
-    requiredAuthSlots.erase(requiredAuthSlots.begin());
+
 
     AuthenticationResult authRetCode = identityManager->authController->authenticateCredential(clientDetails, accountName, JSON_ASSTRING(*request.inputJSON, "password", ""),
                                                                                                authContext->currentSlotId.value(),
@@ -268,14 +259,41 @@ API::APIReturn LoginPortal_AuthMethods::authorize(void *context, const RequestPa
                   "Account Authorization Result: %" PRIu32 " - %s, for application '%s', scheme '%" PRIu32 "' and slotId = %'" PRIu32 "'", authRetCode, authResultToString(authRetCode),
                   authContext->appName.c_str(), authContext->schemeId, authContext->currentSlotId.value());
 
-    if (IS_LOGIN_AUTHORIZED(authRetCode))
+    if (IS_CREDENTIAL_AUTHENTICATED(authRetCode))
     {
-        if (!setupNewIntermediateAuthToken(request, response, identityManager, authContext, requiredAuthSlots, oldIntermediateAuthToken.getExpirationTime(), accountName))
+        std::vector<AuthenticationSchemeUsedSlot> requiredAuthSlots;
+        JWT::Token accessToken;
+        if (!decodeAndValidateAccessTokenIfExist(request,response,&accessToken, accountName,authContext))
         {
-            // Invalid Cookie...
-            authRetCode = AuthenticationResult::BAD_PARAMETERS;
-            response.setError(HTTP::Status::S_401_UNAUTHORIZED, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(authRetCode)), authResultToString(authRetCode));
+            // Invalid Access Token. (Relogin)
+            return response;
         }
+        if (!calculateRequiredAuthSlotsLeftForTheNewIntermediateAuthToken(authContext, accountName, &response, &requiredAuthSlots, accessToken))
+        {
+            return response;
+        }
+
+        if (requiredAuthSlots.empty())
+        {
+            // Why...? at least should exist 1 left.
+            response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::INTERNAL_ERROR)),
+                               authResultToString(AuthenticationResult::INTERNAL_ERROR));
+            return response;
+        }
+
+        // The current slot should be the first to avoid order change...
+        if (requiredAuthSlots.begin()->slotId != authContext->currentSlotId.value())
+        {
+            response.setError(HTTP::Status::S_400_BAD_REQUEST, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::BAD_PARAMETERS)),
+                               authResultToString(AuthenticationResult::BAD_PARAMETERS));
+            return response;
+        }
+
+        // Remove the first element from requiredAuthSlots (which is the authenticated credential)
+        requiredAuthSlots.erase(requiredAuthSlots.begin());
+
+        setupNewIntermediateAuthToken(request, response, identityManager, authContext, requiredAuthSlots, oldIntermediateAuthToken.getExpirationTime(), accountName,
+                                      authRetCode == AuthenticationResult::MUST_CHANGE_CREDENTIAL);
     }
     else
     {
@@ -293,5 +311,6 @@ API::APIReturn LoginPortal_AuthMethods::authorize(void *context, const RequestPa
 
     LOG_APP->log2(__func__, accountName, clientDetails.ipAddress, response.getHTTPResponseCode() != HTTP::Status::S_200_OK ? Logs::LEVEL_SECURITY_ALERT : Logs::LEVEL_INFO, "R/%03" PRIu16 ": %s",
                   static_cast<uint16_t>(response.getHTTPResponseCode()), request.clientRequest->getURI().c_str());
+
     return response;
 }

@@ -78,5 +78,20 @@ private:
     // TODO:
     /*    static APIReturn initiatePasswordReset(void* context, const RequestParameters& inputParameters);
     static APIReturn confirmPasswordReset(void* context, const RequestParameters& inputParameters);
+
+
 */
+
+private:
+
+    static bool calculateRequiredAuthSlotsLeftForTheNewIntermediateAuthToken(std::shared_ptr<AppAuthExtras> authContext, std::string accountName, Mantids30::API::APIReturn *response, std::vector<AuthenticationSchemeUsedSlot> *requiredAuthSlotsOnScheme, const JWT::Token & accessToken);
+
+
+    static bool decodeAndValidateAccessTokenIfExist(const RequestParameters &request, LoginPortal_AuthMethods::APIReturn &response, JWT::Token *token, const std::string &currentAccountName,std::shared_ptr<AppAuthExtras> authContext);
+
+
+    static void setupNewIntermediateAuthToken(const RequestParameters &request, Mantids30::API::APIReturn &response, IdentityManager *identityManager, std::shared_ptr<AppAuthExtras> authContext,
+                                                                const std::vector<AuthenticationSchemeUsedSlot> &requiredAuthSlots, const time_t &oldIntermediateTokenExpirationTime, const std::string &accountName,
+                                              bool mustChange);
+
 };

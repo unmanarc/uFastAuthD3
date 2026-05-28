@@ -401,7 +401,7 @@ public:
          * @param accountName account ID or user string.
          * @return json A JSON object containing the applicable authentication schemes, their details, and the default scheme.
          */
-        json getApplicableAuthenticationSchemesForAccount(const std::string &app, const std::string &activity, const std::string &accountName);
+        json getApplicableAuthenticationSchemesForAccount(const std::string &app, const std::string &activity, const std::string &accountName, const std::set<uint32_t> & alreadyAuthenticatedSlots);
 
 
     };
