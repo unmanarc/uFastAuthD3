@@ -79,7 +79,7 @@ AuthenticationResult IdentityManager::AuthController::authenticateCredential(con
             }
 
             // Slots in position 0:
-            if (authContext->firstAuth)
+            if (authContext->doesTransientTokenNotExist)
             {
                 //Calc the slot scheme hash
                 authContext->slotSchemeHash = Helpers::Crypto::calcSHA256(authSlotsToJSON(authSlotsUsedByScheme).toStyledString());
