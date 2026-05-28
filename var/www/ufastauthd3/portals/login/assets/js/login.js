@@ -41,6 +41,7 @@ let loggedInGETParsedParam = true;
 let currentScheme = null;
 let schemesAvailable = [];
 let cachedCookieData = null;
+let sessionKeepAuthenticated = false;
 const urlParams = new URLSearchParams(window.location.search);
 
 /**
@@ -328,7 +329,7 @@ $(document).ready(function () {
             },
             data: JSON.stringify({
                 preAuthUser: username,
-                keepAuthenticated: $("#keepAuthenticated").is(":checked"),
+                keepAuthenticated: sessionKeepAuthenticated,
                 app: appName,
                 schemeId: parseInt($("#currentSchemeId").val()),
                 password: password,
@@ -371,6 +372,10 @@ $(document).ready(function () {
             return;
         }
 
+        // Update readonly "Keep me signed in" switches and labels on both forms
+        $("#keepAuthenticatedPassword").prop("checked", sessionKeepAuthenticated);
+        $("#keepAuthenticatedOtp").prop("checked", sessionKeepAuthenticated);
+
         const { description, passwordFunction } = currentSlot.details;
 
         updateMessage("Please enter your " + description);
@@ -394,6 +399,8 @@ $(document).ready(function () {
     $("#usernameForm").on("submit", function (e) {
         e.preventDefault();
         const username = $("#username").val();
+        // Capture the "Keep me signed in" state as a readonly session variable
+        sessionKeepAuthenticated = $("#keepAuthenticated").is(":checked");
         $("#usernameForm").addClass("d-none");
         initializeAuthentication(username);
     });
