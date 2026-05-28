@@ -1,5 +1,6 @@
 #include "Mantids30/Protocol_HTTP/api_return.h"
 #include "loginportal_endpoints.h"
+#include "Tokens/tokensmanager.h"
 
 #include "globals.h"
 
@@ -12,20 +13,20 @@ API::APIReturn LoginPortal_Endpoints::changeCredential(void *context, const Requ
 {
     API::APIReturn response;
 
+    // Get the identity manager from global settings to handle authentication.
+    IdentityManager *identityManager = Globals::getIdentityManager();
+
     // INPUTS:
     uint32_t slotId = JSON_ASUINT(*request.inputJSON, "slotId", 0);
     Credential newCredential = Credential::createFromJSON((*request.inputJSON)["newCredential"]);
 
-    // Get the identity manager from global settings to handle authentication.
-    IdentityManager *identityManager = Globals::getIdentityManager();
-
+    // LOCAL CONTEXT:
     std::shared_ptr<TransientAuthenticationContext> authContext = std::make_shared<TransientAuthenticationContext>();
-    JWT::Token transientAuthToken;
-    std::string accountName;
     std::string transientAuthTokenStr = request.clientRequest->getAuthorizationBearer();
+    Json::Value *jResponse = response.responseJSON();
 
     // Decode the bearer transient token... (and get the Account Name)
-    if (!authContext->validateAndDecodeTransientAuthToken(transientAuthTokenStr, request.inputJSON, &transientAuthToken, request.jwtValidator, &accountName))
+    if (!authContext->validateAndMerge_TransientAuthTokenIfExist(transientAuthTokenStr, request.inputJSON, request.jwtValidator))
     {
         response.setError(HTTP::Status::S_403_FORBIDDEN, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::UNAUTHENTICATED)),
                           authResultToString(AuthenticationResult::UNAUTHENTICATED));
@@ -41,30 +42,32 @@ API::APIReturn LoginPortal_Endpoints::changeCredential(void *context, const Requ
         return response;
     }
 
-    if (!identityManager->authController->changeAccountCredential(authClientDetails, accountName, accountName, newCredential, slotId))
+    if (!identityManager->authController->changeAccountCredential(authClientDetails, authContext->accountName, authContext->accountName, newCredential, slotId))
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Internal Error: Failed to change the credential.");
     }
     else
     {
         // Excellent! give the new transient token again..
+        authContext->removeSlotFromMustChangeInTheTransientAuthToken( slotId );
 
         std::vector<AuthenticationSchemeUsedSlot> requiredAuthSlots;
-        JWT::Token accessToken;
-        if (!decodeAndValidateAccessTokenIfExist(request, response, &accessToken, accountName, authContext))
+        if (!authContext->validateAndMerge_AccessTokenIfExist(request.clientRequest->getCookie("AccessToken"), response, request.jwtValidator))
         {
             // Invalid Access Token. (Relogin)
             return response;
         }
-        if (!calculateRequiredAuthSlotsLeftForTheNewTransientAuthToken(authContext, accountName, &response, &requiredAuthSlots, accessToken))
+
+        requiredAuthSlots = calculateRequiredAuthSlotsLeftForTheNewTransientAuthToken(authContext, &response);
+
+        // Issue the same transient token but without the must change resolved id.
+        (*jResponse)["transientToken"] = authContext->issueSignedTransientTokenFromCurrentToken(request.jwtSigner);
+
+        if (requiredAuthSlots.empty() && authContext->mustChangeSlots.empty())
         {
-            return response;
+            // Validation is finished here! emit the cookie for the /token api endpoint.
+            TokensManager::issueAccessTokenCookie(response, request, authContext);
         }
-
-        // It's already authenticated and in must change list (checked before).
-        authContext->currentSlotId = slotId;
-
-        setupNewTransientAuthToken(request, response, identityManager, authContext, requiredAuthSlots, transientAuthToken.getExpirationTime(), accountName, false);
     }
 
     return response;
