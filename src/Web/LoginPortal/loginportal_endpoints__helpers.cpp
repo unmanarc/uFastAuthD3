@@ -119,7 +119,7 @@ void LoginPortal_Endpoints::issueTransientAuthTokenResponse(const RequestParamet
         if (authContext->mustChangeSlots.empty())
         {
             // Set the IAM Access Token into the Cookie ONLY if mustchangeslots is empty (to avoid login if not changed)...
-            TokensManager::issueAccessTokenCookie(response, request, authContext);
+            TokensManager::issueLoginAccessTokenCookie(response, request, authContext);
         }
         (*jResponse)["nextSlot"] = Json::nullValue; // No new slots to be tested.
     }

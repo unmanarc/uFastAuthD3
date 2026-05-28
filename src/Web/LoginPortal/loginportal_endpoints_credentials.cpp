@@ -66,7 +66,7 @@ API::APIReturn LoginPortal_Endpoints::changeCredential(void *context, const Requ
         if (requiredAuthSlots.empty() && authContext->mustChangeSlots.empty())
         {
             // Validation is finished here! emit the cookie for the /token api endpoint.
-            TokensManager::issueAccessTokenCookie(response, request, authContext);
+            TokensManager::issueLoginAccessTokenCookie(response, request, authContext);
         }
     }
 
