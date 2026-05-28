@@ -174,6 +174,31 @@ $(document).ready(function () {
         });
     }
 
+    // Function to handle authorize/changeCredential response
+    function handleAuthorizeResponse(response) {
+        if (response.changeCredential === false) {
+            if (response.nextSlot === null) {
+                loggedIn = true;
+                updateMessage("Authenticated! Redirecting...");
+                loadTokenAndRedirect();
+            } else {
+                currentSlot = response.nextSlot;
+                showNextSlot();
+            }
+        } else if (response.changeCredential === true) {
+            // This credential that has just been authenticated, NEEDS to be changed.
+            // don´t go to the next slot.
+            var pwFunc = currentSlot.details.passwordFunction;
+            if (pwFunc === 5) {
+                hideAllScreens();
+                showChangeOTPScreen();
+            } else {
+                hideAllScreens();
+                showChangePasswordScreen();
+            }
+        }
+    }
+
     // Function to send authorization request for each slot
     function authorizeCredential(username, schemeId, password) {
         $.ajax({
@@ -195,34 +220,28 @@ $(document).ready(function () {
             }),
             success: function (response) {
                 intermediateToken = response.intermediateToken;
-                if (response.nextSlot == null) {
-                    loggedIn = true;
-                    updateMessage("Authenticated! Redirecting...");
-                    loadTokenAndRedirect();
-                } else {
-                    currentSlot = response.nextSlot;
-                    showNextSlot();
-                }
+                handleAuthorizeResponse(response);
             },
             error: function (xhr, status, error) {
                 // Clear password and OTP fields on authorization error
                 $("#genericPassword").val('').trigger('input');
                 $("#otp").val('');
-                // Focus on generic password field after clearing it
-                $("#genericPassword").focus();
                 // Show the error message
                 showErrorWithXHR(xhr, status, error);
                 loggedIn = false;
-
-                // MUST CHANGE CREDENTIAL.
-                if (xhr.responseJSON["error"] == 'AUTH_ERR_113')
-                {
-                    // TODO:
-                    alert('MUST CHANGE CREDENTIAL');
-                }
-
             }
         });
+    }
+
+    // Hide all screens
+    function hideAllScreens() {
+        $("#usernameForm").addClass("d-none");
+        $("#genericPasswordForm").addClass("d-none");
+        $("#otpForm").addClass("d-none");
+        $("#authWaiting").addClass("d-none");
+        $("#logoutForm").addClass("d-none");
+        $("#changePasswordScreen").addClass("d-none");
+        $("#changeOtpScreen").addClass("d-none");
     }
 
     // Update the content based on the current slot
@@ -280,4 +299,257 @@ $(document).ready(function () {
 
         authorizeCredential(username, schemeId, otp);
     });
+
+    // ============================================================
+    // Change Password Screen Functions
+    // ============================================================
+
+    // Change Password button handlers
+    $("#changePasswordSubmitBtn").on("click", function (e) {
+        e.preventDefault();
+        submitChangePassword();
+    });
+
+    $("#changePasswordCancelBtn").on("click", function (e) {
+        e.preventDefault();
+        cancelChangePassword();
+    });
+
+    // Change OTP button handlers
+    $("#changeOtpSubmitBtn").on("click", function (e) {
+        e.preventDefault();
+        submitChangeOTP();
+    });
+
+    $("#changeOtpCancelBtn").on("click", function (e) {
+        e.preventDefault();
+        cancelChangeOTP();
+    });
+
+    // Handle Enter key in change password fields
+    $("#changeNewPassword").on("keypress", function (e) {
+        if (e.which === 13) {
+            e.preventDefault();
+            $("#changeConfirmPassword").focus();
+        }
+    });
+
+    $("#changeConfirmPassword").on("keypress", function (e) {
+        if (e.which === 13) {
+            e.preventDefault();
+            submitChangePassword();
+        }
+    });
+
+    // Handle Enter key in change OTP field
+    $("#changeOtpVerificationCode").on("keypress", function (e) {
+        if (e.which === 13) {
+            e.preventDefault();
+            submitChangeOTP();
+        }
+    });
+
+    var changePasswordFunction = 0;
+
+    /**
+     * Show the Change Password screen (direct - no step 1 verification needed)
+     */
+    function showChangePasswordScreen() {
+        changePasswordFunction = currentSlot.details.passwordFunction;
+
+        // Reset fields
+        $("#changeNewPassword").val('');
+        $("#changeConfirmPassword").val('');
+
+        // Show the screen
+        $("#changePasswordScreen").removeClass('d-none');
+
+        updateMessage("Change Password - " + currentSlot.details.description);
+        $("#changeNewPassword").focus();
+    }
+
+    /**
+     * Cancel Change Password and go back to the credential input screen
+     */
+    function cancelChangePassword() {
+        $("#changePasswordScreen").addClass('d-none');
+        showNextSlot();
+    }
+
+    /**
+     * Submit new password via changeCredential with Bearer token
+     */
+    function submitChangePassword() {
+        var newPassword = $("#changeNewPassword").val();
+        var confirmPassword = $("#changeConfirmPassword").val();
+
+        // Validations
+        if (!newPassword) {
+            updateMessage('Error: New password is required.');
+            return;
+        }
+        if (newPassword !== confirmPassword) {
+            updateMessage('Error: Passwords do not match.');
+            return;
+        }
+
+        // Compute hash using the shared function from credentials.js
+        var hashResult = computePasswordHash(newPassword, changePasswordFunction, null);
+
+        var payload = {
+            newCredential: {
+                hash: hashResult.hash,
+                ssalt: hashResult.ssalt,
+                mustChange: false,
+                slotDetails: {
+                    passwordFunction: changePasswordFunction
+                }
+            },
+            slotId: parseInt(currentSlot.slotId)
+        };
+
+        $.ajax({
+            url: '/api/v1/changeCredential',
+            type: 'PUT',
+            contentType: 'application/json',
+            headers: {
+                'Authorization': 'Bearer ' + intermediateToken
+            },
+            data: JSON.stringify(payload),
+            success: function (response) {
+                intermediateToken = response.intermediateToken;
+
+                // Password changed successfully
+                $("#changePasswordScreen").addClass('d-none');
+                updateMessage('Password changed successfully. Continuing login...');
+                // Handle response same as authorize (nextSlot, changeCredential, etc.)
+                handleAuthorizeResponse(response);
+            },
+            error: function (xhr, status, error) {
+                var msg = 'Error: Failed to change password.';
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    msg = 'Error: ' + xhr.responseJSON.message;
+                }
+                updateMessage(msg);
+            }
+        });
+    }
+
+    // ============================================================
+    // Change OTP Screen Functions
+    // ============================================================
+
+    var changeOtpGeneratedSecret = '';
+
+    /**
+     * Show the Change OTP screen (direct - generate QR and show input)
+     */
+    function showChangeOTPScreen() {
+        changeOtpGeneratedSecret = '';
+
+        // Reset fields
+        $("#changeOtpVerificationCode").val('');
+        $("#changeOtpQrCanvas").addClass('d-none');
+        $("#changeOtpSecretText").addClass('d-none');
+
+        // Show the screen
+        $("#changeOtpScreen").removeClass('d-none');
+
+        updateMessage("Change OTP - " + currentSlot.details.description);
+        $("#changeOtpVerificationCode").focus();
+
+        var label = $("#username").val() + ' - ' + currentSlot.details.description;
+        var issuer = window.location.hostname;
+
+        // Generate OTP secret client-side using otplib v13
+        var secret = otplib.generateSecret();
+        changeOtpGeneratedSecret = secret;
+
+        // Build the OTPAUTH URI
+        var uri = otplib.generateURI({
+            secret: secret,
+            issuer: issuer,
+            label: label
+        });
+
+        // Generate QR code on canvas
+        var canvas = document.getElementById('changeOtpQrCanvas');
+        QRCode.toCanvas(canvas, uri, { width: 200 }, function (error) {
+            if (error) {
+                console.error('QR Code generation failed:', error);
+                updateMessage('Error: Failed to generate QR code.');
+            } else {
+                $("#changeOtpQrCanvas").removeClass('d-none');
+            }
+        });
+    }
+
+    /**
+     * Cancel Change OTP and go back to the credential input screen
+     */
+    function cancelChangeOTP() {
+        $("#changeOtpScreen").addClass('d-none');
+        showNextSlot();
+    }
+
+    /**
+     * Validate new OTP and submit change via changeCredential with Bearer token
+     */
+    function submitChangeOTP() {
+        var verificationCode = $("#changeOtpVerificationCode").val().trim();
+
+        if (!verificationCode || verificationCode.length !== 6) {
+            updateMessage('Error: Please enter a valid 6-digit OTP code.');
+            return;
+        }
+
+        // Client-side validation using otplib v13 verifySync
+        var result = otplib.verifySync({
+            token: verificationCode,
+            secret: changeOtpGeneratedSecret
+        });
+
+        if (!result || !result.valid) {
+            updateMessage('Error: Invalid OTP code. Please scan the QR code again and try.');
+            return;
+        }
+
+        var payload = {
+            newCredential: {
+                hash: changeOtpGeneratedSecret,
+                ssalt: "",
+                mustChange: false,
+                slotDetails: {
+                    passwordFunction: 5
+                }
+            },
+            slotId: parseInt(currentSlot.slotId)
+        };
+
+        $.ajax({
+            url: '/api/v1/changeCredential',
+            type: 'PUT',
+            contentType: 'application/json',
+            headers: {
+                'Authorization': 'Bearer ' + intermediateToken
+            },
+            data: JSON.stringify(payload),
+            success: function (response) {
+                intermediateToken = response.intermediateToken;
+
+                // OTP changed successfully
+                $("#changeOtpScreen").addClass('d-none');
+                updateMessage('OTP credential changed successfully. Continuing login...');
+                // Handle response same as authorize (nextSlot, changeCredential, etc.)
+                handleAuthorizeResponse(response);
+            },
+            error: function (xhr, status, error) {
+                var msg = 'Error: Failed to change OTP credential.';
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    msg = 'Error: ' + xhr.responseJSON.message;
+                }
+                updateMessage(msg);
+            }
+        });
+    }
 });

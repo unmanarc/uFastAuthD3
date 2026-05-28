@@ -55,7 +55,7 @@ void LoginPortal_AuthMethods::addEndpoints(std::shared_ptr<Endpoints> endpoints)
 
     // Post-authenticated API:
     //endpoints->addEndpoint(Endpoints::POST, "retokenize", nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {}, nullptr, &retokenize);
-    endpoints->addEndpoint(Endpoints::PUT, "changeCredential",             SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {}, nullptr, &changeCredential);
+    endpoints->addEndpoint(Endpoints::PUT, "changeCredential",             SecurityOptions::NO_AUTH, {}, nullptr, &changeCredential);
     endpoints->addEndpoint(Endpoints::GET, "listCredentials",              SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {}, nullptr, &listCredentials);
     endpoints->addEndpoint(Endpoints::GET, "accountCredentialPublicData",  SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {}, nullptr, &accountCredentialPublicData);
     endpoints->addEndpoint(Endpoints::GET, "getSessionInfo",               SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {}, nullptr, &getSessionInfo);
