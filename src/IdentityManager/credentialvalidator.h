@@ -3,6 +3,7 @@
 #include "json/value.h"
 #include <Mantids30/API_EndpointsAndSessions/session.h>
 #include <Mantids30/Threads/garbagecollector.h>
+#include <Mantids30/DataFormat_JWT/jwt.h>
 
 #include <mutex>
 #include <optional>
@@ -80,6 +81,35 @@ struct ApplicationScope
 
 struct AppAuthExtras
 {
+    bool validateAndDecodeBearerAccessTokenProperties(const std::string & oldIntermediateAuthTokenStr,
+                                                      const Json::Value * inputJSON,
+                                                      Mantids30::DataFormat::JWT::Token *oldIntermediateAuthTokenOut,
+                                                      const std::shared_ptr<Mantids30::DataFormat::JWT> jwtValidator,
+                                                      std::string *accountName)
+    {
+        // Validate the token
+        if (!oldIntermediateAuthTokenStr.empty() && oldIntermediateAuthTokenStr != "null")
+        {
+            if (!jwtValidator->verify(oldIntermediateAuthTokenStr, oldIntermediateAuthTokenOut))
+            {
+                return false;
+            }
+
+            // Extract JWT Signed Parameters:
+            *accountName = JSON_ASSTRING_D(oldIntermediateAuthTokenOut->getClaim("preAuthUser"), "");
+            fillFromTokenClaims(oldIntermediateAuthTokenOut->getAllClaimsAsJSON());
+        }
+        else
+        {
+            // When there is no token, override initial token parameters with the input parameters...
+            *accountName = JSON_ASSTRING(*inputJSON, "preAuthUser", "");
+            fillFromInitialJSONPOST(*inputJSON);
+        }
+
+        return true;
+    }
+
+
     void fillFromTokenClaims( const json & claims )
     {
         appName = JSON_ASSTRING(claims,"app", "");
@@ -88,6 +118,7 @@ struct AppAuthExtras
         keepAuthenticated = JSON_ASBOOL(claims,"keepAuthenticated", false);
         currentSlotId = JSON_ASUINT(claims,"currentSlotId", 0);
         authenticatedSlots = Mantids30::Helpers::jsonToUInt32Set(claims,"authenticatedSlots");
+        mustChangeSlots = Mantids30::Helpers::jsonToUInt32Set(claims,"mustChangeSlots");
     }
 
     void fillFromInitialJSONPOST( const json & inputJSON )
@@ -103,9 +134,10 @@ struct AppAuthExtras
     bool keepAuthenticated = false;
     std::string appName;
     uint32_t schemeId = UINT32_MAX;
-    std::optional<uint32_t> currentSlotId = 0;
+    std::optional<uint32_t> currentSlotId = std::nullopt;
     std::string slotSchemeHash;
     std::set<uint32_t> authenticatedSlots;
+    std::set<uint32_t> mustChangeSlots;
 };
 
 class CredentialValidator

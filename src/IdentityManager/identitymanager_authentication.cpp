@@ -391,7 +391,7 @@ Credential IdentityManager::AuthController::createNewCredential(const uint32_t &
     return r;
 }
 
-json IdentityManager::AuthController::getApplicableAuthenticationSchemesForAccount(const std::string &app, const std::string &activity, const std::string &accountName)
+json IdentityManager::AuthController::getApplicableAuthenticationSchemesForAccount(const std::string &app, const std::string &activity, const std::string &accountName, const std::set<uint32_t> &alreadyAuthenticatedSlots)
 {
     Threads::Sync::Lock_RD lock(m_parent->m_mutex);
 
@@ -402,6 +402,10 @@ json IdentityManager::AuthController::getApplicableAuthenticationSchemesForAccou
 
     std::map<uint32_t, std::string> allSchemes = listAuthenticationSchemes();
 
+
+    ///////////////////////////////////////////////////////////////////////////
+    ///  ACCOUNT DOES NOT BELONGS TO THE APP
+    ///////////////////////////////////////////////////////////////////////////
     if (!m_parent->applications->validateApplicationAccount(app, accountName))
     {
         // If the user is invalid or not associated, return only the default scheme (reducing risk of user enumeration)
@@ -426,6 +430,9 @@ json IdentityManager::AuthController::getApplicableAuthenticationSchemesForAccou
         return r;
     }
 
+    ///////////////////////////////////////////////////////////////////////////
+    ///  ACCOUNT DOES BELONGS TO THE APP
+    ///////////////////////////////////////////////////////////////////////////
     // Fetch necessary data
     std::set<uint32_t> availableSchemes = m_parent->applicationActivities->listAuthenticationSchemesForApplicationActivity(app, activity);
     std::set<uint32_t> accountUsedAuthSlots = listUsedAuthenticationSlotsOnAccount(accountName);
@@ -453,26 +460,29 @@ json IdentityManager::AuthController::getApplicableAuthenticationSchemesForAccou
         if (allSlotsAvailable)
         {
             int i = 0;
-            json currentScheme;
+            Json::Value currentScheme;
             currentScheme["description"] = allSchemes[schemeId];
+
             // Find the first available slot for this scheme
-            json firstSlot = Json::nullValue;
+            Json::Value firstSlot = Json::nullValue;
             for (const AuthenticationSchemeUsedSlot &slot : slots)
             {
-                if (accountUsedAuthSlots.find(slot.slotId) != accountUsedAuthSlots.end())
+                if (
+                    accountUsedAuthSlots.find(slot.slotId) != accountUsedAuthSlots.end() && // found in accountUsedAuthSlots
+                    alreadyAuthenticatedSlots.find(slot.slotId) == alreadyAuthenticatedSlots.end() // not found in alreadyAuthenticatedSlots
+                    )
                 {
                     firstSlot = slot.toJSON();
                     break;
                 }
             }
-            // If no slot is found for this scheme, set to null
-            if (firstSlot == Json::nullValue)
-            {
-                firstSlot = Json::nullValue;
-            }
+
             currentScheme["firstSlot"] = firstSlot;
+
             r["availableSchemes"][std::to_string(schemeId)] = currentScheme;
-            if (defaultScheme.has_value() && schemeId == *defaultScheme)
+
+            // Put the default scheme OR if you found something without slot ids (already authenticated), go with it.
+            if ((defaultScheme.has_value() && schemeId == *defaultScheme && r["defaultScheme"] == Json::nullValue) || firstSlot == Json::nullValue)
             {
                 r["defaultScheme"] = std::to_string(schemeId);
             }
