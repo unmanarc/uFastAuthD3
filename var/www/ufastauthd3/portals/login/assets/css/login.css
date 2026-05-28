@@ -133,3 +133,44 @@ body
   margin-top: 3px; 
   margin-left: 7px; 
 }
+
+/* Mobile portrait: full-screen card */
+@media (orientation: portrait) {
+    body {
+        overflow: hidden;
+    }
+
+    .mobile-fullscreen-card {
+        width: 100vw !important;
+        max-width: 100% !important;
+        padding: 0 !important;
+    }
+
+    .mobile-fullscreen-card .card {
+        border: none !important;
+        box-shadow: none !important;
+        border-radius: 0 !important;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+
+    .mobile-fullscreen-card .card-body {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding: 20px;
+    }
+
+    .mobile-fullscreen-card .brand-wrapper {
+        flex: 0 0 auto;
+    }
+
+    .mobile-fullscreen-card #screenContent {
+        flex: 1 0 auto;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+}
