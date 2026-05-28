@@ -84,14 +84,14 @@ private:
 
 private:
 
-    static bool calculateRequiredAuthSlotsLeftForTheNewIntermediateAuthToken(std::shared_ptr<AppAuthExtras> authContext, std::string accountName, Mantids30::API::APIReturn *response, std::vector<AuthenticationSchemeUsedSlot> *requiredAuthSlotsOnScheme, const JWT::Token & accessToken);
+    static bool calculateRequiredAuthSlotsLeftForTheNewTransientAuthToken(std::shared_ptr<TransientAuthenticationContext> authContext, std::string accountName, Mantids30::API::APIReturn *response, std::vector<AuthenticationSchemeUsedSlot> *requiredAuthSlotsOnScheme, const JWT::Token & accessToken);
 
 
-    static bool decodeAndValidateAccessTokenIfExist(const RequestParameters &request, LoginPortal_AuthMethods::APIReturn &response, JWT::Token *token, const std::string &currentAccountName,std::shared_ptr<AppAuthExtras> authContext);
+    static bool decodeAndValidateAccessTokenIfExist(const RequestParameters &request, LoginPortal_AuthMethods::APIReturn &response, JWT::Token *token, const std::string &currentAccountName,std::shared_ptr<TransientAuthenticationContext> authContext);
 
 
-    static void setupNewIntermediateAuthToken(const RequestParameters &request, Mantids30::API::APIReturn &response, IdentityManager *identityManager, std::shared_ptr<AppAuthExtras> authContext,
-                                                                const std::vector<AuthenticationSchemeUsedSlot> &requiredAuthSlots, const time_t &oldIntermediateTokenExpirationTime, const std::string &accountName,
+    static void setupNewTransientAuthToken(const RequestParameters &request, Mantids30::API::APIReturn &response, IdentityManager *identityManager, std::shared_ptr<TransientAuthenticationContext> authContext,
+                                                                const std::vector<AuthenticationSchemeUsedSlot> &requiredAuthSlots, const time_t &oldTransientTokenExpirationTime, const std::string &accountName,
                                               bool mustChange);
 
 };

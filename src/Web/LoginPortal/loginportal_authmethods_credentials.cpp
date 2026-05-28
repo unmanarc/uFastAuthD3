@@ -69,12 +69,12 @@ API::APIReturn LoginPortal_AuthMethods::changeCredential(void *context, const Re
     // Get the identity manager from global settings to handle authentication.
     IdentityManager *identityManager = Globals::getIdentityManager();
 
-    std::shared_ptr<AppAuthExtras> authContext = std::make_shared<AppAuthExtras>();
-    JWT::Token oldIntermediateAuthToken;
+    std::shared_ptr<TransientAuthenticationContext> authContext = std::make_shared<TransientAuthenticationContext>();
+    JWT::Token oldTransientAuthToken;
     std::string accountName;
 
-    // Decode the bearer intermediate token... (and get the Account Name)
-    if (!authContext->validateAndDecodeBearerAccessTokenProperties(request.clientRequest->getAuthorizationBearer(), request.inputJSON, &oldIntermediateAuthToken, request.jwtValidator, &accountName))
+    // Decode the bearer transient token... (and get the Account Name)
+    if (!authContext->validateAndDecodeBearerAccessTokenProperties(request.clientRequest->getAuthorizationBearer(), request.inputJSON, &oldTransientAuthToken, request.jwtValidator, &accountName))
     {
         response.setError(HTTP::Status::S_403_FORBIDDEN, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::UNAUTHENTICATED)),
                           authResultToString(AuthenticationResult::UNAUTHENTICATED));
@@ -96,7 +96,7 @@ API::APIReturn LoginPortal_AuthMethods::changeCredential(void *context, const Re
     }
     else
     {
-        // Excellent! give the new intermediate token again..
+        // Excellent! give the new transient token again..
 
         std::vector<AuthenticationSchemeUsedSlot> requiredAuthSlots;
         JWT::Token accessToken;
@@ -105,7 +105,7 @@ API::APIReturn LoginPortal_AuthMethods::changeCredential(void *context, const Re
             // Invalid Access Token. (Relogin)
             return response;
         }
-        if (!calculateRequiredAuthSlotsLeftForTheNewIntermediateAuthToken(authContext, accountName, &response, &requiredAuthSlots, accessToken))
+        if (!calculateRequiredAuthSlotsLeftForTheNewTransientAuthToken(authContext, accountName, &response, &requiredAuthSlots, accessToken))
         {
             return response;
         }
@@ -113,7 +113,7 @@ API::APIReturn LoginPortal_AuthMethods::changeCredential(void *context, const Re
         // It's already authenticated and in must change list (checked before).
         authContext->currentSlotId = slotId;
 
-        setupNewIntermediateAuthToken(request, response, identityManager, authContext, requiredAuthSlots, oldIntermediateAuthToken.getExpirationTime(), accountName, false);
+        setupNewTransientAuthToken(request, response, identityManager, authContext, requiredAuthSlots, oldTransientAuthToken.getExpirationTime(), accountName, false);
     }
 
     return response;

@@ -21,7 +21,7 @@ using namespace API::RESTful;
 using namespace Network::Protocols;
 using namespace Mantids30::DataFormat;
 
-bool LoginPortal_AuthMethods::decodeAndValidateAccessTokenIfExist(const RequestParameters &request, LoginPortal_AuthMethods::APIReturn &response, JWT::Token *token, const std::string &currentAccountName,std::shared_ptr<AppAuthExtras> authContext)
+bool LoginPortal_AuthMethods::decodeAndValidateAccessTokenIfExist(const RequestParameters &request, LoginPortal_AuthMethods::APIReturn &response, JWT::Token *token, const std::string &currentAccountName,std::shared_ptr<TransientAuthenticationContext> authContext)
 {
     std::string cookieAccessTokenStr = request.clientRequest->getCookie("AccessToken");
 
@@ -62,38 +62,38 @@ bool LoginPortal_AuthMethods::decodeAndValidateAccessTokenIfExist(const RequestP
 }
 
 
-void LoginPortal_AuthMethods::setupNewIntermediateAuthToken(const RequestParameters &request, Mantids30::API::APIReturn &response, IdentityManager *identityManager, std::shared_ptr<AppAuthExtras> authContext,
-                                   const std::vector<AuthenticationSchemeUsedSlot> &requiredAuthSlots, const time_t &oldIntermediateTokenExpirationTime, const std::string &accountName,
+void LoginPortal_AuthMethods::setupNewTransientAuthToken(const RequestParameters &request, Mantids30::API::APIReturn &response, IdentityManager *identityManager, std::shared_ptr<TransientAuthenticationContext> authContext,
+                                   const std::vector<AuthenticationSchemeUsedSlot> &requiredAuthSlots, const time_t &oldTransientTokenExpirationTime, const std::string &accountName,
                                    bool mustChange)
 {
     // Retrieve configuration parameters from global settings.
     auto config = Globals::pConfig;
     uint32_t loginAuthenticationTimeout = config.get<uint32_t>("LoginPortal.AuthenticationTimeout", 300);
-    JWT::Token newIntermediateAuthToken;
+    JWT::Token newTransientAuthToken;
 
     if (authContext->firstAuth)
     {
-        newIntermediateAuthToken.setJwtId(Mantids30::Helpers::Random::createRandomString(16));
-        newIntermediateAuthToken.setExpirationTime(time(nullptr) + loginAuthenticationTimeout);
+        newTransientAuthToken.setJwtId(Mantids30::Helpers::Random::createRandomString(16));
+        newTransientAuthToken.setExpirationTime(time(nullptr) + loginAuthenticationTimeout);
     }
     else
     {
-        newIntermediateAuthToken.setExpirationTime(oldIntermediateTokenExpirationTime);
+        newTransientAuthToken.setExpirationTime(oldTransientTokenExpirationTime);
     }
 
-    newIntermediateAuthToken.setIssuedAt(time(nullptr));
-    newIntermediateAuthToken.setNotBefore(time(nullptr) - 30);
-    newIntermediateAuthToken.addClaim("app", authContext->appName);
-    newIntermediateAuthToken.addClaim("preAuthUser", accountName);
-    newIntermediateAuthToken.addClaim("slotSchemeHash", authContext->slotSchemeHash);
-    newIntermediateAuthToken.addClaim("schemeId", authContext->schemeId);
-    newIntermediateAuthToken.addClaim("keepAuthenticated", authContext->keepAuthenticated);
-    newIntermediateAuthToken.addClaim("type", "intermediate");
+    newTransientAuthToken.setIssuedAt(time(nullptr));
+    newTransientAuthToken.setNotBefore(time(nullptr) - 30);
+    newTransientAuthToken.addClaim("app", authContext->appName);
+    newTransientAuthToken.addClaim("preAuthUser", accountName);
+    newTransientAuthToken.addClaim("slotSchemeHash", authContext->slotSchemeHash);
+    newTransientAuthToken.addClaim("schemeId", authContext->schemeId);
+    newTransientAuthToken.addClaim("keepAuthenticated", authContext->keepAuthenticated);
+    newTransientAuthToken.addClaim("type", "transient");
 
     std::set<uint32_t> authSlots = authContext->authenticatedSlots;
     if (authContext->currentSlotId.has_value())
         authSlots.insert(authContext->currentSlotId.value());
-    newIntermediateAuthToken.addClaim("authenticatedSlots", Mantids30::Helpers::setToJSON(authSlots));
+    newTransientAuthToken.addClaim("authenticatedSlots", Mantids30::Helpers::setToJSON(authSlots));
 
     std::set<uint32_t> currentMustChangeSlots = authContext->mustChangeSlots;
     if (mustChange)
@@ -101,7 +101,7 @@ void LoginPortal_AuthMethods::setupNewIntermediateAuthToken(const RequestParamet
     else
         currentMustChangeSlots.erase(authContext->currentSlotId.value());
 
-    newIntermediateAuthToken.addClaim("mustChangeSlots", Mantids30::Helpers::setToJSON(currentMustChangeSlots));
+    newTransientAuthToken.addClaim("mustChangeSlots", Mantids30::Helpers::setToJSON(currentMustChangeSlots));
 
     (*response.responseJSON())["changeCredential"] = mustChange;
 
@@ -110,20 +110,20 @@ void LoginPortal_AuthMethods::setupNewIntermediateAuthToken(const RequestParamet
         if (currentMustChangeSlots.empty())
         {
             // Set the IAM Access Token into the Cookie ONLY if mustchangeslots is empty...
-            TokensManager::setIAMAccessTokenCookie(response, request, newIntermediateAuthToken,
+            TokensManager::setIAMAccessTokenCookie(response, request, newTransientAuthToken,
                                                    authContext->keepAuthenticated,              // Keep authenticated will use the current authentication proccess
-                                                   newIntermediateAuthToken.getExpirationTime() // Get current JWT expiration time (if keep autneticated is false)
+                                                   newTransientAuthToken.getExpirationTime() // Get current JWT expiration time (if keep autneticated is false)
                                                    );
         }
 
         // DONE!
         (*response.responseJSON())["nextSlot"] = Json::nullValue;
-        (*response.responseJSON())["intermediateToken"] = request.jwtSigner->signFromToken(newIntermediateAuthToken, false);
+        (*response.responseJSON())["transientToken"] = request.jwtSigner->signFromToken(newTransientAuthToken, false);
     }
     else
     {
         auto nextSlotId = requiredAuthSlots.begin()->slotId;
-        newIntermediateAuthToken.addClaim("currentSlotId", nextSlotId); // Enforce this with authentication.
+        newTransientAuthToken.addClaim("currentSlotId", nextSlotId); // Enforce this with authentication.
 
         // We can give the credential public data for the next credential:
         Credential credentialPublicData = identityManager->authController->getAccountCredentialPublicData(accountName, nextSlotId);
@@ -134,7 +134,7 @@ void LoginPortal_AuthMethods::setupNewIntermediateAuthToken(const RequestParamet
         (*response.responseJSON())["nextSlot"] = nextSlot;
         (*response.responseJSON())["publicData"] = credentialPublicData.toJSON(identityManager->authController->getAuthenticationPolicy());
         (*response.responseJSON())["publicData"].removeMember("slotDetails");
-        (*response.responseJSON())["intermediateToken"] = request.jwtSigner->signFromToken(newIntermediateAuthToken, false);
+        (*response.responseJSON())["transientToken"] = request.jwtSigner->signFromToken(newTransientAuthToken, false);
     }
 }
 
@@ -146,7 +146,7 @@ API::APIReturn LoginPortal_AuthMethods::preAuthorize(void *context, const API::R
     // Environment:
     JWT::Token authenticatedAccessToken;
     IdentityManager *identityManager = Globals::getIdentityManager();
-    std::shared_ptr<AppAuthExtras> authContext = std::make_shared<AppAuthExtras>();
+    std::shared_ptr<TransientAuthenticationContext> authContext = std::make_shared<TransientAuthenticationContext>();
 
     //  Configuration parameters:
     auto config = Globals::pConfig;
@@ -183,7 +183,7 @@ API::APIReturn LoginPortal_AuthMethods::preAuthorize(void *context, const API::R
 }
 
 
-bool LoginPortal_AuthMethods::calculateRequiredAuthSlotsLeftForTheNewIntermediateAuthToken(std::shared_ptr<AppAuthExtras> authContext,
+bool LoginPortal_AuthMethods::calculateRequiredAuthSlotsLeftForTheNewTransientAuthToken(std::shared_ptr<TransientAuthenticationContext> authContext,
                                                                                            std::string accountName,
                                                                                             API::APIReturn *response,
                                                                                             std::vector<AuthenticationSchemeUsedSlot> *requiredAuthSlotsOnScheme,
@@ -226,13 +226,13 @@ API::APIReturn LoginPortal_AuthMethods::authorize(void *context, const RequestPa
     IdentityManager *identityManager = Globals::getIdentityManager();
     // Vector to store the authentication slots used by a particular scheme.
 
-    std::shared_ptr<AppAuthExtras> authContext = std::make_shared<AppAuthExtras>();
-    JWT::Token oldIntermediateAuthToken;
+    std::shared_ptr<TransientAuthenticationContext> authContext = std::make_shared<TransientAuthenticationContext>();
+    JWT::Token oldTransientAuthToken;
     std::string accountName;
 
-    // Decode the bearer intermediate token... (and get the Account Name)
+    // Decode the bearer transient token... (and get the Account Name)
     // If the token does not exist, it will get the data from the USER INPUT JSON
-    if (!authContext->validateAndDecodeBearerAccessTokenProperties(request.clientRequest->getAuthorizationBearer(), request.inputJSON, &oldIntermediateAuthToken, request.jwtValidator, &accountName))
+    if (!authContext->validateAndDecodeBearerAccessTokenProperties(request.clientRequest->getAuthorizationBearer(), request.inputJSON, &oldTransientAuthToken, request.jwtValidator, &accountName))
     {
         response.setError(HTTP::Status::S_403_FORBIDDEN, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::UNAUTHENTICATED)),
                           authResultToString(AuthenticationResult::UNAUTHENTICATED));
@@ -268,7 +268,7 @@ API::APIReturn LoginPortal_AuthMethods::authorize(void *context, const RequestPa
             // Invalid Access Token. (Relogin)
             return response;
         }
-        if (!calculateRequiredAuthSlotsLeftForTheNewIntermediateAuthToken(authContext, accountName, &response, &requiredAuthSlots, accessToken))
+        if (!calculateRequiredAuthSlotsLeftForTheNewTransientAuthToken(authContext, accountName, &response, &requiredAuthSlots, accessToken))
         {
             return response;
         }
@@ -292,7 +292,7 @@ API::APIReturn LoginPortal_AuthMethods::authorize(void *context, const RequestPa
         // Remove the first element from requiredAuthSlots (which is the authenticated credential)
         requiredAuthSlots.erase(requiredAuthSlots.begin());
 
-        setupNewIntermediateAuthToken(request, response, identityManager, authContext, requiredAuthSlots, oldIntermediateAuthToken.getExpirationTime(), accountName,
+        setupNewTransientAuthToken(request, response, identityManager, authContext, requiredAuthSlots, oldTransientAuthToken.getExpirationTime(), accountName,
                                       authRetCode == AuthenticationResult::MUST_CHANGE_CREDENTIAL);
     }
     else
