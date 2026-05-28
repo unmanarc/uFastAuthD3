@@ -9,7 +9,7 @@ using namespace Mantids30::Program;
 using namespace Mantids30;
 using namespace Mantids30::Network::Protocols;
 
-void AdminPortalMethods_ApplicationsScopes::addEndpoints_Scopes(std::shared_ptr<Endpoints> endpoints)
+void AdminPortal_Endpoints_ApplicationsScopes::addEndpoints_Scopes(std::shared_ptr<Endpoints> endpoints)
 {
     using SecurityOptions = Mantids30::API::RESTful::Endpoints::SecurityOptions;
     endpoints->addEndpoint(Endpoints::POST, "addApplicationScopeToAccount", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"}, nullptr, &addApplicationScopeToAccount);
@@ -22,7 +22,7 @@ void AdminPortalMethods_ApplicationsScopes::addEndpoints_Scopes(std::shared_ptr<
     endpoints->addEndpoint(Endpoints::GET, "searchApplicationScopes", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"}, nullptr, &searchApplicationScopes);
 }
 
-API::APIReturn AdminPortalMethods_ApplicationsScopes::addApplicationScopeToAccount(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortal_Endpoints_ApplicationsScopes::addApplicationScopeToAccount(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
@@ -46,7 +46,7 @@ API::APIReturn AdminPortalMethods_ApplicationsScopes::addApplicationScopeToAccou
     return response;
 }
 
-API::APIReturn AdminPortalMethods_ApplicationsScopes::removeApplicationScopeFromAccount(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortal_Endpoints_ApplicationsScopes::removeApplicationScopeFromAccount(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
@@ -69,7 +69,7 @@ API::APIReturn AdminPortalMethods_ApplicationsScopes::removeApplicationScopeFrom
     }
     return response;
 }
-API::APIReturn AdminPortalMethods_ApplicationsScopes::addApplicationScope(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortal_Endpoints_ApplicationsScopes::addApplicationScope(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
@@ -114,7 +114,7 @@ API::APIReturn AdminPortalMethods_ApplicationsScopes::addApplicationScope(void *
     return response;
 }
 
-API::APIReturn AdminPortalMethods_ApplicationsScopes::removeApplicationScope(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortal_Endpoints_ApplicationsScopes::removeApplicationScope(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
@@ -149,7 +149,7 @@ API::APIReturn AdminPortalMethods_ApplicationsScopes::removeApplicationScope(voi
     return response;
 }
 
-API::APIReturn AdminPortalMethods_ApplicationsScopes::addApplicationScopeToRole(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortal_Endpoints_ApplicationsScopes::addApplicationScopeToRole(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
@@ -162,7 +162,7 @@ API::APIReturn AdminPortalMethods_ApplicationsScopes::addApplicationScopeToRole(
 
     return response;
 }
-API::APIReturn AdminPortalMethods_ApplicationsScopes::removeApplicationScopeFromRole(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortal_Endpoints_ApplicationsScopes::removeApplicationScopeFromRole(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
@@ -177,7 +177,7 @@ API::APIReturn AdminPortalMethods_ApplicationsScopes::removeApplicationScopeFrom
 }
 
 
-API::APIReturn AdminPortalMethods_ApplicationsScopes::searchApplicationScopes(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortal_Endpoints_ApplicationsScopes::searchApplicationScopes(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     return Globals::getIdentityManager()->authController->searchApplicationScopes(*request.inputJSON);
 }

@@ -12,7 +12,7 @@ using namespace Mantids30::Program;
 using namespace Mantids30;
 using namespace Mantids30::Network::Protocols;
 
-std::map<std::string, std::string> AdminPortalMethods_Accounts::jsonToMap(const json &jValue)
+std::map<std::string, std::string> AdminPortal_Endpoints_Accounts::jsonToMap(const json &jValue)
 {
     std::map<std::string, std::string> r;
     for (const std::string &memberName : jValue.getMemberNames())
@@ -23,7 +23,7 @@ std::map<std::string, std::string> AdminPortalMethods_Accounts::jsonToMap(const 
     return r;
 }
 
-void AdminPortalMethods_Accounts::addEndpoints_Accounts(std::shared_ptr<Endpoints> endpoints)
+void AdminPortal_Endpoints_Accounts::addEndpoints_Accounts(std::shared_ptr<Endpoints> endpoints)
 {
     using SecurityOptions = Mantids30::API::RESTful::Endpoints::SecurityOptions;
 
@@ -49,7 +49,7 @@ void AdminPortalMethods_Accounts::addEndpoints_Accounts(std::shared_ptr<Endpoint
     endpoints->addEndpoint(Endpoints::GET,  "getAccountDetailField", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"CONFIG_READ"},    nullptr, &getAccountDetailField);
 }
 
-API::APIReturn AdminPortalMethods_Accounts::addAccount(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortal_Endpoints_Accounts::addAccount(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
     // Extract account name from request
@@ -144,7 +144,7 @@ API::APIReturn AdminPortalMethods_Accounts::addAccount(void *context, const Requ
     return response;
 }
 
-API::APIReturn AdminPortalMethods_Accounts::getAccountFlags(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortal_Endpoints_Accounts::getAccountFlags(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     APIReturn response;
     std::string accountName = JSON_ASSTRING(*request.inputJSON, "accountName", "");
@@ -158,7 +158,7 @@ API::APIReturn AdminPortalMethods_Accounts::getAccountFlags(void *context, const
     return Globals::getIdentityManager()->accounts->getAccountFlags(accountName).toJSON();
 }
 
-API::APIReturn AdminPortalMethods_Accounts::changeAccountFlags(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortal_Endpoints_Accounts::changeAccountFlags(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     APIReturn response;
     std::string accountName = JSON_ASSTRING(*request.inputJSON, "accountName", "");
@@ -189,7 +189,7 @@ API::APIReturn AdminPortalMethods_Accounts::changeAccountFlags(void *context, co
     return response;
 }
 
-API::APIReturn AdminPortalMethods_Accounts::doesAccountExist(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortal_Endpoints_Accounts::doesAccountExist(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
     std::string accountName = JSON_ASSTRING(*request.inputJSON, "accountName", "");
@@ -208,12 +208,12 @@ API::APIReturn AdminPortalMethods_Accounts::doesAccountExist(void *context, cons
     return response;
 }
 
-API::APIReturn AdminPortalMethods_Accounts::searchAccounts(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortal_Endpoints_Accounts::searchAccounts(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     return Globals::getIdentityManager()->accounts->searchAccounts(*request.inputJSON);
 }
 
-API::APIReturn AdminPortalMethods_Accounts::getAccountApplications(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortal_Endpoints_Accounts::getAccountApplications(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
@@ -301,7 +301,7 @@ API::APIReturn AdminPortalMethods_Accounts::getAccountApplications(void *context
     return response;
 }
 
-API::APIReturn AdminPortalMethods_Accounts::addAccountToApplication(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortal_Endpoints_Accounts::addAccountToApplication(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
@@ -329,7 +329,7 @@ API::APIReturn AdminPortalMethods_Accounts::addAccountToApplication(void *contex
     return response;
 }
 
-API::APIReturn AdminPortalMethods_Accounts::removeAccountFromApplication(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortal_Endpoints_Accounts::removeAccountFromApplication(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
@@ -355,12 +355,12 @@ API::APIReturn AdminPortalMethods_Accounts::removeAccountFromApplication(void *c
     return response;
 }
 
-API::APIReturn AdminPortalMethods_Accounts::searchFields(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortal_Endpoints_Accounts::searchFields(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     return Globals::getIdentityManager()->accounts->searchFields(*request.inputJSON);
 }
 
-API::APIReturn AdminPortalMethods_Accounts::addAccountDetailField(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortal_Endpoints_Accounts::addAccountDetailField(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
@@ -380,7 +380,7 @@ API::APIReturn AdminPortalMethods_Accounts::addAccountDetailField(void *context,
     return response;
 }
 
-AdminPortalMethods_Accounts::APIReturn AdminPortalMethods_Accounts::updateAccountDetailField(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+AdminPortal_Endpoints_Accounts::APIReturn AdminPortal_Endpoints_Accounts::updateAccountDetailField(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
     AccountDetailField fieldDetails;
@@ -398,7 +398,7 @@ AdminPortalMethods_Accounts::APIReturn AdminPortalMethods_Accounts::updateAccoun
     return API::APIReturn();
 }
 
-API::APIReturn AdminPortalMethods_Accounts::removeAccountDetailField(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortal_Endpoints_Accounts::removeAccountDetailField(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
@@ -416,7 +416,7 @@ API::APIReturn AdminPortalMethods_Accounts::removeAccountDetailField(void *conte
     return response;
 }
 
-API::APIReturn AdminPortalMethods_Accounts::getAccountDetailField(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortal_Endpoints_Accounts::getAccountDetailField(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
@@ -436,7 +436,7 @@ API::APIReturn AdminPortalMethods_Accounts::getAccountDetailField(void *context,
     return field.value().toJSON();
 }
 
-API::APIReturn AdminPortalMethods_Accounts::getAccountDetailFieldsValues(void *context, const RequestParameters &request,
+API::APIReturn AdminPortal_Endpoints_Accounts::getAccountDetailFieldsValues(void *context, const RequestParameters &request,
                                                             ClientDetails &authClientDetails)
 {
     API::APIReturn response;
@@ -459,7 +459,7 @@ API::APIReturn AdminPortalMethods_Accounts::getAccountDetailFieldsValues(void *c
     return result;
 }
 
-API::APIReturn AdminPortalMethods_Accounts::updateAccountDetailFieldsValues(void *context, const RequestParameters &request,
+API::APIReturn AdminPortal_Endpoints_Accounts::updateAccountDetailFieldsValues(void *context, const RequestParameters &request,
                                                                ClientDetails &authClientDetails)
 {
     API::APIReturn response;
@@ -500,7 +500,7 @@ API::APIReturn AdminPortalMethods_Accounts::updateAccountDetailFieldsValues(void
     return response;
 }
 
-API::APIReturn AdminPortalMethods_Accounts::removeAccount(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortal_Endpoints_Accounts::removeAccount(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
     std::string accountName = JSON_ASSTRING(*request.inputJSON, "accountName", "");

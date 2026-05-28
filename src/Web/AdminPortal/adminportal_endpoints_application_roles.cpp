@@ -10,7 +10,7 @@ using namespace Mantids30;
 
 using namespace Mantids30::Network::Protocols;
 
-void AdminPortalMethods_ApplicationRoles::addEndpoints_Roles(std::shared_ptr<Endpoints> endpoints)
+void AdminPortal_Endpoints_ApplicationRoles::addEndpoints_Roles(std::shared_ptr<Endpoints> endpoints)
 {
     using SecurityOptions = Mantids30::API::RESTful::Endpoints::SecurityOptions;
     endpoints->addEndpoint(Endpoints::GET,    "searchApplicationRoles",        SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"},     nullptr, &searchApplicationRoles);
@@ -24,12 +24,12 @@ void AdminPortalMethods_ApplicationRoles::addEndpoints_Roles(std::shared_ptr<End
 }
 
 
-API::APIReturn AdminPortalMethods_ApplicationRoles::searchApplicationRoles(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortal_Endpoints_ApplicationRoles::searchApplicationRoles(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     return Globals::getIdentityManager()->applicationRoles->searchApplicationRoles(*request.inputJSON);
 }
 
-API::APIReturn AdminPortalMethods_ApplicationRoles::updateRoleDescription(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortal_Endpoints_ApplicationRoles::updateRoleDescription(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
@@ -63,7 +63,7 @@ API::APIReturn AdminPortalMethods_ApplicationRoles::updateRoleDescription(void *
 }
 
 
-API::APIReturn AdminPortalMethods_ApplicationRoles::addRole(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortal_Endpoints_ApplicationRoles::addRole(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
@@ -98,7 +98,7 @@ API::APIReturn AdminPortalMethods_ApplicationRoles::addRole(void *context, const
 }
 
 
-API::APIReturn AdminPortalMethods_ApplicationRoles::getRoleInfo(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortal_Endpoints_ApplicationRoles::getRoleInfo(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
@@ -153,7 +153,7 @@ API::APIReturn AdminPortalMethods_ApplicationRoles::getRoleInfo(void *context, c
 }
 
 
-API::APIReturn AdminPortalMethods_ApplicationRoles::removeRole(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortal_Endpoints_ApplicationRoles::removeRole(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
     const std::string roleName = JSON_ASSTRING(*request.inputJSON, "roleName", "");
@@ -178,7 +178,7 @@ API::APIReturn AdminPortalMethods_ApplicationRoles::removeRole(void *context, co
     return response;
 }
 
-API::APIReturn AdminPortalMethods_ApplicationRoles::addApplicationRoleToAccount(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortal_Endpoints_ApplicationRoles::addApplicationRoleToAccount(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
@@ -211,7 +211,7 @@ API::APIReturn AdminPortalMethods_ApplicationRoles::addApplicationRoleToAccount(
     return response;
 }
 
-API::APIReturn AdminPortalMethods_ApplicationRoles::removeApplicationRoleFromAccount(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortal_Endpoints_ApplicationRoles::removeApplicationRoleFromAccount(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 

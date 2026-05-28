@@ -8,7 +8,7 @@ using namespace Mantids30::Program;
 using namespace Mantids30;
 using namespace Mantids30::Network::Protocols;
 
-void AdminPortalMethods_AccountCredentials::addEndpoints_AccountCredentials(std::shared_ptr<Endpoints> endpoints)
+void AdminPortal_Endpoints_AccountCredentials::addEndpoints_AccountCredentials(std::shared_ptr<Endpoints> endpoints)
 {
     using SecurityOptions = Mantids30::API::RESTful::Endpoints::SecurityOptions;
 
@@ -20,7 +20,7 @@ void AdminPortalMethods_AccountCredentials::addEndpoints_AccountCredentials(std:
     endpoints->addEndpoint(Endpoints::POST,   "generateMasterPassword",            SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"},  nullptr, &generateMasterPassword);
 }
 
-API::APIReturn AdminPortalMethods_AccountCredentials::getAccountCredentialSlots(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortal_Endpoints_AccountCredentials::getAccountCredentialSlots(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
     json jResponse;
@@ -63,7 +63,7 @@ API::APIReturn AdminPortalMethods_AccountCredentials::getAccountCredentialSlots(
     return jResponse;
 }
 
-API::APIReturn AdminPortalMethods_AccountCredentials::removeAccountCredentialSlot(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortal_Endpoints_AccountCredentials::removeAccountCredentialSlot(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
@@ -99,7 +99,7 @@ API::APIReturn AdminPortalMethods_AccountCredentials::removeAccountCredentialSlo
     return response;
 }
 
-API::APIReturn AdminPortalMethods_AccountCredentials::setCredentialLockedStatus(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortal_Endpoints_AccountCredentials::setCredentialLockedStatus(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
@@ -131,7 +131,7 @@ API::APIReturn AdminPortalMethods_AccountCredentials::setCredentialLockedStatus(
 }
 
 
-API::APIReturn AdminPortalMethods_AccountCredentials::setMustChangeCredential(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortal_Endpoints_AccountCredentials::setMustChangeCredential(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
@@ -162,7 +162,7 @@ API::APIReturn AdminPortalMethods_AccountCredentials::setMustChangeCredential(vo
     return response;
 }
 
-API::APIReturn AdminPortalMethods_AccountCredentials::generateMasterPassword(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortal_Endpoints_AccountCredentials::generateMasterPassword(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
