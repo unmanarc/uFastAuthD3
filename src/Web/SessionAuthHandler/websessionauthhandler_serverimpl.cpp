@@ -2,7 +2,7 @@
 #include "config.h"
 #include "defs.h"
 #include "globals.h"
-#include "websessionauthhandler_authmethods.h"
+#include "websessionauthhandler_endpoints.h"
 
 #include <Mantids30/Server_RESTfulWebAPI/config_builder.h>
 #include <Mantids30/Server_RESTfulWebAPI/engine.h>
@@ -102,7 +102,7 @@ bool WebSessionAuthHandler_ServerImpl::createService()
     webSessionAuthHandlerServer->config.appName = "_";
 
     // Add authentication methods
-    WebSessionAuthHandler_AuthMethods::addEndpoints(webSessionAuthHandlerServer->endpointsHandler[1]);
+    WebSessionAuthHandler_Endpoints::addEndpoints(webSessionAuthHandlerServer->endpointsHandler[1]);
 
     webSessionAuthHandlerServer->startInBackground();
 
