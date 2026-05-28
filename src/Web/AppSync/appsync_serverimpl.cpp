@@ -2,7 +2,7 @@
 #include "config.h"
 #include "defs.h"
 #include "globals.h"
-#include "appsync_apiendpoints.h"
+#include "appsync_endpoints.h"
 
 #include <Mantids30/Server_RESTfulWebAPI/config_builder.h>
 #include <Mantids30/Server_RESTfulWebAPI/engine.h>

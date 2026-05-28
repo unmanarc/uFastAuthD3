@@ -21,7 +21,7 @@
 
 #include <fstream>
 
-#include "Web/AppSync/appsync_apiendpoints.h"
+#include "Web/AppSync/appsync_endpoints.h"
 
 using namespace Mantids30::Database;
 using namespace Mantids30::Program;
