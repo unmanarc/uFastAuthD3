@@ -41,7 +41,7 @@ void TokensManager::configureAccessToken(Mantids30::DataFormat::JWT::Token &acce
     // Get the user scope if needed for this application...
     if (tokenProperties.includeApplicationScopes)
     {
-        auto x = identityManager->authController->getAccountUsableApplicationScopes(appName,jwtAccountName);
+        auto x = identityManager->authController->getAccountUsableApplicationScopes(appName, jwtAccountName);
         for (const auto &i : x)
         {
             accessToken.addScope(i.id);
@@ -50,14 +50,14 @@ void TokensManager::configureAccessToken(Mantids30::DataFormat::JWT::Token &acce
     // Get the user basic info if needed for this application...
     if (tokenProperties.includeBasicAccountInfo)
     {
-        if (auto info = identityManager->accounts->getAccountDetails(jwtAccountName,ACCOUNT_DETAILS_TOKEN))
+        if (auto info = identityManager->accounts->getAccountDetails(jwtAccountName, ACCOUNT_DETAILS_TOKEN))
         {
             accessToken.addClaim("accountInfo", info->toJSON());
         }
     }
 
     // Application Admin
-    if (identityManager->applications->isApplicationAdmin(appName,jwtAccountName))
+    if (identityManager->applications->isApplicationAdmin(appName, jwtAccountName))
     {
         accessToken.addClaim("isAdmin", true);
     }
@@ -93,8 +93,8 @@ void TokensManager::configureRefreshToken(Mantids30::DataFormat::JWT::Token &ref
     refreshToken.addClaim("type", "refresher");
 }
 
-void TokensManager::setIAMAccessTokenCookie(APIReturn &response, const RequestParameters &request, const Mantids30::DataFormat::JWT::Token &intermediateToken,
-    const Mantids30::DataFormat::JWT::Token &currentAccessToken, bool keepAuthenticated, const time_t & currentIntermediateTokenExpirationTime)
+void TokensManager::setIAMAccessTokenCookie(APIReturn &response, const RequestParameters &request, const Mantids30::DataFormat::JWT::Token &intermediateToken, bool keepAuthenticated,
+                                            const time_t &currentIntermediateTokenExpirationTime)
 {
     IdentityManager *identityManager = Globals::getIdentityManager();
     Mantids30::DataFormat::JWT::Token accessToken;
@@ -107,18 +107,10 @@ void TokensManager::setIAMAccessTokenCookie(APIReturn &response, const RequestPa
         expectedRefresherTokenTimeoutTime = currentIntermediateTokenExpirationTime;
     }
 
-    std::set<uint32_t> combinedSlotIds;
-    std::set<uint32_t> existingAuthenticatedSlotIds = Mantids30::Helpers::jsonToUInt32Set(currentAccessToken.getClaim("slotIds"));
-    std::set<uint32_t> currentAuthenticationIntermediateSlotIds = Mantids30::Helpers::jsonToUInt32Set(intermediateToken.getClaim("authenticatedSlots"));
-
     // Add all unique slot IDs to the JSON array
-    combinedSlotIds = existingAuthenticatedSlotIds;
     // MIX in unique.
-    for (const auto &i : currentAuthenticationIntermediateSlotIds)
-        combinedSlotIds.insert(i);
 
-    std::set<std::string> uniqueAuthApps = Mantids30::Helpers::jsonToStringSet(currentAccessToken.getClaim("apps"));
-
+    std::set<std::string> uniqueAuthApps = Mantids30::Helpers::jsonToStringSet(intermediateToken.getClaim("apps"));
     uniqueAuthApps.insert(intermediateToken.getClaim("app").asString());
 
     accessToken.setSubject(accountName);
@@ -127,7 +119,7 @@ void TokensManager::setIAMAccessTokenCookie(APIReturn &response, const RequestPa
                                       std::min(accountExpirationTime, expectedRefresherTokenTimeoutTime) // Token expires, take the min time between two...
     );
     accessToken.setNotBefore(time(nullptr) - 30);
-    accessToken.addClaim("slotIds", Mantids30::Helpers::setToJSON(combinedSlotIds));
+    accessToken.addClaim("slotIds", intermediateToken.getClaim("authenticatedSlots"));
     accessToken.addClaim("type", "access");
     accessToken.addClaim("app", IAM_LOGINPORTAL_APPNAME);
     accessToken.addClaim("apps", Mantids30::Helpers::setToJSON(uniqueAuthApps));
@@ -147,7 +139,7 @@ void TokensManager::setIAMAccessTokenCookie(APIReturn &response, const RequestPa
     Json::Value authenticationPublicData;
     authenticationPublicData["exp"] = std::to_string(accessToken.getExpirationTime());
     authenticationPublicData["subject"] = accountName;
-    authenticationPublicData["slotIds"] = Mantids30::Helpers::setToJSON(combinedSlotIds);
+    authenticationPublicData["slotIds"] = intermediateToken.getClaim("authenticatedSlots");
 
     // TODO: account data?
     if (keepAuthenticated)
