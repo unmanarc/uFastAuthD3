@@ -59,13 +59,12 @@ private:
     static std::optional<std::string> token_signApplicationJWT(JWT::Token &accessToken, const ApplicationTokenProperties &tokenProperties);
     static bool token_validateAppAuthorization(IdentityManager *identityManager, const JWT::Token *jwtToken, const std::string &app, const std::string &user, const std::string &ipAddress);
 
-    static bool calculateRequiredAuthSlotsLeftForTheNewTransientAuthToken(std::shared_ptr<TransientAuthenticationContext> authContext, std::string accountName, Mantids30::API::APIReturn *response,
-                                                                          std::vector<AuthenticationSchemeUsedSlot> *requiredAuthSlotsOnScheme, const JWT::Token &accessToken);
+    static std::vector<AuthenticationSchemeUsedSlot> calculateRequiredAuthSlotsLeftForTheNewTransientAuthToken(std::shared_ptr<TransientAuthenticationContext> authContext, Mantids30::API::APIReturn *response);
 
-    static bool decodeAndValidateAccessTokenIfExist(const RequestParameters &request, LoginPortal_Endpoints::APIReturn &response, JWT::Token *token, const std::string &currentAccountName,
-                                                    std::shared_ptr<TransientAuthenticationContext> authContext);
+    //static bool validateAndMerge_AccessTokenIfExist(const RequestParameters &request, LoginPortal_Endpoints::APIReturn &response, std::shared_ptr<TransientAuthenticationContext> authContext);
 
-    static void setupNewTransientAuthToken(const RequestParameters &request, Mantids30::API::APIReturn &response, IdentityManager *identityManager,
-                                           std::shared_ptr<TransientAuthenticationContext> authContext, const std::vector<AuthenticationSchemeUsedSlot> &requiredAuthSlots,
-                                           const time_t &oldTransientTokenExpirationTime, const std::string &accountName, bool mustChange);
+
+    static void issueTransientAuthTokenResponse(const RequestParameters &request, Mantids30::API::APIReturn &response, IdentityManager *identityManager,
+                                           std::shared_ptr<TransientAuthenticationContext> authContext, const std::vector<AuthenticationSchemeUsedSlot> &requiredAuthSlots
+                                          , bool mustChange);
 };
