@@ -93,7 +93,7 @@ function loadTokenAndRedirect() {
 
 $(document).ready(function () {
     let currentSlot = null;
-    let intermediateToken = null;
+    let transientToken = null;
 
     $("#version").text(softwareVersion);
 
@@ -206,7 +206,7 @@ $(document).ready(function () {
             type: "POST",
             contentType: "application/json",
             headers: {
-                'Authorization': 'Bearer ' + intermediateToken
+                'Authorization': 'Bearer ' + transientToken
             },
             data: JSON.stringify({
                 preAuthUser: username,
@@ -219,7 +219,7 @@ $(document).ready(function () {
                 challengeSalt: ""
             }),
             success: function (response) {
-                intermediateToken = response.intermediateToken;
+                transientToken = response.transientToken;
                 handleAuthorizeResponse(response);
             },
             error: function (xhr, status, error) {
@@ -413,11 +413,11 @@ $(document).ready(function () {
             type: 'PUT',
             contentType: 'application/json',
             headers: {
-                'Authorization': 'Bearer ' + intermediateToken
+                'Authorization': 'Bearer ' + transientToken
             },
             data: JSON.stringify(payload),
             success: function (response) {
-                intermediateToken = response.intermediateToken;
+                transientToken = response.transientToken;
 
                 // Password changed successfully
                 $("#changePasswordScreen").addClass('d-none');
@@ -531,11 +531,11 @@ $(document).ready(function () {
             type: 'PUT',
             contentType: 'application/json',
             headers: {
-                'Authorization': 'Bearer ' + intermediateToken
+                'Authorization': 'Bearer ' + transientToken
             },
             data: JSON.stringify(payload),
             success: function (response) {
-                intermediateToken = response.intermediateToken;
+                transientToken = response.transientToken;
 
                 // OTP changed successfully
                 $("#changeOtpScreen").addClass('d-none');
