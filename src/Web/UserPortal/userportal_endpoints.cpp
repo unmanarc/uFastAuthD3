@@ -116,11 +116,11 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::createChallengeToken(void 
     JWT::Token token;
     token.setExpirationTime(time(nullptr)+120); // 2 min token.
     token.setSubject(request.jwtToken->getSubject());
-    token.addClaim("type","challenge");
-    token.addClaim("app",request.jwtToken->getClaim("app"));
-    token.addClaim("parentTokenId", request.jwtToken->getJwtId());
-    token.addClaim("slotId", slotId);
-    token.addClaim("details", (*request.inputJSON)["details"]);
+    token.setClaim("type","challenge");
+    token.setClaim("app",request.jwtToken->getClaim("app"));
+    token.setClaim("parentTokenId", request.jwtToken->getJwtId());
+    token.setClaim("slotId", slotId);
+    token.setClaim("details", (*request.inputJSON)["details"]);
 
     HTTP::Headers::Cookie cookie = HTTP::Headers::Cookie();
     cookie.value = request.jwtSigner->signFromToken(token,false);
