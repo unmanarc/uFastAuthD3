@@ -46,22 +46,22 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::changeCredential(void *con
     {
         if (!tokenVerified)
         {
-            response.setError(HTTP::Status::S_401_UNAUTHORIZED, "auth_failed", "Invalid Challenge Token: Verification failed");
+            response.setError(HTTP::Status::S_401_UNAUTHORIZED, "change_credential_failed", "Challenge Token Expired or Invalid, Try Again.");
         }
         else if (!appMatches)
         {
-            response.setError(HTTP::Status::S_401_UNAUTHORIZED, "auth_failed", "Invalid Challenge Token: App mismatch");
+            response.setError(HTTP::Status::S_401_UNAUTHORIZED, "change_credential_failed", "Invalid Challenge Token: App mismatch");
         }
         else if (!typeIsChallenge)
         {
-            response.setError(HTTP::Status::S_401_UNAUTHORIZED, "auth_failed", "Invalid Challenge Token: Type is not 'challenge'");
+            response.setError(HTTP::Status::S_401_UNAUTHORIZED, "change_credential_failed", "Invalid Challenge Token: Type is not 'challenge'");
         }
         return response;
     }
 
     if (JSON_ASSTRING(challengeToken.getClaim("details"),"operation", "") != "changeCredential")
     {
-        response.setError(HTTP::Status::S_401_UNAUTHORIZED, "auth_failed", "Invalid Operation for Challenge Token");
+        response.setError(HTTP::Status::S_401_UNAUTHORIZED, "change_credential_failed", "Invalid Operation for Challenge Token");
         return response;
     }
 
@@ -125,7 +125,6 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::createChallengeToken(void 
     HTTP::Headers::Cookie cookie = HTTP::Headers::Cookie();
     cookie.value = request.jwtSigner->signFromToken(token,false);
     cookie.expires = HTTP::Date(token.getExpirationTime());
-
     response.cookiesMap["ChallengeToken"] = cookie;
     return response;
 }
