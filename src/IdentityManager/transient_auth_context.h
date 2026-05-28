@@ -1,5 +1,6 @@
 #pragma once
 
+#include "json/value.h"
 #include <Mantids30/DataFormat_JWT/jwt.h>
 #include <Mantids30/Helpers/json.h>
 #include <Mantids30/Helpers/random.h>
@@ -37,18 +38,21 @@ struct TransientAuthenticationContext
             if (accessToken.getSubject() != accountName)
             {
                 // This Token is not for this cookie... (other username... logout first please!)
-                response.setError(Mantids30::Network::Protocols::HTTP::Status::S_403_FORBIDDEN, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::UNAUTHENTICATED)),
-                                  authResultToString(AuthenticationResult::UNAUTHENTICATED));
+                response.setError(Mantids30::Network::Protocols::HTTP::Status::S_401_UNAUTHORIZED, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::BAD_ACCOUNT)),
+                                  authResultToString(AuthenticationResult::BAD_ACCOUNT));
                 return false;
             }
 
             // We have an access token!
             std::set<uint32_t> authenticatedSlotsOnAccessToken = Mantids30::Helpers::jsonToUInt32Set(accessToken.getClaim("slotIds"));
-            // Merge.
+            // Merge auth slots.
             for (const auto &i : authenticatedSlotsOnAccessToken)
             {
                 authenticatedSlots.insert(i);
             }
+            // Merge schemes and apps also...
+            jAuthenticatedSchemes = accessToken.getClaim("authenticatedSchemes");
+            jAuthenticatedApps = accessToken.getClaim("authenticatedApps");
         }
 
         return true;
@@ -104,6 +108,8 @@ struct TransientAuthenticationContext
         newTransientAuthToken.setClaim("type", "transient");
         newTransientAuthToken.setClaim("authenticatedSlots", Mantids30::Helpers::setToJSON(authenticatedSlots));
         newTransientAuthToken.setClaim("mustChangeSlots", Mantids30::Helpers::setToJSON(mustChangeSlots));
+        newTransientAuthToken.setClaim("authenticatedSchemes", jAuthenticatedSchemes);
+        newTransientAuthToken.setClaim("authenticatedApps", jAuthenticatedApps);
 
         if (nextSlotId.has_value())
             newTransientAuthToken.setClaim("currentSlotId", nextSlotId.value()); // Enforce this with authentication.
@@ -122,12 +128,15 @@ struct TransientAuthenticationContext
         auto claims = transientAuthToken.getAllClaimsAsJSON();
 
         appName = JSON_ASSTRING(claims, "app", "");
+
         slotSchemeHash = JSON_ASSTRING(claims, "slotSchemeHash", "");
         schemeId = JSON_ASUINT(claims, "schemeId", UINT32_MAX);
         keepAuthenticated = JSON_ASBOOL(claims, "keepAuthenticated", false);
         currentSlotId = JSON_ASUINT(claims, "currentSlotId", 0);
         authenticatedSlots = Mantids30::Helpers::jsonToUInt32Set(claims, "authenticatedSlots");
         mustChangeSlots = Mantids30::Helpers::jsonToUInt32Set(claims, "mustChangeSlots");
+        jAuthenticatedSchemes = transientAuthToken.getClaim("authenticatedSchemes");
+        jAuthenticatedApps = transientAuthToken.getClaim("authenticatedApps");
     }
 
     void fillVarsFromInitialJSONPOST(const json &inputJSON)
@@ -146,17 +155,45 @@ struct TransientAuthenticationContext
         transientAuthToken.setClaim("mustChangeSlots", Mantids30::Helpers::setToJSON(mustChangeSlots));
     }
 
+
+    Json::Value getAllAuthenticatedSlotsIds()
+    {
+        std::set<uint32_t> r = authenticatedSlots;
+        if (currentSlotId.has_value())
+            r.insert(currentSlotId.value());
+        return Mantids30::Helpers::setToJSON(r);
+    }
+
+    Json::Value getAllAuthenticatedSchemes()
+    {
+        Json::Value r_jAuthenticatedSchemes = jAuthenticatedSchemes;
+        if (schemeId!=UINT32_MAX)
+            r_jAuthenticatedSchemes.append(schemeId);
+        return r_jAuthenticatedSchemes;
+    }
+
+    Json::Value getAllAuthenticatedApps()
+    {
+        Json::Value r_jAuthenticatedApps = jAuthenticatedApps;
+        r_jAuthenticatedApps.append(appName);
+        return r_jAuthenticatedApps;
+    }
+
     time_t newTokenExpirationTime = 0;
 
     bool doesTransientTokenNotExist = false;
     bool keepAuthenticated = false;
     std::string appName;
     std::string accountName;
+    //uint32_t activityId = UINT32_MAX;
     uint32_t schemeId = UINT32_MAX;
     std::optional<uint32_t> currentSlotId = std::nullopt;
     std::string slotSchemeHash;
     std::set<uint32_t> authenticatedSlots;
     std::set<uint32_t> mustChangeSlots;
+
+    Json::Value jAuthenticatedSchemes = Json::arrayValue;
+    Json::Value jAuthenticatedApps = Json::arrayValue;
 
     Mantids30::DataFormat::JWT::Token transientAuthToken;
 };
