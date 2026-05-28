@@ -40,7 +40,100 @@ let loggedIn = false;
 let loggedInGETParsedParam = true;
 let currentScheme = null;
 let schemesAvailable = [];
+let cachedCookieData = null;
 const urlParams = new URLSearchParams(window.location.search);
+
+/**
+ * Parse the loggedIn cookie and return the decoded JSON content.
+ * Returns null if cookie not found or invalid.
+ */
+function parseLoginCookie() {
+    const cookies = document.cookie.split(';');
+    for (const cookie of cookies) {
+        const [name, value] = cookie.trim().split('=');
+        if (name === 'loggedIn') {
+            try {
+                const decoded = JSON.parse(atob(value));
+                return decoded;
+            } catch (e) {
+                return null;
+            }
+        }
+    }
+    return null;
+}
+
+/**
+ * Start a background interval that checks every second if the loggedIn cookie status changed.
+ * - If the cookie existed and disappears, refresh the page.
+ * - If the cookie did not exist and appears, refresh the page.
+ */
+var cookieMonitorInterval = null;
+var cookieMonitorInitiallyExists = null;
+
+function startCookieMonitor(initialCookieExists) {
+    cookieMonitorInitiallyExists = initialCookieExists;
+    cookieMonitorInterval = setInterval(function () {
+        const cookieData = parseLoginCookie();
+        const cookieNowExists = (cookieData !== null);
+
+        if (cookieMonitorInitiallyExists && !cookieNowExists) {
+            // Cookie disappeared - refresh the page
+            clearInterval(cookieMonitorInterval);
+            cookieMonitorInterval = null;
+            location.reload();
+        } else if (!cookieMonitorInitiallyExists && cookieNowExists) {
+            // Cookie appeared - refresh the page
+            clearInterval(cookieMonitorInterval);
+            cookieMonitorInterval = null;
+            location.reload();
+        }
+    }, 1000); // Check every 1 second
+}
+
+function stopCookieMonitor() {
+    if (cookieMonitorInterval !== null) {
+        clearInterval(cookieMonitorInterval);
+        cookieMonitorInterval = null;
+    }
+}
+
+/**
+ * Validate the current session by calling /api/v1/token with mock: true.
+ * Based on the result, either show the normal "Already logged in" screen
+ * or the "Authentication incomplete" screen with a button to continue authentication.
+ */
+function validateSessionAndShowScreen() {
+    $.ajax({
+        url: "/api/v1/token",
+        type: "POST",
+        contentType: "application/json",
+        data: JSON.stringify({
+            redirectURI: decodedRedirectURI,
+            activity: "LOGIN",
+            app: appName,
+            schemeId: 0,
+            mock: true
+        }),
+        success: function (response) {
+            // Session is valid - show normal "Already logged in" screen
+            loggedIn = true;
+            $("#usernameForm").addClass("d-none");
+            $("#logoutForm").removeClass("d-none");
+            updateMessage('Welcome back ' + cachedCookieData.subject + '!');
+        },
+        error: function (xhr, status, error) {
+            // Session is incomplete - show only logout button (hide "Continue to application" button)
+            loggedIn = true;
+            $("#usernameForm").addClass("d-none");
+            $("#logoutForm").removeClass("d-none");
+            // Hide the "Continue to the application" button
+            $("#continueToAppBtn").addClass("d-none");
+            updateMessage('Authentication incomplete for this Application.\nPlease logout and authenticate again.');
+        }
+    });
+}
+
 
 // Retrieve the 'redirectURI' and 'app' parameter from the URL
 const mode = urlParams.get('mode');
@@ -98,6 +191,26 @@ $(document).ready(function () {
 
     $("#version").text(softwareVersion);
 
+    // Fetch and display app description
+    $.ajax({
+        url: "/api/v1/getAppDescription",
+        type: "GET",
+        data: JSON.stringify(
+            {
+                app: appName
+            }
+        ),
+        success: function (response) {
+            if (response.description) {
+                $("#appDescription").text(response.description).css("font-weight", "bold");
+            }
+        },
+        error: function (xhr, status, error) {
+            // Silently fail - app description is optional
+            console.error('Failed to load app description:', error);
+        }
+    });
+
     // Focus on username input when the page loads
     $("#username").focus();
 
@@ -131,19 +244,20 @@ $(document).ready(function () {
         }
     }
 
-    // Load refresh token from cookie
-    const cookies = document.cookie.split(';');
-    cookies.forEach(cookie => {
-        const [name, value] = cookie.trim().split('=');
-        if (name === 'loggedIn') {
-            loggedIn = true;
+    // Load refresh token from cookie and validate session
+    cachedCookieData = parseLoginCookie();
+    if (cachedCookieData) {
+        // Instead of immediately showing "Already logged in", validate the session first
+        // by calling /api/v1/token with mock: true to check if authentication is complete
+        validateSessionAndShowScreen();
+        // Start monitoring the cookie in background (cookie exists, detect if it disappears)
+        startCookieMonitor(true);
+    } else {
+        // No cookie, start monitoring to detect if a cookie appears
+        startCookieMonitor(false);
+    }
 
-            $("#usernameForm").addClass("d-none");
-            $("#logoutForm").removeClass("d-none");
 
-            updateMessage('Already logged in.');
-        }
-    });
 
     // Function to initialize authentication flow using preAuthorize API
     function initializeAuthentication(username) {
@@ -167,7 +281,7 @@ $(document).ready(function () {
                 currentScheme = response.availableSchemes[defaultSchemeIndex];
                 currentSlot = currentScheme.firstSlot;
 
-                $("#schemeDescription").text(currentScheme.description).css("font-weight", "bold");
+                $("#schemeDescription").text(currentScheme.description + " Authentication");
                 $("#currentSchemeId").val(defaultSchemeIndex);
                 showNextSlot();
             },

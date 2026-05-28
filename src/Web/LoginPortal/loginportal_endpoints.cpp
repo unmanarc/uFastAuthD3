@@ -57,8 +57,23 @@ void LoginPortal_Endpoints::addEndpoints(std::shared_ptr<Endpoints> endpoints)
     //endpoints->addEndpoint(Endpoints::POST, "retokenize", nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {}, nullptr, &retokenize);
     endpoints->addEndpoint(Endpoints::PUT, "changeCredential",             SecurityOptions::NO_AUTH, {}, nullptr, &changeCredential);
 
+    endpoints->addEndpoint(Endpoints::GET, "getAppDescription",             SecurityOptions::NO_AUTH, {}, nullptr, &getAppDescription);
+
     // Temporal tokens are also given trough an intermediate window...
     //endpoints->addEndpoint(Endpoints::POST, "tempMFAToken", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {}, nullptr,&tempMFAToken);
+}
+
+LoginPortal_Endpoints::APIReturn LoginPortal_Endpoints::getAppDescription(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+{
+    // Get the identity manager from global settings to handle authentication.
+    IdentityManager *identityManager = Globals::getIdentityManager();
+
+    // INPUTS:
+    std::string appName = JSON_ASSTRING(*request.inputJSON, "app", "");
+
+    json r;
+    r["description"] = identityManager->applications->getApplicationDescription(appName);
+    return r;
 }
 
 bool LoginPortal_Endpoints::retrieveAndValidateAppOrigin(HTTPv1_Base::Request *request, const std::string &appName, const OriginSource &originSource)

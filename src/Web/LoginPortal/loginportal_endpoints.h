@@ -36,6 +36,7 @@ private:
     static APIReturn token(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
     static APIReturn logout(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
     static APIReturn changeCredential(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
+    static APIReturn getAppDescription(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
     static APIReturn registerAccount(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
 
 private:

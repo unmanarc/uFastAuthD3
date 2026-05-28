@@ -40,7 +40,10 @@
                                 </div>
                                 <p class="login-card-header-text" id="version"></p>
                                 <div class="d-flex justify-content-center">
-                                    <p id="schemeDescription" class="text-center"></p>
+                                    <p id="appDescription" class="text-center"></p>
+                                </div>
+                                <div class="d-flex justify-content-center">
+                                    <p id="schemeDescription" class="text-center" style="font-size: -2px;"></p>
                                 </div>
                                 <input type="hidden" id="currentSchemeId">
                                 <p class="login-card-header-message" id="message">_</p>
@@ -53,12 +56,19 @@
                                         <input type="text" class="form-control text-center" id="username"
                                             name="username" placeholder="" required>
                                     </div>
-                                    <div class="form-check mt-2 mb-3 d-flex justify-content-center">
-                                        <input type="checkbox" class="form-check-input" id="keepAuthenticated">
-                                        <br>
-                                        <label class="form-check-label" for="keepAuthenticated">&nbsp;Stay logged in on
-                                            this device</label>
+
+                                    <div class="text-center mt-3 mb-3">
+                                        <div class="form-check form-switch d-flex justify-content-center">
+                                            <input class="form-check-input" type="checkbox" id="keepAuthenticated"
+                                                style="margin-top: 4px;">
+                                            <label class="form-check-label text-muted" for="keepAuthenticated"
+                                                style="font-size: 0.85rem;">
+                                                &nbsp;&nbsp;Keep me signed in
+                                            </label>
+                                        </div>
                                     </div>
+
+
 
                                     <button type="submit" class="btn btn-dark w-100">Next</button>
                                 </form>
@@ -104,7 +114,7 @@
                                 <!-- Screen 5: Logout -->
                                 <div id="logoutForm" class="d-none">
                                     <div class="mb-2">
-                                        <button class="btn btn-success w-100" onclick="loadTokenAndRedirect();">Continue
+                                        <button id="continueToAppBtn" class="btn btn-dark w-100" onclick="loadTokenAndRedirect();">Continue
                                             to the application</button>
                                     </div>
                                     <div class="mb-2">
@@ -138,8 +148,7 @@
                                     </div>
                                     <hr>
                                     <div class="mb-2">
-                                        <button type="button" id="changePasswordSubmitBtn"
-                                            class="btn btn-dark w-100">
+                                        <button type="button" id="changePasswordSubmitBtn" class="btn btn-dark w-100">
                                             <i class="fa-solid fa-save"></i> Change Password
                                         </button>
                                     </div>
