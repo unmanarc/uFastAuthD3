@@ -256,7 +256,7 @@ API::APIReturn LoginPortal_Endpoints::token(void *context, const RequestParamete
     if (JSON_ASBOOL_D(request.jwtToken->getClaim("keepAuthenticated"), false) == false)
     {
         // Discard access cookies upon first use. (Access tokens are short-lived, but should be discarded after the first usage)
-        doLogoutInResponse(context, request, authClientDetails, &response);
+        prepareLogoutResponse(context, request, authClientDetails, &response);
     }
 
     return response;

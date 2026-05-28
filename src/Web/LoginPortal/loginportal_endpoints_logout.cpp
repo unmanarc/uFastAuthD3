@@ -10,21 +10,7 @@ using namespace Network::Protocols;
 API::APIReturn LoginPortal_Endpoints::logout(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
-    doLogoutInResponse(context,request,authClientDetails,&response);
+    prepareLogoutResponse(context,request,authClientDetails,&response);
     return response;
 }
 
-void LoginPortal_Endpoints::doLogoutInResponse(void *, const RequestParameters &request, ClientDetails &, APIReturn * response)
-{
-    if ( request.clientRequest->headers.getOptionValueStringByName("X-Logout") != "1" )
-    {
-        return;
-    }
-
-    response->cookiesMap["AccessToken"] = HTTP::Headers::Cookie();
-    response->cookiesMap["AccessToken"].deleteCookie();
-
-    response->cookiesMap["loggedIn"] = HTTP::Headers::Cookie();
-    response->cookiesMap["loggedIn"].deleteCookie();
-    response->cookiesMap["loggedIn"].path = "/";
-}

@@ -35,7 +35,6 @@ private:
     static APIReturn authorize(void *context, const RequestParameters &request, ClientDetails &clientDetails);
     static APIReturn token(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
     static APIReturn logout(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
-    static void doLogoutInResponse(void *context, const RequestParameters &, ClientDetails &, APIReturn *response);
     static APIReturn changeCredential(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
     static APIReturn registerAccount(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
 
@@ -49,6 +48,8 @@ private:
     };
     static bool retrieveAndValidateAppOrigin(HTTPv1_Base::Request *request, const std::string &appName, const OriginSource &originSource);
     static std::regex originPattern;
+
+    static void prepareLogoutResponse(void *context, const RequestParameters &, ClientDetails &, APIReturn *response);
 
     // TOKEN HELPERS:
     static bool token_validateRedirectURI(IdentityManager *identityManager, const std::string &app, const std::string &redirectURI, const std::string &user, const std::string &ipAddress);

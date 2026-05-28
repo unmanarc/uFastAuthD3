@@ -81,7 +81,7 @@ struct ApplicationScope
 
 struct TransientAuthenticationContext
 {
-    bool validateAndDecodeBearerAccessTokenProperties(const std::string & oldTransientAuthTokenStr,
+    bool validateAndDecodeTransientAuthToken(const std::string & oldTransientAuthTokenStr,
                                                       const Json::Value * inputJSON,
                                                       Mantids30::DataFormat::JWT::Token *oldTransientAuthTokenOut,
                                                       const std::shared_ptr<Mantids30::DataFormat::JWT> jwtValidator,

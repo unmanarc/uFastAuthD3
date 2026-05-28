@@ -3,13 +3,10 @@
 
 #include "globals.h"
 
-
 using namespace Mantids30;
 using namespace Program;
 using namespace API::RESTful;
 using namespace Network::Protocols;
-
-
 
 API::APIReturn LoginPortal_Endpoints::changeCredential(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
@@ -23,11 +20,12 @@ API::APIReturn LoginPortal_Endpoints::changeCredential(void *context, const Requ
     IdentityManager *identityManager = Globals::getIdentityManager();
 
     std::shared_ptr<TransientAuthenticationContext> authContext = std::make_shared<TransientAuthenticationContext>();
-    JWT::Token oldTransientAuthToken;
+    JWT::Token transientAuthToken;
     std::string accountName;
+    std::string transientAuthTokenStr = request.clientRequest->getAuthorizationBearer();
 
     // Decode the bearer transient token... (and get the Account Name)
-    if (!authContext->validateAndDecodeBearerAccessTokenProperties(request.clientRequest->getAuthorizationBearer(), request.inputJSON, &oldTransientAuthToken, request.jwtValidator, &accountName))
+    if (!authContext->validateAndDecodeTransientAuthToken(transientAuthTokenStr, request.inputJSON, &transientAuthToken, request.jwtValidator, &accountName))
     {
         response.setError(HTTP::Status::S_403_FORBIDDEN, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::UNAUTHENTICATED)),
                           authResultToString(AuthenticationResult::UNAUTHENTICATED));
@@ -66,7 +64,7 @@ API::APIReturn LoginPortal_Endpoints::changeCredential(void *context, const Requ
         // It's already authenticated and in must change list (checked before).
         authContext->currentSlotId = slotId;
 
-        setupNewTransientAuthToken(request, response, identityManager, authContext, requiredAuthSlots, oldTransientAuthToken.getExpirationTime(), accountName, false);
+        setupNewTransientAuthToken(request, response, identityManager, authContext, requiredAuthSlots, transientAuthToken.getExpirationTime(), accountName, false);
     }
 
     return response;
