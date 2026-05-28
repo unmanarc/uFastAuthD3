@@ -2,7 +2,7 @@
 #include "config.h"
 #include "defs.h"
 #include "globals.h"
-#include "loginportal_add_endpoints.h"
+#include "loginportal_endpoints.h"
 
 #include <Mantids30/Server_RESTfulWebAPI/config_builder.h>
 #include <Mantids30/Server_RESTfulWebAPI/engine.h>
@@ -37,7 +37,7 @@ bool LoginPortal_ServerImpl::createService()
         return false;
 
     // Handle the login function for APP personalized site:
-    loginWebServer->config.dynamicRequestHandlersByRoute["/login"] = {&LoginPortal_AuthMethods::handleLoginDynamicRequest, nullptr};
+    loginWebServer->config.dynamicRequestHandlersByRoute["/login"] = {&LoginPortal_Endpoints::handleLoginDynamicRequest, nullptr};
 
     // Set the software version:
     loginWebServer->config.setSoftwareVersion(atoi(PROJECT_VER_MAJOR), atoi(PROJECT_VER_MINOR), atoi(PROJECT_VER_PATCH), "a");
@@ -49,7 +49,7 @@ bool LoginPortal_ServerImpl::createService()
     loginWebServer->endpointsHandler[1] = std::make_shared<API::RESTful::Endpoints>();
 
     // Add authentication methods
-    LoginPortal_AuthMethods::addEndpoints(loginWebServer->endpointsHandler[1]);
+    LoginPortal_Endpoints::addEndpoints(loginWebServer->endpointsHandler[1]);
 
     loginWebServer->startInBackground();
 
