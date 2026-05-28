@@ -94,6 +94,7 @@ function loadTokenAndRedirect() {
 $(document).ready(function () {
     let currentSlot = null;
     let transientToken = null;
+    let cachedLastAuthorizeResponse = null;
 
     $("#version").text(softwareVersion);
 
@@ -177,6 +178,7 @@ $(document).ready(function () {
     // Function to handle authorize/changeCredential response
     function handleAuthorizeResponse(response) {
         if (response.changeCredential === false) {
+            cachedLastAuthorizeResponse = null;
             if (response.nextSlot === null) {
                 loggedIn = true;
                 updateMessage("Authenticated! Redirecting...");
@@ -186,6 +188,8 @@ $(document).ready(function () {
                 showNextSlot();
             }
         } else if (response.changeCredential === true) {
+            cachedLastAuthorizeResponse = response;
+            cachedLastAuthorizeResponse.changeCredential = false;
             // This credential that has just been authenticated, NEEDS to be changed.
             // don´t go to the next slot.
             var pwFunc = currentSlot.details.passwordFunction;
@@ -423,7 +427,7 @@ $(document).ready(function () {
                 $("#changePasswordScreen").addClass('d-none');
                 updateMessage('Password changed successfully. Continuing login...');
                 // Handle response same as authorize (nextSlot, changeCredential, etc.)
-                handleAuthorizeResponse(response);
+                handleAuthorizeResponse(cachedLastAuthorizeResponse);
             },
             error: function (xhr, status, error) {
                 var msg = 'Error: Failed to change password.';
@@ -541,7 +545,7 @@ $(document).ready(function () {
                 $("#changeOtpScreen").addClass('d-none');
                 updateMessage('OTP credential changed successfully. Continuing login...');
                 // Handle response same as authorize (nextSlot, changeCredential, etc.)
-                handleAuthorizeResponse(response);
+                handleAuthorizeResponse(cachedLastAuthorizeResponse);
             },
             error: function (xhr, status, error) {
                 var msg = 'Error: Failed to change OTP credential.';
