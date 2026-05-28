@@ -25,8 +25,8 @@ public:
     static void configureRefreshToken(Mantids30::DataFormat::JWT::Token &refreshToken, const std::string &refreshTokenId, const std::string &jwtAccountName,
                                       const std::string &appName, const ApplicationTokenProperties &tokenProperties, const std::set<uint32_t> &slotIds);
 
-    static void setIAMAccessTokenCookie(APIReturn &response, const RequestParameters &request, const Mantids30::DataFormat::JWT::Token &intermediateToken,
-                                  bool keepAuthenticated, const time_t &currentIntermediateTokenExpirationTime);
+    static void setIAMAccessTokenCookie(APIReturn &response, const RequestParameters &request, const Mantids30::DataFormat::JWT::Token &transientToken,
+                                  bool keepAuthenticated, const time_t &currentTransientTokenExpirationTime);
 
 
 };
