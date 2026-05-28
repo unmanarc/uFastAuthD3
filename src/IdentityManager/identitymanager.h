@@ -307,7 +307,7 @@ public:
          * @param slotId The identifier for the specific authentication slot being used.
          * @param authMode Specifies the mode of authentication (e.g., plain text, hashed). Default is `MODE_PLAIN`.
          * @param challengeSalt Optional salt used in challenge-based authentication methods. Default is an empty string.
-         * @param authContext (Optional) A shared pointer to an `AppAuthExtras` object, which provides supplementary
+         * @param authContext (Optional) A shared pointer to an `TransientAuthenticationContext` object, which provides supplementary
          *        data for authentication, such as:
          *        - Application name (`appName`)
          *        - Authentication scheme ID (`schemeId`)
@@ -331,7 +331,7 @@ public:
          * @note On failure, the function ensures to increment bad attempt counters for the account and the password slot.
          */
         virtual AuthenticationResult authenticateCredential(const ClientDetails &clientDetails, const std::string &accountName, const std::string &sPassword, const uint32_t &slotId = 0,
-                                              const Mode &authMode = MODE_PLAIN, const std::string &challengeSalt = "", std::shared_ptr<AppAuthExtras> authContext = nullptr) override;
+                                              const Mode &authMode = MODE_PLAIN, const std::string &challengeSalt = "", std::shared_ptr<TransientAuthenticationContext> authContext = nullptr) override;
 
         /**
      * @brief getAccountCredentialPublicData Get information for Salted Password Calculation and expiration info (Not Authenticated)

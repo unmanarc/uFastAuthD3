@@ -79,25 +79,25 @@ struct ApplicationScope
     std::string description;
 };
 
-struct AppAuthExtras
+struct TransientAuthenticationContext
 {
-    bool validateAndDecodeBearerAccessTokenProperties(const std::string & oldIntermediateAuthTokenStr,
+    bool validateAndDecodeBearerAccessTokenProperties(const std::string & oldTransientAuthTokenStr,
                                                       const Json::Value * inputJSON,
-                                                      Mantids30::DataFormat::JWT::Token *oldIntermediateAuthTokenOut,
+                                                      Mantids30::DataFormat::JWT::Token *oldTransientAuthTokenOut,
                                                       const std::shared_ptr<Mantids30::DataFormat::JWT> jwtValidator,
                                                       std::string *accountName)
     {
         // Validate the token
-        if (!oldIntermediateAuthTokenStr.empty() && oldIntermediateAuthTokenStr != "null")
+        if (!oldTransientAuthTokenStr.empty() && oldTransientAuthTokenStr != "null")
         {
-            if (!jwtValidator->verify(oldIntermediateAuthTokenStr, oldIntermediateAuthTokenOut))
+            if (!jwtValidator->verify(oldTransientAuthTokenStr, oldTransientAuthTokenOut))
             {
                 return false;
             }
 
             // Extract JWT Signed Parameters:
-            *accountName = JSON_ASSTRING_D(oldIntermediateAuthTokenOut->getClaim("preAuthUser"), "");
-            fillFromTokenClaims(oldIntermediateAuthTokenOut->getAllClaimsAsJSON());
+            *accountName = JSON_ASSTRING_D(oldTransientAuthTokenOut->getClaim("preAuthUser"), "");
+            fillFromTokenClaims(oldTransientAuthTokenOut->getAllClaimsAsJSON());
         }
         else
         {
@@ -174,7 +174,7 @@ public:
      * @param slotId The identifier for the specific authentication slot being used.
      * @param authMode Specifies the mode of authentication (e.g., plain text, hashed). Default is `MODE_PLAIN`.
      * @param challengeSalt Optional salt used in challenge-based authentication methods. Default is an empty string.
-     * @param authContext (Optional) A shared pointer to an `AppAuthExtras` object, which provides supplementary
+     * @param authContext (Optional) A shared pointer to an `TransientAuthenticationContext` object, which provides supplementary
      *        data for authentication, such as:
      *        - Application name (`appName`)
      *        - Authentication scheme ID (`schemeId`)
@@ -202,7 +202,7 @@ public:
      *       enforce policies such as account locking or throttling after repeated failed attempts.
      */
     virtual AuthenticationResult authenticateCredential(const Mantids30::Sessions::ClientDetails &clientDetails, const std::string &accountName, const std::string &password, const uint32_t &slotId,
-                                          const Mode &authMode = MODE_PLAIN, const std::string &challengeSalt = "", std::shared_ptr<AppAuthExtras> authContext = nullptr)
+                                          const Mode &authMode = MODE_PLAIN, const std::string &challengeSalt = "", std::shared_ptr<TransientAuthenticationContext> authContext = nullptr)
         = 0;
 
     /**

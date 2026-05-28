@@ -49,7 +49,7 @@ void IdentityManager::AuthController::updateCredentialAuthStatus(const Authentic
 AuthenticationResult IdentityManager::AuthController::authenticateCredential(const ClientDetails &clientDetails, const std::string &accountName, const std::string &incomingPassword, const uint32_t &slotId,
                                                                const Mode &authMode, const std::string &challengeSalt,
                                                                // Extras...
-                                                               std::shared_ptr<AppAuthExtras> authContext)
+                                                               std::shared_ptr<TransientAuthenticationContext> authContext)
 {
     AuthenticationResult ret = AuthenticationResult::BAD_ACCOUNT;
     bool accountFound = false, authSlotFound = false;
