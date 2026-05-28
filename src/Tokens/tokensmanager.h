@@ -3,6 +3,7 @@
 
 
 #include "IdentityManager/ds_application.h"
+#include "IdentityManager/credentialvalidator.h"
 
 #include <Mantids30/Helpers/json.h>
 #include <Mantids30/API_EndpointsAndSessions/api_restful_endpoints.h>
@@ -25,8 +26,7 @@ public:
     static void configureRefreshToken(Mantids30::DataFormat::JWT::Token &refreshToken, const std::string &refreshTokenId, const std::string &jwtAccountName,
                                       const std::string &appName, const ApplicationTokenProperties &tokenProperties, const std::set<uint32_t> &slotIds);
 
-    static void setIAMAccessTokenCookie(APIReturn &response, const RequestParameters &request, const Mantids30::DataFormat::JWT::Token &transientToken,
-                                  bool keepAuthenticated, const time_t &currentTransientTokenExpirationTime);
+    static void issueAccessTokenCookie(APIReturn &response, const RequestParameters &request, std::shared_ptr<TransientAuthenticationContext> authContext);
 
 
 };

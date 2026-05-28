@@ -26,7 +26,6 @@ API::APIReturn LoginPortal_Endpoints::preAuthorize(void *context, const API::RES
     json r;
     API::APIReturn response;
     // Environment:
-    JWT::Token authenticatedAccessToken;
     IdentityManager *identityManager = Globals::getIdentityManager();
     std::shared_ptr<TransientAuthenticationContext> authContext = std::make_shared<TransientAuthenticationContext>();
 
@@ -35,23 +34,23 @@ API::APIReturn LoginPortal_Endpoints::preAuthorize(void *context, const API::RES
     uint32_t loginAuthenticationTimeout = config.get<uint32_t>("LoginPortal.AuthenticationTimeout", 300);
 
     // Input parameters:
-    std::string appName = JSON_ASSTRING(*request.inputJSON, "app", "");                      // APPNAME.
-    std::string inputAccountName = JSON_ASSTRING(*request.inputJSON, "accountName", ""); // ACCOUNT ID.
+    authContext->appName = JSON_ASSTRING(*request.inputJSON, "app", "");                      // APPNAME.
+    authContext->accountName = JSON_ASSTRING(*request.inputJSON, "accountName", ""); // ACCOUNT ID.
     std::string activity = JSON_ASSTRING(*request.inputJSON, "activity", "");            // APP ACTIVITY NAME.
 
-    if (!identityManager->applications->doesApplicationExist(appName))
+    if (!identityManager->applications->doesApplicationExist(authContext->appName))
     {
         response.setError(HTTP::Status::S_404_NOT_FOUND, "not_found", "Invalid Application");
         return response;
     }
 
-    if (!decodeAndValidateAccessTokenIfExist(request, response, &authenticatedAccessToken, inputAccountName, authContext))
+    if (!authContext->validateAndMerge_AccessTokenIfExist(request.clientRequest->getCookie("AccessToken"), response, request.jwtValidator))
     {
-        // Should logout first.
+        // Invalid Access Token. (Relogin)
         return response;
     }
 
-    r = identityManager->authController->getApplicableAuthenticationSchemesForAccount(appName, activity, inputAccountName, authContext->authenticatedSlots);
+    r = identityManager->authController->getApplicableAuthenticationSchemesForAccount(authContext->appName, activity, authContext->accountName, authContext->authenticatedSlots);
 
     if (r["defaultScheme"] == Json::nullValue)
     {
@@ -74,12 +73,10 @@ API::APIReturn LoginPortal_Endpoints::authorize(void *context, const RequestPara
     // Vector to store the authentication slots used by a particular scheme.
 
     std::shared_ptr<TransientAuthenticationContext> authContext = std::make_shared<TransientAuthenticationContext>();
-    JWT::Token oldTransientAuthToken;
-    std::string accountName;
 
     // Decode the bearer transient token... (and get the Account Name)
     // If the token does not exist, it will get the data from the USER INPUT JSON
-    if (!authContext->validateAndDecodeTransientAuthToken(request.clientRequest->getAuthorizationBearer(), request.inputJSON, &oldTransientAuthToken, request.jwtValidator, &accountName))
+    if (!authContext->validateAndMerge_TransientAuthTokenIfExist(request.clientRequest->getAuthorizationBearer(), request.inputJSON, request.jwtValidator))
     {
         response.setError(HTTP::Status::S_403_FORBIDDEN, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::UNAUTHENTICATED)),
                           authResultToString(AuthenticationResult::UNAUTHENTICATED));
@@ -95,30 +92,26 @@ API::APIReturn LoginPortal_Endpoints::authorize(void *context, const RequestPara
         return response;
     }
 
-
-
-    AuthenticationResult authRetCode = identityManager->authController->authenticateCredential(clientDetails, accountName, JSON_ASSTRING(*request.inputJSON, "password", ""),
+    AuthenticationResult authRetCode = identityManager->authController->authenticateCredential(clientDetails, authContext->accountName, JSON_ASSTRING(*request.inputJSON, "password", ""),
                                                                                                authContext->currentSlotId.value(),
                                                                                                getAuthModeFromString(JSON_ASSTRING(*request.inputJSON, "authMode", "MODE_PLAIN")),
                                                                                                JSON_ASSTRING(*request.inputJSON, "challengeSalt", ""), authContext);
 
-    LOG_APP->log2(__func__, accountName, clientDetails.ipAddress, authRetCode != AuthenticationResult::AUTHENTICATED ? Logs::LEVEL_SECURITY_ALERT : Logs::LEVEL_INFO,
+    LOG_APP->log2(__func__, authContext->accountName, clientDetails.ipAddress, authRetCode != AuthenticationResult::AUTHENTICATED ? Logs::LEVEL_SECURITY_ALERT : Logs::LEVEL_INFO,
                   "Account Authorization Result: %" PRIu32 " - %s, for application '%s', scheme '%" PRIu32 "' and slotId = %'" PRIu32 "'", authRetCode, authResultToString(authRetCode),
                   authContext->appName.c_str(), authContext->schemeId, authContext->currentSlotId.value());
 
     if (IS_CREDENTIAL_AUTHENTICATED(authRetCode))
     {
         std::vector<AuthenticationSchemeUsedSlot> requiredAuthSlots;
-        JWT::Token accessToken;
-        if (!decodeAndValidateAccessTokenIfExist(request,response,&accessToken, accountName,authContext))
+
+        if (!authContext->validateAndMerge_AccessTokenIfExist(request.clientRequest->getCookie("AccessToken"), response, request.jwtValidator))
         {
             // Invalid Access Token. (Relogin)
             return response;
         }
-        if (!calculateRequiredAuthSlotsLeftForTheNewTransientAuthToken(authContext, accountName, &response, &requiredAuthSlots, accessToken))
-        {
-            return response;
-        }
+
+        requiredAuthSlots = calculateRequiredAuthSlotsLeftForTheNewTransientAuthToken(authContext, &response);
 
         if (requiredAuthSlots.empty())
         {
@@ -128,7 +121,7 @@ API::APIReturn LoginPortal_Endpoints::authorize(void *context, const RequestPara
             return response;
         }
 
-        // The current slot should be the first to avoid order change...
+        // The current slot should be the first to avoid order change (eg. trying to try the OTP before the pass)...
         if (requiredAuthSlots.begin()->slotId != authContext->currentSlotId.value())
         {
             response.setError(HTTP::Status::S_400_BAD_REQUEST, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::BAD_PARAMETERS)),
@@ -139,8 +132,7 @@ API::APIReturn LoginPortal_Endpoints::authorize(void *context, const RequestPara
         // Remove the first element from requiredAuthSlots (which is the authenticated credential)
         requiredAuthSlots.erase(requiredAuthSlots.begin());
 
-        setupNewTransientAuthToken(request, response, identityManager, authContext, requiredAuthSlots, oldTransientAuthToken.getExpirationTime(), accountName,
-                                      authRetCode == AuthenticationResult::MUST_CHANGE_CREDENTIAL);
+        issueTransientAuthTokenResponse(request, response, identityManager, authContext, requiredAuthSlots, authRetCode == AuthenticationResult::MUST_CHANGE_CREDENTIAL);
     }
     else
     {
@@ -156,7 +148,7 @@ API::APIReturn LoginPortal_Endpoints::authorize(void *context, const RequestPara
         response.setError(HTTP::Status::S_401_UNAUTHORIZED, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(authRetCode)), authResultToString(authRetCode));
     }
 
-    LOG_APP->log2(__func__, accountName, clientDetails.ipAddress, response.getHTTPResponseCode() != HTTP::Status::S_200_OK ? Logs::LEVEL_SECURITY_ALERT : Logs::LEVEL_INFO, "R/%03" PRIu16 ": %s",
+    LOG_APP->log2(__func__, authContext->accountName, clientDetails.ipAddress, response.getHTTPResponseCode() != HTTP::Status::S_200_OK ? Logs::LEVEL_SECURITY_ALERT : Logs::LEVEL_INFO, "R/%03" PRIu16 ": %s",
                   static_cast<uint16_t>(response.getHTTPResponseCode()), request.clientRequest->getURI().c_str());
 
     return response;
