@@ -13,6 +13,7 @@
 #include <json/value.h>
 #include <string>
 
+#include "Mantids30/API_EndpointsAndSessions/api_options_handler.h"
 #include "globals.h"
 #include "IdentityManager/ds_authentication.h"
 
@@ -29,9 +30,13 @@ void WebSessionAuthHandler_Endpoints::addEndpoints(std::shared_ptr<Endpoints> en
     // AUTHENTICATION FUNCTIONS:
 
     // Web triggered events:
-    endpoints->addEndpoint(Endpoints::POST, "logout", SecurityOptions::NO_AUTH, {}, nullptr,  &appLogout);
+    endpoints->addEndpoint(Endpoints::GET, "getLogoutCallbackURL", SecurityOptions::NO_AUTH, {}, nullptr,  &getLogoutCallbackURL);
     endpoints->addEndpoint(Endpoints::POST, "refreshAccessToken", SecurityOptions::NO_AUTH, {}, nullptr, &refreshAccessToken);
     endpoints->addEndpoint(Endpoints::POST, "callback", SecurityOptions::NO_AUTH, {}, nullptr, &callback);
+    endpoints->setEndpointOptions("callback", API::OptionsHandlerConfig()
+                                               .insertAllowedOrigin(Globals::pConfig.get<std::string>("AppVars.LoginPortalURL", ""))
+                                               .setAllowCredentials(true)
+                                  );
 }
 
 bool WebSessionAuthHandler_Endpoints::validateAPIKey(const std::string &app, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
