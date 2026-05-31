@@ -748,7 +748,7 @@ void IdentityManager_DB::logSecurityEventOnApplicationActivities(const std::stri
         sql,
         {{":f_appName", MAKE_VAR(STRING, applicationName)},
          {":f_activityName", MAKE_VAR(STRING, activityName)},
-         {":f_schemeId", MAKE_VAR(UINT32, schemeId.value())},
+         {":f_schemeId", MAKE_VAR(UINT32, schemeId.has_value()?schemeId.value():0)},
          {":f_performedBy", MAKE_VAR(STRING, performedBy)},
          {":eventAction", MAKE_VAR(INT32, static_cast<int>(eventAction))},
          {":eventDescription", MAKE_VAR(STRING, eventDescription)},
