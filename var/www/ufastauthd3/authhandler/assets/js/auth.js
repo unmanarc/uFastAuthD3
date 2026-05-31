@@ -19,6 +19,20 @@ function updateSessionFailed() {
 }
 
 /**
+ * Retrieves the value of a cookie by its name.
+ * @param {string} name - The name of the cookie to retrieve.
+ * @returns {string|null} The cookie value, or null if not found.
+ */
+function getCookie(name) {
+  const value = "; " + document.cookie;
+  const parts = value.split("; " + name + "=");
+  if (parts.length === 2) {
+    return parts.pop().split(";").shift();
+  }
+  return null;
+}
+
+/**
  * Sends an AJAX request to the server to refresh the access token.
  * Upon successful response, it updates maxAgeVar and restarts the session timer.
  */
@@ -36,16 +50,48 @@ function refreshAccessToken() {
     error: updateSessionFailed
   });
 }
+
+/**
+ * Logs out the user by submitting the LogoutToken via a form POST to the callback URL.
+ * This causes the browser to navigate away from the current page.
+ */
 function logout() {
+  // Step 1: Get the logout callback URL from the server (synchronous to ensure we have the URL before proceeding)
   $.ajax({
-    url: '/auth/api/v1/logout',
-    type: 'POST',
+    url: '/auth/api/v1/getLogoutCallbackURL',
+    type: 'GET',
+    async: false,
     success: function (response) {
-      // Reload after the cookie cleanup is complete
-      window.location.href = '/login';
+      var logoutURL = response["url"];
+      var appName = response["appName"];
+
+      // Step 2: Create a hidden form dynamically
+      var form = document.createElement('form');
+      form.method = 'POST';
+      form.action = logoutURL;
+      form.style.display = 'none';
+
+      // Step 3: Add the appName as a hidden input field
+      var tokenInput = document.createElement('input');
+      tokenInput.type = 'hidden';
+      tokenInput.name = 'appName';
+      tokenInput.value = appName;
+      form.appendChild(tokenInput);
+
+      // Step 3b: Add the KeepAuthentication cookie value as a hidden input field
+      var keepAuthInput = document.createElement('input');
+      keepAuthInput.type = 'hidden';
+      keepAuthInput.name = 'keepAuthentication';
+      keepAuthInput.value = getCookie('KeepAuthentication') || '';
+      form.appendChild(keepAuthInput);
+      //alert(keepAuthInput.value);
+
+      // Step 4: Append the form to the document body and submit it
+      document.body.appendChild(form);
+      form.submit();
     },
     error: function () {
-      alert('Logout failed');
+      alert('Failed to retrieve logout URL');
     }
   });
 }
@@ -71,4 +117,22 @@ function startAccessRetokenizerTimer() {
 
 // Initialize the session timer when the script loads, starting the countdown
 startAccessRetokenizerTimer();
+
+/**
+ * Monitors the KeepAuthentication cookie.
+ * If the cookie is missing, redirects the user to /login.
+ * Checks every 1 second.
+ */
+function startKeepAuthenticationMonitor() {
+    setInterval(function() {
+        if (!getCookie('KeepAuthentication')) {
+            window.location.href = '/login';
+        }
+    }, 1000);
+}
+
+// Start the KeepAuthentication cookie monitor
+startKeepAuthenticationMonitor();
+
+//refreshAccessToken();
 

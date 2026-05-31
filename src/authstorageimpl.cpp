@@ -3,6 +3,7 @@
 #include "Mantids30/Program_Logs/loglevels.h"
 #include "globals.h"
 
+#include <optional>
 #include <sys/stat.h>
 
 #include <Mantids30/Program_Logs/applog.h>
@@ -186,48 +187,61 @@ bool AuthStorageImpl::createAuth()
         }
     }
 
-    if (r)
+    // Helper struct to hold configuration for each app
+    struct AppConfig
     {
-        r = r && identityManager->initializeApplicationWithScheme(IAM_ADMPORTAL_APPNAME, IAM_ADMPORTAL_DESCRIPTION, IAM_ADMPORTAL_URL, *schemeId, sDefaultUser, &appExisted);
+        const char *name;
+        const char *description;
+        const char *url;
+    };
+
+    // Define the list of apps to initialize
+    const std::vector<AppConfig> appsToInitialize = {{IAM_ADMPORTAL_APPNAME, IAM_ADMPORTAL_DESCRIPTION, IAM_ADMPORTAL_URL},
+                                                     {IAM_USRPORTAL_APPNAME, IAM_USRPORTAL_DESCRIPTION, IAM_USRPORTAL_URL},
+                                                     {IAM_LOGINPORTAL_APPNAME, IAM_LOGINPORTAL_DESCRIPTION, IAM_LOGINPORTAL_URL}};
+
+    // Loop through each app configuration
+    for (const auto &app : appsToInitialize)
+    {
+        // Check previous result before proceeding
+        if (!r)
+        {
+            break;
+        }
+
+        bool appExisted = false;
+
+        // Attempt to initialize the application
+        // Note: identityManager->initializeApplicationWithScheme returns a boolean success status
+        // We chain it with 'r' to ensure we stop on the first failure
+        r = identityManager->initializeApplicationWithScheme(app.name, app.description, app.url, *schemeId, sDefaultUser, &appExisted);
+
+        // Log based on the result of this specific call
         if (appExisted)
         {
-            // User exist, do nothing.
-            LOG_APP->log0(__func__, Logs::LEVEL_DEBUG, "App '%s' already exist.", IAM_ADMPORTAL_APPNAME);
+            // App already exists, this is not an error in this context
+            LOG_APP->log0(__func__, Logs::LEVEL_DEBUG, "App '%s' already exists.", app.name);
         }
         else
         {
             if (r)
             {
-                LOG_APP->log0(__func__, Logs::LEVEL_INFO, "APP '%s' successfully created.", IAM_ADMPORTAL_APPNAME);
+                LOG_APP->log0(__func__, Logs::LEVEL_INFO, "APP '%s' successfully created.", app.name);
             }
             else
             {
-                LOG_APP->log0(__func__, Logs::LEVEL_CRITICAL, "APP '%s' can't be created.", IAM_ADMPORTAL_APPNAME);
+                LOG_APP->log0(__func__, Logs::LEVEL_CRITICAL, "APP '%s' can't be created.", app.name);
+                // Return false immediately on failure as per original logic
                 return false;
             }
         }
     }
 
-    if (r)
+    if (identityManager->applicationActivities->getApplicationActivityDefaultScheme(IAM_LOGINPORTAL_APPNAME,"LOGIN") == std::nullopt)
     {
-        r = r && identityManager->initializeApplicationWithScheme(IAM_USRPORTAL_APPNAME, IAM_USRPORTAL_DESCRIPTION, IAM_USRPORTAL_URL, *schemeId, sDefaultUser, &appExisted);
-        if (appExisted)
-        {
-            // User exist, do nothing.
-            LOG_APP->log0(__func__, Logs::LEVEL_DEBUG, "App '%s' already exist.", IAM_USRPORTAL_APPNAME);
-        }
-        else
-        {
-            if (r)
-            {
-                LOG_APP->log0(__func__, Logs::LEVEL_INFO, "APP '%s' successfully created.", IAM_USRPORTAL_APPNAME);
-            }
-            else
-            {
-                LOG_APP->log0(__func__, Logs::LEVEL_CRITICAL, "APP '%s' can't be created.", IAM_USRPORTAL_APPNAME);
-                return false;
-            }
-        }
+        identityManager->applicationActivities->createLoginActivity();
+        // create activities.
+        LOG_APP->log0(__func__, Logs::LEVEL_INFO, "APP '%s' LOGIN ACTIVITY successfully created.",IAM_LOGINPORTAL_APPNAME );
     }
 
     // Check account flags:
@@ -283,7 +297,6 @@ bool AuthStorageImpl::createAuth()
     if (!configureUserPortalApplication(identityManager, sDefaultUser))
         return false;
 
-
     return true;
 }
 
@@ -331,7 +344,6 @@ bool AuthStorageImpl::resetAdminPwd(IdentityManager_DB *identityManager, std::st
     return identityManager->authController->changeCredential("admin", credentialData);
 }*/
 
-
 static auto parse = [](const char *json)
 {
     Json::Value r;
@@ -347,7 +359,7 @@ bool AuthStorageImpl::configureAdminPortalApplication(IdentityManager_DB *identi
         return false;
     }
 
-    AppSync_Endpoints::updateAppScopes( IAM_ADMPORTAL_APPNAME, "127.0.0.1", parse(R"(
+    AppSync_Endpoints::updateAppScopes(IAM_ADMPORTAL_APPNAME, "127.0.0.1", parse(R"(
         [
             {
                 "id": "SELF_PWDCHANGE",
@@ -434,8 +446,7 @@ bool AuthStorageImpl::configureAdminPortalApplication(IdentityManager_DB *identi
                 "description": "Clean/remove audit logs"
             }
         ]
-    )") );
-
+    )"));
 
     Sessions::ClientDetails clientDetails;
     std::string performedBy = "%SYS:INIT";
@@ -444,7 +455,7 @@ bool AuthStorageImpl::configureAdminPortalApplication(IdentityManager_DB *identi
     {
         LOG_APP->log0(__func__, Logs::LEVEL_WARN, "Setting up '%s' user as application '%s' user.", adminUser.c_str(), IAM_ADMPORTAL_APPNAME);
 
-        if (!identityManager->applications->addAccountToApplication(clientDetails,performedBy,IAM_ADMPORTAL_APPNAME, adminUser))
+        if (!identityManager->applications->addAccountToApplication(clientDetails, performedBy, IAM_ADMPORTAL_APPNAME, adminUser))
         {
             LOG_APP->log0(__func__, Logs::LEVEL_CRITICAL, "Failed to set the '%s' account as application '%s' user.", adminUser.c_str(), IAM_ADMPORTAL_APPNAME);
             return false;
@@ -455,7 +466,7 @@ bool AuthStorageImpl::configureAdminPortalApplication(IdentityManager_DB *identi
     {
         LOG_APP->log0(__func__, Logs::LEVEL_WARN, "Setting up '%s' user as application '%s' admin.", adminUser.c_str(), IAM_ADMPORTAL_APPNAME);
 
-        if (!identityManager->applications->changeApplicationAdmin(clientDetails,performedBy,IAM_ADMPORTAL_APPNAME, adminUser,true))
+        if (!identityManager->applications->changeApplicationAdmin(clientDetails, performedBy, IAM_ADMPORTAL_APPNAME, adminUser, true))
         {
             LOG_APP->log0(__func__, Logs::LEVEL_CRITICAL, "Failed to set the '%s' account as application '%s' admin.", adminUser.c_str(), IAM_ADMPORTAL_APPNAME);
             return false;
@@ -465,7 +476,6 @@ bool AuthStorageImpl::configureAdminPortalApplication(IdentityManager_DB *identi
     return true;
 }
 
-
 bool AuthStorageImpl::configureUserPortalApplication(IdentityManager_DB *identityManager, const std::string &adminUser)
 {
     if (!identityManager->applications->doesApplicationExist(IAM_USRPORTAL_APPNAME))
@@ -474,7 +484,7 @@ bool AuthStorageImpl::configureUserPortalApplication(IdentityManager_DB *identit
         return false;
     }
 
-    AppSync_Endpoints::updateAppScopes( IAM_USRPORTAL_APPNAME, "127.0.0.1", parse(R"(
+    AppSync_Endpoints::updateAppScopes(IAM_USRPORTAL_APPNAME, "127.0.0.1", parse(R"(
     [
       {
         "id": "LOGIN",
@@ -513,10 +523,9 @@ bool AuthStorageImpl::configureUserPortalApplication(IdentityManager_DB *identit
         "description": "Inspect IP addresses recorded for my activity"
       }
     ]
-    )") );
+    )"));
 
-
-    AppSync_Endpoints::updateAppRoles( IAM_USRPORTAL_APPNAME, "127.0.0.1", parse(R"(
+    AppSync_Endpoints::updateAppRoles(IAM_USRPORTAL_APPNAME, "127.0.0.1", parse(R"(
     [
       {
         "id": "GENERIC_USER",
@@ -534,18 +543,16 @@ bool AuthStorageImpl::configureUserPortalApplication(IdentityManager_DB *identit
         ]
       }
     ]
-    )") );
-
+    )"));
 
     Sessions::ClientDetails clientDetails;
     std::string performedBy = "%SYS:INIT";
-
 
     if (!identityManager->applications->validateApplicationAccount(IAM_USRPORTAL_APPNAME, adminUser))
     {
         LOG_APP->log0(__func__, Logs::LEVEL_WARN, "Setting up '%s' user as application '%s' user.", adminUser.c_str(), IAM_USRPORTAL_APPNAME);
 
-        if (!identityManager->applications->addAccountToApplication(clientDetails,performedBy,IAM_USRPORTAL_APPNAME, adminUser))
+        if (!identityManager->applications->addAccountToApplication(clientDetails, performedBy, IAM_USRPORTAL_APPNAME, adminUser))
         {
             LOG_APP->log0(__func__, Logs::LEVEL_CRITICAL, "Failed to set the '%s' account as application '%s' user.", adminUser.c_str(), IAM_USRPORTAL_APPNAME);
             return false;
@@ -557,14 +564,12 @@ bool AuthStorageImpl::configureUserPortalApplication(IdentityManager_DB *identit
     {
         LOG_APP->log0(__func__, Logs::LEVEL_WARN, "Setting up '%s' user with role 'GENERIC_USER' in application '%s'.", adminUser.c_str(), IAM_USRPORTAL_APPNAME);
 
-
-        if (!identityManager->applicationRoles->addAccountToRole(clientDetails,performedBy,IAM_USRPORTAL_APPNAME, "GENERIC_USER", adminUser))
+        if (!identityManager->applicationRoles->addAccountToRole(clientDetails, performedBy, IAM_USRPORTAL_APPNAME, "GENERIC_USER", adminUser))
         {
             LOG_APP->log0(__func__, Logs::LEVEL_CRITICAL, "Failed to set up '%s' user with role 'GENERIC_USER' in application '%s'.", adminUser.c_str(), IAM_USRPORTAL_APPNAME);
             return false;
         }
     }
-
 
     return true;
 }
