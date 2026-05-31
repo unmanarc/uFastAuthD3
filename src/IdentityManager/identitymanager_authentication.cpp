@@ -64,10 +64,10 @@ AuthenticationResult IdentityManager::AuthController::authenticateCredential(con
         if (authContext)
         {
             // app does not exist or user not in app.
-            if (!m_parent->applications->validateApplicationAccount(authContext->appName, accountName))
+            /*if (!m_parent->applications->validateApplicationAccount(authContext->appName, accountName))
             {
                 return AuthenticationResult::ACCOUNT_NOT_IN_APP;
-            }
+            }*/
 
             // Get authentication slots for the scheme id:
             std::vector<AuthenticationSchemeUsedSlot> authSlotsUsedByScheme = listAuthenticationSlotsUsedByScheme(authContext->schemeId);

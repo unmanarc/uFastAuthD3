@@ -17,15 +17,11 @@ using namespace Mantids30::Memory;
 using namespace Mantids30::Database;
 using namespace Mantids30::Helpers;
 using namespace Mantids30;
+
+
 bool IdentityManager_DB::Applications_DB::addApplication(const ClientDetails &clientDetails, const std::string &performedBy,const std::string &appName, const std::string &applicationDescription, const std::string &appURL, const std::string &apiKey,
                                                          const std::string &creatorAccountName, const ApplicationAttributes &appAttributes, bool initializeDefaultValues)
 {
-    std::optional<uint32_t> defaultSchemeId = _parent->authController->getDefaultAuthScheme();
-
-    if (initializeDefaultValues && !defaultSchemeId.has_value())
-    {
-        return false;
-    }
 
     bool tokenInsertSuccess;
     {
@@ -70,12 +66,6 @@ bool IdentityManager_DB::Applications_DB::addApplication(const ClientDetails &cl
         if (!addWebLoginAllowedRedirectURIToApplication(clientDetails, performedBy,appName, appURL + "/"))
             return false;
         if (!updateWebLoginDefaultRedirectURIForApplication(clientDetails, performedBy,appName, appURL + "/"))
-            return false;
-        if (!_parent->applicationActivities->setApplicationActivities(clientDetails, performedBy,appName, {{"LOGIN", {.description = "Main Login", .parentActivity = ""}}}))
-            return false;
-        if (!_parent->applicationActivities->addAuthenticationSchemeToApplicationActivity(clientDetails, performedBy,appName, "LOGIN", *defaultSchemeId))
-            return false;
-        if (!_parent->applicationActivities->setApplicationActivityDefaultScheme(clientDetails, performedBy,appName, "LOGIN", *defaultSchemeId))
             return false;
     }
 
@@ -625,7 +615,7 @@ bool IdentityManager_DB::Applications_DB::updateWebLoginJWTConfigForApplication(
                                                "maintainRevocationAndLogoutInfo=:maintainRevocationAndLogoutInfo WHERE f_appName=:appName;",
                                                {{":appName", MAKE_VAR(STRING, tokenInfo.appName)},
                                                 {":sessionInactivityTimeout", MAKE_VAR(UINT32, tokenInfo.sessionInactivityTimeout)},
-                                                {":tokenType", MAKE_VAR(STRING, tokenInfo.tokenType)},
+                                                {":tokenType", MAKE_VAR(STRING, tokenInfo.signAlgorithm)},
                                                 {":includeApplicationScopes", MAKE_VAR(BOOL, tokenInfo.includeApplicationScopes)},
                                                 {":includeBasicAccountInfo", MAKE_VAR(BOOL, tokenInfo.includeBasicAccountInfo)},
                                                 {":allowRefreshTokenRenovation", MAKE_VAR(BOOL, tokenInfo.allowRefreshTokenRenovation)},
@@ -660,7 +650,7 @@ ApplicationTokenProperties IdentityManager_DB::Applications_DB::getWebLoginJWTCo
                                                    &maintainRevocationAndLogoutInfo, &tokensConfigJSON}))
     {
         tokenInfo.sessionInactivityTimeout = sessionInactivityTimeout.getValue();
-        tokenInfo.tokenType = tokenType.getValue();
+        tokenInfo.signAlgorithm = tokenType.getValue();
         tokenInfo.includeApplicationScopes = includeApplicationScopes.getValue();
         tokenInfo.includeBasicAccountInfo = includeBasicAccountInfo.getValue();
         tokenInfo.maintainRevocationAndLogoutInfo = maintainRevocationAndLogoutInfo.getValue();

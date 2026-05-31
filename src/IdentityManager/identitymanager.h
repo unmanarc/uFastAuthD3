@@ -40,7 +40,7 @@ public:
     IdentityManager() = default;
     virtual ~IdentityManager();
 
-    bool validateAccountForNewAccess(const std::string &accountName, const std::string &appName, AuthenticationResult &reason, bool checkValidAppAccount);
+    bool isAccountActiveAndValidForApp(const std::string &accountName, const std::string &appName, AuthenticationResult &reason, bool checkValidAppAccount);
 
     class Accounts
     {
@@ -160,7 +160,10 @@ public:
             uint32_t defaultSchemeID = -1;
         };
 
-        virtual ~ApplicationActivities() {}
+        virtual ~ApplicationActivities() = default;
+
+        virtual bool createLoginActivity() = 0;
+
         /////////////////////////////////////////////////////////////////////////////////
         virtual bool addApplicationActivity(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &activityName, const std::string &activityDescription) = 0;
         virtual bool removeApplicationActivity(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &activityName) = 0;

@@ -20,7 +20,7 @@ IdentityManager::~IdentityManager()
         delete applicationActivities;
 }
 
-bool IdentityManager::validateAccountForNewAccess(const std::string &accountName, const std::string &appName, AuthenticationResult &reason, bool checkValidAppAccount)
+bool IdentityManager::isAccountActiveAndValidForApp(const std::string &accountName, const std::string &appName, AuthenticationResult &reason, bool checkValidAppAccount)
 {
     // First, check if the account is disabled, unconfirmed, or expired.
     AccountFlags accountFlags = accounts->getAccountFlags(accountName);
@@ -44,7 +44,7 @@ bool IdentityManager::validateAccountForNewAccess(const std::string &accountName
     // If checkValidAppAccount is true, check if the account is valid for the specified application.
     if (checkValidAppAccount && !applications->validateApplicationAccount(appName, accountName))
     {
-        reason = AuthenticationResult::BAD_ACCOUNT;
+        reason = AuthenticationResult::ACCOUNT_NOT_IN_APP;
         return false;
     }
 
@@ -124,14 +124,14 @@ std::shared_ptr<JWT> IdentityManager::Applications::getAppJWTValidator(const std
     }
 
     // Validate the JWT Algorithm....
-    if (!JWT::isAlgorithmSupported(tokenProperties.tokenType))
+    if (!JWT::isAlgorithmSupported(tokenProperties.signAlgorithm))
     {
         // Failed to validate the algorithm type.
         return nullptr;
     }
 
     // Setup the JWT validator:
-    auto algorithmDetails = JWT::AlgorithmDetails(tokenProperties.tokenType.c_str());
+    auto algorithmDetails = JWT::AlgorithmDetails(tokenProperties.signAlgorithm.c_str());
     std::shared_ptr<JWT> jwtValidator = std::make_shared<JWT>(algorithmDetails.algorithm);
 
     if (algorithmDetails.isUsingHMAC)
@@ -156,7 +156,7 @@ std::shared_ptr<JWT> IdentityManager::Applications::getAppJWTSigner(const std::s
     if (tokenProperties.appName == appName && !validationKey.empty() && !signingKey.empty())
     {
         // Validate the JWT....
-        JWT::AlgorithmDetails algorithmDetails = JWT::AlgorithmDetails(tokenProperties.tokenType.c_str());
+        JWT::AlgorithmDetails algorithmDetails = JWT::AlgorithmDetails(tokenProperties.signAlgorithm.c_str());
         std::shared_ptr<JWT> jwtSigner = std::make_shared<JWT>(algorithmDetails.algorithm);
 
         if (algorithmDetails.isUsingHMAC)

@@ -362,3 +362,29 @@ bool IdentityManager_DB::ApplicationActivities_DB::removeAuthenticationSchemeFro
     
     return success;
 }
+
+
+bool IdentityManager_DB::ApplicationActivities_DB::createLoginActivity()
+{
+    ClientDetails clientDetails;
+    std::string performedBy = "$SYS:INIT"; // nobody (initialization)
+
+
+    std::optional<uint32_t> defaultSchemeId = _parent->authController->getDefaultAuthScheme();
+
+    if (!defaultSchemeId.has_value())
+    {
+        return false;
+    }
+
+    _parent->applicationActivities->setApplicationActivities(clientDetails, performedBy,IAM_LOGINPORTAL_APPNAME, {{"LOGIN", {.description = "Main Login", .parentActivity = ""}}});
+    _parent->applicationActivities->addAuthenticationSchemeToApplicationActivity(clientDetails, performedBy,IAM_LOGINPORTAL_APPNAME, "LOGIN", *defaultSchemeId);
+    if (!_parent->applicationActivities->setApplicationActivityDefaultScheme(clientDetails, performedBy,IAM_LOGINPORTAL_APPNAME, "LOGIN", *defaultSchemeId))
+    {
+        return false;
+    }
+
+    _parent->logSecurityEventOnApplications(IAM_LOGINPORTAL_APPNAME, SecurityEventAction::CREATE, "Created LOGIN activity", performedBy, clientDetails);
+
+    return true;
+}

@@ -52,7 +52,7 @@ struct TransientAuthenticationContext
             }
             // Merge schemes and apps also...
             jAuthenticatedSchemes = accessToken.getClaim("authenticatedSchemes");
-            jAuthenticatedApps = accessToken.getClaim("authenticatedApps");
+            jAuthenticatedAppsCallbackURLs = accessToken.getClaim("authenticatedAppsCallbackURLs");
         }
 
         return true;
@@ -69,14 +69,12 @@ struct TransientAuthenticationContext
             }
 
             // Extract JWT Signed Parameters:
-            accountName = JSON_ASSTRING_D(transientAuthToken.getClaim("preAuthUser"), "");
-            fillVarsFromTransientTokenClaims();
+            fillVars_FromTransientTokenClaims();
         }
         else
         {
             // When there is no token, override initial token parameters with the input parameters...
-            accountName = JSON_ASSTRING(*inputJSON, "preAuthUser", "");
-            fillVarsFromInitialJSONPOST(*inputJSON);
+            fillVars_FromInitialJSONPOST(*inputJSON);
         }
 
         return true;
@@ -109,7 +107,8 @@ struct TransientAuthenticationContext
         newTransientAuthToken.setClaim("authenticatedSlots", Mantids30::Helpers::setToJSON(authenticatedSlots));
         newTransientAuthToken.setClaim("mustChangeSlots", Mantids30::Helpers::setToJSON(mustChangeSlots));
         newTransientAuthToken.setClaim("authenticatedSchemes", jAuthenticatedSchemes);
-        newTransientAuthToken.setClaim("authenticatedApps", jAuthenticatedApps);
+        //newTransientAuthToken.setClaim("authenticatedApps", jAuthenticatedApps);
+        newTransientAuthToken.setClaim("authenticatedAppsCallbackURLs", jAuthenticatedAppsCallbackURLs);
 
         if (nextSlotId.has_value())
             newTransientAuthToken.setClaim("currentSlotId", nextSlotId.value()); // Enforce this with authentication.
@@ -123,12 +122,12 @@ struct TransientAuthenticationContext
         return jwtSigner->signFromToken(transientAuthToken, false);
     }
 
-    void fillVarsFromTransientTokenClaims()
+    void fillVars_FromTransientTokenClaims()
     {
         auto claims = transientAuthToken.getAllClaimsAsJSON();
 
+        accountName = JSON_ASSTRING(claims, "preAuthUser", "");
         appName = JSON_ASSTRING(claims, "app", "");
-
         slotSchemeHash = JSON_ASSTRING(claims, "slotSchemeHash", "");
         schemeId = JSON_ASUINT(claims, "schemeId", UINT32_MAX);
         keepAuthenticated = JSON_ASBOOL(claims, "keepAuthenticated", false);
@@ -136,11 +135,13 @@ struct TransientAuthenticationContext
         authenticatedSlots = Mantids30::Helpers::jsonToUInt32Set(claims, "authenticatedSlots");
         mustChangeSlots = Mantids30::Helpers::jsonToUInt32Set(claims, "mustChangeSlots");
         jAuthenticatedSchemes = transientAuthToken.getClaim("authenticatedSchemes");
-        jAuthenticatedApps = transientAuthToken.getClaim("authenticatedApps");
+        //jAuthenticatedApps = transientAuthToken.getClaim("authenticatedApps");
+        jAuthenticatedAppsCallbackURLs = transientAuthToken.getClaim("authenticatedAppsCallbackURLs");
     }
 
-    void fillVarsFromInitialJSONPOST(const json &inputJSON)
+    void fillVars_FromInitialJSONPOST(const json &inputJSON)
     {
+        accountName = JSON_ASSTRING(inputJSON, "preAuthUser", "");
         keepAuthenticated = JSON_ASBOOL(inputJSON, "keepAuthenticated", false);
         appName = JSON_ASSTRING(inputJSON, "app", "");
         schemeId = JSON_ASUINT(inputJSON, "schemeId", UINT32_MAX);
@@ -154,7 +155,6 @@ struct TransientAuthenticationContext
         // Update the claim
         transientAuthToken.setClaim("mustChangeSlots", Mantids30::Helpers::setToJSON(mustChangeSlots));
     }
-
 
     Json::Value getAllAuthenticatedSlotsIds()
     {
@@ -172,11 +172,19 @@ struct TransientAuthenticationContext
         return r_jAuthenticatedSchemes;
     }
 
+    /*
     Json::Value getAllAuthenticatedApps()
     {
-        Json::Value r_jAuthenticatedApps = jAuthenticatedApps;
-        r_jAuthenticatedApps.append(appName);
+        Json::Value r_jAuthenticatedApps = ;
+        r_jAuthenticatedApps.append(appCallbackURL);
         return r_jAuthenticatedApps;
+    }*/
+
+    Json::Value getAllAuthenticatedAppsCallbackURLs()
+    {
+        Json::Value r_jAuthenticatedAppsCallbackURLs = jAuthenticatedAppsCallbackURLs;
+        r_jAuthenticatedAppsCallbackURLs.append(appCallbackURL);
+        return r_jAuthenticatedAppsCallbackURLs;
     }
 
     time_t newTokenExpirationTime = 0;
@@ -184,6 +192,7 @@ struct TransientAuthenticationContext
     bool doesTransientTokenNotExist = false;
     bool keepAuthenticated = false;
     std::string appName;
+    std::string appCallbackURL;
     std::string accountName;
     //uint32_t activityId = UINT32_MAX;
     uint32_t schemeId = UINT32_MAX;
@@ -193,7 +202,8 @@ struct TransientAuthenticationContext
     std::set<uint32_t> mustChangeSlots;
 
     Json::Value jAuthenticatedSchemes = Json::arrayValue;
-    Json::Value jAuthenticatedApps = Json::arrayValue;
+    //Json::Value jAuthenticatedApps = Json::arrayValue;
+    Json::Value jAuthenticatedAppsCallbackURLs = Json::arrayValue;
 
     Mantids30::DataFormat::JWT::Token transientAuthToken;
 };

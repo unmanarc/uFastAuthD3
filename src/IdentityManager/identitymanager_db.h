@@ -35,7 +35,7 @@ public:
             _parent = parent;
         }
 
-        virtual ~Accounts_DB() {}
+        virtual ~Accounts_DB() = default;
 
         // Account Management
         bool addAccount(const std::string &accountName,
@@ -104,7 +104,7 @@ public:
             _parent = parent;
         }
 
-        virtual ~ApplicationRoles_DB() {}
+        virtual ~ApplicationRoles_DB() = default;
 
         // Role Management
         bool addRole(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &roleName, const std::string &roleDescription) override;
@@ -138,7 +138,10 @@ public:
             _parent = parent;
         }
 
-        virtual ~ApplicationActivities_DB() {}
+        virtual ~ApplicationActivities_DB()  = default;
+
+        bool createLoginActivity() override;
+
 
         // Activity Management
         bool addApplicationActivity(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &activityName, const std::string &activityDescription) override;
@@ -214,7 +217,7 @@ public:
                                                    const time_t &accessTokenExpiration) override;
         bool logoutApplicationAuthLog(const std::string &accountName, const std::string &appName, const std::string &refresherTokenId, LogoutReason reason) override;
 
-        // Authentication Schemes
+        // Authentication Schemesw
         std::optional<uint32_t> addAuthenticationScheme(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &description) override;
         bool updateAuthenticationScheme(const ClientDetails &clientDetails, const std::string &performedBy, const uint32_t &schemeId, const std::string &description) override;
         bool removeAuthenticationScheme(const ClientDetails &clientDetails, const std::string &performedBy, const uint32_t &schemeId) override;
@@ -268,11 +271,13 @@ public:
             _parent = parent;
         }
 
-        virtual ~Applications_DB() {}
+        virtual ~Applications_DB() = default;
 
         // Application CRUD Operations
         bool addApplication(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &applicationDescription, const std::string &appURL, const std::string &apiKey, const std::string &creatorAccountName,
                             const ApplicationAttributes &appAttributes, bool initializeDefaultValues) override;
+
+
         bool removeApplication(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName) override;
         bool doesApplicationExist(const std::string &appName) override;
 

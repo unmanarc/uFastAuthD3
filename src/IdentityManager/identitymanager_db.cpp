@@ -757,3 +757,4 @@ void IdentityManager_DB::logSecurityEventOnApplicationActivities(const std::stri
          {":clientUserAgent", MAKE_VAR(STRING, clientDetails.userAgent)},
          {":clientExtraData", MAKE_VAR(STRING, clientDetails.extraData)}});
 }
+

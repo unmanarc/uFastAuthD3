@@ -69,7 +69,7 @@ struct ApplicationTokenProperties
         Json::Value root(Json::objectValue);
         root["appName"] = appName;
         root["sessionInactivityTimeout"] = sessionInactivityTimeout;
-        root["tokenType"] = tokenType;
+        root["tokenType"] = signAlgorithm;
         root["allowRefreshTokenRenovation"] = allowRefreshTokenRenovation;
         root["includeApplicationScopes"] = includeApplicationScopes;
         root["includeBasicAccountInfo"] = includeBasicAccountInfo;
@@ -90,7 +90,7 @@ struct ApplicationTokenProperties
         }
 
         sessionInactivityTimeout = JSON_ASUINT(root, "sessionInactivityTimeout", 0);
-        tokenType = JSON_ASSTRING(root, "tokenType", "");
+        signAlgorithm = JSON_ASSTRING(root, "tokenType", "");
         allowRefreshTokenRenovation = JSON_ASBOOL(root, "allowRefreshTokenRenovation", false);
         includeApplicationScopes = JSON_ASBOOL(root, "includeApplicationScopes", false);
         includeBasicAccountInfo = JSON_ASBOOL(root, "includeBasicAccountInfo", false);
@@ -102,7 +102,7 @@ struct ApplicationTokenProperties
 
     std::string appName;
     uint32_t sessionInactivityTimeout;
-    std::string tokenType;
+    std::string signAlgorithm;
     bool allowRefreshTokenRenovation;
     bool includeApplicationScopes;
     bool includeBasicAccountInfo;
