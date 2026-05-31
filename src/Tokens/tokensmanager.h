@@ -20,11 +20,13 @@ public:
     using ClientDetails = Mantids30::Sessions::ClientDetails;
 
 
-    static void configureAccessToken(Mantids30::DataFormat::JWT::Token &accessToken, const std::string &refreshTokenId, const std::string &jwtAccountName,
+    static void configureApplicationAccessToken(Mantids30::DataFormat::JWT::Token &accessToken, const std::string &refreshTokenId, const std::string &jwtAccountName,
                                      const std::string &appName, const ApplicationTokenProperties &tokenProperties, const std::set<uint32_t> &slotIds);
 
-    static void configureRefreshToken(Mantids30::DataFormat::JWT::Token &refreshToken, const std::string &refreshTokenId, const std::string &jwtAccountName,
-                                      const std::string &appName, const ApplicationTokenProperties &tokenProperties, const std::set<uint32_t> &slotIds);
+    static void configureApplicationRefreshToken(Mantids30::DataFormat::JWT::Token &refreshToken, const std::string &refreshTokenId, const std::string &jwtAccountName,
+                                                 const std::string &appName, const ApplicationTokenProperties &tokenProperties, const std::set<uint32_t> &slotIds, const bool &keepAuthenticated);
+
+    //static void configureLogoutToken(const Mantids30::DataFormat::JWT::Token &refreshToken, Mantids30::DataFormat::JWT::Token &logoutToken);
 
     static void issueLoginAccessTokenCookie(APIReturn &response, const RequestParameters &request, std::shared_ptr<TransientAuthenticationContext> authContext);
 

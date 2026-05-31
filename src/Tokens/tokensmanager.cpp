@@ -8,7 +8,7 @@ using namespace Mantids30;
 using namespace Mantids30::Network::Protocols;
 using namespace API::RESTful;
 
-void TokensManager::configureAccessToken(Mantids30::DataFormat::JWT::Token &accessToken, const std::string &refreshTokenId, const std::string &jwtAccountName, const std::string &appName,
+void TokensManager::configureApplicationAccessToken(Mantids30::DataFormat::JWT::Token &accessToken, const std::string &refreshTokenId, const std::string &jwtAccountName, const std::string &appName,
                                          const ApplicationTokenProperties &tokenProperties, const std::set<uint32_t> &slotIds)
 {
     IdentityManager *identityManager = Globals::getIdentityManager();
@@ -64,14 +64,11 @@ void TokensManager::configureAccessToken(Mantids30::DataFormat::JWT::Token &acce
     }
 }
 
-void TokensManager::configureRefreshToken(Mantids30::DataFormat::JWT::Token &refreshToken, const std::string &refreshTokenId, const std::string &jwtAccountName, const std::string &appName,
-                                          const ApplicationTokenProperties &tokenProperties, const std::set<uint32_t> &slotIds)
+void TokensManager::configureApplicationRefreshToken(Mantids30::DataFormat::JWT::Token &refreshToken, const std::string &refreshTokenId, const std::string &jwtAccountName, const std::string &appName,
+                                          const ApplicationTokenProperties &tokenProperties, const std::set<uint32_t> &slotIds, const bool & keepAuthenticated)
 {
     IdentityManager *identityManager = Globals::getIdentityManager();
 
-    refreshToken.setSubject(jwtAccountName);
-    refreshToken.setIssuedAt(time(nullptr));
-    //refreshToken.setClaim( "tokensConfig", tokenProperties.tokensConfiguration["refreshToken"] );
 
     auto expectedExpirationTime = time(nullptr) + JSON_ASUINT64(tokenProperties.tokensConfiguration["refreshToken"], "timeout", 2592000);
     auto accountExpirationTime = identityManager->accounts->getAccountExpirationTime(jwtAccountName);
@@ -87,18 +84,29 @@ void TokensManager::configureRefreshToken(Mantids30::DataFormat::JWT::Token &ref
         refreshToken.setExpirationTime(accountExpirationTime);
     }
 
+    refreshToken.setSubject(jwtAccountName);
+    refreshToken.setIssuedAt(time(nullptr));
     refreshToken.setNotBefore(time(nullptr) - 30);
     refreshToken.setClaim("slotIds", Mantids30::Helpers::setToJSON(slotIds));
     refreshToken.setJwtId(refreshTokenId);
     refreshToken.setClaim("app", appName);
+    refreshToken.setClaim("keepAuthenticated", keepAuthenticated);
     refreshToken.setClaim("type", "refresher");
 }
+
+/*
+void TokensManager::configureLogoutToken(const Mantids30::DataFormat::JWT::Token &refreshToken, Mantids30::DataFormat::JWT::Token &logoutToken)
+{
+    logoutToken = refreshToken;
+    logoutToken.setClaim("type", "logout");
+}*/
 
 void TokensManager::issueLoginAccessTokenCookie(APIReturn &response, const RequestParameters &request, std::shared_ptr<TransientAuthenticationContext> authContext)
 {
     IdentityManager *identityManager = Globals::getIdentityManager();
     Mantids30::DataFormat::JWT::Token accessToken;
     auto accountExpirationTime = identityManager->accounts->getAccountExpirationTime(authContext->accountName);
+    authContext->appCallbackURL = identityManager->applications->getApplicationCallbackURI(authContext->appName);
     time_t expectedRefresherTokenTimeoutTime = safeAdd(time(nullptr), Globals::pConfig.get<time_t>("LoginPortal.IAMTokenTimeout", 2592000));
 
     if (!authContext->keepAuthenticated)
@@ -114,7 +122,7 @@ void TokensManager::issueLoginAccessTokenCookie(APIReturn &response, const Reque
     accessToken.setNotBefore(time(nullptr) - 30);
     accessToken.setClaim("slotIds",                 authContext->getAllAuthenticatedSlotsIds());
     accessToken.setClaim("authenticatedSchemes",    authContext->getAllAuthenticatedSchemes());
-    accessToken.setClaim("authenticatedApps",       authContext->getAllAuthenticatedApps());
+    accessToken.setClaim("authenticatedAppsCallbackURLs",    authContext->getAllAuthenticatedAppsCallbackURLs());
     accessToken.setClaim("type", "access");
     accessToken.setClaim("app", IAM_LOGINPORTAL_APPNAME);
     accessToken.setClaim("keepAuthenticated", authContext->keepAuthenticated);
@@ -135,7 +143,7 @@ void TokensManager::issueLoginAccessTokenCookie(APIReturn &response, const Reque
     authenticationPublicData["subject"] = authContext->accountName;
     authenticationPublicData["slotIds"] = Mantids30::Helpers::setToJSON(authContext->authenticatedSlots);
     authenticationPublicData["authenticatedSchemes"] = authContext->getAllAuthenticatedSchemes();
-    authenticationPublicData["authenticatedApps"] = authContext->getAllAuthenticatedApps();
+    authenticationPublicData["authenticatedAppsCallbackURLs"] = authContext->getAllAuthenticatedAppsCallbackURLs();
 
     // TODO: account data?
     if (authContext->keepAuthenticated)
