@@ -1,16 +1,13 @@
 #include "Mantids30/Program_Logs/loglevels.h"
+#include "defs.h"
 #include "loginportal_endpoints.h"
 #include <Mantids30/Helpers/json.h>
 #include <json/value.h>
 
-#include <algorithm> // std::find
 #include <boost/algorithm/string/join.hpp>
 #include <json/config.h>
-#include <optional>
 
 #include "globals.h"
-
-#include "Tokens/tokensmanager.h"
 
 using namespace Mantids30;
 using namespace Mantids30::DataFormat;
@@ -18,189 +15,6 @@ using namespace Program;
 using namespace API::RESTful;
 using namespace Network::Protocols;
 
-bool LoginPortal_Endpoints::token_validateRedirectURI(IdentityManager *identityManager, const std::string &app, const std::string &redirectURI, const std::string &user, const std::string &ipAddress)
-{
-    std::list<std::string> redirectURIs = identityManager->applications->listWebLoginAllowedRedirectURIsFromApplication(app);
-    std::string callbackURI = identityManager->applications->getApplicationCallbackURI(app);
-
-    // Validate if the redirect URI is acceptable by the application.
-    if (!redirectURI.empty() && std::find(redirectURIs.begin(), redirectURIs.end(), redirectURI) == redirectURIs.end())
-    {
-        // This token is not available for retrieving app tokens...
-        LOG_APP->log2(__func__, user, ipAddress, Logs::LEVEL_SECURITY_ALERT, "Invalid return URL '%s': The provided URI does not match any recognized redirect URIs for application '%s'.",
-                      redirectURI.c_str(), app.c_str());
-        return false;
-    }
-
-    if (callbackURI.empty())
-    {
-        LOG_APP->log2(__func__, user, ipAddress, Logs::LEVEL_CRITICAL, "Configuration error: The application '%s' has not configured a callback URI yet.", app.c_str());
-        return false;
-    }
-
-    return true;
-}
-
-std::optional<std::string> LoginPortal_Endpoints::token_signApplicationJWT(JWT::Token &accessToken, const ApplicationTokenProperties &tokenProperties)
-{
-    std::string appName = JSON_ASSTRING_D(accessToken.getClaim("app"), "");
-    std::shared_ptr<JWT> signingJWT = Globals::getIdentityManager()->applications->getAppJWTSigner(appName);
-    if (!signingJWT)
-    {
-        return std::nullopt;
-    }
-    return signingJWT->signFromToken(accessToken, false);
-}
-
-bool LoginPortal_Endpoints::token_createAndSignApplicationsJWTs(IdentityManager *identityManager, const JWT::Token *jwtToken, const std::string &app, const std::string &user, const uint32_t &schemeId,
-                                                                const std::string &redirectURI, APIReturn &response, ClientDetails &authClientDetails)
-{
-    ApplicationTokenProperties tokenProperties = identityManager->applications->getWebLoginJWTConfigFromApplication(app);
-
-    if (tokenProperties.appName != app)
-    {
-        LOG_APP->log1(__func__, user, Logs::LEVEL_CRITICAL, "Configuration error: The application '%s' is configured with an unsupported or invalid signing algorithm.", app.c_str());
-        return false;
-    }
-
-    std::set<uint32_t> authenticatedSlotIdsSet = Mantids30::Helpers::jsonToUInt32Set(jwtToken->getClaim("slotIds"));
-    std::string refreshTokenId = Mantids30::Helpers::Random::createRandomString(16);
-
-    JWT::Token accessToken, refreshToken;
-    TokensManager::configureRefreshToken(refreshToken, refreshTokenId, user, app, tokenProperties, authenticatedSlotIdsSet);
-    TokensManager::configureAccessToken(accessToken, refreshTokenId, user, app, tokenProperties, authenticatedSlotIdsSet);
-
-    // Sign access token
-    std::optional<std::string> accessTokenStr = token_signApplicationJWT(accessToken, tokenProperties);
-    if (!accessTokenStr.has_value())
-    {
-        LOG_APP->log1(__func__, user, Logs::LEVEL_CRITICAL, "Failed to sign access token for application '%s'.", app.c_str());
-        return false;
-    }
-
-    // Sign refresh token
-    std::optional<std::string> refreshTokenStr = token_signApplicationJWT(refreshToken, tokenProperties);
-    if (!refreshTokenStr.has_value())
-    {
-        LOG_APP->log1(__func__, user, Logs::LEVEL_CRITICAL, "Failed to sign refresh token for application '%s'.", app.c_str());
-        return false;
-    }
-
-    identityManager->authController->insertApplicationAccountAccessAuthLog(user, app, schemeId, authClientDetails, refreshTokenId, accessToken.getJwtId(), accessToken.getExpirationTime(),
-                                                                           refreshToken.getExpirationTime());
-
-    // Here is the effective logging in the app.
-    (*response.responseJSON())["accessToken"] = accessTokenStr.value();
-    (*response.responseJSON())["refreshToken"] = refreshTokenStr.value();
-    (*response.responseJSON())["redirectURI"] = redirectURI;
-    (*response.responseJSON())["callbackURI"] = identityManager->applications->getApplicationCallbackURI(app);
-
-    return true;
-}
-
-bool LoginPortal_Endpoints::token_validateJwtClaims(const JWT::Token *jwtToken, const std::string &user, const std::string &ipAddress)
-{
-    if (jwtToken->getClaim("app") != IAM_LOGINPORTAL_APPNAME || jwtToken->getClaim("type") != "access")
-    {
-        LOG_APP->log2(__func__, user, ipAddress, Logs::LEVEL_SECURITY_ALERT, "Token request denied: Invalid or unauthorized token.");
-        return false;
-    }
-    return true;
-}
-
-
-bool token_validateAuthenticationScheme(IdentityManager *identityManager, const JWT::Token *jwtToken, const std::string &requestedApp, const std::string &requestedActivity,
-                                        uint32_t &requestedSchemeId, const std::string &authenticatedUser, const std::string &ipAddress)
-{
-    // 1. Extract authenticated slot IDs from the JWT token
-    std::set<uint32_t> authenticatedSlotIdsSet = Mantids30::Helpers::jsonToUInt32Set(jwtToken->getClaim("slotIds"));
-
-    // 2. Get schemes allowed for this activity
-    std::set<uint32_t> schemesInActivity = identityManager->applicationActivities->listAuthenticationSchemesForApplicationActivity(requestedApp, requestedActivity);
-
-    // Helper Lambda: Checks if a specific scheme ID is valid against the JWT and user account.
-    // Returns true if valid, false otherwise.
-    auto isSchemeValid = [&](uint32_t schemeId) -> bool
-    {
-        // Get slots required by this scheme
-        std::vector<AuthenticationSchemeUsedSlot> slotsUsedByScheme = identityManager->authController->listAuthenticationSlotsUsedByScheme(schemeId);
-
-        // Get slots activated on the user's account
-        std::set<uint32_t> authenticationSlotsActivatedOnAccount = identityManager->authController->listUsedAuthenticationSlotsOnAccount(authenticatedUser);
-
-        for (const auto &slot : slotsUsedByScheme)
-        {
-            bool isSlotRequiredToBeInJwt = false;
-
-            if (slot.optional)
-            {
-                // Optional slot: Required only if activated on account
-                if (authenticationSlotsActivatedOnAccount.find(slot.slotId) != authenticationSlotsActivatedOnAccount.end())
-                {
-                    isSlotRequiredToBeInJwt = true;
-                }
-            }
-            else
-            {
-                // Mandatory slot: Always required
-                isSlotRequiredToBeInJwt = true;
-            }
-
-            if (isSlotRequiredToBeInJwt)
-            {
-                if (authenticatedSlotIdsSet.find(slot.slotId) == authenticatedSlotIdsSet.end())
-                {
-                    return false; // Missing required slot
-                }
-            }
-        }
-        return true; // All required slots present
-    };
-
-    // Case 1: requestedSchemeId is 0 -> Try to find ANY valid scheme
-    if (requestedSchemeId == 0)
-    {
-        for (uint32_t candidateSchemeId : schemesInActivity)
-        {
-            if (isSchemeValid(candidateSchemeId))
-            {
-                requestedSchemeId = candidateSchemeId; // Update the ID to the found valid one
-                return true;
-            }
-        }
-
-        LOG_APP->log2(__func__, authenticatedUser, ipAddress, Logs::LEVEL_SECURITY_ALERT, "Token request denied: No valid authentication scheme found for the provided JWT slots.");
-        return false;
-    }
-
-    // Case 2: requestedSchemeId is NOT 0 -> Validate the specific requested scheme
-    // First, check if the scheme is allowed in this activity
-    if (schemesInActivity.find(requestedSchemeId) == schemesInActivity.end())
-    {
-        LOG_APP->log2(__func__, authenticatedUser, ipAddress, Logs::LEVEL_SECURITY_ALERT, "Token request denied: The user is requesting a scheme that is not in that activity.");
-        return false;
-    }
-
-    // Then, validate the slots for the requested scheme
-    if (!isSchemeValid(requestedSchemeId))
-    {
-        LOG_APP->log2(__func__, authenticatedUser, ipAddress, Logs::LEVEL_SECURITY_ALERT, "Token request denied: Missing required credential slots for requested scheme.");
-        return false;
-    }
-
-    return true;
-}
-
-bool LoginPortal_Endpoints::token_validateAppAuthorization(IdentityManager *identityManager, const JWT::Token *jwtToken, const std::string &app, const std::string &user, const std::string &ipAddress)
-{
-    std::set<std::string> authenticatedAppsSet = Mantids30::Helpers::jsonToStringSet(jwtToken->getClaim("apps"));
-    if (authenticatedAppsSet.find(app) == authenticatedAppsSet.end())
-    {
-        LOG_APP->log2(__func__, user, ipAddress, Logs::LEVEL_SECURITY_ALERT, "Token request denied: Unauthorized application '%s' access.", app.c_str());
-        return false;
-    }
-    return true;
-}
 
 /*
     This will tranform the current authentication into an APP access...
@@ -212,6 +26,7 @@ API::APIReturn LoginPortal_Endpoints::token(void *context, const RequestParamete
     IdentityManager *identityManager = Globals::getIdentityManager();
 
     std::string authenticatedUser = request.jwtToken->getSubject();
+    bool keepAuthenticated = JSON_ASBOOL_D(request.jwtToken->getClaim("keepAuthenticated"), false);
 
     std::string activity = JSON_ASSTRING(*request.inputJSON, "activity", "");       // APP ACTIVITY NAME.
     std::string redirectURI = JSON_ASSTRING(*request.inputJSON, "redirectURI", ""); // APP REDIRECT URI.
@@ -233,18 +48,31 @@ API::APIReturn LoginPortal_Endpoints::token(void *context, const RequestParamete
     //// -------------------------        AUTHENTICATION      --------------------------- ////
     //////////////////////////////////////////////////////////////////////////////////////////
     // Validate authentication scheme
-    if (!token_validateAuthenticationScheme(identityManager, request.jwtToken, appName, activity, schemeId, authenticatedUser, authClientDetails.ipAddress))
+
+    if (activity == "LOGIN")
     {
-        response.setError(HTTP::Status::S_401_UNAUTHORIZED, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::UNAUTHENTICATED)),
-                          authResultToString(AuthenticationResult::UNAUTHENTICATED));
-        return response;
+        if (!token_validateAuthenticationScheme( request.jwtToken, IAM_LOGINPORTAL_APPNAME, "LOGIN" , schemeId, authenticatedUser, authClientDetails.ipAddress))
+        {
+            response.setError(HTTP::Status::S_401_UNAUTHORIZED, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::UNAUTHENTICATED)),
+                              authResultToString(AuthenticationResult::UNAUTHENTICATED));
+            return response;
+        }
+    }
+    else
+    {
+        if (!token_validateAuthenticationScheme( request.jwtToken, appName, activity, schemeId, authenticatedUser, authClientDetails.ipAddress))
+        {
+            response.setError(HTTP::Status::S_401_UNAUTHORIZED, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::UNAUTHENTICATED)),
+                              authResultToString(AuthenticationResult::UNAUTHENTICATED));
+            return response;
+        }
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////
     //// ---------------------------    ACCOUNT VALIDATIONS   --------------------------- ////
     //////////////////////////////////////////////////////////////////////////////////////////
     AuthenticationResult r;
-    if (!identityManager->validateAccountForNewAccess(authenticatedUser, appName, r, true))
+    if (!identityManager->isAccountActiveAndValidForApp(authenticatedUser, appName, r, true))
     {
         // This token is not available for retrieving app tokens because the user does not have a valid account with the specified application.
         const char *reasonText = authResultToString(r);
@@ -264,7 +92,7 @@ API::APIReturn LoginPortal_Endpoints::token(void *context, const RequestParamete
         redirectURI = identityManager->applications->getWebLoginDefaultRedirectURIForApplication(appName);
     }
 
-    if (!token_validateRedirectURI(identityManager, appName, redirectURI, authenticatedUser, authClientDetails.ipAddress))
+    if (!token_validateRedirectURI( appName, redirectURI, authenticatedUser, authClientDetails.ipAddress))
     {
         response.setError(HTTP::Status::S_406_NOT_ACCEPTABLE, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::BAD_PARAMETERS)), "Invalid Redirect URI");
         return response;
@@ -277,7 +105,7 @@ API::APIReturn LoginPortal_Endpoints::token(void *context, const RequestParamete
     //// -------------------------       TOKEN CREATION       --------------------------- ////
     //////////////////////////////////////////////////////////////////////////////////////////
     // Create and sign tokens
-    if (!token_createAndSignApplicationsJWTs(identityManager, request.jwtToken, appName, authenticatedUser, schemeId, redirectURI, response, authClientDetails))
+    if (!token_createAndSignApplicationAccessJWTs( request.jwtToken, keepAuthenticated, appName, authenticatedUser, schemeId, redirectURI, response, authClientDetails))
     {
         // Failed to create the token...
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::INTERNAL_ERROR)),
@@ -288,10 +116,10 @@ API::APIReturn LoginPortal_Endpoints::token(void *context, const RequestParamete
     //////////////////////////////////////////////////////////////////////////////////////////
     //// ----------------------       KEEP AUTHENTICATION       ------------------------- ////
     //////////////////////////////////////////////////////////////////////////////////////////
-    if (JSON_ASBOOL_D(request.jwtToken->getClaim("keepAuthenticated"), false) == false)
+    if (keepAuthenticated == false)
     {
         // Discard access cookies upon first use. (Access tokens are short-lived, but should be discarded after the first usage)
-        prepareLogoutResponse(context, request, authClientDetails, &response);
+        deleteLoginCookies(context, request, authClientDetails, &response);
     }
 
     return response;

@@ -10,7 +10,7 @@ using namespace Network::Protocols;
 API::APIReturn LoginPortal_Endpoints::logout(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
-    prepareLogoutResponse(context,request,authClientDetails,&response);
+    deleteLoginCookies(context,request,authClientDetails,&response);
     return response;
 }
 

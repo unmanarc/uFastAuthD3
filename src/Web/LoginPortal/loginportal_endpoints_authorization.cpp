@@ -34,11 +34,11 @@ API::APIReturn LoginPortal_Endpoints::preAuthorize(void *context, const API::RES
     uint32_t loginAuthenticationTimeout = config.get<uint32_t>("LoginPortal.AuthenticationTimeout", 300);
 
     // Input parameters:
-    authContext->appName = JSON_ASSTRING(*request.inputJSON, "app", "");                      // APPNAME.
-    authContext->accountName = JSON_ASSTRING(*request.inputJSON, "accountName", ""); // ACCOUNT ID.
-    std::string activity = JSON_ASSTRING(*request.inputJSON, "activity", "");            // APP ACTIVITY NAME.
+    authContext->accountName = JSON_ASSTRING(*request.inputJSON, "accountName", "");    // ACCOUNT ID.
+    std::string appName = JSON_ASSTRING(*request.inputJSON, "app", "");                // APPNAME.
+    std::string activityName = JSON_ASSTRING(*request.inputJSON, "activity", "");           // APP ACTIVITY NAME.
 
-    if (!identityManager->applications->doesApplicationExist(authContext->appName))
+    if (!identityManager->applications->doesApplicationExist(appName))
     {
         response.setError(HTTP::Status::S_404_NOT_FOUND, "not_found", "Invalid Application");
         return response;
@@ -50,12 +50,15 @@ API::APIReturn LoginPortal_Endpoints::preAuthorize(void *context, const API::RES
         return response;
     }
 
-    r = identityManager->authController->getApplicableAuthenticationSchemesForAccount(authContext->appName, activity, authContext->accountName, authContext->authenticatedSlots);
+    if ( activityName == "LOGIN" )
+        r = identityManager->authController->getApplicableAuthenticationSchemesForAccount(IAM_LOGINPORTAL_APPNAME, activityName, authContext->accountName, authContext->authenticatedSlots);
+    else // Activity from the application.
+        r = identityManager->authController->getApplicableAuthenticationSchemesForAccount(appName, activityName, authContext->accountName, authContext->authenticatedSlots);
 
     if (r["defaultScheme"] == Json::nullValue)
     {
         // Member not found.
-        response.setError(HTTP::Status::S_404_NOT_FOUND, "not_found", "There is no Authentication Scheme Available For This User/Application.");
+        response.setError(HTTP::Status::S_404_NOT_FOUND, "not_found", "There is no Authentication Scheme Available.");
         return response;
     }
 
@@ -70,8 +73,6 @@ API::APIReturn LoginPortal_Endpoints::authorize(void *context, const RequestPara
 
     // Get the identity manager from global settings to handle authentication.
     IdentityManager *identityManager = Globals::getIdentityManager();
-    // Vector to store the authentication slots used by a particular scheme.
-
     std::shared_ptr<TransientAuthenticationContext> authContext = std::make_shared<TransientAuthenticationContext>();
 
     // Decode the bearer transient token... (and get the Account Name)
@@ -98,8 +99,8 @@ API::APIReturn LoginPortal_Endpoints::authorize(void *context, const RequestPara
                                                                                                JSON_ASSTRING(*request.inputJSON, "challengeSalt", ""), authContext);
 
     LOG_APP->log2(__func__, authContext->accountName, clientDetails.ipAddress, authRetCode != AuthenticationResult::AUTHENTICATED ? Logs::LEVEL_SECURITY_ALERT : Logs::LEVEL_INFO,
-                  "Account Authorization Result: %" PRIu32 " - %s, for application '%s', scheme '%" PRIu32 "' and slotId = %'" PRIu32 "'", authRetCode, authResultToString(authRetCode),
-                  authContext->appName.c_str(), authContext->schemeId, authContext->currentSlotId.value());
+                  "Account Authorization Result: %" PRIu32 " - %s, scheme '%" PRIu32 "' and slotId = %'" PRIu32 "'", authRetCode, authResultToString(authRetCode),
+                  authContext->schemeId, authContext->currentSlotId.value());
 
     if (IS_CREDENTIAL_AUTHENTICATED(authRetCode))
     {
@@ -132,16 +133,10 @@ API::APIReturn LoginPortal_Endpoints::authorize(void *context, const RequestPara
         // Remove the first element from requiredAuthSlots (which is the authenticated credential)
         requiredAuthSlots.erase(requiredAuthSlots.begin());
 
-        issueTransientAuthTokenResponse(request, response, identityManager, authContext, requiredAuthSlots, authRetCode == AuthenticationResult::MUST_CHANGE_CREDENTIAL);
+        issueTransientAuthTokenResponse(request, response, authContext, requiredAuthSlots, authRetCode == AuthenticationResult::MUST_CHANGE_CREDENTIAL);
     }
     else
     {
-        if (authRetCode == AuthenticationResult::ACCOUNT_NOT_IN_APP)
-        {
-            // Prevent user/app enumeration:
-            authRetCode = AuthenticationResult::AUTHENTICATION_FAILED;
-        }
-
         // Use the same auth... don't go to the next.
         (*response.responseJSON())["nextSlot"] = authContext->currentSlotId.value();
 

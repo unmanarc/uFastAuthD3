@@ -88,13 +88,13 @@ bool LoginPortal_Endpoints::validateAndMerge_AccessTokenIfExist(const RequestPar
     return true;
 }*/
 
-void LoginPortal_Endpoints::issueTransientAuthTokenResponse(const RequestParameters &request, Mantids30::API::APIReturn &response, IdentityManager *identityManager,
+void LoginPortal_Endpoints::issueTransientAuthTokenResponse(const RequestParameters &request, Mantids30::API::APIReturn &response,
                                                             std::shared_ptr<TransientAuthenticationContext> authContext, const std::vector<AuthenticationSchemeUsedSlot> &requiredAuthSlots,
                                                             bool mustChange)
 {
     // Retrieve configuration parameters from global settings.
-    auto config = Globals::pConfig;
-    uint32_t loginAuthenticationTimeout = config.get<uint32_t>("LoginPortal.AuthenticationTimeout", 300);
+    IdentityManager *identityManager = Globals::getIdentityManager();
+    uint32_t loginAuthenticationTimeout = Globals::pConfig.get<uint32_t>("LoginPortal.AuthenticationTimeout", 300);
     Json::Value *jResponse = response.responseJSON();
 
     // There is a new authenticated current slot:
@@ -138,7 +138,7 @@ void LoginPortal_Endpoints::issueTransientAuthTokenResponse(const RequestParamet
     }
 }
 
-void LoginPortal_Endpoints::prepareLogoutResponse(void *, const RequestParameters &request, ClientDetails &, APIReturn *response)
+void LoginPortal_Endpoints::deleteLoginCookies(void *, const RequestParameters &request, ClientDetails &, APIReturn *response)
 {
     if (request.clientRequest->headers.getOptionValueStringByName("X-Logout") != "1")
     {

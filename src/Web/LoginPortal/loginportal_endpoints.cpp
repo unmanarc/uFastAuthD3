@@ -63,6 +63,7 @@ void LoginPortal_Endpoints::addEndpoints(std::shared_ptr<Endpoints> endpoints)
     //endpoints->addEndpoint(Endpoints::POST, "tempMFAToken", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {}, nullptr,&tempMFAToken);
 }
 
+
 LoginPortal_Endpoints::APIReturn LoginPortal_Endpoints::getAppDescription(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     // Get the identity manager from global settings to handle authentication.
@@ -113,8 +114,8 @@ HTTP::Status::Codes LoginPortal_Endpoints::handleLoginDynamicRequest(const std::
 {
     std::string page;
     LoginDirectoryManager::ErrorCode status = Globals::getLoginDirManager()->retrieveFile(appName, page);
-    bool originValidated = retrieveAndValidateAppOrigin(request, appName, USING_HEADER_REFERER);
-    auto currentOrigin = request->getHeaderOption("Origin");
+    bool originValidated = request- retrieveAndValidateAppOrigin(request, appName, USING_HEADER_REFERER);
+    auto currentOrigin = request->getOrigin();
 
     if (!originValidated)
     {
@@ -137,4 +138,72 @@ HTTP::Status::Codes LoginPortal_Endpoints::handleLoginDynamicRequest(const std::
 
     return HTTP::Status::S_200_OK;
 }
+
+HTTP::Status::Codes LoginPortal_Endpoints::handleLogoutDynamicRequest(const std::string &urlPostfix, HTTPv1_Base::Request *request, HTTPv1_Base::Response *response, std::shared_ptr<void>)
+{
+    if (request->requestLine.getHTTPMethod() != "POST")
+        return HTTP::Status::S_400_BAD_REQUEST;
+
+    std::string appName = request->getVars(HTTP::VARS_POST)->getStringValue("appName");
+    std::string keepAuthentication = request->getVars(HTTP::VARS_POST)->getStringValue("keepAuthentication");
+
+    // if the cookie does not exist, it's a non-persistent login session.
+    std::string defaultAPPCallback = Globals::getIdentityManager()->applications->getApplicationCallbackURI(appName);
+
+    Json::Value v;
+    v["appName"] = appName;
+    v["keepAuthentication"] = keepAuthentication;
+    v["defaultCallbackURL"] = defaultAPPCallback;
+
+    Json::StreamWriterBuilder builder;
+    builder.settings_["indentation"] = "";
+    std::string xstrValue = Json::writeString(builder, v);
+
+    std::regex appRegex("^[a-zA-Z0-9\\_]+$");
+
+    if (!std::regex_match(appName, appRegex))
+    {
+        LOG_APP->log2(__func__, "", request->networkClientInfo.REMOTE_ADDR, Logs::LEVEL_SECURITY_ALERT,
+                      "Invalid APP Name '%s' ", appName.c_str());
+
+        return HTTP::Status::S_400_BAD_REQUEST;
+    }
+
+    std::string page;
+
+    page = R"(
+<HTML>
+<head>
+    <script src="../assets/js/jquery.min.js" type="text/javascript"></script>
+    <script>
+    let data=DEFAULTAPPCALLBACK_PLACEHOLDER;
+    </script>
+    <script src="../assets/js/logout.js" type="text/javascript"></script>
+</head>
+<body>
+    <h1>Logging out...</h1>
+</body>
+</HTML>
+)";
+
+    // Replace placeholder with the actual default callback URL
+    boost::replace_all(page, "DEFAULTAPPCALLBACK_PLACEHOLDER", xstrValue);
+
+    bool originValidated = retrieveAndValidateAppOrigin(request, appName, USING_HEADER_ORIGIN);
+    auto currentOrigin = request->getHeaderOption("Origin");
+
+    if (!originValidated)
+    {
+        LOG_APP->log2(__func__, "", request->networkClientInfo.REMOTE_ADDR, Logs::LEVEL_SECURITY_ALERT, "Not allowed origin '%s' for application '%s'", currentOrigin.c_str(), appName.c_str());
+        return HTTP::Status::S_403_FORBIDDEN;
+    }
+
+    LOG_APP->log2(__func__, "", request->networkClientInfo.REMOTE_ADDR, Logs::LEVEL_INFO, "Logout requested from application '%s' with origin '%s'", appName.c_str(), currentOrigin.c_str());
+
+    response->content.writer()->writeString(page);
+    response->setContentType("text/html");
+
+    return HTTP::Status::S_200_OK;
+}
+
 
