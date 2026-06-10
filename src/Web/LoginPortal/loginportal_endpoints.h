@@ -24,8 +24,8 @@ public:
     */
     static void addEndpoints(std::shared_ptr<Endpoints> endpoints);
 
-    static Mantids30::Network::Protocols::HTTP::Status::Codes handleLoginDynamicRequest(const std::string &appName, HTTPv1_Base::Request *request, HTTPv1_Base::Response *response,
-                                                                                        std::shared_ptr<void>);
+    /*static Mantids30::Network::Protocols::HTTP::Status::Codes handleLoginDynamicRequest(const std::string &appName, HTTPv1_Base::Request *request, HTTPv1_Base::Response *response,
+                                                                                        std::shared_ptr<void>);*/
 
     static Mantids30::Network::Protocols::HTTP::Status::Codes handleLogoutDynamicRequest(const std::string &appName, HTTPv1_Base::Request *request, HTTPv1_Base::Response *response,
                                                                                         std::shared_ptr<void>);
@@ -73,6 +73,6 @@ private:
 
 
     static void issueTransientAuthTokenResponse(const RequestParameters &request, Mantids30::API::APIReturn &response,
-                                           std::shared_ptr<TransientAuthenticationContext> authContext, const std::vector<AuthenticationSchemeUsedSlot> &requiredAuthSlots
-                                          , bool mustChange);
+                                                std::shared_ptr<TransientAuthenticationContext> authContext, const std::vector<AuthenticationSchemeUsedSlot> &requiredAuthSlots
+                                                , bool mustChange, bool canSkipPasswordChange);
 };

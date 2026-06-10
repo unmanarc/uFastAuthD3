@@ -32,9 +32,9 @@ void AppSync_Endpoints::addAPIEndpoints(std::shared_ptr<Endpoints> endpoints)
     // Web API Endpoints:
     endpoints->addEndpoint(Endpoints::POST, "getApplicationAccountsList", SecurityOptions::NO_AUTH, {}, nullptr, &getApplicationAccountsList);
     endpoints->addEndpoint(Endpoints::POST, "getApplicationJWTConfig", SecurityOptions::NO_AUTH, {}, nullptr, &getApplicationJWTConfig);
-//    endpoints->addEndpoint(Endpoints::POST, "getApplicationJWTSigningKey", SecurityOptions::NO_AUTH, {}, nullptr, &getApplicationJWTSigningKey);
     endpoints->addEndpoint(Endpoints::POST, "getApplicationJWTValidationKey", SecurityOptions::NO_AUTH, {}, nullptr, &getApplicationJWTValidationKey);
     endpoints->addEndpoint(Endpoints::POST, "updateAccessControlContext", SecurityOptions::NO_AUTH, {}, nullptr, &updateAccessControlContext);
+    //    endpoints->addEndpoint(Endpoints::POST, "getApplicationJWTSigningKey", SecurityOptions::NO_AUTH, {}, nullptr, &getApplicationJWTSigningKey);
 }
 
 void AppSync_Endpoints::updateAppScopes( const std::string & appName, const std::string & ipAddress,  const json & proposedScopes )

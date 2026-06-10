@@ -88,56 +88,6 @@ bool LoginPortal_Endpoints::validateAndMerge_AccessTokenIfExist(const RequestPar
     return true;
 }*/
 
-void LoginPortal_Endpoints::issueTransientAuthTokenResponse(const RequestParameters &request, Mantids30::API::APIReturn &response,
-                                                            std::shared_ptr<TransientAuthenticationContext> authContext, const std::vector<AuthenticationSchemeUsedSlot> &requiredAuthSlots,
-                                                            bool mustChange)
-{
-    // Retrieve configuration parameters from global settings.
-    IdentityManager *identityManager = Globals::getIdentityManager();
-    uint32_t loginAuthenticationTimeout = Globals::pConfig.get<uint32_t>("LoginPortal.AuthenticationTimeout", 300);
-    Json::Value *jResponse = response.responseJSON();
-
-    // There is a new authenticated current slot:
-    if (authContext->currentSlotId.has_value())
-        authContext->authenticatedSlots.insert(authContext->currentSlotId.value());
-
-    // This current slot must be changed immediatly:
-    if (mustChange)
-        authContext->mustChangeSlots.insert(authContext->currentSlotId.value());
-
-    std::optional<uint32_t> nextSlotId = std::nullopt;
-    if (!requiredAuthSlots.empty())
-    {
-        nextSlotId = requiredAuthSlots.begin()->slotId;
-    }
-
-    (*jResponse)["changeCredential"] = mustChange;
-    (*jResponse)["transientToken"] = authContext->issueSignedTransientTokenFromValues(loginAuthenticationTimeout, nextSlotId, request.jwtSigner);
-
-    if (requiredAuthSlots.empty())
-    {
-        if (authContext->mustChangeSlots.empty())
-        {
-            // Set the IAM Access Token into the Cookie ONLY if mustchangeslots is empty (to avoid login if not changed)...
-            TokensManager::issueLoginAccessTokenCookie(response, request, authContext);
-        }
-        (*jResponse)["nextSlot"] = Json::nullValue; // No new slots to be tested.
-    }
-    else
-    {
-        // We can give the credential public data for the next credential:
-        Credential credentialPublicData = identityManager->authController->getAccountCredentialPublicData(authContext->accountName, nextSlotId.value());
-
-        json nextSlot;
-        nextSlot["slotId"] = nextSlotId.value();
-        nextSlot["details"] = credentialPublicData.slotDetails.toJSON();
-
-        (*jResponse)["nextSlot"] = nextSlot;
-        (*jResponse)["publicData"] = credentialPublicData.toJSON(identityManager->authController->getAuthenticationPolicy());
-        (*jResponse)["publicData"].removeMember("slotDetails");
-    }
-}
-
 void LoginPortal_Endpoints::deleteLoginCookies(void *, const RequestParameters &request, ClientDetails &, APIReturn *response)
 {
     if (request.clientRequest->headers.getOptionValueStringByName("X-Logout") != "1")

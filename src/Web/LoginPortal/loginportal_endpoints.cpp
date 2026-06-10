@@ -110,6 +110,7 @@ bool LoginPortal_Endpoints::retrieveAndValidateAppOrigin(HTTPv1_Base::Request *r
 }
 
 // Handle personalized login forms:
+/*
 HTTP::Status::Codes LoginPortal_Endpoints::handleLoginDynamicRequest(const std::string &appName, HTTPv1_Base::Request *request, HTTPv1_Base::Response *response, std::shared_ptr<void>)
 {
     std::string page;
@@ -137,7 +138,7 @@ HTTP::Status::Codes LoginPortal_Endpoints::handleLoginDynamicRequest(const std::
     response->setContentType("text/html");
 
     return HTTP::Status::S_200_OK;
-}
+}*/
 
 HTTP::Status::Codes LoginPortal_Endpoints::handleLogoutDynamicRequest(const std::string &urlPostfix, HTTPv1_Base::Request *request, HTTPv1_Base::Response *response, std::shared_ptr<void>)
 {
