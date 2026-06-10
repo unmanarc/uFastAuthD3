@@ -21,13 +21,16 @@ std::optional<uint32_t> IdentityManager_DB::AuthController_DB::addNewAuthenticat
 
     uint32_t newSlotId = 0;
     {
-        auto i = _parent->m_sqlConnector->qExecute("INSERT INTO iam.authenticationSlots (`description`,`function`,`defaultExpirationSeconds`,`strengthJSONValidator`,`totp2FAStepsToleranceWindow`) "
-                                                   "VALUES(:description,:function,:defaultExpirationSeconds,:strengthJSONValidator,:totp2FAStepsToleranceWindow);",
+        auto i = _parent->m_sqlConnector->qExecute("INSERT INTO iam.authenticationSlots (`description`,`function`,`defaultExpirationSeconds`,`strengthJSONValidator`,`totp2FAStepsToleranceWindow`, `canSkipWhenExpired`) "
+                                                   "VALUES(:description,:function,:defaultExpirationSeconds,:strengthJSONValidator,:totp2FAStepsToleranceWindow,:canSkipWhenExpired);",
                                                    {{":description", MAKE_VAR(STRING, details.description)},
                                                     {":function", MAKE_VAR(UINT32, details.passwordFunction)},
                                                     {":defaultExpirationSeconds", MAKE_VAR(UINT32, details.defaultExpirationSeconds)},
                                                     {":totp2FAStepsToleranceWindow", MAKE_VAR(UINT32, details.totp2FAStepsToleranceWindow)},
-                                                    {":strengthJSONValidator", MAKE_VAR(STRING, details.strengthJSONValidator)}});
+                                                    {":strengthJSONValidator", MAKE_VAR(STRING, details.strengthJSONValidator.toStyledString())},
+                                                    {":canSkipWhenExpired", MAKE_VAR(BOOL, details.canSkipWhenExpired)},
+                                                   }
+                                                   );
         if (!i || !i->isSuccessful())
             return std::nullopt;
 
@@ -63,13 +66,15 @@ bool IdentityManager_DB::AuthController_DB::updateAuthenticationSlotDetails(cons
                                                        "`description` = :description, "
                                                        "`defaultExpirationSeconds` = :defaultExpirationSeconds, "
                                                        "`totp2FAStepsToleranceWindow` = :totp2FAStepsToleranceWindow, "
+                                                       "`canSkipWhenExpired` = :canSkipWhenExpired, "
                                                        "`strengthJSONValidator` = :strengthJSONValidator "
                                                        "WHERE `slotId` = :slotId;",
                                                        {{":slotId", MAKE_VAR(UINT32, slotId)},
                                                         {":description", MAKE_VAR(STRING, details.description)},
                                                         {":defaultExpirationSeconds", MAKE_VAR(UINT32, details.defaultExpirationSeconds)},
+                                                        {":canSkipWhenExpired", MAKE_VAR(BOOL, details.canSkipWhenExpired)},
                                                         {":totp2FAStepsToleranceWindow", MAKE_VAR(UINT32, details.totp2FAStepsToleranceWindow)},
-                                                        {":strengthJSONValidator", MAKE_VAR(STRING, details.strengthJSONValidator)}});
+                                                        {":strengthJSONValidator", MAKE_VAR(STRING, details.strengthJSONValidator.toStyledString())}});
 
     if (success)
     {
@@ -79,9 +84,16 @@ bool IdentityManager_DB::AuthController_DB::updateAuthenticationSlotDetails(cons
     return success;
 }
 
+
 std::map<uint32_t, AuthenticationSlotDetails> IdentityManager_DB::AuthController_DB::listAllAuthenticationSlots()
 {
     Threads::Sync::Lock_RD lock(_parent->m_mutex);
+    static auto parse = [](const char *json)
+    {
+        Json::Value r;
+        Json::Reader().parse(json, r);
+        return r;
+    };
 
     std::map<uint32_t, AuthenticationSlotDetails> ret;
 
@@ -92,17 +104,23 @@ std::map<uint32_t, AuthenticationSlotDetails> IdentityManager_DB::AuthController
     Abstract::UINT32 uDefaultExpirationSeconds;
     Abstract::STRING sStrengthJSONValidator;
     Abstract::UINT32 uTotp2FAStepsToleranceWindow;
+    Abstract::BOOL canSkipWhenExpired;
 
-    auto i = _parent->m_sqlConnector->qSelect("SELECT `slotId`, `description`, `function`, `defaultExpirationSeconds`, `strengthJSONValidator`,`totp2FAStepsToleranceWindow` "
+    auto i = _parent->m_sqlConnector->qSelect("SELECT `slotId`, `description`, `function`, `defaultExpirationSeconds`, `strengthJSONValidator`,`totp2FAStepsToleranceWindow`,`canSkipWhenExpired` "
                                               "FROM iam.authenticationSlots;",
-                                              {}, {&uSlotId, &sDescription, &uFunction, &uDefaultExpirationSeconds, &sStrengthJSONValidator, &uTotp2FAStepsToleranceWindow});
+                                              {}, {&uSlotId, &sDescription, &uFunction, &uDefaultExpirationSeconds, &sStrengthJSONValidator, &uTotp2FAStepsToleranceWindow, &canSkipWhenExpired});
 
     // Iterate:
     while (i && i->isSuccessful() && i->step())
     {
         // Build AuthenticationSlotDetails and insert it to the maps
-        ret.insert({uSlotId.getValue(), AuthenticationSlotDetails(sDescription.getValue(), (HashFunction) uFunction.getValue(), sStrengthJSONValidator.getValue(), uDefaultExpirationSeconds.getValue(),
-                                                                  uTotp2FAStepsToleranceWindow.getValue())});
+        ret.insert({uSlotId.getValue(), AuthenticationSlotDetails(sDescription.getValue(),
+                                                                  (HashFunction) uFunction.getValue(),
+                                                                  parse(sStrengthJSONValidator.getValue().c_str()),
+                                                                  uDefaultExpirationSeconds.getValue(),
+                                                                  uTotp2FAStepsToleranceWindow.getValue(),
+                                                                  canSkipWhenExpired.getValue()
+                                                          )});
     }
 
     return ret;

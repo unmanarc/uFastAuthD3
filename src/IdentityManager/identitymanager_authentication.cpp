@@ -504,7 +504,7 @@ std::optional<uint32_t> IdentityManager::AuthController::initializateDefaultPass
     {
         if (r) {
 
-            std::optional<uint32_t> opt_asi = addNewAuthenticationSlot(clientDetails,performedBy, AuthenticationSlotDetails("Master Password", HashFunction::FN_SHA256, "", 3600 * 24 * 365 * 1, 0));
+            std::optional<uint32_t> opt_asi = addNewAuthenticationSlot(clientDetails,performedBy, AuthenticationSlotDetails("Master Password", HashFunction::FN_SHA256, "", 3600 * 24 * 365 * 1, 0,false));
             if ((r = opt_asi.has_value())) {
                 authSlotId = *opt_asi;
             }

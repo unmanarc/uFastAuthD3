@@ -279,16 +279,17 @@ bool IdentityManager_DB::AuthController_DB::changeAccountCredential(const Client
 
     // Única operación SQL
     bool success = _parent->m_sqlConnector->qExecuteEx(R"(
-            INSERT OR REPLACE INTO iam.accountCredentials (f_AuthSlotId, f_accountName, hash, expiration, salt, mustChange, usedstrengthJSONValidator)
-            VALUES (:slotId, :account, :hash, :expiration, :salt, :mustChange, :usedValidator);
+            INSERT OR REPLACE INTO iam.accountCredentials (f_AuthSlotId, f_accountName, hash, expiration, salt, mustChange)
+            VALUES (:slotId, :account, :hash, :expiration, :salt, :mustChange);
         )",
                                                        {{":slotId", MAKE_VAR(UINT32, slotId)},
                                                         {":account", MAKE_VAR(STRING, accountName)},
                                                         {":hash", MAKE_VAR(STRING, passwordData.hash)},
                                                         {":expiration", MAKE_VAR(DATETIME, passwordData.expirationTimestamp)},
                                                         {":salt", MAKE_VAR(STRING, Mantids30::Helpers::Encoders::toHex(passwordData.ssalt, 4))},
-                                                        {":mustChange", MAKE_VAR(BOOL, passwordData.mustChange)},
-                                                        {":usedValidator", MAKE_VAR(STRING, authSlots[slotId].strengthJSONValidator)}});
+                                                        {":mustChange", MAKE_VAR(BOOL, passwordData.mustChange)}
+
+                                                       });
 
     if (success)
     {
@@ -334,15 +335,15 @@ bool IdentityManager_DB::AuthController_DB::activateAccountCredential(const Clie
     }
 
     bool success = _parent->m_sqlConnector->qExecuteEx(R"(INSERT INTO iam.accountCredentials
-           (`f_AuthSlotId`, `f_accountName`, `hash`, `expiration`, `salt`, `mustChange`, `usedstrengthJSONValidator`)
-           VALUES (:slotId, :account, :hash, :expiration, :salt, :mustChange, :usedValidator);)",
+           (`f_AuthSlotId`, `f_accountName`, `hash`, `expiration`, `salt`, `mustChange`)
+           VALUES (:slotId, :account, :hash, :expiration, :salt, :mustChange);)",
                                                        {{":slotId", MAKE_VAR(UINT32, slotId)},
                                                         {":account", MAKE_VAR(STRING, accountName)},
                                                         {":hash", MAKE_VAR(STRING, hash)},
                                                         {":expiration", MAKE_VAR(DATETIME, expiration)},
                                                         {":salt", MAKE_VAR(STRING, ssalt)},
-                                                        {":mustChange", MAKE_VAR(BOOL, false)},
-                                                        {":usedValidator", MAKE_VAR(STRING, authSlots[slotId].strengthJSONValidator)}});
+                                                        {":mustChange", MAKE_VAR(BOOL, false)}
+                                                       });
 
     if (success)
     {

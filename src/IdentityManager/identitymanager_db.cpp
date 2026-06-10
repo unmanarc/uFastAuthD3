@@ -173,6 +173,7 @@ bool IdentityManager_DB::initializeDatabase()
                                              `description`                   VARCHAR(4096) NOT NULL,
                                              `function`                      INTEGER       DEFAULT 0,
                                              `defaultExpirationSeconds`      INTEGER       DEFAULT 0,
+                                             `canSkipWhenExpired`            BOOLEAN       NOT NULL DEFAULT FALSE,
                                              `strengthJSONValidator`         TEXT          NOT NULL,
                                              `totp2FAStepsToleranceWindow`  INTEGER         DEFAULT 0
                                                                         );
@@ -219,7 +220,6 @@ bool IdentityManager_DB::initializeDatabase()
                                              `mustChange`             BOOLEAN         NOT NULL DEFAULT 0,
                                              `isLocked`             BOOLEAN         NOT NULL DEFAULT 0,
                                              `badAttempts`                  INTEGER         NOT NULL DEFAULT 0,
-                                             `usedstrengthJSONValidator`    TEXT            NOT NULL,
                                              `lastChange`                   DATETIME        DEFAULT CURRENT_TIMESTAMP NOT NULL,
 
                                              PRIMARY KEY(`f_AuthSlotId`,`f_accountName`),

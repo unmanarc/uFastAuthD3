@@ -85,8 +85,9 @@ struct AuthenticationSlotDetails
         passwordFunction = (HashFunction) JSON_ASINT(j, "passwordFunction", (int) FN_NOTFOUND);
         description = JSON_ASSTRING(j, "description", "");
         defaultExpirationSeconds = JSON_ASUINT(j, "defaultExpirationSeconds", 0);
-        strengthJSONValidator = JSON_ASSTRING(j, "strengthJSONValidator", "");
+        strengthJSONValidator = j.isMember("strengthJSONValidator")? j["strengthJSONValidator"] : Json::nullValue;
         totp2FAStepsToleranceWindow = JSON_ASUINT(j, "totp2FAStepsToleranceWindow", 0);
+        canSkipWhenExpired = JSON_ASBOOL(j,"canSkipWhenExpired",false);
     }
 
     json toJSON() const
@@ -97,6 +98,7 @@ struct AuthenticationSlotDetails
         jRet["strengthJSONValidator"] = strengthJSONValidator;
         jRet["passwordFunction"] = (int) passwordFunction;
         jRet["totp2FAStepsToleranceWindow"] = totp2FAStepsToleranceWindow;
+        jRet["canSkipWhenExpired"] = canSkipWhenExpired;
         return jRet;
     }
 
@@ -104,23 +106,24 @@ struct AuthenticationSlotDetails
 
     bool isTextPasswordFunction() { return passwordFunction != FN_NOTFOUND && passwordFunction != FN_GAUTHTIME; }
 
-    AuthenticationSlotDetails(const std::string &desc, HashFunction pwdFunction, const std::string &strengthValidator, uint32_t defaultExpSecs, uint32_t totpToleranceWindow)
+    AuthenticationSlotDetails(const std::string &desc, HashFunction pwdFunction, const Json::Value &strengthValidator, uint32_t defaultExpSecs, uint32_t totpToleranceWindow, bool bCanSkipWhenExpired)
         : description(desc)
         , passwordFunction(pwdFunction)
         , strengthJSONValidator(strengthValidator)
         , defaultExpirationSeconds(defaultExpSecs)
         , totp2FAStepsToleranceWindow(totpToleranceWindow)
+        , canSkipWhenExpired(bCanSkipWhenExpired)
     {}
 
     AuthenticationSlotDetails() {}
 
     std::string description;
 
-    // TODO: implementar... JSON Validator, totp2FAStepsToleranceWindow
     HashFunction passwordFunction = FN_NOTFOUND;
-    std::string strengthJSONValidator;
+    Json::Value strengthJSONValidator;
     uint32_t defaultExpirationSeconds = 0;
     uint32_t totp2FAStepsToleranceWindow = 0;
+    bool canSkipWhenExpired = false;
 };
 
 struct Credential
@@ -163,7 +166,7 @@ struct Credential
     static Credential createSHA256TemporalCredential(const std::string &password)
     {
         Credential cred;
-        cred.slotDetails = AuthenticationSlotDetails("SHA256 Temporal", FN_SHA256, "", 0, 0);
+        cred.slotDetails = AuthenticationSlotDetails("SHA256 Temporal", FN_SHA256, "", 0, 0, false);
         cred.hash = Mantids30::Helpers::Crypto::calcSHA256(password);
         return cred;
     }
@@ -222,16 +225,10 @@ enum class AuthenticationResult : uint16_t
 
 
 
-
-[[nodiscard]] inline bool IS_LOGIN_AUTHORIZED(AuthenticationResult result) noexcept
-{
-    return result == AuthenticationResult::AUTHENTICATED ||
-           result == AuthenticationResult::EXPIRED_CREDENTIAL;
-}
-
 [[nodiscard]] inline bool IS_CREDENTIAL_AUTHENTICATED(AuthenticationResult result) noexcept
 {
-    return IS_LOGIN_AUTHORIZED(result) || result == AuthenticationResult::MUST_CHANGE_CREDENTIAL;
+    return  result == AuthenticationResult::AUTHENTICATED ||
+           result == AuthenticationResult::EXPIRED_CREDENTIAL || result == AuthenticationResult::MUST_CHANGE_CREDENTIAL;
 }
 
 [[nodiscard]] inline const char * authResultToString(AuthenticationResult result) noexcept
