@@ -1,0 +1,222 @@
+<script>
+    /**
+     * Generic Password Strength utilities (container-based, reusable)
+     */
+
+    /**
+     * Enforce min/max bounds on all number inputs within a container.
+     * Uses event delegation (single listener per container) to avoid repetitive code.
+     * @param {string|jQuery} $container - jQuery selector or jQuery object
+     */
+    function initStrengthNumberBounds($container) {
+        $container = $($container);
+        $container.off('input change', '.pass-strength-form [type="number"]');
+        $container.on('input change', '.pass-strength-form [type="number"]', function() {
+            const min = parseFloat(this.getAttribute('min'));
+            const max = parseFloat(this.getAttribute('max'));
+            let val = parseFloat(this.value);
+
+            // Clear empty/invalid values first
+            if (this.value === '' || isNaN(val)) {
+                this.value = (isNaN(min) ? 0 : min);
+                return;
+            }
+
+            // Clamp to bounds if min/max are set
+            if (!isNaN(min) && val < min) this.value = min;
+            if (!isNaN(max) && val > max) this.value = max;
+        });
+    }
+
+    /**
+     * Build JSON string from a Password Strength form inside a given container
+     * @param {string|jQuery} $container - jQuery selector or jQuery object
+     */
+    function buildStrengthJSON($container) {
+        $container = $($container);
+        let strength = {
+            enabled: $container.find('[data-field="strengthEnabled"]').is(":checked"),
+            minLength: parseInt($container.find('[data-field="strengthMinLength"]').val()) || 0,
+            maxLength: parseInt($container.find('[data-field="strengthMaxLength"]').val()) || 0,
+            requireUppercase: $container.find('[data-field="strengthRequireUppercase"]').is(":checked"),
+            minUppercase: parseInt($container.find('[data-field="strengthMinUppercase"]').val()) || 0,
+            requireLowercase: $container.find('[data-field="strengthRequireLowercase"]').is(":checked"),
+            minLowercase: parseInt($container.find('[data-field="strengthMinLowercase"]').val()) || 0,
+            requireDigits: $container.find('[data-field="strengthRequireDigits"]').is(":checked"),
+            minDigits: parseInt($container.find('[data-field="strengthMinDigits"]').val()) || 0,
+            requireSpecial: $container.find('[data-field="strengthRequireSpecial"]').is(":checked"),
+            minSpecial: parseInt($container.find('[data-field="strengthMinSpecial"]').val()) || 0,
+            specialCharacters: $container.find('[data-field="strengthSpecialChars"]').val(),
+            maxConsecutiveChars: parseInt($container.find('[data-field="strengthMaxConsecutive"]').val()) || 0,
+            minUniqueChars: parseInt($container.find('[data-field="strengthMinUnique"]').val()) || 0,
+            disallowCommonPasswords: $container.find('[data-field="strengthDisallowCommon"]').is(":checked"),
+            disallowUsername: $container.find('[data-field="strengthDisallowUsername"]').is(":checked"),
+            disallowSequential: $container.find('[data-field="strengthDisallowSequential"]').is(":checked"),
+            maxSequentialCount: parseInt($container.find('[data-field="strengthMaxSequentialCount"]').val()) || 0,
+            maxSameCharPercentage: parseInt($container.find('[data-field="strengthMaxSameCharPercent"]').val()) || 0,
+            actionOnFailure: $container.find('[data-field="strengthActionOnFailure"]').val() || "REQUIRE_WITH_SKIP"
+        };
+        return strength;
+    }
+
+    /**
+     * Parse JSON string and populate a Password Strength form inside a given container
+     * @param {string|jQuery} $container - jQuery selector or jQuery object
+     * @param {string} jsonStr - JSON string to parse
+     */
+    function parseStrengthJSON($container, strength) {
+        $container = $($container);
+
+        $container.find('[data-field="strengthEnabled"]').prop("checked", strength.enabled !== false);
+        $container.find('[data-field="strengthMinLength"]').val(strength.minLength || 8);
+        $container.find('[data-field="strengthMaxLength"]').val(strength.maxLength || 128);
+        $container.find('[data-field="strengthRequireUppercase"]').prop("checked", strength.requireUppercase !== false);
+        $container.find('[data-field="strengthMinUppercase"]').val(strength.minUppercase || 1);
+        $container.find('[data-field="strengthRequireLowercase"]').prop("checked", strength.requireLowercase !== false);
+        $container.find('[data-field="strengthMinLowercase"]').val(strength.minLowercase || 1);
+        $container.find('[data-field="strengthRequireDigits"]').prop("checked", strength.requireDigits !== false);
+        $container.find('[data-field="strengthMinDigits"]').val(strength.minDigits || 1);
+        $container.find('[data-field="strengthRequireSpecial"]').prop("checked", strength.requireSpecial !== false);
+        $container.find('[data-field="strengthMinSpecial"]').val(strength.minSpecial || 1);
+        $container.find('[data-field="strengthSpecialChars"]').val(strength.specialCharacters || "!@#$%^&*()_+-=[]{}|;:,.<>?");
+        $container.find('[data-field="strengthMaxConsecutive"]').val(strength.maxConsecutiveChars || 3);
+        $container.find('[data-field="strengthMinUnique"]').val(strength.minUniqueChars || 4);
+        $container.find('[data-field="strengthDisallowCommon"]').prop("checked", strength.disallowCommonPasswords !== false);
+        $container.find('[data-field="strengthDisallowUsername"]').prop("checked", strength.disallowUsername !== false);
+        $container.find('[data-field="strengthDisallowSequential"]').prop("checked", strength.disallowSequential !== false);
+        $container.find('[data-field="strengthMaxSequentialCount"]').val(strength.maxSequentialCount || 2);
+        $container.find('[data-field="strengthMaxSameCharPercent"]').val(strength.maxSameCharPercentage || 20);
+        $container.find('[data-field="strengthActionOnFailure"]').val(strength.actionOnFailure || "REQUIRE_WITH_SKIP");
+
+        toggleStrengthEnabled($container);
+        initStrengthNumberBounds($container);
+    }
+
+    /**
+     * Master toggle: show/hide and enable/disable all Strength fields based on the Enable Validation switch
+     * @param {string|jQuery} $container - jQuery selector or jQuery object
+     */
+    function toggleStrengthEnabled($container) {
+        $container = $($container);
+        const enabled = $container.find('[data-field="strengthEnabled"]').is(":checked");
+        const $content = $container.find('.strength-fields-content');
+
+        // Select all other fields in the form (exclude the master enable switch itself)
+        const $fields = $container.find('[data-field]').not('[data-field="strengthEnabled"]');
+
+        if (enabled) {
+            $content.removeClass('d-none');
+            $fields.prop("disabled", false);
+        } else {
+            $content.addClass('d-none');
+            $fields.prop("disabled", true);
+        }
+
+        // Also call the dependency toggler to maintain individual checkbox relationships
+        toggleStrengthFieldDependency($container);
+    }
+
+    /**
+     * Toggle visibility/enabled state of numeric fields based on checkbox dependencies
+     * @param {string|jQuery} $container - jQuery selector or jQuery object
+     */
+    function toggleStrengthFieldDependency($container) {
+        $container = $($container);
+
+        // Uppercase
+        if ($container.find('[data-field="strengthRequireUppercase"]').is(":checked")) {
+            let $minInput = $container.find('[data-field="strengthMinUppercase"]');
+            if ((parseInt($minInput.val()) || 0) < 1) {
+                $minInput.val(1);
+            }
+            $minInput.prop("disabled", false)
+                .closest('.row').removeClass('opacity-50');
+        } else {
+            $container.find('[data-field="strengthMinUppercase"]').prop("disabled", true).val(0)
+                .closest('.row').addClass('opacity-50');
+        }
+        // Lowercase
+        if ($container.find('[data-field="strengthRequireLowercase"]').is(":checked")) {
+            let $minInput = $container.find('[data-field="strengthMinLowercase"]');
+            if ((parseInt($minInput.val()) || 0) < 1) {
+                $minInput.val(1);
+            }
+            $minInput.prop("disabled", false)
+                .closest('.row').removeClass('opacity-50');
+        } else {
+            $container.find('[data-field="strengthMinLowercase"]').prop("disabled", true).val(0)
+                .closest('.row').addClass('opacity-50');
+        }
+        // Digits
+        if ($container.find('[data-field="strengthRequireDigits"]').is(":checked")) {
+            let $minInput = $container.find('[data-field="strengthMinDigits"]');
+            if ((parseInt($minInput.val()) || 0) < 1) {
+                $minInput.val(1);
+            }
+            $minInput.prop("disabled", false)
+                .closest('.row').removeClass('opacity-50');
+        } else {
+            $container.find('[data-field="strengthMinDigits"]').prop("disabled", true).val(0)
+                .closest('.row').addClass('opacity-50');
+        }
+        // Special
+        if ($container.find('[data-field="strengthRequireSpecial"]').is(":checked")) {
+            let $minInput = $container.find('[data-field="strengthMinSpecial"]');
+            if ((parseInt($minInput.val()) || 0) < 1) {
+                $minInput.val(1);
+            }
+            $minInput.prop("disabled", false)
+                .closest('.row').removeClass('opacity-50');
+            $container.find('[data-field="strengthSpecialChars"]').prop("disabled", false)
+                .closest('.row').removeClass('opacity-50');
+        } else {
+            $container.find('[data-field="strengthMinSpecial"]').prop("disabled", true).val(0)
+                .closest('.row').addClass('opacity-50');
+            $container.find('[data-field="strengthSpecialChars"]').prop("disabled", true)
+                .closest('.row').addClass('opacity-50');
+        }
+        // Disallow Sequential
+        if ($container.find('[data-field="strengthDisallowSequential"]').is(":checked")) {
+            let $maxInput = $container.find('[data-field="strengthMaxSequentialCount"]');
+            if ((parseInt($maxInput.val()) || 0) < 1) {
+                $maxInput.val(2);
+            }
+            $maxInput.prop("disabled", false)
+                .closest('.row').removeClass('opacity-50');
+        } else {
+            $container.find('[data-field="strengthMaxSequentialCount"]').prop("disabled", true).val(0)
+                .closest('.row').addClass('opacity-50');
+        }
+    }
+
+    /**
+     * Set default values on a Password Strength form inside a given container
+     * @param {string|jQuery} $container - jQuery selector or jQuery object
+     */
+    function setDefaultStrengthValues($container) {
+        $container = $($container);
+        $container.find('[data-field="strengthEnabled"]').prop("checked", true);
+        $container.find('[data-field="strengthMinLength"]').val(8);
+        $container.find('[data-field="strengthMaxLength"]').val(128);
+        $container.find('[data-field="strengthRequireUppercase"]').prop("checked", true);
+        $container.find('[data-field="strengthMinUppercase"]').val(1);
+        $container.find('[data-field="strengthRequireLowercase"]').prop("checked", true);
+        $container.find('[data-field="strengthMinLowercase"]').val(1);
+        $container.find('[data-field="strengthRequireDigits"]').prop("checked", true);
+        $container.find('[data-field="strengthMinDigits"]').val(1);
+        $container.find('[data-field="strengthRequireSpecial"]').prop("checked", true);
+        $container.find('[data-field="strengthMinSpecial"]').val(1);
+        $container.find('[data-field="strengthSpecialChars"]').val("!@#$%^&*()_+-=[]{}|;:,.<>?");
+        $container.find('[data-field="strengthMaxConsecutive"]').val(3);
+        $container.find('[data-field="strengthMinUnique"]').val(4);
+        $container.find('[data-field="strengthDisallowCommon"]').prop("checked", true);
+        $container.find('[data-field="strengthDisallowUsername"]').prop("checked", true);
+        $container.find('[data-field="strengthDisallowSequential"]').prop("checked", true);
+        $container.find('[data-field="strengthMaxSequentialCount"]').val(2);
+        $container.find('[data-field="strengthMaxSameCharPercent"]').val(20);
+        $container.find('[data-field="strengthActionOnFailure"]').val("REQUIRE_WITH_SKIP");
+
+        toggleStrengthEnabled($container);
+        initStrengthNumberBounds($container);
+    }
+</script>

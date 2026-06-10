@@ -1,0 +1,257 @@
+<div class="container-fluid pass-strength-form">
+
+    <!-- Enable/Disable -->
+    <div class="row mb-3 align-items-center">
+        <div class="col-md-4 text-end">
+            <label class="form-label mb-0">Enable Validation:</label>
+        </div>
+        <div class="col-md-8">
+            <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" data-field="strengthEnabled" checked
+                    onchange="toggleStrengthEnabled(this.closest('.pass-strength-form'))">
+            </div>
+        </div>
+    </div>
+
+    <!-- Collapsible Content -->
+    <div class="strength-fields-content">
+        <!-- Length Section -->
+        <hr>
+        <h6 class="text-muted mb-3">Length Requirements</h6>
+
+        <div class="row mb-3 align-items-center">
+            <div class="col-md-4 text-end">
+                <label class="form-label mb-0">Minimum Length:</label>
+            </div>
+            <div class="col-md-8">
+                <input type="number" data-field="strengthMinLength" class="form-control" value="8" min="1" max="999">
+                <small class="form-text text-muted">Minimum number of characters required.</small>
+            </div>
+        </div>
+
+        <div class="row mb-3 align-items-center">
+            <div class="col-md-4 text-end">
+                <label class="form-label mb-0">Maximum Length:</label>
+            </div>
+            <div class="col-md-8">
+                <input type="number" data-field="strengthMaxLength" class="form-control" value="128" min="1" max="9999">
+                <small class="form-text text-muted">Maximum number of characters allowed.</small>
+            </div>
+        </div>
+
+        <!-- Character Type Section -->
+        <hr>
+        <h6 class="text-muted mb-3">Character Type Requirements</h6>
+
+        <!-- Uppercase -->
+        <div class="row mb-3 align-items-center">
+            <div class="col-md-4 text-end">
+                <label class="form-label mb-0">Require Uppercase:</label>
+            </div>
+            <div class="col-md-8">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" data-field="strengthRequireUppercase" checked
+                            onchange="toggleStrengthFieldDependency(this.closest('.pass-strength-form'))">
+                    </div>
+                    <div style="display:inline-block;">
+                        <label class="form-label mb-0 small">Min Count:</label>
+                        <input type="number" data-field="strengthMinUppercase" class="form-control" value="1" min="1"
+                            max="999" style="width: 80px; display:inline-block;">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Lowercase -->
+        <div class="row mb-3 align-items-center">
+            <div class="col-md-4 text-end">
+                <label class="form-label mb-0">Require Lowercase:</label>
+            </div>
+            <div class="col-md-8">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" data-field="strengthRequireLowercase" checked
+                            onchange="toggleStrengthFieldDependency(this.closest('.pass-strength-form'))">
+                    </div>
+                    <div style="display:inline-block;">
+                        <label class="form-label mb-0 small">Min Count:</label>
+                        <input type="number" data-field="strengthMinLowercase" class="form-control" value="1" min="1"
+                            max="999" style="width: 80px; display:inline-block;">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Digits -->
+        <div class="row mb-3 align-items-center">
+            <div class="col-md-4 text-end">
+                <label class="form-label mb-0">Require Digits:</label>
+            </div>
+            <div class="col-md-8">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" data-field="strengthRequireDigits" checked
+                            onchange="toggleStrengthFieldDependency(this.closest('.pass-strength-form'))">
+                    </div>
+                    <div style="display:inline-block;">
+                        <label class="form-label mb-0 small">Min Count:</label>
+                        <input type="number" data-field="strengthMinDigits" class="form-control" value="1" min="1"
+                            max="999" style="width: 80px; display:inline-block;">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Special Characters -->
+        <div class="row mb-3 align-items-center">
+            <div class="col-md-4 text-end">
+                <label class="form-label mb-0">Require Special Chars:</label>
+            </div>
+            <div class="col-md-8">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" data-field="strengthRequireSpecial" checked
+                            onchange="toggleStrengthFieldDependency(this.closest('.pass-strength-form'))">
+                    </div>
+                    <div style="display:inline-block;">
+                        <label class="form-label mb-0 small">Min Count:</label>
+                        <input type="number" data-field="strengthMinSpecial" class="form-control" value="1" min="1"
+                            max="999" style="width: 80px; display:inline-block;">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mb-3 align-items-center">
+            <div class="col-md-4 text-end">
+                <label class="form-label mb-0">Special Characters Set:</label>
+            </div>
+            <div class="col-md-8">
+                <input type="text" data-field="strengthSpecialChars" class="form-control"
+                    value="!@#$%^&*()_+-=[]{}|;:,.<>?" placeholder="Define special characters">
+                <small class="form-text text-muted">Characters considered as "special". Password must contain characters
+                    from this set.</small>
+            </div>
+        </div>
+
+        <!-- Pattern / Complexity Section -->
+        <hr>
+        <h6 class="text-muted mb-3">Pattern & Complexity Rules</h6>
+
+        <!-- Max Consecutive -->
+        <div class="row mb-3 align-items-center">
+            <div class="col-md-4 text-end">
+                <label class="form-label mb-0">Max Consecutive Chars:</label>
+            </div>
+            <div class="col-md-8">
+                <input type="number" data-field="strengthMaxConsecutive" class="form-control" value="3" min="0"
+                    max="999" style="width: 200px;">
+                <small class="form-text text-muted">Max same characters in a row (0 = no limit). E.g., 3 blocks "aaaa"
+                    but
+                    allows "aaa".</small>
+            </div>
+        </div>
+
+        <!-- Min Unique -->
+        <div class="row mb-3 align-items-center">
+            <div class="col-md-4 text-end">
+                <label class="form-label mb-0">Min Unique Chars:</label>
+            </div>
+            <div class="col-md-8">
+                <input type="number" data-field="strengthMinUnique" class="form-control" value="4" min="0" max="999"
+                    style="width: 200px;">
+                <small class="form-text text-muted">Minimum number of distinct characters the password must contain (0 =
+                    no
+                    limit).</small>
+            </div>
+        </div>
+
+        <!-- Max Same Char Percentage -->
+        <div class="row mb-3 align-items-center">
+            <div class="col-md-4 text-end">
+                <label class="form-label mb-0">Max Same Char %:</label>
+            </div>
+            <div class="col-md-8">
+                <input type="number" data-field="strengthMaxSameCharPercent" class="form-control" value="20" min="1"
+                    max="100" style="width: 200px;">
+                <small class="form-text text-muted">Max percentage of the password that can be the same character (1 -
+                    100).</small>
+            </div>
+        </div>
+
+        <!-- Disallow Sequential -->
+        <div class="row mb-3 align-items-center">
+            <div class="col-md-4 text-end">
+                <label class="form-label mb-0">Disallow Sequential:</label>
+            </div>
+            <div class="col-md-8">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" data-field="strengthDisallowSequential" checked
+                            onchange="toggleStrengthFieldDependency(this.closest('.pass-strength-form'))">
+                    </div>
+                    <div style="display:inline-block;">
+                        <label class="form-label mb-0 small">Max Count:</label>
+                        <input type="number" data-field="strengthMaxSequentialCount" class="form-control" value="2" min="2"
+                            max="999" style="width: 80px; display:inline-block;">
+                    </div>
+                </div>
+                <small class="form-text text-muted">Block sequential patterns (e.g., "abc", "123", "xyz"). Max Count sets the
+                    maximum length of sequential pattern to detect (0 = no limit).</small>
+            </div>
+        </div>
+
+
+        <!-- Security Section -->
+        <hr>
+        <h6 class="text-muted mb-3">Security Rules</h6>
+
+        <!-- Disallow Common -->
+        <div class="row mb-3 align-items-center">
+            <div class="col-md-4 text-end">
+                <label class="form-label mb-0">Block Common Passwords:</label>
+            </div>
+            <div class="col-md-8">
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" data-field="strengthDisallowCommon" checked>
+                </div>
+                <small class="form-text text-muted">Reject passwords from a list of commonly used / breached
+                    passwords.</small>
+            </div>
+        </div>
+
+        <!-- Disallow Username -->
+        <div class="row mb-3 align-items-center">
+            <div class="col-md-4 text-end">
+                <label class="form-label mb-0">Block Username in Password:</label>
+            </div>
+            <div class="col-md-8">
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" data-field="strengthDisallowUsername" checked>
+                </div>
+                <small class="form-text text-muted">Password cannot contain the user's username
+                    (case-insensitive).</small>
+            </div>
+        </div>
+
+        <!-- Non-Compliance Action Section -->
+        <hr>
+        <h6 class="text-muted mb-3">Non-Compliance Action</h6>
+
+        <div class="row mb-3 align-items-center">
+            <div class="col-md-4 text-end">
+                <label class="form-label mb-0">Action on Failure:</label>
+            </div>
+            <div class="col-md-8">
+                <select data-field="strengthActionOnFailure" class="form-select">
+                    <option value="NONE">NONE - No action taken</option>
+                    <option value="REQUIRE_WITH_SKIP" selected>REQUIRE_WITH_SKIP - Require change but allow skip</option>
+                    <option value="FORCE">FORCE - Force password change</option>
+                </select>
+                <small class="form-text text-muted">Action to take when password does not meet strength requirements during password introduction at login.</small>
+            </div>
+        </div>
+    </div><!-- /.strength-fields-content -->
+
+</div>

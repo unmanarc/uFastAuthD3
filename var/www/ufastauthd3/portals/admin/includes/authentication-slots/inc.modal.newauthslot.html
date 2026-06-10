@@ -5,32 +5,42 @@
         $("#createFunction").val('1');
         $("#createDefaultExpiration").val('31536000');
         $("#createTotp2FAStepsToleranceWindow").val('0');
+        $("#createCanSkipWhenExpired").prop("checked", false);
         $("#createStrengthJSONValidator").val('');
 
         updatePrettyTime('createDefaultExpiration', 'createDefaultExpirationPretty');
 
-        $('#totp-tab-create').hide();
+        // Initialize number bounds enforcement on strength form
+        setDefaultStrengthValues('#createStrengthForm');
 
-        $('#createFunction').change(function() {
-            if ($(this).val() == '5') { // TOTP
-                $('#totp-tab-create').show();
-                $('#advanced-tab-create').hide();
+        $('#totp-tab-create').parent().hide();
+        $('#strength-tab-create').parent().hide();
+
+        $('#createFunction').off('change').on('change', function () {
+            const $dropdown = $(this);
+            const wasFocused = document.activeElement;
+
+            if ($dropdown.val() == '5') { // TOTP
+                $('#totp-tab-create').parent().show();
+                $('#strength-tab-create').parent().hide();
 
                 if ($("#createDescription").val() == 'Password Slot')
                     $("#createDescription").val('TOTP Slot');
 
             } else {
-                $('#totp-tab-create').hide();
-                $('#advanced-tab-create').show();
+                $('#totp-tab-create').parent().hide();
+                $('#strength-tab-create').parent().show();
 
                 if ($("#createDescription").val() == 'TOTP Slot')
                     $("#createDescription").val('Password Slot');
-
             }
-        });
 
-        // TODO:
-        $('.nav-tabs a:first').tab('show')
+            // Always keep "Slot Details" as the active tab
+            $('#details-tab-create').tab('show');
+
+            // Restore focus to the element that had focus before
+            setTimeout(() => $(wasFocused).focus(), 0);
+        }).trigger('change');
     }
 
     function ajaxCreateAuthSlot() {
@@ -43,7 +53,8 @@
                 passwordFunction: parseInt($("#createFunction").val()),
                 description: $("#createDescription").val(),
                 defaultExpirationSeconds: parseInt($("#createDefaultExpiration").val()),
-                strengthJSONValidator: $("#createStrengthJSONValidator").val(),
+                canSkipWhenExpired: $("#createCanSkipWhenExpired").is(":checked"),
+                strengthJSONValidator: buildStrengthJSON('#createStrengthForm'),
                 totp2FAStepsToleranceWindow: parseInt($("#createTotp2FAStepsToleranceWindow").val())
             }),
             success: function (response, textStatus, xhr) {
@@ -55,12 +66,10 @@
         });
 
     }
-
 </script>
-
 <div class="modal fade" id="modalCreateAuthSlot" data-bs-backdrop="static" data-bs-keyboard="true" tabindex="-1"
     aria-labelledby="modalCreateAuthSlotLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
+    <div class="modal-dialog modal-dialog-scrollable modal-lg">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="modalCreateAuthSlotLabel">Add New Authentication Slot</h5>
@@ -81,15 +90,17 @@
 
                                 <li class="nav-item">
                                     <button class="nav-link" id="totp-tab-create" data-bs-toggle="tab"
-                                        data-bs-target="#totpCreate" type="button" role="tab"
-                                        aria-controls="totpCreate" aria-selected="false">TOTP (2FA)</button>
+                                        data-bs-target="#totpCreate" type="button" role="tab" aria-controls="totpCreate"
+                                        aria-selected="false">TOTP (2FA)</button>
                                 </li>
 
                                 <li class="nav-item">
-                                    <button class="nav-link" id="advanced-tab-create" data-bs-toggle="tab"
-                                        data-bs-target="#advancedCreate" type="button" role="tab"
-                                        aria-controls="advancedCreate" aria-selected="false">Advanced Controls</button>
+                                    <button class="nav-link" id="strength-tab-create" data-bs-toggle="tab"
+                                        data-bs-target="#strengthCreate" type="button" role="tab"
+                                        aria-controls="strengthCreate" aria-selected="false">Password Strength
+                                        Validation</button>
                                 </li>
+
                             </ul>
                         </td>
                     </tr>
@@ -99,7 +110,7 @@
 
                     <div class="tab-pane show active" id="detailsCreate" role="tabpanel"
                         aria-labelledby="details-tab-create" style="min-height: 500px;">
-                       
+
 
                         <div class="container-fluid">
                             <div class="row mb-3 align-items-center">
@@ -110,7 +121,7 @@
                                     <input id="createDescription" class="form-control" placeholder="Description">
                                 </div>
                             </div>
-                            
+
                             <div class="row mb-3 align-items-center">
                                 <div class="col-md-4 text-end">
                                     <label for="createFunction" class="form-label mb-0">Function:</label>
@@ -126,7 +137,7 @@
                                     </select>
                                 </div>
                             </div>
-                            
+
                             <div class="row mb-3 align-items-start">
                                 <div class="col-md-4 text-end">
                                     <label for="createDefaultExpiration" class="form-label mb-0 pt-2">
@@ -134,13 +145,21 @@
                                     </label>
                                 </div>
                                 <div class="col-md-8">
-                                    <input type="number" 
-                                           id="createDefaultExpiration" 
-                                           class="form-control"
-                                           placeholder="Default Expiration (seconds)" 
-                                           value="31536000"
-                                           oninput="updatePrettyTime('createDefaultExpiration', 'createDefaultExpirationPretty')">
+                                    <input type="number" id="createDefaultExpiration" class="form-control"
+                                        placeholder="Default Expiration (seconds)" value="31536000"
+                                        oninput="updatePrettyTime('createDefaultExpiration', 'createDefaultExpirationPretty')">
                                     <small id="createDefaultExpirationPretty" class="form-text text-muted mt-1"></small>
+                                </div>
+                            </div>
+
+                            <div class="row mb-3 align-items-center">
+                                <div class="col-md-4 text-end">
+                                    <label for="createCanSkipWhenExpired" class="form-label mb-0">Can Skip When Expired:</label>
+                                </div>
+                                <div class="col-md-8 d-flex align-items-center">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="createCanSkipWhenExpired">
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -159,21 +178,14 @@
                         </table>
                     </div>
 
-                    <div class="tab-pane" id="advancedCreate" role="tabpanel" aria-labelledby="advanced-tab-create"
+                    <div class="tab-pane" id="strengthCreate" role="tabpanel" aria-labelledby="strength-tab-create"
                         style="min-height: 500px;">
-                        <table width=100% style=" border-spacing: 10px;   border-collapse: separate;">
-                            <tr>
-                                <td align="right">Strength JSON Validator: </td>
-                                <td><textarea id="createStrengthJSONValidator" class="form-control"
-                                        placeholder="Strength JSON Validator" rows="3"></textarea>
-                                </td>
-                            </tr>
-                        </table>
+                        <div id="createStrengthForm">
+                            <!--<%include:/includes/authentication-slots/inc.pass_strength.html%>-->
+                        </div>
                     </div>
 
                 </div>
-
-
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>

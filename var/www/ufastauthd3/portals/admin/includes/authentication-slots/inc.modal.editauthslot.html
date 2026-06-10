@@ -1,59 +1,8 @@
-<script>
-
-    function editAuthSlot(slotId) {
-        let slot = authSlots[slotId];
-        
-        $("#editSlotID").val(slotId);
-        $("#editDescription").val(slot['description']);
-        $("#editFunction").val(slot['passwordFunction']);
-        $("#editDefaultExpiration").val(slot['defaultExpirationSeconds']);
-        $("#editTotp2FAStepsToleranceWindow").val(slot['totp2FAStepsToleranceWindow']);
-        $("#editStrengthJSONValidator").val(slot['strengthJSONValidator']);
-
-        updatePrettyTime('editDefaultExpiration', 'editDefaultExpirationPretty');
-
-        if (slot['passwordFunction'] == '5') { // TOTP
-            $('#totp-tab-edit').show();
-            $('#advanced-tab-edit').hide();
-            //$('#totpEdit').show();
-        } else {
-            $('#totp-tab-edit').hide();
-            $('#advanced-tab-edit').show();
-            //  $('#totpEdit').hide();
-        }
-      
-        // TODO:
-        $('.nav-tabs a:first').tab('show')
-    }
-
-    function ajaxEditAuthSlot() {
-
-        $.ajax({
-            url: '/api/v1/updateAuthenticationSlot',
-            type: 'PATCH',
-            contentType: 'application/json',
-            data: JSON.stringify({
-                slotId: parseInt($("#editSlotID").val()),
-                description: $("#editDescription").val(),
-                defaultExpirationSeconds: parseInt($("#editDefaultExpiration").val()),
-                strengthJSONValidator: $("#editStrengthJSONValidator").val(),
-                totp2FAStepsToleranceWindow: parseInt($("#editTotp2FAStepsToleranceWindow").val())
-            }),
-            success: function (response, textStatus, xhr) {
-                $('#modalEditAuthSlot').modal('hide');
-                populateTable();
-                showToastSuccess("Slot updated successfully.");
-            },
-            error: commonFunctionError
-        });
-
-    }
-
-</script>
+<!--<%include:/includes/authentication-slots/inc.pass_strength_js.html%>-->
 
 <div class="modal fade" id="modalEditAuthSlot" data-bs-backdrop="static" data-bs-keyboard="true" tabindex="-1"
     aria-labelledby="modalEditAuthSlotLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
+    <div class="modal-dialog  modal-dialog-scrollable modal-lg">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="modalEditAuthSlotLabel">Edit Authentication Slot</h5>
@@ -79,10 +28,12 @@
                                 </li>
 
                                 <li class="nav-item">
-                                    <button class="nav-link" id="advanced-tab-edit" data-bs-toggle="tab"
-                                        data-bs-target="#advancedEdit" type="button" role="tab"
-                                        aria-controls="advancedEdit" aria-selected="false">Advanced Controls</button>
+                                    <button class="nav-link" id="strength-tab-edit" data-bs-toggle="tab"
+                                        data-bs-target="#strengthEdit" type="button" role="tab"
+                                        aria-controls="strengthEdit" aria-selected="false">Password Strength
+                                        Validation</button>
                                 </li>
+
                             </ul>
                         </td>
                     </tr>
@@ -93,10 +44,7 @@
                     <div class="tab-pane show active" id="detailsEdit" role="tabpanel"
                         aria-labelledby="details-tab-edit" style="min-height: 500px;">
 
-
-
                         <div class="container-fluid">
-
 
                             <div class="row mb-3 align-items-center">
                                 <div class="col-md-4 text-end">
@@ -122,7 +70,7 @@
                                     </select>
                                 </div>
                             </div>
-                            
+
 
                             <div class="row mb-3 align-items-center">
                                 <div class="col-md-4 text-end">
@@ -132,7 +80,7 @@
                                     <input id="editDescription" class="form-control" placeholder="Description">
                                 </div>
                             </div>
-                            
+
                             <div class="row mb-3 align-items-start">
                                 <div class="col-md-4 text-end">
                                     <label for="editDefaultExpiration" class="form-label mb-0 pt-2">
@@ -142,8 +90,19 @@
                                 <div class="col-md-8">
                                     <input type="number" id="editDefaultExpiration" class="form-control"
                                         placeholder="Default Expiration (seconds)" value="31536000"
-                                           oninput="updatePrettyTime('editDefaultExpiration', 'editDefaultExpirationPretty')">
+                                        oninput="updatePrettyTime('editDefaultExpiration', 'editDefaultExpirationPretty')">
                                     <small id="editDefaultExpirationPretty" class="form-text text-muted mt-1"></small>
+                                </div>
+                            </div>
+
+                            <div class="row mb-3 align-items-center">
+                                <div class="col-md-4 text-end">
+                                    <label for="editCanSkipWhenExpired" class="form-label mb-0">Can Skip When Expired:</label>
+                                </div>
+                                <div class="col-md-8 d-flex align-items-center">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="editCanSkipWhenExpired">
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -162,17 +121,16 @@
                         </table>
                     </div>
 
-                    <div class="tab-pane" id="advancedEdit" role="tabpanel" aria-labelledby="advanced-tab-edit"
+                    <div class="tab-pane" id="strengthEdit" role="tabpanel" aria-labelledby="strength-tab-edit"
                         style="min-height: 500px;">
-                        <table width=100% style=" border-spacing: 10px;   border-collapse: separate;">
-                            <tr>
-                                <td align="right">Strength JSON Validator: </td>
-                                <td><textarea id="editStrengthJSONValidator" class="form-control"
-                                        placeholder="Strength JSON Validator" rows="3"></textarea>
-                                </td>
-                            </tr>
-                        </table>
+
+                        <div id="editStrengthForm">
+                            <!--<%include:/includes/authentication-slots/inc.pass_strength.html%>-->
+                        </div>
+
+
                     </div>
+
 
                 </div>
 
@@ -186,3 +144,58 @@
         </div>
     </div>
 </div>
+
+<script>
+
+    function editAuthSlot(slotId) {
+        let slot = authSlots[slotId];
+
+        $("#editSlotID").val(slotId);
+        $("#editDescription").val(slot['description']);
+        $("#editFunction").val(slot['passwordFunction']);
+        $("#editDefaultExpiration").val(slot['defaultExpirationSeconds']);
+        $("#editTotp2FAStepsToleranceWindow").val(slot['totp2FAStepsToleranceWindow']);
+        $("#editCanSkipWhenExpired").prop("checked", slot['canSkipWhenExpired']);
+
+        // Parse and populate strength validation UI
+        parseStrengthJSON('#editStrengthForm', slot['strengthJSONValidator']);
+
+        updatePrettyTime('editDefaultExpiration', 'editDefaultExpirationPretty');
+
+        if (slot['passwordFunction'] == '5') { // TOTP
+            $('#totp-tab-edit').show();
+            $('#strength-tab-edit').hide();
+        } else {
+            $('#totp-tab-edit').hide();
+            $('#strength-tab-edit').show();
+        }
+
+        // TODO:
+        $('.nav-tabs a:first').tab('show')
+    }
+
+    function ajaxEditAuthSlot() {
+
+        $.ajax({
+            url: '/api/v1/updateAuthenticationSlot',
+            type: 'PATCH',
+            contentType: 'application/json',
+            data: JSON.stringify({
+                slotId: parseInt($("#editSlotID").val()),
+                description: $("#editDescription").val(),
+                defaultExpirationSeconds: parseInt($("#editDefaultExpiration").val()),
+                canSkipWhenExpired: $("#editCanSkipWhenExpired").is(":checked"),
+                strengthJSONValidator: buildStrengthJSON('#editStrengthForm'),
+                totp2FAStepsToleranceWindow: parseInt($("#editTotp2FAStepsToleranceWindow").val())
+            }),
+            success: function (response, textStatus, xhr) {
+                $('#modalEditAuthSlot').modal('hide');
+                populateTable();
+                showToastSuccess("Slot updated successfully.");
+            },
+            error: commonFunctionError
+        });
+
+    }
+
+</script>
