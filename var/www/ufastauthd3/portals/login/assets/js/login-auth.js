@@ -41,9 +41,54 @@ function initializeAuthentication(username) {
 
 /**
  * Handle authorize/changeCredential response
+ * @param {Object} response - The authorize/changeCredential response
+ * @param {boolean} skipStrengthValidation - If true, skip local strength validation (used when user skips password change)
  */
-function handleAuthorizeResponse(response) {
+function handleAuthorizeResponse(response, skipStrengthValidation) {
     if (response.mustChangeCredential === false) {
+        // Password was accepted by server - now check strength locally
+        var needStrengthChange = false;
+        var pwFunc = currentSlot.details.passwordFunction;
+        
+        // Only check strength for password types (not OTP) and if not skipping
+        if (pwFunc !== 5 && !skipStrengthValidation) {
+            var strengthValidator = null;
+            if (currentSlot.details && currentSlot.details.strengthJSONValidator) {
+                strengthValidator = currentSlot.details.strengthJSONValidator;
+            }
+            
+            var currentPassword = $("#genericPassword").val();
+            var username = $("#username").val();
+            
+            if (strengthValidator && strengthValidator.enabled && currentPassword) {
+                var strengthResult = validatePasswordAgainstStrength('', currentPassword, strengthValidator, username);
+                if (!allStrengthRequirementsMet(strengthResult)) {
+                    // Password is weak - check actionOnFailure policy
+                    var actionOnFailure = strengthValidator.actionOnFailure;
+                    
+                    if (actionOnFailure === 'NONE') {
+                        // Continue login, no change screen
+                    } else if (actionOnFailure === 'REQUIRE_WITH_SKIP') {
+                        needStrengthChange = true;
+                        window.canSkipPasswordChange = true;
+                    } else if (actionOnFailure === 'FORCE') {
+                        needStrengthChange = true;
+                        window.canSkipPasswordChange = false;
+                    }
+                }
+            }
+        }
+        
+        if (needStrengthChange) {
+            // Show change password screen due to weak password
+            cachedLastAuthorizeResponse = response;
+            cachedLastAuthorizeResponse.mustChangeCredential = false;
+            hideAllScreens();
+            showChangePasswordScreen();
+            return;
+        }
+        
+        // Continue normal flow
         cachedLastAuthorizeResponse = null;
         if (response.nextSlot === null) {
             loggedIn = true;
@@ -54,10 +99,11 @@ function handleAuthorizeResponse(response) {
             showNextSlot();
         }
     } else if (response.mustChangeCredential === true) {
+        // Server requires credential change
         cachedLastAuthorizeResponse = response;
         cachedLastAuthorizeResponse.mustChangeCredential = false;
-        // Store canSkipPasswordChange from response
         window.canSkipPasswordChange = (response.canSkipPasswordChange === true);
+        
         // This credential that has just been authenticated, NEEDS to be changed.
         // don´t go to the next slot.
         var pwFunc = currentSlot.details.passwordFunction;
@@ -94,7 +140,7 @@ function authorizeCredential(username, schemeId, password) {
         }),
         success: function (response) {
             transientToken = response.transientToken;
-            handleAuthorizeResponse(response);
+            handleAuthorizeResponse(response, false);
         },
         error: function (xhr, status, error) {
             // Clear password and OTP fields on authorization error

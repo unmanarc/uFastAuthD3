@@ -103,8 +103,8 @@ function skipPasswordChange() {
     currentStrengthValidator = null;
     $("#changePasswordScreen").addClass('d-none');
     updateMessage('Password change skipped. Continuing login...');
-    // Continue with the cached authorization response (mustChangeCredential set to false)
-    handleAuthorizeResponse(cachedLastAuthorizeResponse);
+    // Continue with the cached authorization response, skipping strength validation to avoid infinite loop
+    handleAuthorizeResponse(cachedLastAuthorizeResponse, true);
 }
 
 /**
@@ -166,7 +166,7 @@ function submitChangePassword() {
             $("#changePasswordScreen").addClass('d-none');
             updateMessage('Password changed successfully. Continuing login...');
             // Handle response same as authorize (nextSlot, changeCredential, etc.)
-            handleAuthorizeResponse(cachedLastAuthorizeResponse);
+            handleAuthorizeResponse(cachedLastAuthorizeResponse, true);
         },
         error: function (xhr, status, error) {
             var msg = 'Error: Failed to change password.';

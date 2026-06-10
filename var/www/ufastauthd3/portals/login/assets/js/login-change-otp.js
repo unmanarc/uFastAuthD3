@@ -104,7 +104,7 @@ function submitChangeOTP() {
             $("#changeOtpScreen").addClass('d-none');
             updateMessage('OTP credential changed successfully. Continuing login...');
             // Handle response same as authorize (nextSlot, changeCredential, etc.)
-            handleAuthorizeResponse(cachedLastAuthorizeResponse);
+            handleAuthorizeResponse(cachedLastAuthorizeResponse, true);
         },
         error: function (xhr, status, error) {
             var msg = 'Error: Failed to change OTP credential.';
