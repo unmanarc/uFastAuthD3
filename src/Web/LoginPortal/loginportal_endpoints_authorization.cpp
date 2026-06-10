@@ -3,6 +3,7 @@
 #include "Mantids30/Protocol_HTTP/api_return.h"
 #include "loginportal_endpoints.h"
 #include "json/value.h"
+#include "Tokens/tokensmanager.h"
 #include <Mantids30/Helpers/json.h>
 
 #include "globals.h"
@@ -30,8 +31,7 @@ API::APIReturn LoginPortal_Endpoints::preAuthorize(void *context, const API::RES
     std::shared_ptr<TransientAuthenticationContext> authContext = std::make_shared<TransientAuthenticationContext>();
 
     //  Configuration parameters:
-    auto config = Globals::pConfig;
-    uint32_t loginAuthenticationTimeout = config.get<uint32_t>("LoginPortal.AuthenticationTimeout", 300);
+    uint32_t loginAuthenticationTimeout = Globals::pConfig.get<uint32_t>("LoginPortal.AuthenticationTimeout", 300);
 
     // Input parameters:
     authContext->accountName = JSON_ASSTRING(*request.inputJSON, "accountName", "");    // ACCOUNT ID.
@@ -63,8 +63,65 @@ API::APIReturn LoginPortal_Endpoints::preAuthorize(void *context, const API::RES
     }
 
     r["loginAuthenticationTimeout"] = loginAuthenticationTimeout;
-    return r;
+
+    *(response.responseJSON()) = r;
+    response.cookiesMap["AccessToken"].deleteCookie();
+
+    return response;
 }
+
+
+void LoginPortal_Endpoints::issueTransientAuthTokenResponse(const RequestParameters &request, Mantids30::API::APIReturn &response,
+                                                            std::shared_ptr<TransientAuthenticationContext> authContext, const std::vector<AuthenticationSchemeUsedSlot> &requiredAuthSlots,
+                                                            bool mustChangeCredential, bool canSkipPasswordChange)
+{
+    // Retrieve configuration parameters from global settings.
+    IdentityManager *identityManager = Globals::getIdentityManager();
+    uint32_t loginAuthenticationTimeout = Globals::pConfig.get<uint32_t>("LoginPortal.AuthenticationTimeout", 300);
+    Json::Value *jResponse = response.responseJSON();
+
+    // There is a new authenticated current slot:
+    if (authContext->currentSlotId.has_value())
+        authContext->authenticatedSlots.insert(authContext->currentSlotId.value());
+
+    // This current slot must be changed immediatly:
+    /*if (mustChange)
+        authContext->mustChangeSlots.insert(authContext->currentSlotId.value());*/
+
+    std::optional<uint32_t> nextSlotId = std::nullopt;
+    if (!requiredAuthSlots.empty())
+    {
+        nextSlotId = requiredAuthSlots.begin()->slotId;
+    }
+
+    (*jResponse)["canSkipPasswordChange"] = canSkipPasswordChange;
+    (*jResponse)["mustChangeCredential"] = mustChangeCredential;
+    (*jResponse)["transientToken"] = authContext->issueSignedTransientTokenFromValues(loginAuthenticationTimeout, nextSlotId, request.jwtSigner);
+
+    if (requiredAuthSlots.empty())
+    {
+        //if (authContext->mustChangeSlots.empty())
+        //{
+        // Set the IAM Access Token into the Cookie ONLY if mustchangeslots is empty (to avoid login if not changed)...
+        TokensManager::issueLoginAccessTokenCookie(response, request, authContext);
+        //}
+        (*jResponse)["nextSlot"] = Json::nullValue; // No new slots to be tested.
+    }
+    else
+    {
+        // We can give the credential public data for the next credential:
+        Credential credentialPublicData = identityManager->authController->getAccountCredentialPublicData(authContext->accountName, nextSlotId.value());
+
+        json nextSlot;
+        nextSlot["slotId"] = nextSlotId.value();
+        nextSlot["details"] = credentialPublicData.slotDetails.toJSON();
+
+        (*jResponse)["nextSlot"] = nextSlot;
+        (*jResponse)["publicData"] = credentialPublicData.toJSON(identityManager->authController->getAuthenticationPolicy());
+        (*jResponse)["publicData"].removeMember("slotDetails");
+    }
+}
+
 
 // Validate credential:
 API::APIReturn LoginPortal_Endpoints::authorize(void *context, const RequestParameters &request, ClientDetails &clientDetails)
@@ -93,12 +150,19 @@ API::APIReturn LoginPortal_Endpoints::authorize(void *context, const RequestPara
         return response;
     }
 
-    AuthenticationResult authRetCode = identityManager->authController->authenticateCredential(clientDetails, authContext->accountName, JSON_ASSTRING(*request.inputJSON, "password", ""),
+
+    std::map<uint32_t, AuthenticationSlotDetails> authSlots = identityManager->authController->listAllAuthenticationSlots();
+
+    // TODO implement other authentication modes (Eg. CRAM)
+    AuthenticationResult authRetCode = identityManager->authController->authenticateCredential(clientDetails,
+                                                                                               authContext->accountName,
+                                                                                               JSON_ASSTRING(*request.inputJSON, "password", ""),
                                                                                                authContext->currentSlotId.value(),
                                                                                                getAuthModeFromString(JSON_ASSTRING(*request.inputJSON, "authMode", "MODE_PLAIN")),
-                                                                                               JSON_ASSTRING(*request.inputJSON, "challengeSalt", ""), authContext);
+                                                                                               JSON_ASSTRING(*request.inputJSON, "challengeSalt", ""),
+                                                                                               authContext);
 
-    LOG_APP->log2(__func__, authContext->accountName, clientDetails.ipAddress, authRetCode != AuthenticationResult::AUTHENTICATED ? Logs::LEVEL_SECURITY_ALERT : Logs::LEVEL_INFO,
+    LOG_APP->log2(__func__, authContext->accountName, clientDetails.ipAddress, !IS_CREDENTIAL_AUTHENTICATED(authRetCode) ? Logs::LEVEL_SECURITY_ALERT : Logs::LEVEL_INFO,
                   "Account Authorization Result: %" PRIu32 " - %s, scheme '%" PRIu32 "' and slotId = %'" PRIu32 "'", authRetCode, authResultToString(authRetCode),
                   authContext->schemeId, authContext->currentSlotId.value());
 
@@ -133,7 +197,10 @@ API::APIReturn LoginPortal_Endpoints::authorize(void *context, const RequestPara
         // Remove the first element from requiredAuthSlots (which is the authenticated credential)
         requiredAuthSlots.erase(requiredAuthSlots.begin());
 
-        issueTransientAuthTokenResponse(request, response, authContext, requiredAuthSlots, authRetCode == AuthenticationResult::MUST_CHANGE_CREDENTIAL);
+        issueTransientAuthTokenResponse(request, response, authContext, requiredAuthSlots,
+                                        authRetCode == AuthenticationResult::MUST_CHANGE_CREDENTIAL || authRetCode == AuthenticationResult::EXPIRED_CREDENTIAL,
+                                        authRetCode == AuthenticationResult::EXPIRED_CREDENTIAL && authSlots[authContext->currentSlotId.value()].canSkipWhenExpired
+                                        );
     }
     else
     {
