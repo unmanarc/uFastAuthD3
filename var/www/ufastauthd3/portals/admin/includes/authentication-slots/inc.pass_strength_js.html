@@ -11,7 +11,7 @@
     function initStrengthNumberBounds($container) {
         $container = $($container);
         $container.off('input change', '.pass-strength-form [type="number"]');
-        $container.on('input change', '.pass-strength-form [type="number"]', function() {
+        $container.on('input change', '.pass-strength-form [type="number"]', function () {
             const min = parseFloat(this.getAttribute('min'));
             const max = parseFloat(this.getAttribute('max'));
             let val = parseFloat(this.value);
@@ -67,26 +67,32 @@
     function parseStrengthJSON($container, strength) {
         $container = $($container);
 
-        $container.find('[data-field="strengthEnabled"]').prop("checked", strength.enabled !== false);
-        $container.find('[data-field="strengthMinLength"]').val(strength.minLength || 8);
-        $container.find('[data-field="strengthMaxLength"]').val(strength.maxLength || 128);
-        $container.find('[data-field="strengthRequireUppercase"]').prop("checked", strength.requireUppercase !== false);
-        $container.find('[data-field="strengthMinUppercase"]').val(strength.minUppercase || 1);
-        $container.find('[data-field="strengthRequireLowercase"]').prop("checked", strength.requireLowercase !== false);
-        $container.find('[data-field="strengthMinLowercase"]').val(strength.minLowercase || 1);
-        $container.find('[data-field="strengthRequireDigits"]').prop("checked", strength.requireDigits !== false);
-        $container.find('[data-field="strengthMinDigits"]').val(strength.minDigits || 1);
-        $container.find('[data-field="strengthRequireSpecial"]').prop("checked", strength.requireSpecial !== false);
-        $container.find('[data-field="strengthMinSpecial"]').val(strength.minSpecial || 1);
-        $container.find('[data-field="strengthSpecialChars"]').val(strength.specialCharacters || "!@#$%^&*()_+-=[]{}|;:,.<>?");
-        $container.find('[data-field="strengthMaxConsecutive"]').val(strength.maxConsecutiveChars || 3);
-        $container.find('[data-field="strengthMinUnique"]').val(strength.minUniqueChars || 4);
-        $container.find('[data-field="strengthDisallowCommon"]').prop("checked", strength.disallowCommonPasswords !== false);
-        $container.find('[data-field="strengthDisallowUsername"]').prop("checked", strength.disallowUsername !== false);
-        $container.find('[data-field="strengthDisallowSequential"]').prop("checked", strength.disallowSequential !== false);
-        $container.find('[data-field="strengthMaxSequentialCount"]').val(strength.maxSequentialCount || 2);
-        $container.find('[data-field="strengthMaxSameCharPercent"]').val(strength.maxSameCharPercentage || 20);
-        $container.find('[data-field="strengthActionOnFailure"]').val(strength.actionOnFailure || "REQUIRE_WITH_SKIP");
+        if (strength!==null) {
+            $container.find('[data-field="strengthEnabled"]').prop("checked", strength.enabled !== false);
+            $container.find('[data-field="strengthMinLength"]').val(strength.minLength || 8);
+            $container.find('[data-field="strengthMaxLength"]').val(strength.maxLength || 128);
+            $container.find('[data-field="strengthRequireUppercase"]').prop("checked", strength.requireUppercase !== false);
+            $container.find('[data-field="strengthMinUppercase"]').val(strength.minUppercase || 1);
+            $container.find('[data-field="strengthRequireLowercase"]').prop("checked", strength.requireLowercase !== false);
+            $container.find('[data-field="strengthMinLowercase"]').val(strength.minLowercase || 1);
+            $container.find('[data-field="strengthRequireDigits"]').prop("checked", strength.requireDigits !== false);
+            $container.find('[data-field="strengthMinDigits"]').val(strength.minDigits || 1);
+            $container.find('[data-field="strengthRequireSpecial"]').prop("checked", strength.requireSpecial !== false);
+            $container.find('[data-field="strengthMinSpecial"]').val(strength.minSpecial || 1);
+            $container.find('[data-field="strengthSpecialChars"]').val(strength.specialCharacters || "!@#$%^&*()_+-=[]{}|;:,.<>?");
+            $container.find('[data-field="strengthMaxConsecutive"]').val(strength.maxConsecutiveChars || 3);
+            $container.find('[data-field="strengthMinUnique"]').val(strength.minUniqueChars || 4);
+            $container.find('[data-field="strengthDisallowCommon"]').prop("checked", strength.disallowCommonPasswords !== false);
+            $container.find('[data-field="strengthDisallowUsername"]').prop("checked", strength.disallowUsername !== false);
+            $container.find('[data-field="strengthDisallowSequential"]').prop("checked", strength.disallowSequential !== false);
+            $container.find('[data-field="strengthMaxSequentialCount"]').val(strength.maxSequentialCount || 2);
+            $container.find('[data-field="strengthMaxSameCharPercent"]').val(strength.maxSameCharPercentage || 20);
+            $container.find('[data-field="strengthActionOnFailure"]').val(strength.actionOnFailure || "REQUIRE_WITH_SKIP");
+        }
+        else
+        {
+            $container.find('[data-field="strengthEnabled"]').prop("checked", false);
+        }
 
         toggleStrengthEnabled($container);
         initStrengthNumberBounds($container);

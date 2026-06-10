@@ -162,16 +162,25 @@
 
         updatePrettyTime('editDefaultExpiration', 'editDefaultExpirationPretty');
 
-        if (slot['passwordFunction'] == '5') { // TOTP
+        const isTotp = (slot['passwordFunction'] == 5);
+
+        if (isTotp) {
+            // TOTP: show totp tab, hide strength tab
             $('#totp-tab-edit').show();
             $('#strength-tab-edit').hide();
         } else {
-            $('#totp-tab-edit').hide();
+            // Password function: show strength tab, hide totp tab
             $('#strength-tab-edit').show();
+            $('#totp-tab-edit').hide();
         }
 
-        // TODO:
-        $('.nav-tabs a:first').tab('show')
+        // Reset all tab states to default (clear previous tab selection)
+        $('#myTabEdit .nav-link').removeClass('active');
+        $('#myTabContentEdit > .tab-pane').removeClass('show active');
+
+        // Set details tab as active default
+        $('#details-tab-edit').addClass('active');
+        $('#detailsEdit').addClass('show active');
     }
 
     function ajaxEditAuthSlot() {
