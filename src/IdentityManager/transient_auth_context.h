@@ -105,7 +105,7 @@ struct TransientAuthenticationContext
         newTransientAuthToken.setClaim("keepAuthenticated", keepAuthenticated);
         newTransientAuthToken.setClaim("type", "transient");
         newTransientAuthToken.setClaim("authenticatedSlots", Mantids30::Helpers::setToJSON(authenticatedSlots));
-        newTransientAuthToken.setClaim("mustChangeSlots", Mantids30::Helpers::setToJSON(mustChangeSlots));
+        //newTransientAuthToken.setClaim("mustChangeSlots", Mantids30::Helpers::setToJSON(mustChangeSlots));
         newTransientAuthToken.setClaim("authenticatedSchemes", jAuthenticatedSchemes);
         //newTransientAuthToken.setClaim("authenticatedApps", jAuthenticatedApps);
         newTransientAuthToken.setClaim("authenticatedAppsCallbackURLs", jAuthenticatedAppsCallbackURLs);
@@ -133,7 +133,7 @@ struct TransientAuthenticationContext
         keepAuthenticated = JSON_ASBOOL(claims, "keepAuthenticated", false);
         currentSlotId = JSON_ASUINT(claims, "currentSlotId", 0);
         authenticatedSlots = Mantids30::Helpers::jsonToUInt32Set(claims, "authenticatedSlots");
-        mustChangeSlots = Mantids30::Helpers::jsonToUInt32Set(claims, "mustChangeSlots");
+        //mustChangeSlots = Mantids30::Helpers::jsonToUInt32Set(claims, "mustChangeSlots");
         jAuthenticatedSchemes = transientAuthToken.getClaim("authenticatedSchemes");
         //jAuthenticatedApps = transientAuthToken.getClaim("authenticatedApps");
         jAuthenticatedAppsCallbackURLs = transientAuthToken.getClaim("authenticatedAppsCallbackURLs");
@@ -149,12 +149,12 @@ struct TransientAuthenticationContext
         doesTransientTokenNotExist = true;
     }
 
-    void removeSlotFromMustChangeInTheTransientAuthToken(const uint32_t &slotId)
+    /*void removeSlotFromMustChangeInTheTransientAuthToken(const uint32_t &slotId)
     {
         mustChangeSlots.erase(slotId);
         // Update the claim
         transientAuthToken.setClaim("mustChangeSlots", Mantids30::Helpers::setToJSON(mustChangeSlots));
-    }
+    }*/
 
     Json::Value getAllAuthenticatedSlotsIds()
     {
@@ -199,7 +199,7 @@ struct TransientAuthenticationContext
     std::optional<uint32_t> currentSlotId = std::nullopt;
     std::string slotSchemeHash;
     std::set<uint32_t> authenticatedSlots;
-    std::set<uint32_t> mustChangeSlots;
+    //std::set<uint32_t> mustChangeSlots;
 
     Json::Value jAuthenticatedSchemes = Json::arrayValue;
     //Json::Value jAuthenticatedApps = Json::arrayValue;
