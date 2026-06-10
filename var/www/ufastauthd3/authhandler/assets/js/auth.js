@@ -7,11 +7,11 @@
  * - sessionTimeout: Stores the ID of the setTimeout function used to manage session countdown.
  */
 
-//<%jvar/maxAge:maxAge%>//
-//<%jvar/user:user%>//
-//<%jvar/domain:domain%>//
+//<%jvar/ufad3_maxAge:maxAge%>//
+//<%jvar/ufad3_user:user%>//
+//<%jvar/ufad3_domain:domain%>//
 
-let maxAgeVar = maxAge;
+let maxAgeVar = ufad3_maxAge;
 let sessionTimeout = null;
 
 function updateSessionFailed() {

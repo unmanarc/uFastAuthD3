@@ -29,6 +29,7 @@ function initializeAuthentication(username) {
 
             currentScheme = response.availableSchemes[defaultSchemeIndex];
             currentSlot = currentScheme.firstSlot;
+            transientToken = null;
 
             $("#schemeDescription").text(currentScheme.description + " Authentication");
             $("#currentSchemeId").val(defaultSchemeIndex);
@@ -42,7 +43,7 @@ function initializeAuthentication(username) {
  * Handle authorize/changeCredential response
  */
 function handleAuthorizeResponse(response) {
-    if (response.changeCredential === false) {
+    if (response.mustChangeCredential === false) {
         cachedLastAuthorizeResponse = null;
         if (response.nextSlot === null) {
             loggedIn = true;
@@ -52,9 +53,11 @@ function handleAuthorizeResponse(response) {
             currentSlot = response.nextSlot;
             showNextSlot();
         }
-    } else if (response.changeCredential === true) {
+    } else if (response.mustChangeCredential === true) {
         cachedLastAuthorizeResponse = response;
-        cachedLastAuthorizeResponse.changeCredential = false;
+        cachedLastAuthorizeResponse.mustChangeCredential = false;
+        // Store canSkipPasswordChange from response
+        window.canSkipPasswordChange = (response.canSkipPasswordChange === true);
         // This credential that has just been authenticated, NEEDS to be changed.
         // don´t go to the next slot.
         var pwFunc = currentSlot.details.passwordFunction;

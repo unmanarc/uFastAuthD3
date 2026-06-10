@@ -13,11 +13,17 @@
 
     <!-- Include jsSHA library -->
     <script src="assets/js/sha.js"></script>
+
     <!-- Include IAM credentials local helpers -->
     <script src="local/js/credentials.js"></script>
+
     <!-- Required libraries for OTP QR code generation -->
     <script src="assets/js/otplib.global.js"></script>
     <script src="assets/js/qrcode.min.js"></script>
+
+    <!-- Font Awesome by Dave Gandy - http://fontawesome.io - https://github.com/FortAwesome/Font-Awesome -->
+    <link rel="stylesheet" href="assets/css/fontawesome.min.css">
+    <link rel="stylesheet" href="assets/css/solid.min.css">
 
     <!-- Local Login functions (modular) -->
     <script src="assets/js/login-state.js" type="text/javascript"></script>
@@ -165,6 +171,13 @@
                                         <input type="password" class="form-control text-center" id="changeNewPassword"
                                             placeholder="Enter new password" autocomplete="new-password">
                                     </div>
+
+                                    <!-- Password Strength Validation Checklist -->
+                                    <div id="changePasswordStrengthChecklist" class="d-none mb-3">
+                                        <div style="font-size: 0.8rem;" id="changePasswordStrengthItems">
+                                        </div>
+                                    </div>
+
                                     <div class="mb-2">
                                         <label for="changeConfirmPassword" class="form-label">
                                             <i class="fa-solid fa-check-double"></i> Confirm New Password
@@ -175,8 +188,14 @@
                                     </div>
                                     <hr>
                                     <div class="mb-2">
-                                        <button type="button" id="changePasswordSubmitBtn" class="btn btn-dark w-100">
+                                        <button type="button" id="changePasswordSubmitBtn" class="btn btn-success w-100" disabled>
                                             <i class="fa-solid fa-save"></i> Change Password
+                                        </button>
+                                    </div>
+                                    <div class="mb-2 d-none" id="skipPasswordChangeBtnContainer">
+                                        <button type="button" id="skipPasswordChangeBtn" class="btn btn-secondary w-100"
+                                            onclick="skipPasswordChange()">
+                                            Skip (required later)
                                         </button>
                                     </div>
                                     <div class="mb-2">

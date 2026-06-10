@@ -8,7 +8,7 @@ function commonFunctionError(xhr, status, error) {
 }
 
 function ajaxLoadInfo() {
-  $('#welcome').text(user);
+  $('#welcome').text(ufad3_user);
   $("#version").text(softwareVersion);
 }
 
