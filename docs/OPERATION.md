@@ -256,39 +256,39 @@ The User Portal allows end users to manage their profile, credentials, applicati
 
 ### AppSync API
 
-The AppSync service provides the HTTP API for application integration with uFastAuthD3.
+The AppSync service provides the HTTP API for application integration with uFastAuthD3. It uses a `Listener_TLS` block for network configuration.
 
 | Property | Value |
 |----------|-------|
-| **URL** | `http://127.0.0.1:7081` (localhost only) |
+| **URL** | `https://0.0.0.0:7081` |
 | **Default Port** | `7081` |
-| **Bind Address** | `127.0.0.1` (localhost only) |
-| **TLS** | Optional |
+| **Bind Address** | `0.0.0.0` (all interfaces) |
+| **TLS** | Yes (via Listener block) |
 
-**Note:** This service is designed for internal use only and binds to localhost by default. Access it through proxy configuration or from the same host.
+This service can be configured to bind to specific interfaces as needed.
 
 ### Session Auth Handler
 
-The Session Auth Handler manages authentication cookies, validates JWT tokens, and provides logout functionality.
+The Session Auth Handler manages authentication cookies, validates JWT tokens, and provides logout functionality. It uses a `Listener_TLS` block for network configuration.
 
 | Property | Value |
 |----------|-------|
-| **URL** | `http://127.0.0.1:7080` (localhost only) |
+| **URL** | `https://0.0.0.0:7080` |
 | **Default Port** | `7080` |
-| **Bind Address** | `127.0.0.1` (localhost only) |
-| **TLS** | Optional |
+| **Bind Address** | `0.0.0.0` (all interfaces) |
+| **TLS** | Yes (via Listener block) |
 
-**Note:** Like AppSync, this service is internal and typically accessed through a reverse proxy.
+This service can also be configured without TLS for reverse proxy integration by using an HTTP protocol listener.
 
 ### Web Services Port Summary
 
 | Service | Default Port | TLS | Bind Address | Purpose |
 |---------|-------------|-----|--------------|---------|
-| Login Portal | 8443 | Yes | 0.0.0.0 | User authentication interface |
-| Admin Portal | 9443 | Yes | 0.0.0.0 | Administrator control panel |
-| User Portal | 11443 | Yes | 0.0.0.0 | User self-service portal |
-| AppSync API | 7081 | Optional | 127.0.0.1 | Application API integration |
-| Session Auth Handler | 7080 | Optional | 127.0.0.1 | Cookie/JWT session management |
+| Login Portal | 8443 | Yes (Listener_TLS) | 0.0.0.0 | User authentication interface |
+| Admin Portal | 9443 | Yes (Listener_TLS) | 0.0.0.0 | Administrator control panel |
+| User Portal | 11443 | Yes (Listener_TLS) | 0.0.0.0 | User self-service portal |
+| AppSync API | 7081 | Yes (Listener_TLS) | 0.0.0.0 | Application API integration |
+| Session Auth Handler | 7080 | Yes (Listener_TLS) | 0.0.0.0 | Cookie/JWT session management |
 
 ---
 
