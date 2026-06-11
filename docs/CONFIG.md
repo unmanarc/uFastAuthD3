@@ -129,25 +129,75 @@ Configures the identity management backend database connection.
 
 Each web service has its own configuration file with a dedicated section block. All services share common configuration patterns.
 
+### Listener-Based Architecture
+
+Web services use a **listener-based configuration model**, where network listening parameters (port, address, protocol, TLS) are encapsulated in named `Listener` blocks. This architecture provides the following benefits:
+
+- **Multi-listener support** — A single service can listen on multiple interfaces/protocols simultaneously (e.g., one TLS listener on `0.0.0.0:8443` and one plain listener on `127.0.0.1:8080`)
+- **Per-listener isolation** — Each listener can have its own TLS certificate, protocol, and bind address
+- **Cleaner configuration** — Network settings are grouped logically rather than scattered across the service block
+
 ### Common Configuration Sections
 
 The following sections are available across all web service configurations.
 
-#### General Settings
+#### Listener Block
+
+Each service defines one or more listener blocks. A listener encapsulates all network-facing configuration:
+
+```ini
+ServiceName {
+    Listener_TLS {
+        ListenPort 8443
+        ListenAddr "0.0.0.0"
+        UseIPv6 false
+        Protocol TLS
+        TLS {
+            CertFile "etc/ufastauthd3/tls/snakeoil.crt"
+            KeyFile  "etc/ufastauthd3/tls/snakeoil.key"
+        }
+    }
+}
+```
 
 | Parameter | Description | Example Values |
 |-----------|-------------|----------------|
-| `ListenPort` | Port number the service listens on | `8443`, `9443`, `7080` |
-| `ListenAddr` | Bind address for the service | `"0.0.0.0"` (all interfaces), `"127.0.0.1"` (localhost) |
-| `UseIPv6` | Enable IPv6 support | `true`, `false` |
-| `ResourcesPath` | Path to static web resources | `"/var/www/ufastauthd3/portals/login"` |
+| `Listener_<name>` | Named listener block (e.g., `Listener_TLS`, `Listener_PLAIN`) | Any descriptive name |
+| `ListenPort` | Port number this listener binds to | `8443`, `9443`, `7080` |
+| `ListenAddr` | Bind address for this listener | `"0.0.0.0"` (all interfaces), `"127.0.0.1"` (localhost) |
+| `UseIPv6` | Enable IPv6 for this listener | `true`, `false` |
+| `Protocol` | Protocol used by this listener | `TLS`, `HTTP` |
+| `TLS { }` | TLS certificate configuration for this listener | See TLS Configuration below |
 
-#### TLS Configuration
+##### Multiple Listeners Example
 
-Secures the web service with SSL/TLS encryption.
+A service can define multiple listeners to serve on different endpoints:
 
 ```ini
-UseTLS true
+ServiceName {
+    Listener_TLS {
+        ListenPort 8443
+        ListenAddr "0.0.0.0"
+        Protocol TLS
+        TLS {
+            CertFile "etc/ufastauthd3/tls/server.crt"
+            KeyFile  "etc/ufastauthd3/tls/server.key"
+        }
+    }
+
+    Listener_PLAIN {
+        ListenPort 8080
+        ListenAddr "127.0.0.1"
+        Protocol HTTP
+    }
+}
+```
+
+#### TLS Configuration (inside Listener Block)
+
+TLS settings are defined inside each listener block that uses the `TLS` protocol:
+
+```ini
 TLS {
     CertFile "etc/ufastauthd3/tls/snakeoil.crt"
     KeyFile  "etc/ufastauthd3/tls/snakeoil.key"
@@ -156,15 +206,22 @@ TLS {
 
 | Parameter | Description | Example |
 |-----------|-------------|---------|
-| `UseTLS` | Enable TLS encryption | `true`, `false` |
 | `CertFile` | Path to the public certificate (PEM format) | `"etc/ufastauthd3/tls/snakeoil.crt"` |
 | `KeyFile` | Path to the private key (PEM format) | `"etc/ufastauthd3/tls/snakeoil.key"` |
 
 **Security Note:** The private key file should have restricted permissions (`0600`) to prevent unauthorized access.
 
+#### Service-Level Settings
+
+Settings that apply to the service as a whole (outside of listener blocks):
+
+| Parameter | Description | Example |
+|-----------|-------------|---------|
+| `ResourcesPath` | Path to static web resources | `"var/www/ufastauthd3/portals/login"` |
+
 #### Thread Pool Configuration
 
-Controls concurrency and threading behavior.
+Controls concurrency and threading behavior. Defined at the service level (outside listener blocks).
 
 ```ini
 Threads {
@@ -189,11 +246,11 @@ Threads {
 
 #### Logs Configuration
 
-Configures per-service file logging with rotation support.
+Configures per-service file logging with rotation support. Defined at the service level (outside listener blocks).
 
 ```ini
 Logs {
-    Dir "/var/log/ufastauthd3"
+    Dir "var/log/ufastauthd3"
     CreateDir "true"
     File "web_loginportal.log"
     MaxFileSize "10mb"
@@ -217,7 +274,7 @@ Logs {
 
 | Parameter | Description | Default | Values |
 |-----------|-------------|---------|--------|
-| `Dir` | Log file directory | `"/var/log/ufastauthd3"` | Path |
+| `Dir` | Log file directory | `"var/log/ufastauthd3"` | Path |
 | `CreateDir` | Auto-create log directory | `"true"` | `"true"`, `"false"` |
 | `File` | Log filename | Service-specific | String |
 | `MaxFileSize` | Max log size before rotation | `"10mb"` | Size (e.g., "1Kb", "10Mb", "1Gb") |
@@ -262,14 +319,16 @@ RotateSchedule {
 
 The AppSync service provides the HTTP API for application integration with uFastAuthD3. It handles token validation, session management, and authentication operations for registered applications.
 
+Uses a `Listener_TLS` block for TLS-encrypted API connections.
+
 | Setting | Default Value | Notes |
 |---------|---------------|-------|
-| `ListenPort` | `7081` | Non-TLS port |
-| `ListenAddr` | `"127.0.0.1"` | Localhost only (internal service) |
-| `UseTLS` | `true` | TLS enabled (port becomes 7081s) |
-| `ResourcesPath` | `"/var/www/ufastauthd3/appsync"` | Static resources |
+| Listener `ListenPort` | `7081` | TLS port |
+| Listener `ListenAddr` | `"0.0.0.0"` | All interfaces |
+| Listener `Protocol` | `TLS` | TLS enabled |
+| `ResourcesPath` | `"var/www/ufastauthd3/appsync"` | Static resources |
 
-This service is designed to be accessed internally by other services and proxy configurations. By default, it binds to localhost only.
+This service is designed to be accessed internally by other services and proxy configurations.
 
 ---
 
@@ -280,12 +339,14 @@ This service is designed to be accessed internally by other services and proxy c
 
 The Session Auth Handler is a shared authentication module that can be embedded in applications. It manages authentication cookies, validates JWT tokens, and provides logout functionality.
 
+Uses a `Listener_TLS` block for TLS-encrypted connections (can be configured without TLS for reverse proxy integration).
+
 | Setting | Default Value | Notes |
 |---------|---------------|-------|
-| `ListenPort` | `7080` | Non-TLS (designed for proxy integration) |
-| `ListenAddr` | `"127.0.0.1"` | Localhost only |
-| `UseTLS` | `false` | TLS typically handled by reverse proxy |
-| `ResourcesPath` | `"/var/www/ufastauthd3/authhandler"` | Static resources |
+| Listener `ListenPort` | `7080` | TLS port |
+| Listener `ListenAddr` | `"0.0.0.0"` | All interfaces |
+| Listener `Protocol` | `TLS` | TLS enabled |
+| `ResourcesPath` | `"var/www/ufastauthd3/authhandler"` | Static resources |
 
 #### Additional Settings
 
@@ -308,12 +369,14 @@ Login {
 
 The Login Portal is the primary authentication interface where users log in, register, and manage their session tokens.
 
+Uses a `Listener_TLS` block for secure HTTPS connections.
+
 | Setting | Default Value | Notes |
 |---------|---------------|-------|
-| `ListenPort` | `8443` | HTTPS port |
-| `ListenAddr` | `"0.0.0.0"` | All interfaces (public-facing) |
-| `UseTLS` | `true` | TLS required for authentication |
-| `ResourcesPath` | `"/var/www/ufastauthd3/portals/login"` | Portal frontend |
+| Listener `ListenPort` | `8443` | HTTPS port |
+| Listener `ListenAddr` | `"0.0.0.0"` | All interfaces (public-facing) |
+| Listener `Protocol` | `TLS` | TLS required for authentication |
+| `ResourcesPath` | `"var/www/ufastauthd3/portals/login"` | Portal frontend |
 
 #### Overlapped Directories
 
@@ -397,12 +460,14 @@ Registration {
 
 The Admin Portal provides system administrators with full control over the IAM system: user management, application configuration, security settings, and monitoring.
 
+Uses a `Listener_TLS` block for secure HTTPS connections.
+
 | Setting | Default Value | Notes |
 |---------|---------------|-------|
-| `ListenPort` | `9443` | HTTPS port |
-| `ListenAddr` | `"0.0.0.0"` | All interfaces |
-| `UseTLS` | `true` | TLS required |
-| `ResourcesPath` | `"/var/www/ufastauthd3/portals/admin"` | Portal frontend |
+| Listener `ListenPort` | `9443` | HTTPS port |
+| Listener `ListenAddr` | `"0.0.0.0"` | All interfaces |
+| Listener `Protocol` | `TLS` | TLS required |
+| `ResourcesPath` | `"var/www/ufastauthd3/portals/admin"` | Portal frontend |
 
 #### HTTP Proxy Configuration
 
@@ -473,12 +538,14 @@ The Admin Portal supports two redirection formats:
 
 The User Portal allows end users to manage their profile, credentials, application access, and session information.
 
+Uses a `Listener_TLS` block for secure HTTPS connections.
+
 | Setting | Default Value | Notes |
 |---------|---------------|-------|
-| `ListenPort` | `11443` | HTTPS port |
-| `ListenAddr` | `"0.0.0.0"` | All interfaces |
-| `UseTLS` | `true` | TLS required |
-| `ResourcesPath` | `"/var/www/ufastauthd3/portals/user"` | Portal frontend |
+| Listener `ListenPort` | `11443` | HTTPS port |
+| Listener `ListenAddr` | `"0.0.0.0"` | All interfaces |
+| Listener `Protocol` | `TLS` | TLS required |
+| `ResourcesPath` | `"var/www/ufastauthd3/portals/user"` | Portal frontend |
 
 The User Portal uses the same configuration structure as the Admin Portal (Proxies, Redirections, OverlappedDirectories) but with User Portal-specific settings:
 
