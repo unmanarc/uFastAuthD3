@@ -21,31 +21,6 @@
 
 ---
 
-## Admin Account Inactivity Policy
-
-Admin accounts are **exempt from inactivity-based deactivation**. Unlike regular user accounts, admin accounts will never be automatically disabled or flagged as inactive due to prolonged periods of non-use.
-
-### Rationale
-
-This policy is based on the following considerations:
-
-1.  **Low Usage Frequency:** Admin accounts are inherently used less frequently than regular user accounts. Administrative tasks are typically performed on an as-needed basis, which can result in long periods between logins.
-2.  **High Sensitivity:** Admin accounts have elevated privileges and provide access to critical system functions. If an admin account were to be deactivated due to inactivity, it could create a higher-risk scenario than the inactivity itself—for example, preventing administrators from logging in and performing urgent maintenance, responding to security incidents, or managing system configuration.
-3.  **Operational Continuity:** Ensuring that admin accounts remain accessible at all times is critical for operational continuity. An unexpectedly locked admin account could delay critical interventions and exacerbate system issues.
-
-### Admin Responsibility
-
-While admin accounts are protected from automatic deactivation, this exemption places additional responsibility on administrators:
-
-*   **Regular Access Verification:** Administrators should periodically verify that their admin credentials remain functional and accessible.
-*   **Secure Credential Management:** Admin credentials must be stored securely and protected from unauthorized access, even during periods of non-use.
-*   **Prompt Response to Security Events:** Administrators remain responsible for monitoring and responding to security events related to their admin accounts, regardless of usage frequency.
-*   **Awareness of Access Status:** Administrators should be aware of the current status of their admin accounts and take immediate action if any suspicious activity is detected.
-
-> **Note:** The system provides the infrastructure to keep admin accounts accessible; the administrator is responsible for maintaining proper care and security awareness regarding their admin accounts.
-
----
-
 ## IAM Providers (IAM Responsibility vs. Role Separation)
 
 This application is designed for real-world deployment conditions rather than idealized scenarios. In practice, software development often faces the following constraints:
@@ -231,3 +206,29 @@ Administrators and users are encouraged to:
 *   Always use the provided GUI interfaces for password changes, which enforce strength validation and old-password confirmation.
 *   Be aware that direct API manipulation of password hashes is possible but unsupported and carries self-inflicted risk.
 *   Monitor for unusually weak password patterns if audit capabilities are enabled, as an indicator of potential misuse.
+
+---
+
+## Admin Account Inactivity Policy
+
+Admin accounts are **exempt from inactivity-based deactivation**. Unlike regular user accounts, admin accounts will never be automatically disabled or flagged as inactive due to prolonged periods of non-use.
+
+### Rationale
+
+This policy is based on the following considerations:
+
+1.  **Low Usage Frequency:** Admin accounts are inherently used less frequently than regular user accounts. Administrative tasks are typically performed on an as-needed basis, which can result in long periods between logins.
+2.  **High Sensitivity:** Admin accounts have elevated privileges and provide access to critical system functions. If an admin account were to be deactivated due to inactivity, it could create a higher-risk scenario than the inactivity itself—for example, preventing administrators from logging in and performing urgent maintenance, responding to security incidents, or managing system configuration.
+3.  **Operational Continuity:** Ensuring that admin accounts remain accessible at all times is critical for operational continuity. An unexpectedly locked admin account could delay critical interventions and exacerbate system issues.
+
+### Admin Responsibility
+
+While admin accounts are protected from automatic deactivation, this exemption places additional responsibility on administrators:
+
+*   **Regular Access Verification:** Administrators should periodically verify that their admin credentials remain functional and accessible.
+*   **Secure Credential Management:** Admin credentials must be stored securely and protected from unauthorized access, even during periods of non-use.
+*   **Prompt Response to Security Events:** Administrators remain responsible for monitoring and responding to security events related to their admin accounts, regardless of usage frequency.
+*   **Awareness of Access Status:** Administrators should be aware of the current status of their admin accounts and take immediate action if any suspicious activity is detected.
+
+> **Note:** The system provides the infrastructure to keep admin accounts accessible; the administrator is responsible for maintaining proper care and security awareness regarding their admin accounts.
+
