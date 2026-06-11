@@ -135,7 +135,7 @@ AuthenticationResult IdentityManager::AuthController::authenticateCredential(con
             else if (m_parent->accounts->isAccountExpired(accountName))
                 return AuthenticationResult::EXPIRED_ACCOUNT;
 
-            else if (lastLogin->first + m_authenticationPolicy.abandonedAccountExpirationSeconds < time(nullptr))
+            else if (!flags.admin && lastLogin->first + m_authenticationPolicy.abandonedAccountExpirationSeconds < time(nullptr))
                 return AuthenticationResult::INACTIVE_ACCOUNT;
 
             else if ( pStoredCredentialData.hasExceededMaxAttempts(m_authenticationPolicy) )
