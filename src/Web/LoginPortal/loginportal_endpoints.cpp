@@ -14,7 +14,6 @@
 #include <string>
 
 #include "globals.h"
-#include "logindirectorymanager.h"
 
 using namespace Mantids30;
 using namespace Mantids30::Program;
