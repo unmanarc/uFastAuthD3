@@ -37,8 +37,8 @@ public:
     static LoginDirectoryManager *getLoginDirManager();
     static void setLoginDirManager(LoginDirectoryManager *newLoginDirManager);
 
-    static Mantids30::Network::Servers::Web::APIEngineCore *getWebLoginServer();
-    static void setWebLoginServer(Mantids30::Network::Servers::Web::APIEngineCore *newWebLoginServer);
+    static Mantids30::Network::Servers::Web::APIServerCore *getWebLoginServer();
+    static void setWebLoginServer(Mantids30::Network::Servers::Web::APIServerCore *newWebLoginServer);
 /*
     static Mantids30::Network::Protocols::FastRPC::FastRPC1 *getFastRPC();
     static void setFastRPC(Mantids30::Network::Protocols::FastRPC::FastRPC1 *newFastRPC);
@@ -51,6 +51,6 @@ private:
     static bool resetAdminPasswd;
     static LoginDirectoryManager *loginDirManager;
     static IdentityManager *identityManager;
-    static Mantids30::Network::Servers::Web::APIEngineCore *webLoginServer;
+    static Mantids30::Network::Servers::Web::APIServerCore *webLoginServer;
 //    static Mantids30::Network::Protocols::FastRPC::FastRPC1 *fastRPC;
 };

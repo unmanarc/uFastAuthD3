@@ -6,7 +6,7 @@ std::shared_ptr<Mantids30::Program::Logs::AppLog> Globals::appLog = nullptr;
 std::shared_ptr<Mantids30::Program::Logs::RPCLog> Globals::rpcLog = nullptr;
 boost::property_tree::ptree Globals::pConfig;
 bool Globals::resetAdminPasswd = false;
-Mantids30::Network::Servers::Web::APIEngineCore *Globals::webLoginServer = nullptr;
+Mantids30::Network::Servers::Web::APIServerCore *Globals::webLoginServer = nullptr;
 
 IdentityManager *Globals::getIdentityManager()
 {
@@ -38,12 +38,12 @@ void Globals::setLoginDirManager(LoginDirectoryManager *newLoginDirManager)
     loginDirManager = newLoginDirManager;
 }
 
-Mantids30::Network::Servers::Web::APIEngineCore *Globals::getWebLoginServer()
+Mantids30::Network::Servers::Web::APIServerCore *Globals::getWebLoginServer()
 {
     return webLoginServer;
 }
 
-void Globals::setWebLoginServer(Mantids30::Network::Servers::Web::APIEngineCore *newWebLoginServer)
+void Globals::setWebLoginServer(Mantids30::Network::Servers::Web::APIServerCore *newWebLoginServer)
 {
     webLoginServer = newWebLoginServer;
 }
