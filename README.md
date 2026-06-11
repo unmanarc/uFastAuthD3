@@ -15,9 +15,10 @@ A lightweight **Identity and Access Management (IAM)** system designed for secur
 - [✨ Overview](#-overview)
 - [🚀 Key Features](#-key-features)
 - [🏗️ Architecture & Components](#️-architecture--components)
-- [⚙️ System Requirements](#️-system-requirements)
-- [🔧 Installation & Build](#-installation--build)
+- [📦 Build & Installation](#-build--installation)
+- [🚀 Initial Setup](#-initial-setup)
 - [📁 Configuration](#-configuration)
+- [🔒 Certificate Management](#-certificate-management)
 - [🌐 Web Portals](#-web-portals)
 - [🔐 Security](#-security)
 - [🏃 Running the Service](#-running-the-service)
@@ -60,303 +61,64 @@ The architecture is designed to minimize token consumption while preserving full
 
 ## 🏗️ Architecture & Components
 
-### 📁 IdentityManager
-
-The core identity management module responsible for:
-
-- SQLite3 database management and schema handling
-- Thread-safe database access using read-write mutexes
-- Account, application, credential, and session management
-- Authentication scheme configuration
-- Security event logging
-
-**Key modules:**
-- `identitymanager_db.cpp` — Database operations
-- `identitymanager_accounts.cpp` — Account CRUD operations
-- `identitymanager_authentication.cpp` — Authentication workflows
-- `credentialvalidator.cpp` — Credential validation logic
-- `domains.cpp` — Domain management
-
-### 🌐 Web Services
-
-Each web service runs on a dedicated port and handles a specific aspect of the IAM system:
-
-#### 🧑‍💼 AdminPortal
-Administrative web interface for managing:
-- User accounts and credentials
-- Applications, roles, and scopes
-- Authentication schemes and slots
-- System settings
-
-#### 🔐 LoginPortal
-Unified login portal providing:
-- Single Sign-On (SSO) for all registered applications
-- Access token and refresh token generation
-- Token injection into target applications
-- User registration and authorization flows
-
-#### 👤 UserPortal
-Self-service portal allowing users to:
-- View and update personal account information
-- Manage credentials and security settings
-- View associated applications
-- Dashboard with account overview
-
-#### 🔄 AppSync
-Direct HTTP API for application integration:
-- Update access control attributes
-- Receive and validate authentication tokens
-- Retrieve account lists associated with the application
-- Synchronize application state
-
-#### 🛡️ SessionAuthHandler
-Proxy-based service for session management:
-- Token refresh via cookies
-- Logout and cookie cleanup
-- Generic callback for token injection into applications
-- No additional coding required on the application side
-
-#### 🎫 Tokens Manager
-JWT token lifecycle management:
-- Access token generation and validation
-- Refresh token handling
-- Token expiration and revocation
+For a detailed overview of the system architecture, including backend modules, web services, database structure, and endpoint configuration, see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ---
 
-## ⚙️ System Requirements
+## 📦 Build & Installation
 
-### Operating System
-- systemd-enabled Linux distribution (Ubuntu, CentOS, Fedora, Debian, etc.)
-
-### Compiler
-- GCC or Clang with **C++20** support
-
-### Build Dependencies
-- **CMake** >= 3.12
-- **libMantids30** (development and SQLite packages)
-- **SQLite3** (development headers)
-- **OpenSSL** (development headers)
-- **jsoncpp** (development headers)
-- **Boost** (regex, thread components)
-- **pthread**
-- **zlib** (development headers)
-
-### Runtime Dependencies
-- systemd (service management)
-- libMantids30 runtime libraries
-- OpenSSL runtime libraries
+For detailed build and installation instructions, see [docs/BUILD.md](docs/BUILD.md).
 
 ---
 
-## 🔧 Installation & Build
+## 🚀 Initial Setup
 
-### Step 1: Install Prerequisites
+For a complete, step-by-step guide to configuring uFastAuthD3 for the first time, see **[docs/INIT.md](docs/INIT.md)**. This guide covers:
 
-**Debian/Ubuntu:**
-```bash
-sudo apt-get install build-essential cmake libsqlite3-dev libssl-dev libjsoncpp-dev libboost-dev libboost-regex-dev libboost-thread-dev zlib1g-dev pkg-config
-```
+- Configuring `/etc/hosts` for local DNS resolution
+- Generating TLS/SSL certificates with Easy-RSA
+- Installing certificates and generating the JWT HMAC secret key
+- Configuring internal URLs across all configuration files
+- Creating required directories and enabling the systemd service
+- Firewall configuration
+- First service startup and retrieving the temporary super-user password
 
-**Red Hat/CentOS/Fedora:**
-```bash
-sudo yum install gcc-c++ cmake sqlite-devel openssl-devel jsoncpp-devel boost-devel zlib-devel pkg-config
-```
+---
 
-### Step 2: Clone and Build
+## 🔒 Certificate Management
 
-```bash
-cd /root
-git clone https://github.com/unmanarc/uFastAuthD3
-cmake -B../builds/uFastAuthD3 ./uFastAuthD3 -DCMAKE_VERBOSE_MAKEFILE=ON
-cd ../builds/uFastAuthD3
-make -j12 install
-```
+For a comprehensive guide on X.509 certificate generation, renewal, revocation, and maintenance using Easy-RSA PKI, see **[docs/CERTIFICATES.md](docs/CERTIFICATES.md)**. This guide covers:
 
-### Step 3: Install Configuration Files
-
-```bash
-cp -a ~/uFastAuthD3/etc/ufastauthd3 /etc/
-chmod 600 /etc/ufastauthd3/snakeoil.key
-mkdir -p /var/www
-mkdir -p /var/lib/ufastauthd3
-rm -rf /var/www/ufastauthd3
-cp -a ~/uFastAuthD3/var/www/ufastauthd3 /var/www
-```
-
-> **⚠️ Security Alert:** Replace the default snakeoil X.509 certificates with your own production certificates. Failure to do so may allow communication to be eavesdropped or tampered with.
-
-### Step 4: Initialize the systemd Service
-
-```bash
-cat << 'EOF' | install -m 640 /dev/stdin /usr/lib/systemd/system/ufastauthd3.service
-[Unit]
-Description=Unmanarc Fast Authentication Daemon 3
-After=network.target
-
-[Service]
-Type=simple
-Restart=always
-RestartSec=1
-EnvironmentFile=/etc/default/ufastauthd3
-ExecStart=/usr/local/bin/uFastAuthD3
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
-cat << 'EOF' | install -m 640 /dev/stdin /etc/default/ufastauthd3
-LD_LIBRARY_PATH=/usr/local/lib:
-EOF
-
-systemctl daemon-reload
-systemctl enable --now ufastauthd3.service
-```
+- Building a local Certificate Authority (CA) with Easy-RSA
+- Generating server and client certificates
+- Installing certificates for uFastAuthD3
+- Certificate renewal and revocation procedures
+- Importing CA certificates into browser trust stores
+- Multi-server deployment strategies
 
 ---
 
 ## 📁 Configuration
 
-The main configuration file is located at `/etc/ufastauthd3/ufastauthd3.conf` and uses a modular include-based structure.
-
-### Main Configuration (`ufastauthd3.conf`)
-
-```ini
-; Logging Configuration
-Logs {
-    Debug "true"
-    ShowDate "true"
-    ShowColors "true"
-}
-
-; Authentication Backend
-Auth {
-    Driver "SQLite3"
-    IAMMainFile "var/lib/ufastauthd3/main.db"
-    IAMLogsFile "var/log/ufastauthd3/logs.db"
-    TerminateOnSQLError "true"
-}
-
-; Include Web Server Configurations
-#include "etc/ufastauthd3/web_appsync.conf"
-#include "etc/ufastauthd3/web_authhandler.conf"
-#include "etc/ufastauthd3/web_portal_login.conf"
-#include "etc/ufastauthd3/web_portal_admin.conf"
-#include "etc/ufastauthd3/web_portal_user.conf"
-```
-
-### Configuration Sections
-
-| Section | Description |
-|---------|-------------|
-| `Logs` | Controls logging behavior (debug mode, date display, colors) |
-| `Auth` | Database driver, main database path, log database path, error handling |
-| `Web Portals` | Individual configuration files for each web service (ports, TLS, paths) |
-
-### TLS Certificates
-
-Certificate files are stored in `/etc/ufastauthd3/tls/`:
-- `ca.crt` — Certificate Authority certificate
-- `snakeoil.crt` — Default server certificate (replace in production)
-- `snakeoil.key` — Default server private key (restrict permissions to 0600)
-
-### Command-Line Options
-
-| Flag | Option | Description | Default |
-|------|--------|-------------|---------|
-| `-c` | `config-dir` | Configuration directory path | `/etc/ufastauthd3` |
-| `-r` | `resetadmpw` | Reset administrator password on next start | `false` |
+uFastAuthD3 uses a modular configuration system with the main configuration file located at `/etc/ufastauthd3/ufastauthd3.conf`. For detailed configuration instructions, including all web service configurations, TLS setup, command-line options, best practices, and troubleshooting, see **[docs/CONFIG.md](docs/CONFIG.md)**.
 
 ---
 
 ## 🌐 Web Portals
 
-The web interface is served from `/var/www/ufastauthd3` and includes the following portals:
-
-### Admin Portal (`/portals/admin`)
-Full system administration interface with pages for:
-- Account management and field configuration
-- Application management
-- Authentication schemes and slots
-- System settings
-- Resource activity monitoring
-
-### Login Portal (`/portals/login`)
-Unified authentication entry point for all registered applications, supporting:
-- Username/password authentication
-- Token-based authorization
-- Single Sign-On (SSO) flow
-
-### User Portal (`/portals/user`)
-Self-service user interface with:
-- Dashboard overview
-- Profile management
-- Credential management
-- Associated applications view
-
-### Shared Resources
-- **`/global/`** — Shared assets (CSS, JS, images) for all portals
-- **`/authhandler/`** — Assets for token refresh and session management
-- **`/appsync/`** — AppSync API frontend resources
+For detailed information on the web portals (Admin, Login, User) and shared resources, see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) under the "Website Structure" section.
 
 ---
 
 ## 🔐 Security
 
-### SSL/TLS Encryption
-All web communications are encrypted using SSL/TLS. Production deployments MUST replace the default snakeoil certificates with valid certificates from a trusted Certificate Authority.
-
-### File Permissions
-Configuration files containing sensitive data are automatically secured:
-- `ufastauthd3.conf` permissions are enforced to `0600`
-- Private key files must be restricted to `0600`
-
-### Password Security
-- Upon first initialization, a super-user password is generated and stored in a temporary file (e.g., `/tmp/syspwd-98ZAisMO`)
-- **Login immediately** and change the default admin password
-- Passwords are hashed before storage in the database
-
-### Token Security
-- Short-lived access tokens minimize exposure window
-- Refresh tokens enable seamless session continuation
-- JWT cookies are used for secure client-side authentication
+For detailed security information including architecture design, cookie handling, AppSync API security, and password management policies, see [docs/SECURITY.md](docs/SECURITY.md).
 
 ---
 
 ## 🏃 Running the Service
 
-### Start the Service
-```bash
-systemctl start ufastauthd3.service
-```
-
-### Stop the Service
-```bash
-systemctl stop ufastauthd3.service
-```
-
-### Check Service Status
-```bash
-systemctl status ufastauthd3.service
-```
-
-### View Logs
-```bash
-journalctl -xefu ufastauthd3
-```
-
-### Initial Admin Login
-After the first startup, check the logs for the super-user password file path:
-```
-File '/tmp/syspwd-98ZAisMO' created with the super-user password. Login and change it immediately.
-```
-
-Access the login portal using your server's address:
-```
-https://<your-server-ip>:40443/login
-```
-
-Log in as `admin` with the password from the temporary file, then immediately change it through the admin portal.
+For detailed operational guidance including service management, logging, daily operations, maintenance tasks, and troubleshooting, see [docs/OPERATION.md](docs/OPERATION.md).
 
 ---
 
