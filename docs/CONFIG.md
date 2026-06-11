@@ -217,7 +217,7 @@ Settings that apply to the service as a whole (outside of listener blocks):
 
 | Parameter | Description | Example |
 |-----------|-------------|---------|
-| `ResourcesPath` | Path to static web resources | `"var/www/ufastauthd3/portals/login"` |
+| `ResourcesPath` | Path to static web resources | `"/var/www/ufastauthd3/portals/login"` |
 
 #### Thread Pool Configuration
 
@@ -250,7 +250,7 @@ Configures per-service file logging with rotation support. Defined at the servic
 
 ```ini
 Logs {
-    Dir "var/log/ufastauthd3"
+    Dir "/var/log/ufastauthd3"
     CreateDir "true"
     File "web_loginportal.log"
     MaxFileSize "10mb"
@@ -274,7 +274,7 @@ Logs {
 
 | Parameter | Description | Default | Values |
 |-----------|-------------|---------|--------|
-| `Dir` | Log file directory | `"var/log/ufastauthd3"` | Path |
+| `Dir` | Log file directory | `"/var/log/ufastauthd3"` | Path |
 | `CreateDir` | Auto-create log directory | `"true"` | `"true"`, `"false"` |
 | `File` | Log filename | Service-specific | String |
 | `MaxFileSize` | Max log size before rotation | `"10mb"` | Size (e.g., "1Kb", "10Mb", "1Gb") |
@@ -326,7 +326,7 @@ Uses a `Listener_TLS` block for TLS-encrypted API connections.
 | Listener `ListenPort` | `7081` | TLS port |
 | Listener `ListenAddr` | `"0.0.0.0"` | All interfaces |
 | Listener `Protocol` | `TLS` | TLS enabled |
-| `ResourcesPath` | `"var/www/ufastauthd3/appsync"` | Static resources |
+| `ResourcesPath` | `"/var/www/ufastauthd3/appsync"` | Static resources |
 
 This service is designed to be accessed internally by other services and proxy configurations.
 
@@ -346,7 +346,7 @@ Uses a `Listener_TLS` block for TLS-encrypted connections (can be configured wit
 | Listener `ListenPort` | `7080` | TLS port |
 | Listener `ListenAddr` | `"0.0.0.0"` | All interfaces |
 | Listener `Protocol` | `TLS` | TLS enabled |
-| `ResourcesPath` | `"var/www/ufastauthd3/authhandler"` | Static resources |
+| `ResourcesPath` | `"/var/www/ufastauthd3/authhandler"` | Static resources |
 
 #### Additional Settings
 
@@ -376,7 +376,7 @@ Uses a `Listener_TLS` block for secure HTTPS connections.
 | Listener `ListenPort` | `8443` | HTTPS port |
 | Listener `ListenAddr` | `"0.0.0.0"` | All interfaces (public-facing) |
 | Listener `Protocol` | `TLS` | TLS required for authentication |
-| `ResourcesPath` | `"var/www/ufastauthd3/portals/login"` | Portal frontend |
+| `ResourcesPath` | `"/var/www/ufastauthd3/portals/login"` | Portal frontend |
 
 #### Overlapped Directories
 
@@ -467,7 +467,7 @@ Uses a `Listener_TLS` block for secure HTTPS connections.
 | Listener `ListenPort` | `9443` | HTTPS port |
 | Listener `ListenAddr` | `"0.0.0.0"` | All interfaces |
 | Listener `Protocol` | `TLS` | TLS required |
-| `ResourcesPath` | `"var/www/ufastauthd3/portals/admin"` | Portal frontend |
+| `ResourcesPath` | `"/var/www/ufastauthd3/portals/admin"` | Portal frontend |
 
 #### HTTP Proxy Configuration
 
@@ -545,7 +545,7 @@ Uses a `Listener_TLS` block for secure HTTPS connections.
 | Listener `ListenPort` | `11443` | HTTPS port |
 | Listener `ListenAddr` | `"0.0.0.0"` | All interfaces |
 | Listener `Protocol` | `TLS` | TLS required |
-| `ResourcesPath` | `"var/www/ufastauthd3/portals/user"` | Portal frontend |
+| `ResourcesPath` | `"/var/www/ufastauthd3/portals/user"` | Portal frontend |
 
 The User Portal uses the same configuration structure as the Admin Portal (Proxies, Redirections, OverlappedDirectories) but with User Portal-specific settings:
 
