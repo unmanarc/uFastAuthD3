@@ -476,7 +476,7 @@ The Admin Portal proxies authentication requests to the Session Auth Handler:
 ```ini
 Proxies {
     "/auth" {
-        UseTLS false
+        UseTLS true
         RemoteHost "127.0.0.1"
         RemotePort 7080
         ExtraHeaders {
@@ -488,7 +488,7 @@ Proxies {
 
 | Parameter | Description | Example |
 |-----------|-------------|---------|
-| `UseTLS` | Use TLS for proxy connection | `false` |
+| `UseTLS` | Use TLS for proxy connection | `true` |
 | `RemoteHost` | Auth Handler host | `"127.0.0.1"` |
 | `RemotePort` | Auth Handler port | `7080` |
 | `ExtraHeaders` | Additional headers sent with proxy requests | `"x-api-key" "%APIKEY%"` |
@@ -497,16 +497,16 @@ Proxies {
 
 ```ini
 TLS {
-    CheckTLSPeer false
-    UsePrivateCA false
+    CheckTLSPeer true
+    UsePrivateCA true
     PrivateCAPath "/path/to/ca.pem"
 }
 ```
 
 | Parameter | Description | Default |
 |-----------|-------------|---------|
-| `CheckTLSPeer` | Validate remote TLS certificate | `false` |
-| `UsePrivateCA` | Use custom CA for validation | `false` |
+| `CheckTLSPeer` | Validate remote TLS certificate | `true` |
+| `UsePrivateCA` | Use custom CA for validation | `true` |
 | `PrivateCAPath` | Path to private CA certificate | - |
 
 #### Redirections
