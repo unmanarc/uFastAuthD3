@@ -85,19 +85,27 @@ The core identity management module responsible for:
 
 ### 📁 Web Services
 
-Each web service runs on a dedicated port and handles a specific aspect of the IAM system. All services use TLS encryption and are configured in separate configuration files under `etc/ufastauthd3/`.
+Each web service runs on a dedicated port (or multiple ports via multiple listeners) and handles a specific aspect of the IAM system. All services use TLS encryption and are configured in separate configuration files under `etc/ufastauthd3/`.
+
+#### Listener-Based Architecture
+
+Web services use a **listener-based configuration model** where network listening parameters are encapsulated in named `Listener` blocks within each service configuration. This provides:
+
+- **Multi-listener support** — A single service can listen on multiple interfaces/protocols simultaneously
+- **Per-listener isolation** — Each listener can have its own TLS certificate, protocol, and bind address
+- **Flexible deployment** — Services can expose both TLS and non-TLS endpoints, or bind to different network interfaces
 
 ---
 
 ## 🔌 Service Configuration Reference
 
-| Service | Config File | Port | Bind Address | Domain (example) | Base URL |
-|---------|-------------|------|--------------|------------------|----------|
-| **LoginPortal** | `web_portal_login.conf` | `8443` | `0.0.0.0` | `login.localhost` | `https://login.localhost:8443` |
-| **AdminPortal** | `web_portal_admin.conf` | `9443` | `0.0.0.0` | `iamadmin.localhost` | `https://iamadmin.localhost:9443` |
-| **UserPortal** | `web_portal_user.conf` | `11443` | `0.0.0.0` | `iamuser.localhost` | `https://iamuser.localhost:11443` |
-| **AppSync** | `web_appsync.conf` | `6080` | `0.0.0.0` | `appsync.localhost` | `https://appsync.localhost:6080` |
-| **SessionAuthHandler** | `web_authhandler.conf` | `7080` | `0.0.0.0` | `auth.localhost` | `https://auth.localhost:7080` |
+| Service | Config File | Listener Port | Bind Address | Domain (example) | Base URL |
+|---------|-------------|---------------|--------------|------------------|----------|
+| **LoginPortal** | `web_portal_login.conf` | `8443` (Listener_TLS) | `0.0.0.0` | `login.localhost` | `https://login.localhost:8443` |
+| **AdminPortal** | `web_portal_admin.conf` | `9443` (Listener_TLS) | `0.0.0.0` | `iamadmin.localhost` | `https://iamadmin.localhost:9443` |
+| **UserPortal** | `web_portal_user.conf` | `11443` (Listener_TLS) | `0.0.0.0` | `iamuser.localhost` | `https://iamuser.localhost:11443` |
+| **AppSync** | `web_appsync.conf` | `6080` (Listener_TLS) | `0.0.0.0` | `appsync.localhost` | `https://appsync.localhost:6080` |
+| **SessionAuthHandler** | `web_authhandler.conf` | `7080` (Listener_TLS) | `0.0.0.0` | `auth.localhost` | `https://auth.localhost:7080` |
 
 > **Note:** The domains above are example configurations using `.localhost` suffix for development. In production, replace with actual domain names and appropriate TLS certificates.
 
