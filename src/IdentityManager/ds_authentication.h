@@ -182,6 +182,11 @@ struct Credential
     bool hasExceededMaxAttempts(const AuthenticationPolicy &authPolicy) const { return (badAttempts + 1) >= authPolicy.maxTries; }
     bool isExpired() const { return (time(nullptr) > expirationTimestamp && expirationTimestamp != 0); }
 
+    void setExpirationTimeAutomatically()
+    {
+        expirationTimestamp = 1;
+    }
+
     bool isLocked = false;
     bool mustChange = true;
     uint32_t badAttempts = 0;

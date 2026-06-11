@@ -20,6 +20,9 @@ API::APIReturn LoginPortal_Endpoints::changeCredential(void *context, const Requ
     uint32_t slotId = JSON_ASUINT(*request.inputJSON, "slotId", 0);
     Credential newCredential = Credential::createFromJSON((*request.inputJSON)["newCredential"]);
 
+    // Set the expiration timestamp automatically on authController->changeAccountCredential
+    newCredential.setExpirationTimeAutomatically();
+
     // LOCAL CONTEXT:
     std::shared_ptr<TransientAuthenticationContext> authContext = std::make_shared<TransientAuthenticationContext>();
     std::string transientAuthTokenStr = request.clientRequest->getAuthorizationBearer();

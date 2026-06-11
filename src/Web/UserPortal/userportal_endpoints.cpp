@@ -70,7 +70,7 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::changeCredential(void *con
 
     Credential cred;
     cred.fromJSON((*request.inputJSON)["credential"]);
-    cred.expirationTimestamp = 1; // Default expiration timestamp.
+    cred.setExpirationTimeAutomatically();
 
     if (!Globals::getIdentityManager()->authController->changeAccountCredential(clientDetails,accountName, accountName, cred, slotId))
     {

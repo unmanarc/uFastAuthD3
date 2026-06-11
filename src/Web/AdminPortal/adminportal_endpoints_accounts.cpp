@@ -111,6 +111,8 @@ API::APIReturn AdminPortal_Endpoints_Accounts::addAccount(void *context, const R
         return response;
     }
 
+    newCredentialData.setExpirationTimeAutomatically();
+
     // Apply the credential to the new account
     if (!Globals::getIdentityManager()->authController->changeAccountCredential(authClientDetails, request.jwtToken->getSubject(),accountName, newCredentialData, slotId))
     {
