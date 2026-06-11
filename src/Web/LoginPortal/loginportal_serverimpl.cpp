@@ -54,7 +54,10 @@ bool LoginPortal_ServerImpl::createService()
 
     loginWebServer->startInBackground();
 
-    LOG_APP->log0(__func__, Logs::LEVEL_INFO, "Web Login Service Listening @%s", loginWebServer->getListenerSocket()->getLastBindAddress().c_str());
+    for (const auto & i : loginWebServer->getListenerSockets())
+    {
+        LOG_APP->log0(__func__, Logs::LEVEL_INFO, "Web Login Service Listening @%s", i->getLastBindAddress().c_str());
+    }
 
     return true;
 }

@@ -61,7 +61,10 @@ bool AdminPortal_ServerImpl::createService()
 
     adminPortalWebServer->startInBackground();
 
-    LOG_APP->log0(__func__, Logs::LEVEL_INFO, "IAM Admin Portal Web Server Listening @%s", adminPortalWebServer->getListenerSocket()->getLastBindAddress().c_str());
+    for (const auto & i : adminPortalWebServer->getListenerSockets())
+    {
+        LOG_APP->log0(__func__, Logs::LEVEL_INFO, "IAM Admin Portal Web Server Listening @%s", i->getLastBindAddress().c_str());
+    }
 
     return true;
 }

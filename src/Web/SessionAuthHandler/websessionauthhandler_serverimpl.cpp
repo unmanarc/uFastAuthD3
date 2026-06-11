@@ -106,7 +106,10 @@ bool WebSessionAuthHandler_ServerImpl::createService()
 
     webSessionAuthHandlerServer->startInBackground();
 
-    LOG_APP->log0(__func__, Logs::LEVEL_INFO, "Web Session Auth Handler Service Listening @%s", webSessionAuthHandlerServer->getListenerSocket()->getLastBindAddress().c_str());
+    for (const auto & i : webSessionAuthHandlerServer->getListenerSockets())
+    {
+        LOG_APP->log0(__func__, Logs::LEVEL_INFO, "Web Session Auth Handler Service Listening @%s", i->getLastBindAddress().c_str());
+    }
 
     return true;
 }

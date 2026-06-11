@@ -68,7 +68,10 @@ bool UserPortal_ServerImpl::createService()
 
     userPortalWebServer->startInBackground();
 
-    LOG_APP->log0(__func__, Logs::LEVEL_INFO, "IAM User Portal Web Server Listening @%s", userPortalWebServer->getListenerSocket()->getLastBindAddress().c_str());
+    for (const auto & i : userPortalWebServer->getListenerSockets())
+    {
+        LOG_APP->log0(__func__, Logs::LEVEL_INFO, "IAM User Portal Web Server Listening @%s", i->getLastBindAddress().c_str());
+    }
 
     return true;
 }
