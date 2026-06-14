@@ -712,7 +712,7 @@ bool IdentityManager_DB::Accounts_DB::changeAccountDetails(const ClientDetails &
     else
     {
         // Delete only specified fields for the account
-        for (const auto &field : fieldsValues)
+        for (const std::pair<std::string, std::string> &field : fieldsValues)
         {
             _parent->m_sqlConnector->qExecuteEx("DELETE FROM iam.accountDetailValues WHERE `f_accountName` = :accountName AND `f_fieldName` = :fieldName;",
                                                 {{":accountName", MAKE_VAR(STRING, accountName)}, {":fieldName", MAKE_VAR(STRING, field.first)}});
@@ -720,7 +720,7 @@ bool IdentityManager_DB::Accounts_DB::changeAccountDetails(const ClientDetails &
     }
 
     // Insert new values
-    for (const auto &field : fieldsValues)
+    for (const std::pair<std::string, std::string> &field : fieldsValues)
     {
         // Validate field value against regex from iam.accountDetailFields
         Abstract::STRING regex;
@@ -768,7 +768,7 @@ bool IdentityManager_DB::Accounts_DB::updateAccountDetailFieldValues(const Clien
     std::map<std::string, AccountDetailField> dbFieldsScheme = listAccountDetailFields();
 
     // TODO: log the field update operation.
-    for (const auto &inputFieldValue : inputFieldValues)
+    for (const AccountDetailFieldValue &inputFieldValue : inputFieldValues)
     {
         // Validate Regexp.
         if (dbFieldsScheme.find(inputFieldValue.name) != dbFieldsScheme.end())
@@ -818,7 +818,7 @@ bool IdentityManager_DB::Accounts_DB::updateAccountDetailFieldValues(const Clien
     {
         // Collect all editable field names for this account
         std::set<std::string> editableFields;
-        for (const auto &field : dbFieldsScheme)
+        for (const std::pair<std::string, AccountDetailField> &field : dbFieldsScheme)
         {
             if ((field.second.canUserEdit() && !isAdmin) || isAdmin)
             {
@@ -827,7 +827,7 @@ bool IdentityManager_DB::Accounts_DB::updateAccountDetailFieldValues(const Clien
         }
 
         // Delete every editable field from that user account.
-        for (const auto &fieldName : editableFields)
+        for (const std::string &fieldName : editableFields)
         {
             std::string sql = "DELETE FROM iam.accountDetailValues WHERE `f_accountName` = :account AND `f_fieldName` = :field;";
             std::map<std::string, std::shared_ptr<Mantids30::Memory::Abstract::Var>> params;
@@ -841,7 +841,7 @@ bool IdentityManager_DB::Accounts_DB::updateAccountDetailFieldValues(const Clien
     }
 
     // Insert all the fields to the database.
-    for (const auto &fieldValue : inputFieldValues)
+    for (const AccountDetailFieldValue &fieldValue : inputFieldValues)
     {
         if (fieldValue.value.has_value() && dbFieldsScheme.find(fieldValue.name) != dbFieldsScheme.end())
         {

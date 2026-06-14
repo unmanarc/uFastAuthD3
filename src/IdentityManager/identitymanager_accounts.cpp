@@ -18,7 +18,7 @@ bool IdentityManager::Accounts::isAccountExpired(const std::string &accountName)
 
 bool IdentityManager::Accounts::hasAdminAccount()
 {
-    auto accounts = listAccounts();
+    std::set<std::string> accounts = listAccounts();
     for (const std::string &account : accounts)
     {
         if (getAccountFlags(account).admin)

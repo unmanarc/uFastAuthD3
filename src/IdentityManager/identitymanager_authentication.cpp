@@ -532,7 +532,7 @@ std::optional<uint32_t> IdentityManager::AuthController::initializateDefaultPass
     *defaultPasswordSchemesExist = true;
 
     // Already initialized, return the first scheme with the description Simple Password Login
-    for (const auto &scheme : authSchemes)
+    for (const std::pair<const uint32_t, std::string> &scheme : authSchemes)
     {
         // Look for simple password login scheme:
         if (scheme.second == "Simple Password Login")

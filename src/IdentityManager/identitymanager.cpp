@@ -108,7 +108,7 @@ bool IdentityManager::Accounts::createAdminAccount(const std::string &accountNam
 std::shared_ptr<JWT> IdentityManager::Applications::getAppJWTValidator(const std::string &appName)
 {
     // Obtain data from the DB:
-    auto tokenProperties = getWebLoginJWTConfigFromApplication(appName);
+    ApplicationTokenProperties tokenProperties = getWebLoginJWTConfigFromApplication(appName);
     std::string validationKey = getWebLoginJWTValidationKeyForApplication(appName);
 
     if (tokenProperties.appName != appName)
@@ -131,7 +131,7 @@ std::shared_ptr<JWT> IdentityManager::Applications::getAppJWTValidator(const std
     }
 
     // Setup the JWT validator:
-    auto algorithmDetails = JWT::AlgorithmDetails(tokenProperties.signAlgorithm.c_str());
+    JWT::AlgorithmDetails algorithmDetails = JWT::AlgorithmDetails(tokenProperties.signAlgorithm.c_str());
     std::shared_ptr<JWT> jwtValidator = std::make_shared<JWT>(algorithmDetails.algorithm);
 
     if (algorithmDetails.isUsingHMAC)

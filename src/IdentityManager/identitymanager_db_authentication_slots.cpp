@@ -88,7 +88,7 @@ bool IdentityManager_DB::AuthController_DB::updateAuthenticationSlotDetails(cons
 std::map<uint32_t, AuthenticationSlotDetails> IdentityManager_DB::AuthController_DB::listAllAuthenticationSlots()
 {
     Threads::Sync::Lock_RD lock(_parent->m_mutex);
-    static auto parse = [](const char *json)
+    static std::function<Json::Value(const char *)> parse = [](const char *json)
     {
         Json::Value r;
         Json::Reader().parse(json, r);

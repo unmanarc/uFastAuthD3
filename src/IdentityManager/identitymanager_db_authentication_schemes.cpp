@@ -118,7 +118,7 @@ std::map<uint32_t, std::string> IdentityManager_DB::AuthController_DB::listAuthe
 std::vector<AuthenticationSchemeUsedSlot> IdentityManager_DB::AuthController_DB::listAuthenticationSlotsUsedByScheme(const uint32_t &schemeId)
 {
     std::vector<AuthenticationSchemeUsedSlot> slotsList;
-    auto allAuthSlots = listAllAuthenticationSlots();
+    std::map<uint32_t, AuthenticationSlotDetails> allAuthSlots = listAllAuthenticationSlots();
 
     // Acquire a read lock for thread-safe read operation
     Threads::Sync::Lock_RD lock(_parent->m_mutex);
@@ -165,7 +165,7 @@ bool IdentityManager_DB::AuthController_DB::updateAuthenticationSlotUsedByScheme
     }
 
     // Repopulate the table with new slots
-    for (const auto &slot : slotsUsedByScheme)
+    for (const AuthenticationSchemeUsedSlot &slot : slotsUsedByScheme)
     {
         std::string insertSql = "INSERT INTO `iam`.`authenticationSchemeUsedSlots` (`f_schemeId`, `f_slotId`, `orderPriority`, `optional`) VALUES (:schemeId, "
                                 ":slotId, :orderPriority, :optional);";

@@ -109,7 +109,7 @@ bool IdentityManager_DB::ApplicationActivities_DB::setApplicationActivities(cons
     }
 
     // Update or insert the activity...
-    for (const auto &activity : activities)
+    for (const std::pair<const std::string, ActivityData> &activity : activities)
     {
         if (currentActivities.find(activity.first) != currentActivities.end())
         {

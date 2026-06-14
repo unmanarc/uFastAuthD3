@@ -70,7 +70,7 @@ Credential IdentityManager_DB::AuthController_DB::retrieveAccountCredential(cons
     if (!*accountFound)
         return ret;
 
-    auto authSlots = listAllAuthenticationSlots();
+    std::map<uint32_t, AuthenticationSlotDetails> authSlots = listAllAuthenticationSlots();
 
     if (authSlots.find(slotId) != authSlots.end())
     {
@@ -209,11 +209,14 @@ std::map<uint32_t, std::pair<bool, Credential>> IdentityManager_DB::AuthControll
 
     // Get all authentication slots and configured slots.
     std::map<uint32_t, AuthenticationSlotDetails> allAuthSlots = listAllAuthenticationSlots();
-    auto configuredSlots = listUsedAuthenticationSlotsOnAccount(accountName);
+    std::set<uint32_t> configuredSlots = listUsedAuthenticationSlotsOnAccount(accountName);
 
     // For each authentication slot, create a public Credential entry
-    for (const auto &[id, slotDetails] : allAuthSlots)
+    for (const std::pair<const uint32_t, AuthenticationSlotDetails> &i : allAuthSlots)
     {
+        uint32_t id = i.first;
+        AuthenticationSlotDetails slotDetails = i.second;
+
         if (configuredSlots.find(id) != configuredSlots.end())
         {
             // Account has this slot configured - provide public info
@@ -256,7 +259,7 @@ bool IdentityManager_DB::AuthController_DB::doesCredentialSlotExistOnAccount(con
 bool IdentityManager_DB::AuthController_DB::changeAccountCredential(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountName, Credential passwordData,
                                                                     uint32_t slotId)
 {
-    auto authSlots = listAllAuthenticationSlots();
+    std::map<uint32_t, AuthenticationSlotDetails> authSlots = listAllAuthenticationSlots();
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
 
     if (authSlots.find(slotId) == authSlots.end())
@@ -302,7 +305,7 @@ bool IdentityManager_DB::AuthController_DB::changeAccountCredential(const Client
 bool IdentityManager_DB::AuthController_DB::activateAccountCredential(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountName, uint32_t slotId,
                                                                       const std::string &hash, const std::string &ssalt)
 {
-    auto authSlots = listAllAuthenticationSlots();
+    std::map<uint32_t, AuthenticationSlotDetails> authSlots = listAllAuthenticationSlots();
     // Validate slot exists
     if (authSlots.find(slotId) == authSlots.end())
     {
