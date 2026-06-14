@@ -8,11 +8,6 @@ boost::property_tree::ptree Globals::pConfig;
 bool Globals::resetAdminPasswd = false;
 Mantids30::Network::Servers::Web::APIServerCore *Globals::webLoginServer = nullptr;
 
-IdentityManager *Globals::getIdentityManager()
-{
-    return identityManager;
-}
-
 void Globals::setIdentityManager(IdentityManager *value)
 {
     identityManager = value;
