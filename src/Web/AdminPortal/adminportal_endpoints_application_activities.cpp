@@ -221,7 +221,7 @@ API::APIReturn AdminPortal_Endpoints_ApplicationActivities::getActivityInfo(void
 
     (*response.responseJSON())["details"] = activities[activityName].toJSON();
     (*response.responseJSON())["allActivities"] = Json::arrayValue;
-    for ( const auto & activity : activities )
+    for ( const std::pair<std::string, IdentityManager::ApplicationActivities::ActivityData> & activity : activities )
     {
         json jActivity;
         jActivity["name"] = activity.first;
@@ -237,12 +237,12 @@ API::APIReturn AdminPortal_Endpoints_ApplicationActivities::getActivityInfo(void
     (*response.responseJSON())["schemes"] = Json::arrayValue;
     (*response.responseJSON())["leftSchemes"] = Json::arrayValue;  
     
-    for ( const auto & scheme : allSchemes )
+    for ( const std::pair<uint32_t, std::string> & scheme : allSchemes )
     {
         json jScheme;
         jScheme["id"] = scheme.first;
         jScheme["name"] = scheme.second;
-        
+
         if ( authSchemes.find(scheme.first) != authSchemes.end() )
         {
             (*response.responseJSON())["schemes"].append(jScheme);
@@ -281,7 +281,7 @@ API::APIReturn AdminPortal_Endpoints_ApplicationActivities::listApplicationActiv
 
     int i=0;
     (*response.responseJSON()) = Json::arrayValue;
-    for ( const auto & activity : activities )
+    for ( const std::pair<std::string, IdentityManager::ApplicationActivities::ActivityData> & activity : activities )
     {
         (*response.responseJSON())[i] = activity.second.toJSON();
         (*response.responseJSON())[i]["name"] = activity.first;

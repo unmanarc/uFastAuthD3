@@ -238,14 +238,14 @@ API::APIReturn AdminPortal_Endpoints_Accounts::getAccountApplications(void *cont
         std::set<ApplicationRole> usedAppRoles = Globals::getIdentityManager()->accounts->getAccountApplicationRoles(applicationName,accountName);
 
         // Add used roles
-        for (const auto &role : usedAppRoles)
+        for (const ApplicationRole &role : usedAppRoles)
         {
             (*response.responseJSON())["applications"][i]["usedRoles"].append(role.toJSON());
         }
 
         // Add available roles (roles that can be added)
         std::set<ApplicationRole> availableRoles;
-        for (const auto &role : allAppRoles)
+        for (const ApplicationRole &role : allAppRoles)
         {
             if (usedAppRoles.find(role) == usedAppRoles.end())
             {
@@ -253,14 +253,14 @@ API::APIReturn AdminPortal_Endpoints_Accounts::getAccountApplications(void *cont
             }
         }
 
-        for (const auto &role : availableRoles)
+        for (const ApplicationRole &role : availableRoles)
         {
             (*response.responseJSON())["applications"][i]["availableRoles"].append(role.toJSON());
         }
 
 
         int j = 0;
-        for (const auto &directApplicationScope : directScopes)
+        for (const ApplicationScope &directApplicationScope : directScopes)
         {
             if (directApplicationScope.appName == applicationName)
             {
@@ -270,7 +270,7 @@ API::APIReturn AdminPortal_Endpoints_Accounts::getAccountApplications(void *cont
         }
 
         j = 0;
-        for (const auto &scope : Globals::getIdentityManager()->authController->listApplicationScopes(applicationName))
+        for (const ApplicationScope &scope : Globals::getIdentityManager()->authController->listApplicationScopes(applicationName))
         {
             if (directScopes.find(scope) == directScopes.end())
             {
@@ -280,7 +280,7 @@ API::APIReturn AdminPortal_Endpoints_Accounts::getAccountApplications(void *cont
         }
 
         j = 0;
-        for (const auto &usableScope : usableScopes)
+        for (const ApplicationScope &usableScope : usableScopes)
         {
             (*response.responseJSON())["applications"][i]["usableScopes"][j] = usableScope.toJSON();
             j++;
@@ -290,7 +290,7 @@ API::APIReturn AdminPortal_Endpoints_Accounts::getAccountApplications(void *cont
 
     i = 0;
 
-    for (const auto &applicationName : Globals::getIdentityManager()->applications->listApplications())
+    for (const std::string &applicationName : Globals::getIdentityManager()->applications->listApplications())
     {
         if (listAccountApplications.find(applicationName) == listAccountApplications.end())
         {
@@ -428,7 +428,7 @@ API::APIReturn AdminPortal_Endpoints_Accounts::getAccountDetailField(void *conte
         response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Field Name is Empty");
         return response;
     }
-    auto field = Globals::getIdentityManager()->accounts->getAccountDetailField(fieldName);
+    std::optional<AccountDetailField> field = Globals::getIdentityManager()->accounts->getAccountDetailField(fieldName);
     if (!field)
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "field_not_found", "Field not found");
@@ -453,7 +453,7 @@ API::APIReturn AdminPortal_Endpoints_Accounts::getAccountDetailFieldsValues(void
     std::map<std::string,AccountDetailFieldValue> fieldValues = Globals::getIdentityManager()->accounts->getAccountDetailFieldValues(accountName);
 
     Json::Value result(Json::arrayValue);
-    for (const auto &fieldValue : fieldValues)
+    for (const std::pair<std::string, AccountDetailFieldValue> &fieldValue : fieldValues)
     {
         result.append(fieldValue.second.toJSON());
     }

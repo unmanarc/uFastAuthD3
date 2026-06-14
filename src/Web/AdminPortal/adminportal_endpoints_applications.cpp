@@ -205,7 +205,7 @@ API::APIReturn AdminPortal_Endpoints_Applications::getApplicationInfo(void *cont
     payloadOut["scopes"] = Json::arrayValue;
     std::set<ApplicationScope> attrList = Globals::getIdentityManager()->authController->listApplicationScopes(appName);
     int i = 0;
-    for (const auto &scope : attrList)
+    for (const ApplicationScope &scope : attrList)
     {
         payloadOut["scopes"][i] = scope.toJSON();
         i++;
@@ -219,7 +219,7 @@ API::APIReturn AdminPortal_Endpoints_Applications::getApplicationInfo(void *cont
     std::map<std::string, IdentityManager::ApplicationActivities::ActivityData> activities = Globals::getIdentityManager()->applicationActivities->listApplicationActivities(appName);
     i=0;
     payloadOut["activities"] = Json::arrayValue;
-    for ( const auto & activity : activities )
+    for ( const std::pair<std::string, IdentityManager::ApplicationActivities::ActivityData> & activity : activities )
     {
         payloadOut["activities"][i] = activity.second.toJSON();
         payloadOut["activities"][i]["name"] = activity.first;
@@ -286,7 +286,7 @@ API::APIReturn AdminPortal_Endpoints_Applications::updateWebLoginJWTConfigForApp
     API::APIReturn response;
 
     ApplicationTokenProperties tokenInfo;
-    auto err = tokenInfo.fromJSON( *request.inputJSON );
+    std::optional<AppError> err = tokenInfo.fromJSON( *request.inputJSON );
     if (err.has_value())
     {
         response.setError((Network::Protocols::HTTP::Status::Codes)err->http_code, err->error, err->message);
@@ -474,7 +474,7 @@ json AdminPortal_Endpoints_Applications::getApplicationAccountDetails(const std:
     std::set<std::string> appAdmins = Globals::getIdentityManager()->applications->listApplicationAdmins(appName);
     uint32_t i = 0;
     payloadOut = Json::arrayValue;
-    for (const auto &acct : acctList)
+    for (const std::string &acct : acctList)
     {
         payloadOut[i]["name"] = acct;
         payloadOut[i]["isAppAdmin"] = (appAdmins.find(acct) != appAdmins.end());

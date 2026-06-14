@@ -90,7 +90,7 @@ API::APIReturn AdminPortal_Endpoints_AuthController::listAuthenticationSchemes(v
 
     r["schemes"] = Json::arrayValue;
 
-    for (const auto & slot : slots)
+    for (const std::pair<uint32_t, std::string> & slot : slots)
     {
         json rSlot;
         rSlot["description"] = slot.second;
@@ -151,7 +151,7 @@ API::APIReturn AdminPortal_Endpoints_AuthController::listAuthenticationSlotsUsed
     }
 
     std::map<uint32_t, AuthenticationSlotDetails> allSlots = Globals::getIdentityManager()->authController->listAllAuthenticationSlots();
-    for (const auto & slot : allSlots)
+    for (const std::pair<uint32_t, AuthenticationSlotDetails> & slot : allSlots)
     {
         if ( usedSlots.find(slot.first) == usedSlots.end()  )
         {
@@ -197,7 +197,7 @@ API::APIReturn AdminPortal_Endpoints_AuthController::listAuthenticationSlots(voi
 
     std::map<uint32_t, AuthenticationSlotDetails> slots = Globals::getIdentityManager()->authController->listAllAuthenticationSlots();
     json r;
-    for (const auto & slot : slots)
+    for (const std::pair<uint32_t, AuthenticationSlotDetails> & slot : slots)
     {
         json rSlot;
         rSlot = slot.second.toJSON();
