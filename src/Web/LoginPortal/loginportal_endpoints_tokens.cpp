@@ -25,8 +25,9 @@ API::APIReturn LoginPortal_Endpoints::token(void *context, const RequestParamete
     IdentityManager *identityManager = Globals::getIdentityManager();
 
     std::string authenticatedUser = request.jwtToken->getSubject();
-    bool keepAuthenticated = JSON_ASBOOL_D(request.jwtToken->getClaim("keepAuthenticated"), false);
 
+    bool useEmbeddedAuthentication = false;
+    bool keepAuthenticated = JSON_ASBOOL_D(request.jwtToken->getClaim("keepAuthenticated"), false);
     std::string activity = JSON_ASSTRING(*request.inputJSON, "activity", "");       // APP ACTIVITY NAME.
     std::string redirectURI = JSON_ASSTRING(*request.inputJSON, "redirectURI", ""); // APP REDIRECT URI.
     uint32_t schemeId = JSON_ASUINT(*request.inputJSON, "schemeId", 0);             // APP SCHEME ID.
@@ -47,6 +48,7 @@ API::APIReturn LoginPortal_Endpoints::token(void *context, const RequestParamete
 
         // Check if the application has embedded authentication enabled
         std::optional<IdentityManager::Applications::ApplicationAttributes> appAttrs = identityManager->applications->getApplicationAttributes(appName);
+
         if (!appAttrs.has_value())
         {
             LOG_APP->log2(__func__, appName, authClientDetails.ipAddress, Logs::LEVEL_SECURITY_ALERT, "Application attributes not found for app: %s",appName.c_str());
@@ -59,9 +61,11 @@ API::APIReturn LoginPortal_Endpoints::token(void *context, const RequestParamete
             response.setError(HTTP::Status::S_403_FORBIDDEN, "security_error", "Application does not support embedded authentication via API key.");
             return response;
         }
+        useEmbeddedAuthentication = true;
     }
     else
     {
+        useEmbeddedAuthentication = false;
         appName = JSON_ASSTRING(*request.inputJSON, "app", "");
     }
 
@@ -136,7 +140,7 @@ API::APIReturn LoginPortal_Endpoints::token(void *context, const RequestParamete
     //// -------------------------       TOKEN CREATION       --------------------------- ////
     //////////////////////////////////////////////////////////////////////////////////////////
     // Create and sign tokens
-    if (!token_createAndSignApplicationAccessJWTs(request.jwtToken, keepAuthenticated, appName, authenticatedUser, schemeId, redirectURI, response, authClientDetails))
+    if (!token_createAndSignApplicationRefreshAndAccessJWTs(request.jwtToken, useEmbeddedAuthentication, keepAuthenticated, appName, authenticatedUser, schemeId, redirectURI, response, authClientDetails))
     {
         // Failed to create the token...
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::INTERNAL_ERROR)),

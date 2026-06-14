@@ -2,14 +2,14 @@
 #include "Mantids30/Protocol_HTTP/httpv1_base.h"
 #include "Tokens/tokensmanager.h"
 #include "websessionauthhandler_endpoints.h"
-#include <json/value.h>
 #include <Mantids30/Helpers/json.h>
+#include <json/value.h>
 
 #include <boost/algorithm/string/join.hpp>
 #include <json/config.h>
 
-#include "globals.h"
 #include "Tokens/tokensmanager.h"
+#include "globals.h"
 
 using namespace Mantids30;
 using namespace Mantids30::DataFormat;
@@ -17,6 +17,7 @@ using namespace Program;
 using namespace API::RESTful;
 using namespace Network::Protocols;
 
+/*
 API::APIReturn WebSessionAuthHandler_Endpoints::refreshAccessToken(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
@@ -112,8 +113,14 @@ API::APIReturn WebSessionAuthHandler_Endpoints::refreshAccessToken(void *context
     }
 
     JWT::Token newAccessToken;
-    TokensManager::configureApplicationAccessToken(newAccessToken, refreshTokenVerified.getJwtId(), refreshTokenUser, refreshTokenApp, tokenProps,
-                         currentAuthenticatedSlotIds); // Assuming these variables are accessible here
+    TokensManager::ApplicationTokenCommonParams params;
+    params.refreshTokenId = refreshTokenVerified.getJwtId();
+    params.tokenProperties = tokenProps;
+    params.appName = refreshTokenApp;
+    params.jwtAccountName = refreshTokenUser;
+    params.slotIds = currentAuthenticatedSlotIds;
+
+    TokensManager::configureApplicationAccessToken(newAccessToken, params); // Assuming these variables are accessible here
 
     // --------- return as cookie, and create the max age cookie too, don't do anything else. ------------
     // Update cookies with new tokens
@@ -125,6 +132,58 @@ API::APIReturn WebSessionAuthHandler_Endpoints::refreshAccessToken(void *context
     (*response.responseJSON())["maxAge"] = (time_t)(newAccessToken.getExpirationTime() - time(nullptr));
     return response;
 }
+*/
 
 
 
+API::APIReturn WebSessionAuthHandler_Endpoints::refreshAccessToken(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+{
+    API::APIReturn response;
+    std::string refreshTokenStr = request.clientRequest->getCookies()->getSubVar("RefreshToken");
+    RefreshTokenData tokenData;
+    std::string errorMsg;
+    std::string errorType;
+
+    // 3. Delegar la validación y decodificación
+    if (!validateAndDecodeRefreshToken(refreshTokenStr, tokenData, errorMsg, errorType))
+    {
+        // Determinar el código HTTP basado en el tipo de error
+        HTTP::Status::Codes status = HTTP::Status::S_401_UNAUTHORIZED;
+        if (errorType == "internal_error")
+        {
+            status = HTTP::Status::S_500_INTERNAL_SERVER_ERROR;
+            errorMsg = authResultToString(AuthenticationResult::INTERNAL_ERROR); // Ajuste según tu mapeo
+        }
+
+        LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LEVEL_SECURITY_ALERT, "%s", errorMsg.c_str());
+        response.setError(status, errorType, errorMsg);
+        return response;
+    }
+
+    // 4. Validar API Key usando la app extraída del token
+    if (!validateAPIKey(tokenData.app, response, request, authClientDetails))
+    {
+        return response;
+    }
+
+    // 5. Crear nuevo Access Token
+    JWT::Token newAccessToken;
+    TokensManager::ApplicationTokenCommonParams params;
+    params.refreshTokenId = tokenData.jwtId;
+    params.tokenProperties = tokenData.tokenProps;
+    params.appName = tokenData.app;
+    params.jwtAccountName = tokenData.user;
+    params.slotIds = tokenData.slotIds;
+
+    TokensManager::configureApplicationAccessToken(newAccessToken, params);
+
+    // 6. Configurar respuesta
+    setupAccessTokenCookies(response, newAccessToken, tokenData.tokenProps);
+
+    // Actualizar logs en BD
+    Globals::getIdentityManager()->authController->updateApplicationAuthLogAccessTokenId(tokenData.user, tokenData.app, tokenData.jwtId, newAccessToken.getJwtId(), newAccessToken.getExpirationTime());
+
+    (*response.responseJSON())["maxAge"] = (time_t) (newAccessToken.getExpirationTime() - time(nullptr));
+
+    return response;
+}
