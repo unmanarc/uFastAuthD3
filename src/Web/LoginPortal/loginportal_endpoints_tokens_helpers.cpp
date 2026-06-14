@@ -3,7 +3,6 @@
 #include <Mantids30/Helpers/json.h>
 #include <json/value.h>
 
-#include <algorithm> // std::find
 #include <boost/algorithm/string/join.hpp>
 #include <json/config.h>
 #include <optional>
@@ -22,11 +21,11 @@ bool LoginPortal_Endpoints::token_validateRedirectURI(const std::string &app, co
 {
     IdentityManager *identityManager = Globals::getIdentityManager();
 
-    std::list<std::string> redirectURIs = identityManager->applications->listWebLoginAllowedRedirectURIsFromApplication(app);
+    std::set<std::string> redirectURIs = identityManager->applications->listWebLoginAllowedRedirectURIsFromApplication(app);
     std::string callbackURI = identityManager->applications->getApplicationCallbackURI(app);
 
     // Validate if the redirect URI is acceptable by the application.
-    if (!redirectURI.empty() && std::find(redirectURIs.begin(), redirectURIs.end(), redirectURI) == redirectURIs.end())
+    if (!redirectURI.empty() && redirectURIs.count(redirectURI)==0)
     {
         // This token is not available for retrieving app tokens...
         LOG_APP->log2(__func__, user, ipAddress, Logs::LEVEL_SECURITY_ALERT, "Invalid return URL '%s': The provided URI does not match any recognized redirect URIs for application '%s'.",

@@ -101,10 +101,10 @@ void TokensManager::configureLogoutToken(const Mantids30::DataFormat::JWT::Token
     logoutToken.setClaim("type", "logout");
 }*/
 
-void TokensManager::issueLoginAccessTokenCookie(APIReturn &response, const RequestParameters &request, std::shared_ptr<TransientAuthenticationContext> authContext)
+void TokensManager::issueLPTokenCookie(APIReturn &response, const RequestParameters &request, std::shared_ptr<TransientAuthenticationContext> authContext)
 {
     IdentityManager *identityManager = Globals::getIdentityManager();
-    Mantids30::DataFormat::JWT::Token accessToken;
+    Mantids30::DataFormat::JWT::Token lpToken;
     auto accountExpirationTime = identityManager->accounts->getAccountExpirationTime(authContext->accountName);
     authContext->appCallbackURL = identityManager->applications->getApplicationCallbackURI(authContext->appName);
     time_t expectedRefresherTokenTimeoutTime = safeAdd(time(nullptr), Globals::pConfig.get<time_t>("LoginPortal.IAMTokenTimeout", 2592000));
@@ -114,32 +114,32 @@ void TokensManager::issueLoginAccessTokenCookie(APIReturn &response, const Reque
         expectedRefresherTokenTimeoutTime = authContext->newTokenExpirationTime;
     }
 
-    accessToken.setSubject(authContext->accountName);
-    accessToken.setIssuedAt(time(nullptr));
-    accessToken.setExpirationTime(accountExpirationTime == 0 ? expectedRefresherTokenTimeoutTime :       // Token does not expire.
+    lpToken.setSubject(authContext->accountName);
+    lpToken.setIssuedAt(time(nullptr));
+    lpToken.setExpirationTime(accountExpirationTime == 0 ? expectedRefresherTokenTimeoutTime :       // Token does not expire.
                                       std::min(accountExpirationTime, expectedRefresherTokenTimeoutTime) // Token expires, take the min time between two...
     );
-    accessToken.setNotBefore(time(nullptr) - 30);
-    accessToken.setClaim("slotIds",                 authContext->getAllAuthenticatedSlotsIds());
-    accessToken.setClaim("authenticatedSchemes",    authContext->getAllAuthenticatedSchemes());
-    accessToken.setClaim("authenticatedAppsCallbackURLs",    authContext->getAllAuthenticatedAppsCallbackURLs());
-    accessToken.setClaim("type", "access");
-    accessToken.setClaim("app", IAM_LOGINPORTAL_APPNAME);
-    accessToken.setClaim("keepAuthenticated", authContext->keepAuthenticated);
+    lpToken.setNotBefore(time(nullptr) - 30);
+    lpToken.setClaim("slotIds",                 authContext->getAllAuthenticatedSlotsIds());
+    lpToken.setClaim("authenticatedSchemes",    authContext->getAllAuthenticatedSchemes());
+    lpToken.setClaim("authenticatedAppsCallbackURLs",    authContext->getAllAuthenticatedAppsCallbackURLs());
+    lpToken.setClaim("type", "access");
+    lpToken.setClaim("app", IAM_LOGINPORTAL_APPNAME);
+    lpToken.setClaim("keepAuthenticated", authContext->keepAuthenticated);
 
-    accessToken.setJwtId(Mantids30::Helpers::Random::createRandomString(16));
+    lpToken.setJwtId(Mantids30::Helpers::Random::createRandomString(16));
 
-    std::string sAuthToken = request.jwtSigner->signFromToken(accessToken, false);
+    std::string sAuthToken = request.jwtSigner->signFromToken(lpToken, false);
 
     // Keep the auth refresher token here:
-    response.cookiesMap["AccessToken"] = HTTP::Headers::Cookie();
-    response.cookiesMap["AccessToken"].setExpiration(accessToken.getExpirationTime());
-    response.cookiesMap["AccessToken"].secure = true;
-    response.cookiesMap["AccessToken"].httpOnly = true;
-    response.cookiesMap["AccessToken"].value = sAuthToken;
+    response.cookiesMap["LPToken"] = HTTP::Headers::Cookie();
+    response.cookiesMap["LPToken"].setExpiration(lpToken.getExpirationTime());
+    response.cookiesMap["LPToken"].secure = true;
+    response.cookiesMap["LPToken"].httpOnly = true;
+    response.cookiesMap["LPToken"].value = sAuthToken;
 
     Json::Value authenticationPublicData;
-    authenticationPublicData["exp"] = std::to_string(accessToken.getExpirationTime());
+    authenticationPublicData["exp"] = std::to_string(lpToken.getExpirationTime());
     authenticationPublicData["subject"] = authContext->accountName;
     authenticationPublicData["slotIds"] = Mantids30::Helpers::setToJSON(authContext->authenticatedSlots);
     authenticationPublicData["authenticatedSchemes"] = authContext->getAllAuthenticatedSchemes();
@@ -149,7 +149,7 @@ void TokensManager::issueLoginAccessTokenCookie(APIReturn &response, const Reque
     if (authContext->keepAuthenticated)
     {
         response.cookiesMap["loggedIn"] = HTTP::Headers::Cookie();
-        response.cookiesMap["loggedIn"].setExpiration(accessToken.getExpirationTime());
+        response.cookiesMap["loggedIn"].setExpiration(lpToken.getExpirationTime());
         response.cookiesMap["loggedIn"].secure = true;
         response.cookiesMap["loggedIn"].httpOnly = false;
         response.cookiesMap["loggedIn"].path = "/";
