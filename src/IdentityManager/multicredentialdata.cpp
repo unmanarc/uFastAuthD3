@@ -11,7 +11,7 @@ MultiCredentialData::MultiCredentialData()
 std::set<uint32_t> MultiCredentialData::getAuthenticationSlotsAvailable()
 {
     std::set<uint32_t> r;
-    for (const auto &i : m_authenticationsSlots)
+    for (const std::pair<uint32_t, CredentialData> &i : m_authenticationsSlots)
         r.insert(i.first);
     return r;
 }
@@ -45,7 +45,7 @@ bool MultiCredentialData::setJSON(const json &jAuthentications)
 
     if (jAuthentications.isObject())
     {
-        for (const auto &slotId : jAuthentications.getMemberNames())
+        for (const std::string &slotId : jAuthentications.getMemberNames())
         {
             if (jAuthentications[slotId].isMember("pass"))
             {

@@ -111,12 +111,12 @@ AuthenticationResult CredentialValidator::validateGAuth(const std::string &accou
 
     if (useTokenCache)
     {
-        auto cacheEntry = usedTokensCache.find(accountTokenKey);
+        std::unordered_map<TokenCacheKey, time_t>::iterator cacheEntry = usedTokensCache.find(accountTokenKey);
         if (cacheEntry != usedTokensCache.end())
         {
-            auto tokenTimestamp = cacheEntry->second;
+            time_t tokenTimestamp = cacheEntry->second;
             time_t now = time(nullptr);
-            auto elapsedSeconds = now - tokenTimestamp;
+            time_t elapsedSeconds = now - tokenTimestamp;
 
             if (elapsedSeconds < 90)
             {
