@@ -29,18 +29,13 @@ bool IdentityManager_DB::Applications_DB::addApplication(const ClientDetails &cl
 
         // Insert into iam.applications.
         bool appInsertSuccess = _parent->m_sqlConnector->qExecuteEx(
-            "INSERT INTO iam.applications (`appName`, `f_appCreator`, `appDescription`, `apiKey`, "
-            "`canAdminModifyApplicationSecurityContext`, `canUserAutoRegister`, `useEmbeddedAuthentication`, `appSyncEnabled`, `appSyncCanRetrieveAppAccountsList`) VALUES (:appName, "
-            ":appCreator, :description, :apiKey, :canAdminModifyApplicationSecurityContext, :canUserAutoRegister, :useEmbeddedAuthentication, :appSyncEnabled, :appSyncCanRetrieveAppAccountsList);",
+            "INSERT INTO iam.applications (`appName`, `f_appCreator`, `appDescription`, `apiKey`, `appAttributesJSON`) VALUES (:appName, "
+            ":appCreator, :description, :apiKey, :appAttributesJSON);",
             {{":appName", MAKE_VAR(STRING, appName)},
              {":appCreator", MAKE_VAR(STRING, creatorAccountName)},
              {":description", MAKE_VAR(STRING, applicationDescription)},
              {":apiKey", MAKE_VAR(STRING, Encoders::encodeToBase64Obf(apiKey))},
-             {":canAdminModifyApplicationSecurityContext", MAKE_VAR(BOOL, appAttributes.canAdminModifyApplicationSecurityContext)},
-             {":canUserAutoRegister", MAKE_VAR(BOOL, appAttributes.canUserAutoRegister)},
-             {":useEmbeddedAuthentication", MAKE_VAR(BOOL, appAttributes.useEmbeddedAuthentication)},
-             {":appSyncEnabled", MAKE_VAR(BOOL, appAttributes.appSyncEnabled)},
-             {":appSyncCanRetrieveAppAccountsList", MAKE_VAR(BOOL, appAttributes.appSyncCanRetrieveAppAccountsList)}});
+             {":appAttributesJSON", MAKE_VAR(STRING, appAttributes.toJSON().toStyledString())}});
 
         // If the insertion is successful, insert another row default values into iam.applicationsJWTTokenConfig.
         if (appInsertSuccess)
@@ -101,24 +96,13 @@ bool IdentityManager_DB::Applications_DB::updateApplicationAttributes(const Clie
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
     bool result = _parent->m_sqlConnector->qExecuteEx("UPDATE iam.applications SET "
-                                               "`canAdminModifyApplicationSecurityContext`=:canAdminModifyApplicationSecurityContext, "
-                                               "`canUserAutoRegister`=:canUserAutoRegister, `useEmbeddedAuthentication`=:useEmbeddedAuthentication, "
-                                               "`appSyncEnabled`=:appSyncEnabled, `appSyncCanRetrieveAppAccountsList`=:appSyncCanRetrieveAppAccountsList WHERE `appName`=:appName;",
-                                               {{":appName", MAKE_VAR(STRING, appName)},
-                                                {":canAdminModifyApplicationSecurityContext", MAKE_VAR(BOOL, appAttributes.canAdminModifyApplicationSecurityContext)},
-                                                {":canUserAutoRegister", MAKE_VAR(BOOL, appAttributes.canUserAutoRegister)},
-                                                {":useEmbeddedAuthentication", MAKE_VAR(BOOL, appAttributes.useEmbeddedAuthentication)},
-                                                {":appSyncEnabled", MAKE_VAR(BOOL, appAttributes.appSyncEnabled)},
-                                                {":appSyncCanRetrieveAppAccountsList", MAKE_VAR(BOOL, appAttributes.appSyncCanRetrieveAppAccountsList)}});
+                                                 "`appAttributesJSON`=:appAttributesJSON WHERE `appName`=:appName;",
+                                                 {{":appName", MAKE_VAR(STRING, appName)},
+                                                  {":appAttributesJSON", MAKE_VAR(STRING, appAttributes.toJSON().toStyledString())}});
     if (result)
     {
-        _parent->logSecurityEventOnApplications(appName, SecurityEventAction::UPDATE, "Updated attributes: "
-                                                                                            "adminModifySecurity=" + std::to_string(appAttributes.canAdminModifyApplicationSecurityContext)
-                                                                                          + ", autoRegister=" + std::to_string(appAttributes.canUserAutoRegister)
-                                                                                          + ", useEmbeddedAuth=" + std::to_string(appAttributes.useEmbeddedAuthentication)
-                                                                                          + ", syncEnabled=" + std::to_string(appAttributes.appSyncEnabled)
-                                                                                          + ", syncCanRetrieveAccounts=" + std::to_string(appAttributes.appSyncCanRetrieveAppAccountsList),
-                                                performedBy, clientDetails);
+        _parent->logSecurityEventOnApplications(appName, SecurityEventAction::UPDATE, "Updated attributes: " + appAttributes.toString(),
+                                                 performedBy, clientDetails);
     }
     return result;
 }
@@ -126,23 +110,18 @@ bool IdentityManager_DB::Applications_DB::updateApplicationAttributes(const Clie
 std::optional<IdentityManager::Applications::ApplicationAttributes> IdentityManager_DB::Applications_DB::getApplicationAttributes(const std::string &appName)
 {
     Threads::Sync::Lock_RD lock(_parent->m_mutex);
-    Abstract::BOOL canAdminModifyApplicationSecurityContext;
-    Abstract::BOOL canUserAutoRegister;
-    Abstract::BOOL useEmbeddedAuthentication;
-    Abstract::BOOL appSyncEnabled;
-    Abstract::BOOL appSyncCanRetrieveAppAccountsList;
+    Abstract::STRING appAttributesJSON;
 
-    if (_parent->m_sqlConnector->qSelectSingleRow("SELECT `canAdminModifyApplicationSecurityContext`, `canUserAutoRegister`, `useEmbeddedAuthentication`, `appSyncEnabled`, `appSyncCanRetrieveAppAccountsList` "
+    if (_parent->m_sqlConnector->qSelectSingleRow("SELECT `appAttributesJSON` "
                                                   "FROM iam.applications WHERE `appName`=:appName LIMIT 1;",
                                                   {{":appName", MAKE_VAR(STRING, appName)}},
-                                                  {&canAdminModifyApplicationSecurityContext, &canUserAutoRegister, &useEmbeddedAuthentication, &appSyncEnabled, &appSyncCanRetrieveAppAccountsList}))
+                                                  {&appAttributesJSON}))
     {
         IdentityManager::Applications::ApplicationAttributes attrs;
-        attrs.canAdminModifyApplicationSecurityContext = canAdminModifyApplicationSecurityContext.getValue();
-        attrs.canUserAutoRegister = canUserAutoRegister.getValue();
-        attrs.useEmbeddedAuthentication = useEmbeddedAuthentication.getValue();
-        attrs.appSyncEnabled = appSyncEnabled.getValue();
-        attrs.appSyncCanRetrieveAppAccountsList = appSyncCanRetrieveAppAccountsList.getValue();
+        Json::Value root;
+        Mantids30::Helpers::JSONReader2 reader;
+        reader.parse(appAttributesJSON.getValue(), root);
+        attrs.fromJSON(root);
         return attrs;
     }
     return std::nullopt;

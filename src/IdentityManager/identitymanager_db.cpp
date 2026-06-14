@@ -55,24 +55,18 @@ bool IdentityManager_DB::initializeDatabase()
                                                                         );
                                        )",
         R"(CREATE TABLE IF NOT EXISTS `iam`.`applications` (
-                                             `appName`                                      VARCHAR(256)  NOT NULL,
-                                             `f_appCreator`                                 VARCHAR(256)  NOT NULL,
-                                             `appDescription`                               VARCHAR(4096) NOT NULL,
-                                             `apiKey`                                       VARCHAR(512)  NOT NULL,
-                                             `canAdminModifyApplicationSecurityContext`     BOOLEAN NOT NULL DEFAULT FALSE,
-                                             `canUserAutoRegister`                          BOOLEAN NOT NULL DEFAULT FALSE,
-                                             `useEmbeddedAuthentication`                    BOOLEAN NOT NULL DEFAULT FALSE,
-                                             `appSyncEnabled`                               BOOLEAN NOT NULL DEFAULT TRUE,
-                                             `appSyncCanRetrieveAppAccountsList`                BOOLEAN NOT NULL DEFAULT TRUE,
-                                             `appIcon`                                      BLOB DEFAULT NULL,
-                                             `appLogo`                                      BLOB DEFAULT NULL,
-                                             `extendedJSONAttribs`                          TEXT DEFAULT NULL,
-                                             `appJSONConfig`                                TEXT DEFAULT NULL,
-                                              FOREIGN KEY(`f_appCreator`) REFERENCES accounts(`accountName`) ON DELETE CASCADE
-                                              PRIMARY KEY(`appName`)
-                                              UNIQUE(`apiKey`)
-                                                                        );
-                                    )",
+                                              `appName`                                      VARCHAR(256)  NOT NULL,
+                                              `f_appCreator`                                 VARCHAR(256)  NOT NULL,
+                                              `appDescription`                               VARCHAR(4096) NOT NULL,
+                                              `apiKey`                                       VARCHAR(512)  NOT NULL,
+                                              `appAttributesJSON`                            TEXT NOT NULL DEFAULT '{"canAdminModifyApplicationSecurityContext":false,"canUserAutoRegister":false,"useEmbeddedAuthentication":false,"appSyncEnabled":true,"appSyncCanRetrieveAppAccountsList":true,"useSessionBasedRefreshToken":false}',
+                                              `appIcon`                                      BLOB DEFAULT NULL,
+                                              `appLogo`                                      BLOB DEFAULT NULL,
+                                               FOREIGN KEY(`f_appCreator`) REFERENCES accounts(`accountName`) ON DELETE CASCADE
+                                               PRIMARY KEY(`appName`)
+                                               UNIQUE(`apiKey`)
+                                                                         );
+                                     )",
         R"(CREATE TABLE IF NOT EXISTS `iam`.`applicationsWebLoginAllowedRedirectURIs` (
                                              `f_appName`             VARCHAR(256)  NOT NULL,
                                              `loginRedirectURI`        VARCHAR(4096) NOT NULL,
