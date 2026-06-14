@@ -8,16 +8,15 @@ using namespace Mantids30;
 using namespace Mantids30::Network::Protocols;
 using namespace API::RESTful;
 
-void TokensManager::configureApplicationAccessToken(Mantids30::DataFormat::JWT::Token &accessToken, const std::string &refreshTokenId, const std::string &jwtAccountName, const std::string &appName,
-                                         const ApplicationTokenProperties &tokenProperties, const std::set<uint32_t> &slotIds)
+void TokensManager::configureApplicationAccessToken(Mantids30::DataFormat::JWT::Token &accessToken, const ApplicationTokenCommonParams &commonParams)
 {
     IdentityManager *identityManager = Globals::getIdentityManager();
 
     std::string tokenId = Mantids30::Helpers::Random::createRandomString(16);
-    accessToken.setSubject(jwtAccountName);
+    accessToken.setSubject(commonParams.jwtAccountName);
     accessToken.setIssuedAt(time(nullptr));
-    time_t expectedExpirationTime = time(nullptr) + JSON_ASUINT64(tokenProperties.tokensConfiguration["accessToken"], "timeout", 300);
-    time_t accountExpirationTime = identityManager->accounts->getAccountExpirationTime(jwtAccountName);
+    time_t expectedExpirationTime = time(nullptr) + JSON_ASUINT64(commonParams.tokenProperties.tokensConfiguration["accessToken"], "timeout", 300);
+    time_t accountExpirationTime = identityManager->accounts->getAccountExpirationTime(commonParams.jwtAccountName);
 
     if (accountExpirationTime == 0 || accountExpirationTime >= expectedExpirationTime)
     {
@@ -31,47 +30,43 @@ void TokensManager::configureApplicationAccessToken(Mantids30::DataFormat::JWT::
     }
 
     accessToken.setNotBefore(time(nullptr) - 30);
-    accessToken.setClaim("sessionInactivityTimeout", tokenProperties.sessionInactivityTimeout);
-    accessToken.setClaim("slotIds", Mantids30::Helpers::setToJSON(slotIds));
+    accessToken.setClaim("sessionInactivityTimeout", commonParams.tokenProperties.sessionInactivityTimeout);
+    accessToken.setClaim("slotIds", Mantids30::Helpers::setToJSON(commonParams.slotIds));
     accessToken.setJwtId(tokenId);
-    accessToken.setClaim("parentTokenId", refreshTokenId);
-    accessToken.setClaim("app", appName);
+    accessToken.setClaim("parentTokenId", commonParams.refreshTokenId);
+    accessToken.setClaim("app", commonParams.appName);
     accessToken.setClaim("type", "access");
     //accessToken.setClaim( "tokensConfig", tokenProperties.tokensConfiguration["accessToken"] );
 
     // Get the user scope if needed for this application...
-    if (tokenProperties.includeApplicationScopes)
+    if (commonParams.tokenProperties.includeApplicationScopes)
     {
-        std::set<ApplicationScope> x = identityManager->authController->getAccountUsableApplicationScopes(appName, jwtAccountName);
+        std::set<ApplicationScope> x = identityManager->authController->getAccountUsableApplicationScopes(commonParams.appName, commonParams.jwtAccountName);
         for (const ApplicationScope &appScope: x)
         {
             accessToken.addScope(appScope.id);
         }
     }
     // Get the user basic info if needed for this application...
-    if (tokenProperties.includeBasicAccountInfo)
+    if (commonParams.tokenProperties.includeBasicAccountInfo)
     {
-        if (std::optional<AccountDetails> info = identityManager->accounts->getAccountDetails(jwtAccountName, ACCOUNT_DETAILS_TOKEN))
+        if (std::optional<AccountDetails> info = identityManager->accounts->getAccountDetails(commonParams.jwtAccountName, ACCOUNT_DETAILS_TOKEN))
         {
             accessToken.setClaim("accountInfo", info->toJSON());
         }
     }
 
     // Application Admin
-    if (identityManager->applications->isApplicationAdmin(appName, jwtAccountName))
+    if (identityManager->applications->isApplicationAdmin(commonParams.appName, commonParams.jwtAccountName))
     {
         accessToken.setClaim("isAdmin", true);
     }
 }
 
-void TokensManager::configureApplicationRefreshToken(Mantids30::DataFormat::JWT::Token &refreshToken, const std::string &refreshTokenId, const std::string &jwtAccountName, const std::string &appName,
-                                          const ApplicationTokenProperties &tokenProperties, const std::set<uint32_t> &slotIds, const bool & keepAuthenticated)
+void TokensManager::configureApplicationRefreshToken(Mantids30::DataFormat::JWT::Token &refreshToken, const ApplicationTokenCommonParams &commonParams, const RefreshTokenParams &refreshParams)
 {
-    IdentityManager *identityManager = Globals::getIdentityManager();
-
-
-    time_t expectedExpirationTime = time(nullptr) + JSON_ASUINT64(tokenProperties.tokensConfiguration["refreshToken"], "timeout", 2592000);
-    time_t accountExpirationTime = identityManager->accounts->getAccountExpirationTime(jwtAccountName);
+    time_t expectedExpirationTime = time(nullptr) + JSON_ASUINT64(commonParams.tokenProperties.tokensConfiguration["refreshToken"], "timeout", 2592000);
+    time_t accountExpirationTime = Globals::getIdentityManager()->accounts->getAccountExpirationTime(commonParams.jwtAccountName);
 
     if (accountExpirationTime == 0 || accountExpirationTime >= expectedExpirationTime)
     {
@@ -84,22 +79,16 @@ void TokensManager::configureApplicationRefreshToken(Mantids30::DataFormat::JWT:
         refreshToken.setExpirationTime(accountExpirationTime);
     }
 
-    refreshToken.setSubject(jwtAccountName);
+    refreshToken.setSubject(commonParams.jwtAccountName);
     refreshToken.setIssuedAt(time(nullptr));
     refreshToken.setNotBefore(time(nullptr) - 30);
-    refreshToken.setClaim("slotIds", Mantids30::Helpers::setToJSON(slotIds));
-    refreshToken.setJwtId(refreshTokenId);
-    refreshToken.setClaim("app", appName);
-    refreshToken.setClaim("keepAuthenticated", keepAuthenticated);
+    refreshToken.setClaim("slotIds", Mantids30::Helpers::setToJSON(commonParams.slotIds));
+    refreshToken.setJwtId(commonParams.refreshTokenId);
+    refreshToken.setClaim("app", commonParams.appName);
+    refreshToken.setClaim("keepAuthenticated", refreshParams.keepAuthenticated);
+    refreshToken.setClaim("useEmbeddedAuthentication", refreshParams.useEmbeddedAuthentication);
     refreshToken.setClaim("type", "refresher");
 }
-
-/*
-void TokensManager::configureLogoutToken(const Mantids30::DataFormat::JWT::Token &refreshToken, Mantids30::DataFormat::JWT::Token &logoutToken)
-{
-    logoutToken = refreshToken;
-    logoutToken.setClaim("type", "logout");
-}*/
 
 void TokensManager::issueLPTokenCookie(APIReturn &response, const RequestParameters &request, std::shared_ptr<TransientAuthenticationContext> authContext)
 {
