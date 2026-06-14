@@ -40,6 +40,7 @@ private:
     static APIReturn logout(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
     static APIReturn changeCredential(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
     static APIReturn getAppDescription(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
+    static APIReturn getLoginMode(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
     static APIReturn registerAccount(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
     static APIReturn callback(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
 
@@ -58,8 +59,16 @@ private:
 
     // TOKEN HELPERS:
     static bool token_validateRedirectURI(const std::string &app,  const std::string &user, const std::string &redirectURI, const std::string &ipAddress);
-    static bool token_createAndSignApplicationAccessJWTs(const JWT::Token *jwtToken,const bool & keepAuthenticated, const std::string &app, const std::string &user, const uint32_t &schemeId,
-                                                         const std::string &redirectURI, APIReturn &response, ClientDetails &authClientDetails);
+    static bool token_createAndSignApplicationRefreshAndAccessJWTs(const JWT::Token *jwtToken,
+                                                                   const bool & useEmbeddedAuthentication,
+                                                                   const bool & keepAuthenticated,
+                                                                   const std::string &app,
+                                                                   const std::string &user,
+                                                                   const uint32_t &schemeId,
+                                                                   const std::string &redirectURI,
+                                                                   APIReturn &response,
+                                                                   ClientDetails &authClientDetails
+                                                                   );
     static bool token_validateJwtClaims(const JWT::Token *jwtToken, const std::string &user, const std::string &ipAddress);
 
     static bool token_validateAuthenticationScheme( const JWT::Token *jwtToken, const std::string &requestedApp, const std::string &requestedActivity,

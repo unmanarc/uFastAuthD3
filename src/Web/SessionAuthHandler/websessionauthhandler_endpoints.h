@@ -25,6 +25,7 @@ public:
 
     // Remote triggered:
     static APIReturn refreshAccessToken(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
+    static APIReturn getLoginMode(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
     static APIReturn appLogout(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
     static APIReturn callback(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
     static APIReturn getLogoutCallbackURL(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
@@ -44,7 +45,17 @@ private:
         time_t expirationTime = 0; // don't expire?
         std::string path;
     };
+    struct RefreshTokenData
+    {
+        bool useEmbeddedAuthentication = false;
+        std::string app;
+        std::string user;
+        std::string jwtId;
+        std::set<uint32_t> slotIds;
+        ApplicationTokenProperties tokenProps;
+    };
 
+    static bool validateAndDecodeRefreshToken(const std::string &refreshTokenStr, RefreshTokenData &outData, std::string &outErrorMessage, std::string &outErrorType);
     static void setupCookie(APIReturn &response, const std::string &name, const std::string &value, const CookieProperties & props);
     static void setupMaxAgeCookie(APIReturn &response, const std::string &name, time_t expirationTime);
     static std::string signApplicationToken(JWT::Token &accessToken, const ApplicationTokenProperties &tokenProperties);
