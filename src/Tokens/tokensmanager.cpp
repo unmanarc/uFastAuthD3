@@ -51,7 +51,7 @@ void TokensManager::configureApplicationAccessToken(Mantids30::DataFormat::JWT::
     // Get the user basic info if needed for this application...
     if (tokenProperties.includeBasicAccountInfo)
     {
-        if (auto info = identityManager->accounts->getAccountDetails(jwtAccountName, ACCOUNT_DETAILS_TOKEN))
+        if (std::optional<AccountDetails> info = identityManager->accounts->getAccountDetails(jwtAccountName, ACCOUNT_DETAILS_TOKEN))
         {
             accessToken.setClaim("accountInfo", info->toJSON());
         }
@@ -70,8 +70,8 @@ void TokensManager::configureApplicationRefreshToken(Mantids30::DataFormat::JWT:
     IdentityManager *identityManager = Globals::getIdentityManager();
 
 
-    auto expectedExpirationTime = time(nullptr) + JSON_ASUINT64(tokenProperties.tokensConfiguration["refreshToken"], "timeout", 2592000);
-    auto accountExpirationTime = identityManager->accounts->getAccountExpirationTime(jwtAccountName);
+    time_t expectedExpirationTime = time(nullptr) + JSON_ASUINT64(tokenProperties.tokensConfiguration["refreshToken"], "timeout", 2592000);
+    time_t accountExpirationTime = identityManager->accounts->getAccountExpirationTime(jwtAccountName);
 
     if (accountExpirationTime == 0 || accountExpirationTime >= expectedExpirationTime)
     {
@@ -105,7 +105,7 @@ void TokensManager::issueLPTokenCookie(APIReturn &response, const RequestParamet
 {
     IdentityManager *identityManager = Globals::getIdentityManager();
     Mantids30::DataFormat::JWT::Token lpToken;
-    auto accountExpirationTime = identityManager->accounts->getAccountExpirationTime(authContext->accountName);
+    time_t accountExpirationTime = identityManager->accounts->getAccountExpirationTime(authContext->accountName);
     authContext->appCallbackURL = identityManager->applications->getApplicationCallbackURI(authContext->appName);
     time_t expectedRefresherTokenTimeoutTime = safeAdd(time(nullptr), Globals::pConfig.get<time_t>("LoginPortal.IAMTokenTimeout", 2592000));
 
