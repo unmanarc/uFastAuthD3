@@ -98,12 +98,19 @@ WebSessionAuthHandler_Endpoints::APIReturn WebSessionAuthHandler_Endpoints::getL
         return response;
     }
 
-    auto attribs = identityManager->applications->getApplicationAttributes(appName);
+    std::optional<IdentityManager::Applications::ApplicationAttributes> attribs = identityManager->applications->getApplicationAttributes(appName);
+    if (!attribs.has_value())
+    {
+        // app key not found...
+        LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LEVEL_SECURITY_ALERT, "Internal Error While reading the APP '%s' Attributes.", appName.c_str());
+        response.setError(HTTP::Status::S_401_UNAUTHORIZED, "invalid_app", "Internal Error While reading the APP Attributes.");
+        return response;
+    }
 
     json payloadOut;
 
     //  Configuration parameters:
-    auto config = Globals::pConfig;
+    boost::property_tree::ptree config = Globals::pConfig;
 
     std::string logoutURL = attribs->useEmbeddedAuthentication?  "/login/logout/" : config.get<std::string>("AppVars.LoginPortalURL", "about:blank") + "/logout/";
     payloadOut["url"] = logoutURL;

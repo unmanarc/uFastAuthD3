@@ -136,7 +136,7 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::listAllAuthCredentialSlots
     std::map<uint32_t,std::pair<bool,Credential>> creds = Globals::getIdentityManager()->authController->listAllAuthCredentialSlotsPublicDataForAccount(accountName);
     const AuthenticationPolicy &authPolicy = Globals::getIdentityManager()->authController->getGlobalAuthenticationPolicy();
 
-    for (const auto &credEntry : creds)
+    for (const std::pair<uint32_t, std::pair<bool, Credential>> &credEntry : creds)
     {
         Json::Value entry;
         entry["slotId"] = credEntry.first;
@@ -205,7 +205,7 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::getAccountDetailFieldsValu
     std::map<std::string, AccountDetailFieldValue> fieldValues = Globals::getIdentityManager()->accounts->getAccountDetailFieldValues(accountName);
 
     Json::Value result(Json::arrayValue);
-    for (const auto &fieldValue : fieldValues)
+    for (const std::pair<std::string, AccountDetailFieldValue> &fieldValue : fieldValues)
     {
         result.append(fieldValue.second.toJSON());
     }

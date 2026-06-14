@@ -133,7 +133,7 @@ bool LoginPortal_Endpoints::token_validateAuthenticationScheme(const JWT::Token 
 
     // Helper Lambda: Checks if a specific scheme ID is valid against the JWT and user account.
     // Returns true if valid, false otherwise.
-    auto isSchemeValid = [&](uint32_t schemeId) -> bool
+    const std::function<bool(uint32_t)> isSchemeValid = [&](uint32_t schemeId) -> bool
     {
         // Get slots required by this scheme
         std::vector<AuthenticationSchemeUsedSlot> slotsUsedByScheme = identityManager->authController->listAuthenticationSlotsUsedByScheme(schemeId);
@@ -141,7 +141,7 @@ bool LoginPortal_Endpoints::token_validateAuthenticationScheme(const JWT::Token 
         // Get slots activated on the user's account
         std::set<uint32_t> authenticationSlotsActivatedOnAccount = identityManager->authController->listUsedAuthenticationSlotsOnAccount(authenticatedUser);
 
-        for (const auto &slot : slotsUsedByScheme)
+        for (const AuthenticationSchemeUsedSlot &slot : slotsUsedByScheme)
         {
             bool isSlotRequiredToBeInJwt = false;
 

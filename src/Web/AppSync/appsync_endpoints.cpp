@@ -60,7 +60,7 @@ void AppSync_Endpoints::updateAppScopes( const std::string & appName, const std:
                 newScope.description = JSON_ASSTRING(scope, "description", "");
 
                 // Check if scope exists
-                auto existingScope = currentScopes.find(newScope);
+                std::set<ApplicationScope>::iterator existingScope = currentScopes.find(newScope);
                 if (existingScope != currentScopes.end())
                 {
                     // If description changed, update it
@@ -80,7 +80,7 @@ void AppSync_Endpoints::updateAppScopes( const std::string & appName, const std:
         }
 
         // Remove scopes that are not in proposed list
-        for (const auto &currentScope : currentScopes)
+        for (const ApplicationScope &currentScope : currentScopes)
         {
             if (proposedScopeIds.find(currentScope.id) == proposedScopeIds.end())
             {
@@ -105,7 +105,7 @@ void AppSync_Endpoints::updateAppRoles( const std::string & appName, const std::
     if (proposedRoles.isArray())
     {
         std::set<std::string> proposedRoleIds;
-        for (const auto &role : proposedRoles)
+        for (const json &role : proposedRoles)
         {
             std::string id = JSON_ASSTRING(role, "id", "");
             if (id.empty())
@@ -119,7 +119,7 @@ void AppSync_Endpoints::updateAppRoles( const std::string & appName, const std::
             newRole.id = id;
             newRole.description = description;
             // Check if role exists
-            auto existingRole = currentRoles.find(newRole);
+            std::set<ApplicationRole>::iterator existingRole = currentRoles.find(newRole);
             if (existingRole != currentRoles.end())
             {
                 // If description changed, update it
@@ -137,7 +137,7 @@ void AppSync_Endpoints::updateAppRoles( const std::string & appName, const std::
             }
         }
         // Remove roles that are not in proposed list
-        for (const auto &currentRole : currentRoles)
+        for (const ApplicationRole &currentRole : currentRoles)
         {
             if (proposedRoleIds.find(currentRole.id) == proposedRoleIds.end())
             {
@@ -148,7 +148,7 @@ void AppSync_Endpoints::updateAppRoles( const std::string & appName, const std::
     }
 
     // Process scopes for each role
-    for (const auto &pair : proposedRoleData)
+    for (const std::pair<std::string, Json::Value> &pair : proposedRoleData)
     {
         const std::string &roleId = pair.first;
         const Json::Value &roleData = pair.second;
@@ -222,11 +222,11 @@ void AppSync_Endpoints::updateAppActivities( const std::string & appName, const 
             IdentityManager::ApplicationActivities::ActivityData activityData;
             activityData.fromJSON(act); // populate description, parentActivity, etc.
 
-            auto currentIt = currentActivities.find(name);
+            std::map<std::string, IdentityManager::ApplicationActivities::ActivityData>::iterator currentIt = currentActivities.find(name);
             if (currentIt != currentActivities.end())
             {
                 // Existing activity: check for changes
-                const auto &currentData = currentIt->second;
+                const IdentityManager::ApplicationActivities::ActivityData &currentData = currentIt->second;
 
                 if (currentData.description != activityData.description)
                 {
@@ -257,7 +257,7 @@ void AppSync_Endpoints::updateAppActivities( const std::string & appName, const 
         }
 
         // Remove obsolete activities not listed in request
-        for (const auto &pair : currentActivities)
+        for (const std::pair<std::string, IdentityManager::ApplicationActivities::ActivityData> &pair : currentActivities)
         {
             const std::string &existingActivityName = pair.first;
             if (proposedActivityNames.find(existingActivityName) == proposedActivityNames.end())
@@ -344,9 +344,9 @@ AppSync_Endpoints::APIReturn AppSync_Endpoints::getApplicationAccountsList(void 
     // Retrieve and return the list of users
     std::set<std::string> accountList = Globals::getIdentityManager()->applications->listApplicationAccounts(appName);
     Json::Value response = Json::arrayValue;
-    for (const auto &accountName : accountList)
+    for (const std::string &accountName : accountList)
     {
-        if (auto x = Globals::getIdentityManager()->accounts->getAccountDetails(accountName,ACCOUNT_DETAILS_APISYNC))
+        if (std::optional<AccountDetails> x = Globals::getIdentityManager()->accounts->getAccountDetails(accountName,ACCOUNT_DETAILS_APISYNC))
         {
             response.append(x->toJSON());
         }
