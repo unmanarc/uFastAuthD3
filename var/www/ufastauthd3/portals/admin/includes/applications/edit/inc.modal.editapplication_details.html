@@ -75,6 +75,18 @@
             </td>
         </tr>
 
+        <tr>
+            <td align="right" style="white-space: nowrap; width: 1%;">Use Session-Based Refresh Token: </td>
+            <td>
+                <div class="input-group">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="useSessionBasedRefreshToken"
+                            onchange="displayUpdateFunction()">
+                    </div>
+                </div>
+            </td>
+        </tr>
+
     </table>
     <table width=100% style=" border-spacing: 10px;   border-collapse: separate;">
 
@@ -111,6 +123,7 @@
         document.getElementById("useEmbeddedAuthentication").checked = attributes.useEmbeddedAuthentication ?? false;
         document.getElementById("syncServiceEnabled").checked = attributes.appSyncEnabled ?? false;
         document.getElementById("appSyncCanRetrieveAppAccountsList").checked = attributes.appSyncCanRetrieveAppAccountsList ?? false;
+        document.getElementById("useSessionBasedRefreshToken").checked = attributes.useSessionBasedRefreshToken ?? false;
 
         // Re-validate login flow after populating details
         if (typeof validateLoginFlowForEmbeddedMode === 'function') {
@@ -139,7 +152,8 @@
                     canUserAutoRegister: $("#canUserAutoRegister").is(":checked"),
                     useEmbeddedAuthentication: $("#useEmbeddedAuthentication").is(":checked"),
                     appSyncEnabled: $("#syncServiceEnabled").is(":checked"),
-                    appSyncCanRetrieveAppAccountsList: $("#appSyncCanRetrieveAppAccountsList").is(":checked")
+                    appSyncCanRetrieveAppAccountsList: $("#appSyncCanRetrieveAppAccountsList").is(":checked"),
+                    useSessionBasedRefreshToken: $("#useSessionBasedRefreshToken").is(":checked")
                 },
             }),
             success: function (response, textStatus, xhr) {
