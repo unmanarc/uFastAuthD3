@@ -10,6 +10,7 @@
 //<%jvar/ufad3_maxAge:maxAge%>//
 //<%jvar/ufad3_user:user%>//
 //<%jvar/ufad3_domain:domain%>//
+//<%jfunc/ufad3_loginMode:GET/v1/getLoginMode({})%>//
 
 let maxAgeVar = ufad3_maxAge;
 let sessionTimeout = null;
@@ -56,44 +57,61 @@ function refreshAccessToken() {
  * This causes the browser to navigate away from the current page.
  */
 function logout() {
-  // Step 1: Get the logout callback URL from the server (synchronous to ensure we have the URL before proceeding)
-  $.ajax({
-    url: '/auth/api/v1/getLogoutCallbackURL',
-    type: 'GET',
-    async: false,
-    success: function (response) {
-      var logoutURL = response["url"];
-      var appName = response["appName"];
+  // Check if login mode is EMBEDDED
+  if (ufad3_loginMode.body && ufad3_loginMode.body.mode === "EMBEDDED") {
+    $.ajax({
+      url: '/auth/api/v1/logout',
+      type: 'POST',
+      success: function (response) {
+        window.location.href = '/login/';
+      },
+      error: function () {
+        alert('Failed to logout');
+      }
+    });
+    return;
+  }
+  else {
+    // Step 1: Get the logout callback URL from the server (synchronous to ensure we have the URL before proceeding)
+    $.ajax({
+      url: '/auth/api/v1/getLogoutCallbackURL',
+      type: 'GET',
+      async: false,
+      success: function (response) {
+        var logoutURL = response["url"];
+        var appName = response["appName"];
 
-      // Step 2: Create a hidden form dynamically
-      var form = document.createElement('form');
-      form.method = 'POST';
-      form.action = logoutURL;
-      form.style.display = 'none';
+        // Step 2: Create a hidden form dynamically
+        var form = document.createElement('form');
+        form.method = 'POST';
+        form.action = logoutURL;
+        form.style.display = 'none';
 
-      // Step 3: Add the appName as a hidden input field
-      var tokenInput = document.createElement('input');
-      tokenInput.type = 'hidden';
-      tokenInput.name = 'appName';
-      tokenInput.value = appName;
-      form.appendChild(tokenInput);
+        // Step 3: Add the appName as a hidden input field
+        var tokenInput = document.createElement('input');
+        tokenInput.type = 'hidden';
+        tokenInput.name = 'appName';
+        tokenInput.value = appName;
+        form.appendChild(tokenInput);
 
-      // Step 3b: Add the KeepAuthentication cookie value as a hidden input field
-      var keepAuthInput = document.createElement('input');
-      keepAuthInput.type = 'hidden';
-      keepAuthInput.name = 'keepAuthentication';
-      keepAuthInput.value = getCookie('KeepAuthentication') || '';
-      form.appendChild(keepAuthInput);
-      //alert(keepAuthInput.value);
+        // Step 3b: Add the KeepAuthentication cookie value as a hidden input field
+        var keepAuthInput = document.createElement('input');
+        keepAuthInput.type = 'hidden';
+        keepAuthInput.name = 'keepAuthentication';
+        keepAuthInput.value = getCookie('KeepAuthentication') || '';
+        form.appendChild(keepAuthInput);
+        //alert(keepAuthInput.value);
 
-      // Step 4: Append the form to the document body and submit it
-      document.body.appendChild(form);
-      form.submit();
-    },
-    error: function () {
-      alert('Failed to retrieve logout URL');
-    }
-  });
+        // Step 4: Append the form to the document body and submit it
+        document.body.appendChild(form);
+        form.submit();
+      },
+      error: function () {
+        alert('Failed to retrieve logout URL');
+      }
+    });
+  }
+
 }
 
 /**
@@ -124,11 +142,11 @@ startAccessRetokenizerTimer();
  * Checks every 1 second.
  */
 function startKeepAuthenticationMonitor() {
-    setInterval(function() {
-        if (!getCookie('KeepAuthentication')) {
-            window.location.href = '/login';
-        }
-    }, 1000);
+  setInterval(function () {
+    if (!getCookie('KeepAuthentication')) {
+      window.location.href = '/login';
+    }
+  }, 1000);
 }
 
 // Start the KeepAuthentication cookie monitor
