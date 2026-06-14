@@ -3,25 +3,29 @@
 // ============================================================
 
 $(document).ready(function () {
+
     // Fetch and display app description
-    $.ajax({
-        url: "api/v1/getAppDescription",
-        type: "GET",
-        data: JSON.stringify(
-            {
-                app: appName
+    /*    
+        $.ajax({
+            url: "api/v1/getAppDescription",
+            type: "GET",
+            data: JSON.stringify(
+                {
+                    app: appName
+                }
+            ),
+            success: function (response) {
+                if (response.description) {
+                    $("#appDescription").text(response.description).css("font-weight", "bold");
+                }
+            },
+            error: function (xhr, status, error) {
+                // Silently fail - app description is optional
+                console.error('Failed to load app description:', error);
             }
-        ),
-        success: function (response) {
-            if (response.description) {
-                $("#appDescription").text(response.description).css("font-weight", "bold");
-            }
-        },
-        error: function (xhr, status, error) {
-            // Silently fail - app description is optional
-            console.error('Failed to load app description:', error);
-        }
-    });
+        });
+    */
+
 
     // Focus on username input when the page loads
     $("#username").focus();
@@ -38,10 +42,14 @@ $(document).ready(function () {
         loggedInGETParsedParam = false;
     }
 
-    if (!appName) {
+    if (loginMode.body.app.name === null || loginMode.body.app.name === "") {
         // Override appName to IAM_USRPORTAL
         window.location.href = "./?app=IAM_USRPORTAL";
     }
+    appName = loginMode.body.app.name;
+
+    $("#appDescription").text(loginMode.body.app.description).css("font-weight", "bold");
+    document.title = loginMode.body.app.description + " Login";
 
     // Validate if 'redirectURI' exists and is a valid base64 string
     if (!encodedRedirectURI) {

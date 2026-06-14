@@ -124,13 +124,12 @@ function decodeBase64(str) {
                 },
                 success: function (response) {
                     console.log('[Local Logout] SUCCESS. Reloading page...');
-                    window.location.href = "./?app=" + data.appName;
+                    window.location.href = "/?app=" + data.appName;
                 },
                 error: function (xhr, status, error) {
                     console.error('[Local Logout] FAILED:', error, 'XHR status:', xhr.status);
                     console.log('[Local Logout] Reloading page anyway...');
 //                  window.location.href = "/?app=" + data.appName;
-
                 }
             });
         } else {

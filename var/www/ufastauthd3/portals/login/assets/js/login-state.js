@@ -13,5 +13,7 @@ const urlParams = new URLSearchParams(window.location.search);
 
 // Retrieve parameters from URL
 const mode = urlParams.get('mode');
-const appName = urlParams.get('app');
 const encodedRedirectURI = urlParams.get('redirectURI');
+
+
+//const appName = urlParams.get('app');
