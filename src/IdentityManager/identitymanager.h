@@ -422,6 +422,7 @@ public:
                 root["useEmbeddedAuthentication"] = useEmbeddedAuthentication;
                 root["appSyncEnabled"] = appSyncEnabled;
                 root["appSyncCanRetrieveAppAccountsList"] = appSyncCanRetrieveAppAccountsList;
+                root["useSessionBasedRefreshToken"] = useSessionBasedRefreshToken;
                 return root;
             }
 
@@ -432,13 +433,24 @@ public:
                 appSyncEnabled = JSON_ASBOOL(root, "appSyncEnabled", false);
                 useEmbeddedAuthentication = JSON_ASBOOL(root, "useEmbeddedAuthentication", false);
                 appSyncCanRetrieveAppAccountsList = JSON_ASBOOL(root, "appSyncCanRetrieveAppAccountsList", false);
+                useSessionBasedRefreshToken = JSON_ASBOOL(root, "useSessionBasedRefreshToken", false);
             }
 
+            std::string toString() const
+            {
+                return "adminModifySecurity=" + std::to_string(canAdminModifyApplicationSecurityContext)
+                     + ", autoRegister=" + std::to_string(canUserAutoRegister)
+                     + ", useEmbeddedAuth=" + std::to_string(useEmbeddedAuthentication)
+                     + ", syncEnabled=" + std::to_string(appSyncEnabled)
+                     + ", syncCanRetrieveAccounts=" + std::to_string(appSyncCanRetrieveAppAccountsList)
+                     + ", sessionRefreshToken=" + std::to_string(useSessionBasedRefreshToken);
+            }
             bool canAdminModifyApplicationSecurityContext = false;
             bool canUserAutoRegister = false;
             bool useEmbeddedAuthentication = false;
             bool appSyncEnabled = false;
             bool appSyncCanRetrieveAppAccountsList = false;
+            bool useSessionBasedRefreshToken = false;
         };
 
         /////////////////////////////////////////////////////////////////////////////////
