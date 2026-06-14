@@ -48,7 +48,7 @@ bool AuthStorageImpl::createAuth()
             return false;
         }
 
-        auto createFileIfNotExists = [](const std::string &path) -> bool
+        std::function<bool(const std::string &)> createFileIfNotExists = [](const std::string &path) -> bool
         {
             struct stat buffer;
             if (stat(path.c_str(), &buffer) == 0)
@@ -201,7 +201,7 @@ bool AuthStorageImpl::createAuth()
                                                      {IAM_LOGINPORTAL_APPNAME, IAM_LOGINPORTAL_DESCRIPTION, IAM_LOGINPORTAL_URL}};
 
     // Loop through each app configuration
-    for (const auto &app : appsToInitialize)
+    for (const AppConfig &app : appsToInitialize)
     {
         // Check previous result before proceeding
         if (!r)
@@ -245,7 +245,7 @@ bool AuthStorageImpl::createAuth()
     }
 
     // Check account flags:
-    auto accountFlags = identityManager->accounts->getAccountFlags(sDefaultUser);
+    AccountFlags accountFlags = identityManager->accounts->getAccountFlags(sDefaultUser);
 
     // Check for admin accounts:
     if (identityManager->accounts->doesAccountExist(sDefaultUser) && !accountFlags.admin)
@@ -344,7 +344,7 @@ bool AuthStorageImpl::resetAdminPwd(IdentityManager_DB *identityManager, std::st
     return identityManager->authController->changeCredential("admin", credentialData);
 }*/
 
-static auto parse = [](const char *json)
+static std::function<Json::Value(const char *)> parse = [](const char *json)
 {
     Json::Value r;
     Json::Reader().parse(json, r);

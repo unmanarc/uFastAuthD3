@@ -42,10 +42,10 @@ void TokensManager::configureApplicationAccessToken(Mantids30::DataFormat::JWT::
     // Get the user scope if needed for this application...
     if (tokenProperties.includeApplicationScopes)
     {
-        auto x = identityManager->authController->getAccountUsableApplicationScopes(appName, jwtAccountName);
-        for (const auto &i : x)
+        std::set<ApplicationScope> x = identityManager->authController->getAccountUsableApplicationScopes(appName, jwtAccountName);
+        for (const ApplicationScope &appScope: x)
         {
-            accessToken.addScope(i.id);
+            accessToken.addScope(appScope.id);
         }
     }
     // Get the user basic info if needed for this application...

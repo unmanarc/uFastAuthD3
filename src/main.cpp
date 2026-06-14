@@ -51,7 +51,7 @@ public:
     bool _config(int, char *argv[], Program::Arguments::GlobalArguments *globalArguments)
     {
         // process config:
-        auto initLog = Program::Config::Logs::createInitLog();
+        std::shared_ptr<Mantids30::Program::Logs::AppLog> initLog = Program::Config::Logs::createInitLog();
         unsigned int logMode = Program::Logs::MODE_STANDARD;
 
         Network::Sockets::Socket_TLS::prepareTLS();
