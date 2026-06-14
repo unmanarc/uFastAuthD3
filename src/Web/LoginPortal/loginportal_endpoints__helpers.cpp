@@ -28,7 +28,7 @@ std::vector<AuthenticationSchemeUsedSlot> LoginPortal_Endpoints::calculateRequir
 
     // Remove unused requiredAuthSlots if they are optional (eg. requiredAuthSlots[0].optional) and don't exist in usedAuthSlotsOnAccount
     std::vector<AuthenticationSchemeUsedSlot> filteredAuthSlots;
-    for (const auto &slot : requiredAuthSlotsOnScheme)
+    for (const AuthenticationSchemeUsedSlot &slot : requiredAuthSlotsOnScheme)
     {
         // Skip slots that are optional and not used by the account
         if (!slot.optional || usedAuthSlotsOnAccount.find(slot.slotId) != usedAuthSlotsOnAccount.end())

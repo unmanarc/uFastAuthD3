@@ -133,14 +133,14 @@ API::APIReturn AdminPortal_Endpoints_ApplicationRoles::getRoleInfo(void *context
     // Populate used scopes
 
     i=0;
-    for (const auto &scope : usedScopes)
+    for (const ApplicationScope &scope : usedScopes)
     {
         payloadOut["scopes"]["usedScopes"][i++] = scope.toJSON();
     }
 
     // Populate unused scopes
     i=0;
-    for (const auto &scope : fullScopes)
+    for (const ApplicationScope &scope : fullScopes)
     {
         if (usedScopes.find(scope) == usedScopes.end())
         {

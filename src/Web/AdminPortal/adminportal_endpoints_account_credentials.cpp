@@ -3,6 +3,7 @@
 #include "globals.h"
 #include <json/value.h>
 #include <Mantids30/Program_Logs/applog.h>
+#include <utility>
 
 using namespace Mantids30::Program;
 using namespace Mantids30;
@@ -38,20 +39,20 @@ API::APIReturn AdminPortal_Endpoints_AccountCredentials::getAccountCredentialSlo
     std::map<uint32_t, AuthenticationSlotDetails> allSlots = Globals::getIdentityManager()->authController->listAllAuthenticationSlots();
 
     // Get account credential data
-    std::map<uint32_t, Credential> credentialData = Globals::getIdentityManager()->authController->getAccountAllCredentialsPublicData(accountName);
+    std::map<uint32_t, Credential> accountCredentialsPublicData = Globals::getIdentityManager()->authController->getAccountAllCredentialsPublicData(accountName);
 
     jResponse["slots"] = Json::arrayValue;
     jResponse["currentAuthPolicy"] = Json::nullValue;
 
-    for (const auto &slot : allSlots)
+    for (const std::pair<uint32_t, AuthenticationSlotDetails> &slot : allSlots)
     {
         json rSlot;
         rSlot["slotId"] = slot.first;
         rSlot["slotInfo"] = slot.second.toJSON();
         rSlot["slotData"] = Json::nullValue;
-        if (credentialData.find(slot.first) != credentialData.end())
+        if (accountCredentialsPublicData.find(slot.first) != accountCredentialsPublicData.end())
         {
-            auto slotData = credentialData[slot.first];
+            Credential slotData = accountCredentialsPublicData[slot.first];
             rSlot["slotData"] = slotData.toJSON(slotData.currentAuthPolicy);
             jResponse["currentAuthPolicy"] = slotData.currentAuthPolicy.toJSON();
         }

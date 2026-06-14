@@ -29,7 +29,13 @@ bool appOriginValidatorFunction(const std::string &requestOrigin, const std::str
             return false;
         }
 
-        auto attribs = Globals::getIdentityManager()->applications->getApplicationAttributes(appName);
+        std::optional<IdentityManager::Applications::ApplicationAttributes> attribs = Globals::getIdentityManager()->applications->getApplicationAttributes(appName);
+
+        if (!attribs.has_value())
+        {
+            LOG_APP->log2(__func__, "", "", Logs::LEVEL_SECURITY_ALERT, "Failed to obtain app '%s' attributes.", appName.c_str());
+            return false;
+        }
 
         if (!attribs->useEmbeddedAuthentication)
         {
@@ -88,7 +94,7 @@ bool LoginPortal_ServerImpl::createService()
 
     loginWebServer->startInBackground();
 
-    for (const auto &i : loginWebServer->getListenerSockets())
+    for (const std::shared_ptr<Sockets::Socket_Stream> &i : loginWebServer->getListenerSockets())
     {
         LOG_APP->log0(__func__, Logs::LEVEL_INFO, "Web Login Service Listening @%s", i->getLastBindAddress().c_str());
     }

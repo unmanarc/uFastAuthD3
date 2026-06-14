@@ -18,7 +18,7 @@ json AdminPortal_Endpoints::scopeListToJSON(const std::set<ApplicationScope> &sc
 {
     json x;
     int i = 0;
-    for (const auto &scope : scopes)
+    for (const ApplicationScope &scope : scopes)
     {
         x[i]["appName"] = scope.appName;
         x[i]["id"] = scope.id;
@@ -29,12 +29,13 @@ json AdminPortal_Endpoints::scopeListToJSON(const std::set<ApplicationScope> &sc
 
 std::set<ApplicationScope> AdminPortal_Endpoints::iScopesLeftListForRole(const std::string &appName, const std::string &roleName)
 {
-    auto scopesLeft = Globals::getIdentityManager()->authController->listApplicationScopes(appName);
-    auto roleScopes = Globals::getIdentityManager()->authController->getRoleApplicationScopes(appName,roleName);
+    std::set<ApplicationScope> scopesLeft = Globals::getIdentityManager()->authController->listApplicationScopes(appName);
+    std::set<ApplicationScope> roleScopes = Globals::getIdentityManager()->authController->getRoleApplicationScopes(appName,roleName);
 
-    for (const auto &roleScope : roleScopes)
+    for (const ApplicationScope &roleScope : roleScopes)
     {
         scopesLeft.erase(roleScope);
     }
+
     return scopesLeft;
 }
