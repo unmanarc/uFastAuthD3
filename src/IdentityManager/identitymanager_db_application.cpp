@@ -30,14 +30,15 @@ bool IdentityManager_DB::Applications_DB::addApplication(const ClientDetails &cl
         // Insert into iam.applications.
         bool appInsertSuccess = _parent->m_sqlConnector->qExecuteEx(
             "INSERT INTO iam.applications (`appName`, `f_appCreator`, `appDescription`, `apiKey`, "
-            "`canAdminModifyApplicationSecurityContext`, `canUserAutoRegister`, `appSyncEnabled`, `appSyncCanRetrieveAppAccountsList`) VALUES (:appName, "
-            ":appCreator, :description, :apiKey, :canAdminModifyApplicationSecurityContext, :canUserAutoRegister, :appSyncEnabled, :appSyncCanRetrieveAppAccountsList);",
+            "`canAdminModifyApplicationSecurityContext`, `canUserAutoRegister`, `useEmbeddedAuthentication`, `appSyncEnabled`, `appSyncCanRetrieveAppAccountsList`) VALUES (:appName, "
+            ":appCreator, :description, :apiKey, :canAdminModifyApplicationSecurityContext, :canUserAutoRegister, :useEmbeddedAuthentication, :appSyncEnabled, :appSyncCanRetrieveAppAccountsList);",
             {{":appName", MAKE_VAR(STRING, appName)},
              {":appCreator", MAKE_VAR(STRING, creatorAccountName)},
              {":description", MAKE_VAR(STRING, applicationDescription)},
              {":apiKey", MAKE_VAR(STRING, Encoders::encodeToBase64Obf(apiKey))},
              {":canAdminModifyApplicationSecurityContext", MAKE_VAR(BOOL, appAttributes.canAdminModifyApplicationSecurityContext)},
              {":canUserAutoRegister", MAKE_VAR(BOOL, appAttributes.canUserAutoRegister)},
+             {":useEmbeddedAuthentication", MAKE_VAR(BOOL, appAttributes.useEmbeddedAuthentication)},
              {":appSyncEnabled", MAKE_VAR(BOOL, appAttributes.appSyncEnabled)},
              {":appSyncCanRetrieveAppAccountsList", MAKE_VAR(BOOL, appAttributes.appSyncCanRetrieveAppAccountsList)}});
 
@@ -100,15 +101,24 @@ bool IdentityManager_DB::Applications_DB::updateApplicationAttributes(const Clie
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
     bool result = _parent->m_sqlConnector->qExecuteEx("UPDATE iam.applications SET "
-                                               "`canUserAutoRegister`=:canUserAutoRegister, `appSyncEnabled`=:appSyncEnabled, "
-                                               "`appSyncCanRetrieveAppAccountsList`=:appSyncCanRetrieveAppAccountsList WHERE `appName`=:appName;",
+                                               "`canAdminModifyApplicationSecurityContext`=:canAdminModifyApplicationSecurityContext, "
+                                               "`canUserAutoRegister`=:canUserAutoRegister, `useEmbeddedAuthentication`=:useEmbeddedAuthentication, "
+                                               "`appSyncEnabled`=:appSyncEnabled, `appSyncCanRetrieveAppAccountsList`=:appSyncCanRetrieveAppAccountsList WHERE `appName`=:appName;",
                                                {{":appName", MAKE_VAR(STRING, appName)},
+                                                {":canAdminModifyApplicationSecurityContext", MAKE_VAR(BOOL, appAttributes.canAdminModifyApplicationSecurityContext)},
                                                 {":canUserAutoRegister", MAKE_VAR(BOOL, appAttributes.canUserAutoRegister)},
+                                                {":useEmbeddedAuthentication", MAKE_VAR(BOOL, appAttributes.useEmbeddedAuthentication)},
                                                 {":appSyncEnabled", MAKE_VAR(BOOL, appAttributes.appSyncEnabled)},
                                                 {":appSyncCanRetrieveAppAccountsList", MAKE_VAR(BOOL, appAttributes.appSyncCanRetrieveAppAccountsList)}});
     if (result)
     {
-        _parent->logSecurityEventOnApplications(appName, SecurityEventAction::UPDATE, "Updated attributes: autoRegister=" + std::to_string(appAttributes.canUserAutoRegister) + ", syncEnabled=" + std::to_string(appAttributes.appSyncEnabled) + ", syncCanRetrieveAccounts=" + std::to_string(appAttributes.appSyncCanRetrieveAppAccountsList), performedBy, clientDetails);
+        _parent->logSecurityEventOnApplications(appName, SecurityEventAction::UPDATE, "Updated attributes: "
+                                                                                            "adminModifySecurity=" + std::to_string(appAttributes.canAdminModifyApplicationSecurityContext)
+                                                                                          + ", autoRegister=" + std::to_string(appAttributes.canUserAutoRegister)
+                                                                                          + ", useEmbeddedAuth=" + std::to_string(appAttributes.useEmbeddedAuthentication)
+                                                                                          + ", syncEnabled=" + std::to_string(appAttributes.appSyncEnabled)
+                                                                                          + ", syncCanRetrieveAccounts=" + std::to_string(appAttributes.appSyncCanRetrieveAppAccountsList),
+                                                performedBy, clientDetails);
     }
     return result;
 }
@@ -118,17 +128,19 @@ std::optional<IdentityManager::Applications::ApplicationAttributes> IdentityMana
     Threads::Sync::Lock_RD lock(_parent->m_mutex);
     Abstract::BOOL canAdminModifyApplicationSecurityContext;
     Abstract::BOOL canUserAutoRegister;
+    Abstract::BOOL useEmbeddedAuthentication;
     Abstract::BOOL appSyncEnabled;
     Abstract::BOOL appSyncCanRetrieveAppAccountsList;
 
-    if (_parent->m_sqlConnector->qSelectSingleRow("SELECT `canAdminModifyApplicationSecurityContext`, `canUserAutoRegister`, `appSyncEnabled`, `appSyncCanRetrieveAppAccountsList` "
+    if (_parent->m_sqlConnector->qSelectSingleRow("SELECT `canAdminModifyApplicationSecurityContext`, `canUserAutoRegister`, `useEmbeddedAuthentication`, `appSyncEnabled`, `appSyncCanRetrieveAppAccountsList` "
                                                   "FROM iam.applications WHERE `appName`=:appName LIMIT 1;",
                                                   {{":appName", MAKE_VAR(STRING, appName)}},
-                                                  {&canAdminModifyApplicationSecurityContext, &canUserAutoRegister, &appSyncEnabled, &appSyncCanRetrieveAppAccountsList}))
+                                                  {&canAdminModifyApplicationSecurityContext, &canUserAutoRegister, &useEmbeddedAuthentication, &appSyncEnabled, &appSyncCanRetrieveAppAccountsList}))
     {
         IdentityManager::Applications::ApplicationAttributes attrs;
         attrs.canAdminModifyApplicationSecurityContext = canAdminModifyApplicationSecurityContext.getValue();
         attrs.canUserAutoRegister = canUserAutoRegister.getValue();
+        attrs.useEmbeddedAuthentication = useEmbeddedAuthentication.getValue();
         attrs.appSyncEnabled = appSyncEnabled.getValue();
         attrs.appSyncCanRetrieveAppAccountsList = appSyncCanRetrieveAppAccountsList.getValue();
         return attrs;
@@ -488,18 +500,18 @@ bool IdentityManager_DB::Applications_DB::removeWebLoginAllowedRedirectURIToAppl
     return result;
 }
 
-std::list<std::string> IdentityManager_DB::Applications_DB::listWebLoginAllowedRedirectURIsFromApplication(const std::string &appName)
+std::set<std::string> IdentityManager_DB::Applications_DB::listWebLoginAllowedRedirectURIsFromApplication(const std::string &appName)
 {
     Threads::Sync::Lock_RD lock(_parent->m_mutex);
 
     Abstract::STRING loginRedirectURI;
-    std::list<std::string> redirectURIs;
+    std::set<std::string> redirectURIs;
 
     auto i = _parent->m_sqlConnector->qSelect("SELECT `loginRedirectURI` FROM iam.applicationsWebLoginAllowedRedirectURIs WHERE `f_appName`=:appName;", {{":appName", MAKE_VAR(STRING, appName)}},
                                               {&loginRedirectURI});
     while (i && i->isSuccessful() && i->step())
     {
-        redirectURIs.push_back(loginRedirectURI.getValue());
+        redirectURIs.insert(loginRedirectURI.getValue());
     }
     return redirectURIs;
 }
@@ -589,17 +601,17 @@ bool IdentityManager_DB::Applications_DB::removeWebLoginOriginURLToApplication(c
     return result;
 }
 
-std::list<std::string> IdentityManager_DB::Applications_DB::listWebLoginOriginUrlsFromApplication(const std::string &appName)
+std::set<std::string> IdentityManager_DB::Applications_DB::listWebLoginOriginUrlsFromApplication(const std::string &appName)
 {
     Threads::Sync::Lock_RD lock(_parent->m_mutex);
 
     Abstract::STRING originUrl;
-    std::list<std::string> originUrls;
+    std::set<std::string> originUrls;
 
     auto i = _parent->m_sqlConnector->qSelect("SELECT `originUrl` FROM iam.applicationsWebLoginOrigins WHERE `f_appName`=:appName;", {{":appName", MAKE_VAR(STRING, appName)}}, {&originUrl});
     while (i && i->isSuccessful() && i->step())
     {
-        originUrls.push_back(originUrl.getValue());
+        originUrls.insert(originUrl.getValue());
     }
     return originUrls;
 }

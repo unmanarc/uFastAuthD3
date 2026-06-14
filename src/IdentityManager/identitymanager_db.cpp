@@ -61,6 +61,7 @@ bool IdentityManager_DB::initializeDatabase()
                                              `apiKey`                                       VARCHAR(512)  NOT NULL,
                                              `canAdminModifyApplicationSecurityContext`     BOOLEAN NOT NULL DEFAULT FALSE,
                                              `canUserAutoRegister`                          BOOLEAN NOT NULL DEFAULT FALSE,
+                                             `useEmbeddedAuthentication`                    BOOLEAN NOT NULL DEFAULT FALSE,
                                              `appSyncEnabled`                               BOOLEAN NOT NULL DEFAULT TRUE,
                                              `appSyncCanRetrieveAppAccountsList`                BOOLEAN NOT NULL DEFAULT TRUE,
                                              `appIcon`                                      BLOB DEFAULT NULL,

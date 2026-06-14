@@ -419,6 +419,7 @@ public:
                 Json::Value root;
                 root["canAdminModifyApplicationSecurityContext"] = canAdminModifyApplicationSecurityContext;
                 root["canUserAutoRegister"] = canUserAutoRegister;
+                root["useEmbeddedAuthentication"] = useEmbeddedAuthentication;
                 root["appSyncEnabled"] = appSyncEnabled;
                 root["appSyncCanRetrieveAppAccountsList"] = appSyncCanRetrieveAppAccountsList;
                 return root;
@@ -429,11 +430,13 @@ public:
                 canAdminModifyApplicationSecurityContext = JSON_ASBOOL(root, "canAdminModifyApplicationSecurityContext", false);
                 canUserAutoRegister = JSON_ASBOOL(root, "canUserAutoRegister", false);
                 appSyncEnabled = JSON_ASBOOL(root, "appSyncEnabled", false);
+                useEmbeddedAuthentication = JSON_ASBOOL(root, "useEmbeddedAuthentication", false);
                 appSyncCanRetrieveAppAccountsList = JSON_ASBOOL(root, "appSyncCanRetrieveAppAccountsList", false);
             }
 
             bool canAdminModifyApplicationSecurityContext = false;
             bool canUserAutoRegister = false;
+            bool useEmbeddedAuthentication = false;
             bool appSyncEnabled = false;
             bool appSyncCanRetrieveAppAccountsList = false;
         };
@@ -471,7 +474,7 @@ public:
         // Weblogin return urls:
         virtual bool addWebLoginAllowedRedirectURIToApplication(const ClientDetails &clientDetails, const std::string &performedBy,const std::string &appName, const std::string &loginRedirectURI) = 0;
         virtual bool removeWebLoginAllowedRedirectURIToApplication(const ClientDetails &clientDetails, const std::string &performedBy,const std::string &appName, const std::string &loginRedirectURI) = 0;
-        virtual std::list<std::string> listWebLoginAllowedRedirectURIsFromApplication(const std::string &appName) = 0;
+        virtual std::set<std::string> listWebLoginAllowedRedirectURIsFromApplication(const std::string &appName) = 0;
 
         virtual bool updateWebLoginDefaultRedirectURIForApplication(const ClientDetails &clientDetails, const std::string &performedBy,const std::string &appName, const std::string &loginRedirectURI) = 0;
         virtual std::string getWebLoginDefaultRedirectURIForApplication(const std::string &appName) = 0;
@@ -482,7 +485,7 @@ public:
         // Application admited origin URLS:
         virtual bool addWebLoginOriginURLToApplication(const ClientDetails &clientDetails, const std::string &performedBy,const std::string &appName, const std::string &originUrl) = 0;
         virtual bool removeWebLoginOriginURLToApplication(const ClientDetails &clientDetails, const std::string &performedBy,const std::string &appName, const std::string &originUrl) = 0;
-        virtual std::list<std::string> listWebLoginOriginUrlsFromApplication(const std::string &appName) = 0;
+        virtual std::set<std::string> listWebLoginOriginUrlsFromApplication(const std::string &appName) = 0;
 
         // A aplication activity can have multiple authentication schemes...
         // by example, some (special) activities can be: transfer_money, edit_details, and so...

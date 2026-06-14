@@ -311,7 +311,7 @@ public:
         // Redirect URIs
         bool addWebLoginAllowedRedirectURIToApplication(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &loginRedirectURI) override;
         bool removeWebLoginAllowedRedirectURIToApplication(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &loginRedirectURI) override;
-        std::list<std::string> listWebLoginAllowedRedirectURIsFromApplication(const std::string &appName) override;
+        std::set<std::string> listWebLoginAllowedRedirectURIsFromApplication(const std::string &appName) override;
         bool updateWebLoginDefaultRedirectURIForApplication(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &loginRedirectURI) override;
         std::string getWebLoginDefaultRedirectURIForApplication(const std::string &appName) override;
 
@@ -322,7 +322,7 @@ public:
         // Origin URLs
         bool addWebLoginOriginURLToApplication(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &originUrl) override;
         bool removeWebLoginOriginURLToApplication(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &originUrl) override;
-        std::list<std::string> listWebLoginOriginUrlsFromApplication(const std::string &appName) override;
+        std::set<std::string> listWebLoginOriginUrlsFromApplication(const std::string &appName) override;
 
         // JWT Token Config
         bool updateWebLoginJWTConfigForApplication(const ClientDetails &clientDetails, const std::string &performedBy, const ApplicationTokenProperties &tokenInfo) override;
