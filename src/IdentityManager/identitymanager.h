@@ -229,7 +229,7 @@ public:
 
         std::string genRandomConfirmationToken();
 
-        AuthenticationPolicy getAuthenticationPolicy();
+        AuthenticationPolicy getGlobalAuthenticationPolicy();
         void setAuthenticationPolicy(const AuthenticationPolicy &newAuthenticationPolicy);
 
         virtual std::set<ApplicationScope> getAccountDirectApplicationScopes(const std::string &accountName, bool lock = true) = 0;

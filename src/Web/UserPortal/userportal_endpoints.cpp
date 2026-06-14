@@ -134,7 +134,7 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::listAllAuthCredentialSlots
     Json::Value result(Json::arrayValue);
     std::string accountName = request.jwtToken->getSubject();
     std::map<uint32_t,std::pair<bool,Credential>> creds = Globals::getIdentityManager()->authController->listAllAuthCredentialSlotsPublicDataForAccount(accountName);
-    const AuthenticationPolicy &authPolicy = Globals::getIdentityManager()->authController->getAuthenticationPolicy();
+    const AuthenticationPolicy &authPolicy = Globals::getIdentityManager()->authController->getGlobalAuthenticationPolicy();
 
     for (const auto &credEntry : creds)
     {
@@ -153,7 +153,7 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::listAccountApplicationsFul
     Json::Value result(Json::arrayValue);
     std::string accountName = request.jwtToken->getSubject();
 
-    for (const auto &appInfo : Globals::getIdentityManager()->applications->listAccountApplicationsFullInfo(accountName))
+    for (const AccountApplicationInfo &appInfo : Globals::getIdentityManager()->applications->listAccountApplicationsFullInfo(accountName))
     {
         result.append(appInfo.toJSON());
     }
@@ -351,7 +351,7 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::removeCredential(void *con
     uint32_t slotId = JSON_ASUINT((*request.inputJSON), "slotId", 0);
     std::string verification = JSON_ASSTRING((*request.inputJSON), "verification", "");
 
-    auto authResult = Globals::getIdentityManager()->authController->authenticateCredential(clientDetails,accountName, verification,slotId);
+    AuthenticationResult authResult = Globals::getIdentityManager()->authController->authenticateCredential(clientDetails,accountName, verification,slotId);
 
     // Log the authentication result
     LOG_APP->log2(__func__, accountName, clientDetails.ipAddress,

@@ -161,7 +161,7 @@ bool IdentityManager_DB::Accounts_DB::updateAccountApplicationRoles(const Client
                                              {{":accountName", MAKE_VAR(STRING, accountName)}, {":appName", MAKE_VAR(STRING, appName)}}))
         return false;
 
-    for (const auto &role : roleSet)
+    for (const std::string &role : roleSet)
     {
         if (!_parent->m_sqlConnector->qExecuteEx("INSERT INTO iam.applicationRolesAccounts (`f_roleName`,`f_accountName`,`f_appName`) VALUES(:roleName,:accountName,:appName);",
                                                  {{":roleName", MAKE_VAR(STRING, role)}, {":accountName", MAKE_VAR(STRING, accountName)}, {":appName", MAKE_VAR(STRING, appName)}}))
@@ -205,7 +205,7 @@ std::optional<AccountDetails> IdentityManager_DB::Accounts_DB::getAccountDetails
     Abstract::BOOL isAdmin, isEnabled, isAccountConfirmed;
     Abstract::DATETIME creation, expiration;
 
-    auto allFields = listAccountDetailFields();
+    std::map<std::string, AccountDetailField> allFields = listAccountDetailFields();
     AccountDetails details;
 
     {
@@ -297,7 +297,7 @@ Json::Value IdentityManager_DB::Accounts_DB::searchFields(const json &dataTables
     {
         Abstract::STRING fieldName, fieldDescription, fieldType;
         Abstract::BOOL isOptionalField, isUnique;
-        auto i = _parent->m_sqlConnector->qSelectWithFilters(sqlQueryStr, whereFilters, {{":SEARCHWORDS", MAKE_VAR(STRING, searchValue)}},
+        std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelectWithFilters(sqlQueryStr, whereFilters, {{":SEARCHWORDS", MAKE_VAR(STRING, searchValue)}},
                                                              {&fieldName, &fieldDescription, &fieldType, &isOptionalField, &isUnique},
                                                              orderByStatement, // Order by
                                                              limit,            // LIMIT
@@ -389,7 +389,7 @@ Json::Value IdentityManager_DB::Accounts_DB::searchAccounts(const json &dataTabl
         Abstract::BOOL isAdmin, isEnabled, isBlocked, isAccountConfirmed;
         Abstract::STRING creator;
 
-        auto i = _parent->m_sqlConnector->qSelectWithFilters(sqlQueryStr, whereFilters, {{":SEARCHWORDS", MAKE_VAR(STRING, searchValue)}},
+        std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelectWithFilters(sqlQueryStr, whereFilters, {{":SEARCHWORDS", MAKE_VAR(STRING, searchValue)}},
                                                              {&accountName, &creation, &expiration, &lastLogin, &lastChange, &isAdmin, &isEnabled, &isBlocked, &isAccountConfirmed, &creator},
                                                              orderByStatement, // Order by
                                                              limit,            // LIMIT
@@ -440,7 +440,7 @@ std::set<std::string> IdentityManager_DB::Accounts_DB::listAccounts()
     Threads::Sync::Lock_RD lock(_parent->m_mutex);
 
     Abstract::STRING accountName;
-    auto i = _parent->m_sqlConnector->qSelect("SELECT `accountName` FROM iam.accounts;", {}, {&accountName});
+    std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelect("SELECT `accountName` FROM iam.accounts;", {}, {&accountName});
     while (i && i->isSuccessful() && i->step())
     {
         ret.insert(accountName.getValue());
@@ -458,7 +458,7 @@ std::set<ApplicationRole> IdentityManager_DB::Accounts_DB::getAccountApplication
     {
         Abstract::STRING role;
         Abstract::STRING roleDescription;
-        auto i = _parent->m_sqlConnector->qSelect("SELECT ar.f_roleName, r.roleDescription FROM iam.applicationRolesAccounts ar LEFT JOIN iam.applicationRoles r ON "
+        std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelect("SELECT ar.f_roleName, r.roleDescription FROM iam.applicationRolesAccounts ar LEFT JOIN iam.applicationRoles r ON "
                                                   "ar.f_roleName = r.roleName AND ar.f_appName = r.f_appName WHERE ar.f_accountName=:accountName AND ar.f_appName = :appName;",
                                                   {{":accountName", MAKE_VAR(STRING, accountName)}, {":appName", MAKE_VAR(STRING, appName)}}, {&role, &roleDescription});
         while (i && i->isSuccessful() && i->step())
@@ -495,7 +495,7 @@ bool IdentityManager_DB::Accounts_DB::isThereAnotherAdmin(const std::string &acc
 
 int32_t IdentityManager_DB::Accounts_DB::getAccountBlockTokenNoRenew(const std::string &accountName, std::string &token)
 {
-    auto authenticationPolicy = _parent->authController->getAuthenticationPolicy();
+    AuthenticationPolicy authenticationPolicy = _parent->authController->getGlobalAuthenticationPolicy();
     Threads::Sync::Lock_RD lock(_parent->m_mutex);
 
     Abstract::STRING blockToken;
@@ -645,7 +645,7 @@ std::map<std::string, AccountDetailField> IdentityManager_DB::Accounts_DB::listA
     Abstract::BOOL isOptionalField, isUnique;
     Abstract::STRING jsonExtendedAttribsText;
 
-    auto i = _parent->m_sqlConnector->qSelect("SELECT `fieldName`, `fieldDescription`, `fieldType`, `isOptionalField`, `isUnique`, `jsonExtendedAttribs` FROM `iam`.`accountDetailFields`;", {},
+    std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelect("SELECT `fieldName`, `fieldDescription`, `fieldType`, `isOptionalField`, `isUnique`, `jsonExtendedAttribs` FROM `iam`.`accountDetailFields`;", {},
                                               {&fieldName, &fieldDescription, &fieldType, &isOptionalField, &isUnique, &jsonExtendedAttribsText});
 
     if (i && i->isSuccessful())
@@ -878,7 +878,7 @@ std::map<std::string, AccountDetailFieldValue> IdentityManager_DB::Accounts_DB::
                             AND vadv.f_accountName = :accountName
                         )";
 
-    auto i = _parent->m_sqlConnector->qSelect(query, {{":accountName", MAKE_VAR(STRING, accountName)}}, {&fieldName, &fieldDescription, &fieldType, &jsonExtendedAttribsText, &value});
+    std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelect(query, {{":accountName", MAKE_VAR(STRING, accountName)}}, {&fieldName, &fieldDescription, &fieldType, &jsonExtendedAttribsText, &value});
 
     if (i && i->isSuccessful())
     {

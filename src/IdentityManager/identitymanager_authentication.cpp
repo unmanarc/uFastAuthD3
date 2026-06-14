@@ -13,7 +13,7 @@ json IdentityManager::AuthController::authSlotsToJSON(const std::vector<Authenti
 {
     json r;
     int i = 0;
-    for (const auto &slot : authSlots)
+    for (const AuthenticationSchemeUsedSlot &slot : authSlots)
     {
         r[i] = slot.toJSON();
     }
@@ -121,7 +121,7 @@ AuthenticationResult IdentityManager::AuthController::authenticateCredential(con
                 }*/
             }
 
-            auto flags = m_parent->accounts->getAccountFlags(accountName);
+            AccountFlags flags = m_parent->accounts->getAccountFlags(accountName);
 
             if (!flags.confirmed)
                 return AuthenticationResult::UNCONFIRMED_ACCOUNT;
@@ -161,7 +161,7 @@ std::string IdentityManager::AuthController::genRandomConfirmationToken()
     return Mantids30::Helpers::Random::createRandomString(64);
 }
 
-AuthenticationPolicy IdentityManager::AuthController::getAuthenticationPolicy()
+AuthenticationPolicy IdentityManager::AuthController::getGlobalAuthenticationPolicy()
 {
     Threads::Sync::Lock_RD lock(m_parent->m_mutex);
     return m_authenticationPolicy;
@@ -207,7 +207,7 @@ bool IdentityManager::AuthController::changeAccountAuthenticatedCredential(const
     {
         Threads::Sync::Lock_RD lock(m_parent->m_mutex);
 
-        auto authSlots = listAllAuthenticationSlots();
+        std::map<uint32_t, AuthenticationSlotDetails> authSlots = listAllAuthenticationSlots();
 
         if (authSlots.find(slotId) == authSlots.end())
         {
@@ -234,7 +234,7 @@ bool IdentityManager::AuthController::changeAccountAuthenticatedCredential(const
         if (authSlotFound)
         {
             // If the slotId has been initialized, authenticate the current credential.
-            auto i = authenticateCredential(clientInfo, accountName, sCurrentPassword, slotId, authMode, challengeSalt);
+            AuthenticationResult i = authenticateCredential(clientInfo, accountName, sCurrentPassword, slotId, authMode, challengeSalt);
             // Now take the authentication and add/change the credential
             if (!(IS_CREDENTIAL_AUTHENTICATED(i)))
             {
@@ -255,7 +255,7 @@ bool IdentityManager::AuthController::validateAccountApplicationScope(const std:
     {
         return true;
     }
-    for (const auto &role : m_parent->accounts->getAccountApplicationRoles(applicationScope.appName, accountName, false))
+    for (const ApplicationRole &role : m_parent->accounts->getAccountApplicationRoles(applicationScope.appName, accountName, false))
     {
         if (validateApplicationScopeOnRole(role.id, applicationScope, false))
         {
@@ -274,7 +274,7 @@ std::set<ApplicationScope> IdentityManager::AuthController::getAccountUsableAppl
         x.insert(scope);
 
     // Take the scope from the belonging roles
-    for (const auto &role : m_parent->accounts->getAccountApplicationRoles(appName,accountName, false))
+    for (const ApplicationRole &role : m_parent->accounts->getAccountApplicationRoles(appName,accountName, false))
     {
         for (const ApplicationScope &scope : getRoleApplicationScopes(appName, role.id, false))
             x.insert(scope);
@@ -339,7 +339,7 @@ Credential IdentityManager::AuthController::createNewCredential(const uint32_t &
 {
     Credential r;
 
-    auto authSlots = listAllAuthenticationSlots();
+    std::map<uint32_t, AuthenticationSlotDetails> authSlots = listAllAuthenticationSlots();
 
     if (authSlots.find(slotId) == authSlots.end())
     {
@@ -498,7 +498,7 @@ std::optional<uint32_t> IdentityManager::AuthController::initializateDefaultPass
     ClientDetails clientDetails;
     const std::string performedBy;
 
-    auto authSchemes = listAuthenticationSchemes();
+    std::map<uint32_t, std::string> authSchemes = listAuthenticationSchemes();
 
     if (authSchemes.empty())
     {

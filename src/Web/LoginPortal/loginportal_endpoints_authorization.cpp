@@ -149,7 +149,7 @@ void LoginPortal_Endpoints::issueTransientAuthTokenResponse(const RequestParamet
         nextSlot["details"] = credentialPublicData.slotDetails.toJSON();
 
         (*jResponse)["nextSlot"] = nextSlot;
-        (*jResponse)["publicData"] = credentialPublicData.toJSON(identityManager->authController->getAuthenticationPolicy());
+        (*jResponse)["publicData"] = credentialPublicData.toJSON(identityManager->authController->getGlobalAuthenticationPolicy());
         (*jResponse)["publicData"].removeMember("slotDetails");
     }
 }
