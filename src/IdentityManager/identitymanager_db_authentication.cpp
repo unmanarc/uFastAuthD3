@@ -40,7 +40,7 @@ std::set<ApplicationScope> IdentityManager_DB::AuthController_DB::getRoleApplica
         _parent->m_mutex.lockShared();
 
     Abstract::STRING sScopeName, sDescription;
-    auto i = _parent->m_sqlConnector->qSelect("SELECT ars.`f_scopeId`,ascope.description FROM iam.applicationRolesScopes ars LEFT JOIN iam.applicationScopes ascope ON (ars.`f_scopeId` = "
+    std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelect("SELECT ars.`f_scopeId`,ascope.description FROM iam.applicationRolesScopes ars LEFT JOIN iam.applicationScopes ascope ON (ars.`f_scopeId` = "
                                               "ascope.scopeId AND ars.`f_appName` = ascope.f_appName) WHERE ars.`f_roleName`=:roleName AND ars.`f_appName`=:appName;",
                                               {{":roleName", MAKE_VAR(STRING, roleName)}, {":appName", MAKE_VAR(STRING, appName)}}, {&sScopeName, &sDescription});
     while (i && i->isSuccessful() && i->step())
@@ -61,7 +61,7 @@ std::set<std::string> IdentityManager_DB::AuthController_DB::getApplicationRoles
         _parent->m_mutex.lockShared();
 
     Abstract::STRING roleName;
-    auto i = _parent->m_sqlConnector->qSelect("SELECT `f_roleName` FROM iam.applicationRolesScopes WHERE `f_scopeId`=:scopeId AND `f_appName`=:appName;",
+    std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelect("SELECT `f_roleName` FROM iam.applicationRolesScopes WHERE `f_scopeId`=:scopeId AND `f_appName`=:appName;",
                                               {{":appName", MAKE_VAR(STRING, applicationScope.appName)}, {":scopeId", MAKE_VAR(STRING, applicationScope.id)}}, {&roleName});
     while (i && i->isSuccessful() && i->step())
     {
@@ -111,7 +111,7 @@ std::set<ApplicationScope> IdentityManager_DB::AuthController_DB::getAccountDire
         _parent->m_mutex.lockShared();
 
     Abstract::STRING appName, scopeId;
-    auto i = _parent->m_sqlConnector->qSelect("SELECT `f_appName`,`f_scopeId` FROM iam.applicationScopeAccounts WHERE `f_accountName`=:accountName;", {{":accountName", MAKE_VAR(STRING, accountName)}},
+    std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelect("SELECT `f_appName`,`f_scopeId` FROM iam.applicationScopeAccounts WHERE `f_accountName`=:accountName;", {{":accountName", MAKE_VAR(STRING, accountName)}},
                                               {&appName, &scopeId});
     while (i && i->isSuccessful() && i->step())
     {

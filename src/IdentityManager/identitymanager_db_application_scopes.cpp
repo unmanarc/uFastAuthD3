@@ -166,7 +166,7 @@ std::set<ApplicationScope> IdentityManager_DB::AuthController_DB::listApplicatio
     if (!applicationName.empty())
         sqlQuery = "SELECT `f_appName`,`scopeId`,`description` FROM iam.applicationScopes WHERE `f_appName`=:appName;";
 
-    auto i = _parent->m_sqlConnector->qSelect(sqlQuery, {{":appName", MAKE_VAR(STRING, applicationName)}}, {&sAppName, &sScopeId, &sDescription});
+    std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelect(sqlQuery, {{":appName", MAKE_VAR(STRING, applicationName)}}, {&sAppName, &sScopeId, &sDescription});
     while (i && i->isSuccessful() && i->step())
     {
         ret.insert({sAppName.getValue(), sScopeId.getValue(), sDescription.getValue()});
@@ -181,7 +181,7 @@ std::set<std::string> IdentityManager_DB::AuthController_DB::listAccountsOnAppli
         _parent->m_mutex.lockShared();
 
     Abstract::STRING accountName;
-    auto i = _parent->m_sqlConnector->qSelect("SELECT `f_accountName` FROM iam.applicationScopeAccounts WHERE `f_scopeId`=:scopeId AND `f_appName`=:appName;",
+    std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelect("SELECT `f_accountName` FROM iam.applicationScopeAccounts WHERE `f_scopeId`=:scopeId AND `f_appName`=:appName;",
                                               {{":appName", MAKE_VAR(STRING, applicationScope.appName)}, {":scopeId", MAKE_VAR(STRING, applicationScope.id)}}, {&accountName});
     while (i && i->isSuccessful() && i->step())
     {
@@ -227,7 +227,7 @@ Json::Value IdentityManager_DB::AuthController_DB::searchApplicationScopes(const
 
     {
         Abstract::STRING scopeId, description;
-        auto i = _parent->m_sqlConnector->qSelectWithFilters(sqlQueryStr, whereFilters, {{":SEARCHWORDS", MAKE_VAR(STRING, searchValue)}, {":APPNAME", MAKE_VAR(STRING, appName)}},
+        std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelectWithFilters(sqlQueryStr, whereFilters, {{":SEARCHWORDS", MAKE_VAR(STRING, searchValue)}, {":APPNAME", MAKE_VAR(STRING, appName)}},
                                                              {&scopeId, &description},
                                                              orderByStatement, // Order by
                                                              limit,            // LIMIT

@@ -96,7 +96,7 @@ std::set<std::string> IdentityManager_DB::ApplicationRoles_DB::listApplicationSc
     Threads::Sync::Lock_RD lock(_parent->m_mutex);
     std::set<std::string> scopes;
     Abstract::STRING scopeId;
-    auto i = _parent->m_sqlConnector->qSelect("SELECT `f_scopeId` FROM iam.applicationRolesScopes WHERE `f_appName`=:appName AND `f_roleName`=:roleName;",
+    std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelect("SELECT `f_scopeId` FROM iam.applicationRolesScopes WHERE `f_appName`=:appName AND `f_roleName`=:roleName;",
                                               {{":appName", MAKE_VAR(STRING, appName)}, {":roleName", MAKE_VAR(STRING, roleName)}}, {&scopeId});
     if (i && i->isSuccessful())
     {
@@ -126,7 +126,7 @@ std::set<ApplicationRole> IdentityManager_DB::ApplicationRoles_DB::getApplicatio
     Threads::Sync::Lock_RD lock(_parent->m_mutex);
 
     Abstract::STRING roleId, description;
-    auto i = _parent->m_sqlConnector->qSelect("SELECT `roleName`,`roleDescription` FROM iam.applicationRoles WHERE `f_appName`=:appName;", {{":appName", MAKE_VAR(STRING, appName)}},
+    std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelect("SELECT `roleName`,`roleDescription` FROM iam.applicationRoles WHERE `f_appName`=:appName;", {{":appName", MAKE_VAR(STRING, appName)}},
                                               {&roleId, &description});
     while (i && i->isSuccessful() && i->step())
     {
@@ -148,7 +148,7 @@ std::set<std::string> IdentityManager_DB::ApplicationRoles_DB::getApplicationRol
         _parent->m_mutex.lockShared();
 
     Abstract::STRING accountName;
-    auto i = _parent->m_sqlConnector->qSelect("SELECT `f_accountName` FROM iam.applicationRolesAccounts WHERE `f_roleName`=:roleName AND `f_appName`=:appName;",
+    std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelect("SELECT `f_accountName` FROM iam.applicationRolesAccounts WHERE `f_roleName`=:roleName AND `f_appName`=:appName;",
                                               {{":appName", MAKE_VAR(STRING, appName)}, {":roleName", MAKE_VAR(STRING, roleName)}}, {&accountName});
     while (i && i->isSuccessful() && i->step())
     {
@@ -194,7 +194,7 @@ Json::Value IdentityManager_DB::ApplicationRoles_DB::searchApplicationRoles(cons
 
     {
         Abstract::STRING roleName, roleDescription;
-        auto i = _parent->m_sqlConnector->qSelectWithFilters(sqlQueryStr, whereFilters, {{":SEARCHWORDS", MAKE_VAR(STRING, searchValue)}, {":APPNAME", MAKE_VAR(STRING, appName)}},
+        std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelectWithFilters(sqlQueryStr, whereFilters, {{":SEARCHWORDS", MAKE_VAR(STRING, searchValue)}, {":APPNAME", MAKE_VAR(STRING, appName)}},
                                                              {&roleName, &roleDescription},
                                                              orderByStatement, // Order by
                                                              limit,            // LIMIT

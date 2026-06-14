@@ -21,7 +21,7 @@ std::optional<uint32_t> IdentityManager_DB::AuthController_DB::addNewAuthenticat
 
     uint32_t newSlotId = 0;
     {
-        auto i = _parent->m_sqlConnector->qExecute("INSERT INTO iam.authenticationSlots (`description`,`function`,`defaultExpirationSeconds`,`strengthJSONValidator`,`totp2FAStepsToleranceWindow`, `canSkipWhenExpired`) "
+        std::shared_ptr<Query> i = _parent->m_sqlConnector->qExecute("INSERT INTO iam.authenticationSlots (`description`,`function`,`defaultExpirationSeconds`,`strengthJSONValidator`,`totp2FAStepsToleranceWindow`, `canSkipWhenExpired`) "
                                                    "VALUES(:description,:function,:defaultExpirationSeconds,:strengthJSONValidator,:totp2FAStepsToleranceWindow,:canSkipWhenExpired);",
                                                    {{":description", MAKE_VAR(STRING, details.description)},
                                                     {":function", MAKE_VAR(UINT32, details.passwordFunction)},
@@ -106,7 +106,7 @@ std::map<uint32_t, AuthenticationSlotDetails> IdentityManager_DB::AuthController
     Abstract::UINT32 uTotp2FAStepsToleranceWindow;
     Abstract::BOOL canSkipWhenExpired;
 
-    auto i = _parent->m_sqlConnector->qSelect("SELECT `slotId`, `description`, `function`, `defaultExpirationSeconds`, `strengthJSONValidator`,`totp2FAStepsToleranceWindow`,`canSkipWhenExpired` "
+    std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelect("SELECT `slotId`, `description`, `function`, `defaultExpirationSeconds`, `strengthJSONValidator`,`totp2FAStepsToleranceWindow`,`canSkipWhenExpired` "
                                               "FROM iam.authenticationSlots;",
                                               {}, {&uSlotId, &sDescription, &uFunction, &uDefaultExpirationSeconds, &sStrengthJSONValidator, &uTotp2FAStepsToleranceWindow, &canSkipWhenExpired});
 

@@ -219,7 +219,7 @@ std::set<std::string> IdentityManager_DB::Applications_DB::listApplications()
     Threads::Sync::Lock_RD lock(_parent->m_mutex);
 
     Abstract::STRING sAppName;
-    auto i = _parent->m_sqlConnector->qSelect("SELECT `appName` FROM iam.applications;", {}, {&sAppName});
+    std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelect("SELECT `appName` FROM iam.applications;", {}, {&sAppName});
     while (i && i->isSuccessful() && i->step())
     {
         ret.insert(sAppName.getValue());
@@ -252,7 +252,7 @@ std::set<std::string> IdentityManager_DB::Applications_DB::listApplicationAdmins
     Threads::Sync::Lock_RD lock(_parent->m_mutex);
 
     Abstract::STRING accountName;
-    auto i = _parent->m_sqlConnector->qSelect("SELECT `f_accountName` FROM iam.applicationAccounts WHERE `f_appName`=:appName AND `isAppAdmin`='1';", {{":appName", MAKE_VAR(STRING, appName)}},
+    std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelect("SELECT `f_accountName` FROM iam.applicationAccounts WHERE `f_appName`=:appName AND `isAppAdmin`='1';", {{":appName", MAKE_VAR(STRING, appName)}},
                                               {&accountName});
     while (i && i->isSuccessful() && i->step())
     {
@@ -268,7 +268,7 @@ std::set<std::string> IdentityManager_DB::Applications_DB::listApplicationAccoun
     Threads::Sync::Lock_RD lock(_parent->m_mutex);
 
     Abstract::STRING accountName;
-    auto i = _parent->m_sqlConnector->qSelect("SELECT `f_accountName` FROM iam.applicationAccounts WHERE `f_appName`=:appName;", {{":appName", MAKE_VAR(STRING, appName)}}, {&accountName});
+    std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelect("SELECT `f_accountName` FROM iam.applicationAccounts WHERE `f_appName`=:appName;", {{":appName", MAKE_VAR(STRING, appName)}}, {&accountName});
     while (i && i->isSuccessful() && i->step())
     {
         ret.insert(accountName.getValue());
@@ -283,7 +283,7 @@ std::set<std::string> IdentityManager_DB::Applications_DB::listAccountApplicatio
     Threads::Sync::Lock_RD lock(_parent->m_mutex);
 
     Abstract::STRING applicationName;
-    auto i = _parent->m_sqlConnector->qSelect("SELECT `f_appName` FROM iam.applicationAccounts WHERE `f_accountName`=:accountName;", {{":accountName", MAKE_VAR(STRING, accountName)}},
+    std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelect("SELECT `f_appName` FROM iam.applicationAccounts WHERE `f_accountName`=:accountName;", {{":accountName", MAKE_VAR(STRING, accountName)}},
                                               {&applicationName});
     while (i && i->isSuccessful() && i->step())
     {
@@ -363,7 +363,7 @@ Json::Value IdentityManager_DB::Applications_DB::searchApplications(const json &
 
     {
         Abstract::STRING appName, appCreator, appDescription;
-        auto i = _parent->m_sqlConnector->qSelectWithFilters(sqlQueryStr, whereFilters, {{":SEARCHWORDS", MAKE_VAR(STRING, searchValue)}}, {&appName, &appCreator, &appDescription},
+        std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelectWithFilters(sqlQueryStr, whereFilters, {{":SEARCHWORDS", MAKE_VAR(STRING, searchValue)}}, {&appName, &appCreator, &appDescription},
                                                              orderByStatement, // Order by
                                                              limit,            // LIMIT
                                                              offset            // OFFSET
@@ -404,11 +404,11 @@ std::vector<AccountApplicationInfo> IdentityManager_DB::Applications_DB::listAcc
         Abstract::BOOL isAppAdmin;
         Abstract::DATETIME enrollmentDate;
 
-        auto i = _parent->m_sqlConnector->qSelect("SELECT a.`f_appName`, ap.`appDescription`, a.`isAppAdmin`, a.`enrollmentDate` "
-                                                  "FROM iam.applicationAccounts a "
-                                                  "JOIN iam.applications ap ON a.`f_appName` = ap.`appName` "
-                                                  "WHERE a.`f_accountName` = :accountName;",
-                                                  {{":accountName", MAKE_VAR(STRING, accountName)}}, {&appName, &appDescription, &isAppAdmin, &enrollmentDate});
+        std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelect("SELECT a.`f_appName`, ap.`appDescription`, a.`isAppAdmin`, a.`enrollmentDate` "
+                                                   "FROM iam.applicationAccounts a "
+                                                   "JOIN iam.applications ap ON a.`f_appName` = ap.`appName` "
+                                                   "WHERE a.`f_accountName` = :accountName;",
+                                                   {{":accountName", MAKE_VAR(STRING, accountName)}}, {&appName, &appDescription, &isAppAdmin, &enrollmentDate});
 
         while (i && i->isSuccessful() && i->step())
         {
@@ -427,7 +427,7 @@ std::vector<AccountApplicationInfo> IdentityManager_DB::Applications_DB::listAcc
         // Query 2: Obtener roles del account en esta app
         {
             Abstract::STRING roleName;
-            auto j = _parent->m_sqlConnector->qSelect("SELECT `f_roleName` FROM iam.applicationRolesAccounts "
+            std::shared_ptr<Query> j = _parent->m_sqlConnector->qSelect("SELECT `f_roleName` FROM iam.applicationRolesAccounts "
                                                       "WHERE `f_accountName` = :accountName AND `f_appName` = :appName;",
                                                       {{":accountName", MAKE_VAR(STRING, accountName)}, {":appName", MAKE_VAR(STRING, info.appName)}}, {&roleName});
 
@@ -443,7 +443,7 @@ std::vector<AccountApplicationInfo> IdentityManager_DB::Applications_DB::listAcc
         {
             // Query 3: Obtener scopes de este rol
             Abstract::STRING scopeId;
-            auto k = _parent->m_sqlConnector->qSelect("SELECT `f_scopeId` FROM iam.applicationRolesScopes "
+            std::shared_ptr<Query> k = _parent->m_sqlConnector->qSelect("SELECT `f_scopeId` FROM iam.applicationRolesScopes "
                                                       "WHERE `f_appName` = :appName AND `f_roleName` = :roleName;",
                                                       {{":appName", MAKE_VAR(STRING, info.appName)}, {":roleName", MAKE_VAR(STRING, currentRole)}}, {&scopeId});
 
@@ -458,7 +458,7 @@ std::vector<AccountApplicationInfo> IdentityManager_DB::Applications_DB::listAcc
             // Query 4: Obtener scopes directos del account en esta app
             // desde iam.applicationScopeAccounts unido con iam.applicationScopes
             Abstract::STRING scopeId;
-            auto l = _parent->m_sqlConnector->qSelect(
+            std::shared_ptr<Query> l = _parent->m_sqlConnector->qSelect(
                 "SELECT `f_scopeId` FROM iam.applicationScopeAccounts  WHERE `f_accountName` = :accountName AND `f_appName` = :appName;",
                 {{":accountName", MAKE_VAR(STRING, accountName)}, {":appName", MAKE_VAR(STRING, info.appName)}}, {&scopeId});
 
@@ -507,7 +507,7 @@ std::set<std::string> IdentityManager_DB::Applications_DB::listWebLoginAllowedRe
     Abstract::STRING loginRedirectURI;
     std::set<std::string> redirectURIs;
 
-    auto i = _parent->m_sqlConnector->qSelect("SELECT `loginRedirectURI` FROM iam.applicationsWebLoginAllowedRedirectURIs WHERE `f_appName`=:appName;", {{":appName", MAKE_VAR(STRING, appName)}},
+    std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelect("SELECT `loginRedirectURI` FROM iam.applicationsWebLoginAllowedRedirectURIs WHERE `f_appName`=:appName;", {{":appName", MAKE_VAR(STRING, appName)}},
                                               {&loginRedirectURI});
     while (i && i->isSuccessful() && i->step())
     {
@@ -608,7 +608,7 @@ std::set<std::string> IdentityManager_DB::Applications_DB::listWebLoginOriginUrl
     Abstract::STRING originUrl;
     std::set<std::string> originUrls;
 
-    auto i = _parent->m_sqlConnector->qSelect("SELECT `originUrl` FROM iam.applicationsWebLoginOrigins WHERE `f_appName`=:appName;", {{":appName", MAKE_VAR(STRING, appName)}}, {&originUrl});
+    std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelect("SELECT `originUrl` FROM iam.applicationsWebLoginOrigins WHERE `f_appName`=:appName;", {{":appName", MAKE_VAR(STRING, appName)}}, {&originUrl});
     while (i && i->isSuccessful() && i->step())
     {
         originUrls.insert(originUrl.getValue());

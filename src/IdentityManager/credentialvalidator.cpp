@@ -17,7 +17,7 @@ void CredentialValidator::cleanupExpiredTokens()
 
     if (useTokenCache)
     {
-        auto now = time(nullptr);
+        time_t now = time(nullptr);
         while (!expirationQueue.empty() && (now - expirationQueue.begin()->first) >= 90)
         {
             usedTokensCache.erase(expirationQueue.begin()->second);
@@ -115,7 +115,7 @@ AuthenticationResult CredentialValidator::validateGAuth(const std::string &accou
         if (cacheEntry != usedTokensCache.end())
         {
             auto tokenTimestamp = cacheEntry->second;
-            auto now = time(nullptr);
+            time_t now = time(nullptr);
             auto elapsedSeconds = now - tokenTimestamp;
 
             if (elapsedSeconds < 90)
@@ -132,7 +132,7 @@ AuthenticationResult CredentialValidator::validateGAuth(const std::string &accou
         // Add token to cache:
         if (useTokenCache)
         {
-            auto now = time(nullptr);
+            time_t now = time(nullptr);
             usedTokensCache[accountTokenKey] = now;
             expirationQueue.insert({now, accountTokenKey});
         }

@@ -510,7 +510,7 @@ bool IdentityManager_DB::initializeDatabase()
     };
 
     bool success = true;
-    for (const auto &sql : sqlStatements)
+    for (const std::string_view &sql : sqlStatements)
     {
         if (!m_sqlConnector->qExecuteEx(sql.data()))
         {

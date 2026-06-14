@@ -49,7 +49,7 @@ std::optional<uint32_t> IdentityManager_DB::AuthController_DB::addAuthentication
 
     uint32_t newSchemeId = 0;
     {
-        auto i = _parent->m_sqlConnector->qExecute("INSERT INTO iam.authenticationSchemes (`description`) VALUES(:description);", {{":description", MAKE_VAR(STRING, description)}});
+        std::shared_ptr<Query> i = _parent->m_sqlConnector->qExecute("INSERT INTO iam.authenticationSchemes (`description`) VALUES(:description);", {{":description", MAKE_VAR(STRING, description)}});
 
         if (!i || !i->isSuccessful())
             return std::nullopt;
@@ -104,7 +104,7 @@ std::map<uint32_t, std::string> IdentityManager_DB::AuthController_DB::listAuthe
     Abstract::UINT32 uSlotId;
     Abstract::STRING sDescription;
 
-    auto i = _parent->m_sqlConnector->qSelect("SELECT `schemeId`, `description` FROM iam.authenticationSchemes;", {}, {&uSlotId, &sDescription});
+    std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelect("SELECT `schemeId`, `description` FROM iam.authenticationSchemes;", {}, {&uSlotId, &sDescription});
 
     // Iterate:
     while (i && i->isSuccessful() && i->step())
@@ -134,7 +134,7 @@ std::vector<AuthenticationSchemeUsedSlot> IdentityManager_DB::AuthController_DB:
                       "ORDER BY `orderPriority` ASC;"; // Assuming you want to order by priority
 
     // Execute the query with direct parameter passing
-    auto queryInstance = _parent->m_sqlConnector->qSelect(sql, {{":schemeId", MAKE_VAR(UINT32, schemeId)}}, {&uSlotId, &uOrderPriority, &uOptional});
+    std::shared_ptr<Query> queryInstance = _parent->m_sqlConnector->qSelect(sql, {{":schemeId", MAKE_VAR(UINT32, schemeId)}}, {&uSlotId, &uOrderPriority, &uOptional});
 
     // Assuming queryInstance->query provides a way to iterate over results and bind columns to variables
 

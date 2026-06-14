@@ -74,7 +74,7 @@ Json::Value IdentityManager_DB::AuthController_DB::searchAccountSessions(const s
         Abstract::DATETIME accessTokenExpiration, refreshTokenExpiration, logoutDateTime;
         Abstract::UINT32 logoutReason;
 
-        auto i = _parent->m_sqlConnector->qSelectWithFilters(sqlQueryStr, whereFilters, params,
+        std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelectWithFilters(sqlQueryStr, whereFilters, params,
                                                              {&f_accountName, &f_schemeId, &f_appName, &loginDateTime, &loginIP, &loginTLSCN, &loginUserAgent, &refresherTokenId, &accessTokenId,
                                                               &accessTokenExpiration, &refreshTokenExpiration, &logoutDateTime, &logoutReason},
                                                              orderByStatement, limit, offset);

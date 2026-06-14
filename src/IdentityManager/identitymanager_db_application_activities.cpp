@@ -80,7 +80,7 @@ bool IdentityManager_DB::ApplicationActivities_DB::setApplicationActivities(cons
     Abstract::STRING activityName;
 
     {
-        auto i = _parent->m_sqlConnector->qSelect("SELECT `activityName` FROM iam.applicationActivities WHERE `f_appName` = :appName;", {{":appName", MAKE_VAR(STRING, appName)}}, {&activityName});
+        std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelect("SELECT `activityName` FROM iam.applicationActivities WHERE `f_appName` = :appName;", {{":appName", MAKE_VAR(STRING, appName)}}, {&activityName});
 
         if (i && i->isSuccessful())
         {
@@ -96,7 +96,7 @@ bool IdentityManager_DB::ApplicationActivities_DB::setApplicationActivities(cons
     }
 
     // Remove the activities not present in the new map.
-    for (const auto &currentActivity : currentActivities)
+    for (const std::string &currentActivity : currentActivities)
     {
         if (activities.find(currentActivity) == activities.end())
         {
@@ -243,7 +243,7 @@ std::map<std::string, IdentityManager::ApplicationActivities::ActivityData> Iden
     Abstract::UINT32 defaultSchemeId;
     std::map<std::string, IdentityManager::ApplicationActivities::ActivityData> activities;
 
-    auto i = _parent->m_sqlConnector->qSelect(
+    std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelect(
         R"(SELECT
                                                     `activityName`,
                                                     `parentActivity`,
@@ -312,7 +312,7 @@ std::set<uint32_t> IdentityManager_DB::ApplicationActivities_DB::listAuthenticat
     // Temporal Variables to store the results
     Abstract::UINT32 uSchemeId;
 
-    auto i = _parent->m_sqlConnector->qSelect("SELECT `f_schemeId` FROM iam.applicationActivitiesAuthSchemes WHERE `f_appName`=:appName AND `f_activityName`=:activityName;",
+    std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelect("SELECT `f_schemeId` FROM iam.applicationActivitiesAuthSchemes WHERE `f_appName`=:appName AND `f_activityName`=:activityName;",
                                               {{":appName", MAKE_VAR(STRING, appName)}, {":activityName", MAKE_VAR(STRING, activityName)}}, {&uSchemeId});
 
     // Iterate:
