@@ -1,11 +1,132 @@
 <div class="tab-pane" id="loginflow" role="tabpanel" aria-labelledby="loginflow-tab" style="min-height: 500px;">
 
-    <script>
-        let currentLoginFlowDetails = "";
+<script>
+    let currentLoginFlowDetails = "";
 
-        function displayUpdateFunctionForLoginCallbackURI() {
-            document.getElementById('modifyButtonsForCallbackURI').style.display = 'block';
+    function displayUpdateFunctionForLoginCallbackURI() {
+        document.getElementById('modifyButtonsForCallbackURI').style.display = 'block';
+    }
+
+    // === Embedded Authentication Helpers ===
+
+    function isEmbeddedAuthentication() {
+        const checkbox = document.getElementById('useEmbeddedAuthentication');
+        return checkbox && checkbox.checked;
+    }
+
+    function validateUriForMode(uri, embedded) {
+        if (!uri || uri.trim() === '') return true; // empty is ok
+        uri = uri.trim();
+        if (uri.startsWith('https://')) return true; // always valid
+        if (uri.startsWith('HTTPS://')) return true; // always valid
+        if (embedded && uri.startsWith('/')) return true; // embedded allows paths
+        return false;
+    }
+
+    function showFieldWarning(fieldId, message) {
+        let warningEl = document.getElementById(fieldId + '_warning');
+        if (!warningEl) {
+            warningEl = document.createElement('div');
+            warningEl.id = fieldId + '_warning';
+            warningEl.className = 'text-danger mt-1 small';
+            warningEl.innerHTML = '<i class="fas fa-exclamation-triangle"></i> ' + message;
+            // Insert after the field
+            const field = document.getElementById(fieldId);
+            if (field && field.parentNode) {
+                field.parentNode.insertBefore(warningEl, field.nextSibling);
+            }
+        } else {
+            warningEl.style.display = 'block';
         }
+    }
+
+    function hideFieldWarning(fieldId) {
+        const warningEl = document.getElementById(fieldId + '_warning');
+        if (warningEl) {
+            warningEl.style.display = 'none';
+        }
+    }
+
+    function showRowWarning(rowContainerId, message) {
+        let warningEl = document.getElementById(rowContainerId + '_warning');
+        if (!warningEl) {
+            warningEl = document.createElement('span');
+            warningEl.id = rowContainerId + '_warning';
+            warningEl.className = 'text-danger ms-2';
+            warningEl.title = message;
+            warningEl.innerHTML = '<i class="fas fa-exclamation-triangle"></i>';
+            // Append to the row container (the <th> element that shows the text)
+            const container = document.getElementById(rowContainerId);
+            if (container) {
+                container.appendChild(warningEl);
+            }
+        } else {
+            warningEl.style.display = 'inline';
+            warningEl.title = message;
+        }
+    }
+
+    function hideRowWarning(rowContainerId) {
+        const warningEl = document.getElementById(rowContainerId + '_warning');
+        if (warningEl) {
+            warningEl.style.display = 'none';
+        }
+    }
+
+    function validateLoginFlowForEmbeddedMode() {
+        const embedded = isEmbeddedAuthentication();
+        let hasWarnings = false;
+
+        // Validate loginCallbackURI
+        const callbackUri = document.getElementById('callbackURI').value.trim();
+        if (!validateUriForMode(callbackUri, embedded)) {
+            showFieldWarning('callbackURI', embedded
+                ? 'Embedded auth requires https:// URL or / path'
+                : 'Non-embedded auth requires https:// URL');
+            hasWarnings = true;
+        } else {
+            hideFieldWarning('callbackURI');
+        }
+
+        // Validate WebLoginRedirectURIs
+        document.querySelectorAll('[id^="ulist-webLoginRedirectURIsById-"]').forEach((input, idx) => {
+            const rowId = 'ulist-webLoginRedirectURIs-' + idx;
+            if (!validateUriForMode(input.value.trim(), embedded)) {
+                showRowWarning(rowId, embedded
+                    ? 'Embedded auth requires https:// URL or / path'
+                    : 'Non-embedded auth requires https:// URL');
+                hasWarnings = true;
+            } else {
+                hideRowWarning(rowId);
+            }
+        });
+
+        // Validate WebLoginOrigins (always require https://)
+        document.querySelectorAll('[id^="ulist-webLoginOriginsById-"]').forEach((input, idx) => {
+            const rowId = 'ulist-webLoginOrigins-' + idx;
+            const uri = input.value.trim();
+            if (uri && !uri.toLowerCase().startsWith('https://')) {
+                showRowWarning(rowId, 'Origin must start with https://');
+                hasWarnings = true;
+            } else {
+                hideRowWarning(rowId);
+            }
+        });
+
+        // Update warning icon next to app name in modal header
+        const headerWarning = document.getElementById('applicationNameWarning');
+        if (headerWarning) {
+            if (hasWarnings) {
+                headerWarning.style.display = 'inline';
+                headerWarning.title = 'Some Login Flow fields are inconsistent with the current Embedded Authentication mode';
+            } else {
+                headerWarning.style.display = 'none';
+                headerWarning.title = '';
+            }
+        }
+
+        return hasWarnings;
+    }
 
         function populateWebLoginOrigins(origins) {
             document.getElementById("tbody-webloginOrigins").innerHTML = "";
@@ -56,7 +177,6 @@
             }
         }
 
-
         function populateWebLoginRedirectURIs(redirectURIs, defaultRedirectURI) 
         {
             document.getElementById("tbody-webloginRedirectURIs").innerHTML = "";
@@ -86,7 +206,6 @@
             }
         }
 
-
         function addWebLoginRedirectURItoApp() {
             var newRedirectURI = document.getElementById("newWebLoginRedirectURI").value;
 
@@ -96,21 +215,32 @@
                 return;
             }
 
-            // Validate if redirect URI is a valid URL
-            try {
-                newURL = new URL(newRedirectURI);
-            } catch (e) {
-                showToastError("Invalid URL format for redirect URI.");
-                return;
+            // Check if embedded auth mode (allows paths)
+            const embedded = isEmbeddedAuthentication();
+
+            // Validate format based on embedded mode
+            if (embedded) {
+                // Embedded: accept https:// URLs or / paths
+                if (!newRedirectURI.startsWith('https://') && !newRedirectURI.startsWith('/')) {
+                    showToastError("Redirect URI must start with 'https://' or '/' (internal path) for embedded auth.");
+                    return;
+                }
+            } else {
+                // Non-embedded: require valid https:// URL
+                try {
+                    newURL = new URL(newRedirectURI);
+                } catch (e) {
+                    showToastError("Invalid URL format for redirect URI.");
+                    return;
+                }
+
+                if (!newRedirectURI.toLowerCase().startsWith("https://")) {
+                    showToastError("Redirect URI must start with 'https://' for security reasons.");
+                    return;
+                }
             }
 
-            // Validate if redirect URI starts with https
-            if (!newRedirectURI.toLowerCase().startsWith("https://")) {
-                showToastError("Redirect URI must start with 'https://' for security reasons.");
-                return;
-            }
-
-            // Update description via PATCH
+            // Add redirect URI via PUT
             $.ajax({
                 url: '/api/v1/addApplicationLoginRedirectURI',
                 type: 'PUT',
@@ -127,7 +257,6 @@
                 error: commonFunctionError
             });
         }
-
 
         function addWebLoginOriginToApp() {
             var newOrigin = document.getElementById("newWebLoginOrigin").value;
@@ -228,13 +357,14 @@
             });
         }
 
-
-
         function populateApplicationLoginFlow(details) {
             currentLoginFlowDetails = details;
             document.getElementById("callbackURI").value = details["callbackURI"];
             populateWebLoginOrigins(details["loginOrigins"]);
             populateWebLoginRedirectURIs(details["redirectURIs"], details["defaultRedirectURI"]);
+
+            // Validate data against current embedded mode after populating
+            validateLoginFlowForEmbeddedMode();
         }
 
         function discardLoginCallbackURIDetails() {
@@ -245,19 +375,29 @@
         function modifyLoginCallbackURIDetails() {
             var callbackURI = document.getElementById("callbackURI").value;
 
+            // Check if embedded auth mode (allows paths)
+            const embedded = isEmbeddedAuthentication();
 
-            // Validate if callbackURI is a valid URL
-            try {
-                new URL(callbackURI);
-            } catch (e) {
-                showToastError("Invalid URL format for callback URI.");
-                return;
-            }
+            // Validate format based on embedded mode
+            if (embedded) {
+                // Embedded: accept https:// URLs or / paths
+                if (!callbackURI.startsWith('https://') && !callbackURI.startsWith('/')) {
+                    showToastError("Callback URI must start with 'https://' or '/' (internal path) for embedded auth.");
+                    return;
+                }
+            } else {
+                // Non-embedded: require valid https:// URL
+                try {
+                    new URL(callbackURI);
+                } catch (e) {
+                    showToastError("Invalid URL format for callback URI.");
+                    return;
+                }
 
-            // Validate if callbackURI starts with https
-            if (!callbackURI.toLowerCase().startsWith("https://")) {
-                showToastError("Callback URI must start with 'https://' for security reasons.");
-                return;
+                if (!callbackURI.toLowerCase().startsWith("https://")) {
+                    showToastError("Callback URI must start with 'https://' for security reasons.");
+                    return;
+                }
             }
 
 
@@ -281,7 +421,7 @@
     </script>
 
     <div class="card mb-3">
-        <div class="card-header" style="text-align: center;"><b>Login Callback URI (Outgoing JWT Injection)</b></div>
+        <div class="card-header" style="text-align: center;"><b>Login Callback URI (IAM->APP JWT Injection)</b></div>
         <div class="card-body">
             <input type="text" class="form-control" id="callbackURI" placeholder="Enter callback URI"
                 oninput="displayUpdateFunctionForLoginCallbackURI()"
@@ -303,8 +443,8 @@
 
     </div>
 
-    <div class="card mb-3">
-        <div class="card-header" style="text-align: center;"><b>WebLogin Origins (Incomming Traffic)</b></div>
+    <div class="card mb-3" id="appOriginsCard">
+        <div class="card-header" style="text-align: center;"><b>Application Origins (APP->IAM Traffic, eg. logout, retokenization)</b></div>
         <div class="card-body">
 
             <div class="input-group mb-3">

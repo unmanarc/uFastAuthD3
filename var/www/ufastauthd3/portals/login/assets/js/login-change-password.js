@@ -151,7 +151,7 @@ function submitChangePassword() {
     };
 
     $.ajax({
-        url: '/api/v1/changeCredential',
+        url: 'api/v1/changeCredential',
         type: 'PUT',
         contentType: 'application/json',
         headers: {

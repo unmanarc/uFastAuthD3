@@ -11,7 +11,7 @@ let cachedLastAuthorizeResponse = null;
  */
 function initializeAuthentication(username) {
     $.ajax({
-        url: "/api/v1/preAuthorize",
+        url: "api/v1/preAuthorize",
         type: "POST",
         contentType: "application/json",
         data: JSON.stringify({
@@ -122,7 +122,7 @@ function handleAuthorizeResponse(response, skipStrengthValidation) {
  */
 function authorizeCredential(username, schemeId, password) {
     $.ajax({
-        url: "/api/v1/authorize",
+        url: "api/v1/authorize",
         type: "POST",
         contentType: "application/json",
         headers: {

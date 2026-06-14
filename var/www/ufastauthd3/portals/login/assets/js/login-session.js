@@ -9,7 +9,7 @@
  */
 function validateSessionAndShowScreen() {
     $.ajax({
-        url: "/api/v1/token",
+        url: "api/v1/token",
         type: "POST",
         contentType: "application/json",
         data: JSON.stringify({
@@ -40,7 +40,7 @@ function validateSessionAndShowScreen() {
 
 function logout() {
     $.ajax({
-        url: "/api/v1/logout",
+        url: "api/v1/logout",
         type: "POST",
         contentType: "application/json",
         data: JSON.stringify({}),
@@ -59,7 +59,7 @@ function logout() {
 function loadTokenAndRedirect() {
     // Perform the AJAX request
     $.ajax({
-        url: "/api/v1/token",
+        url: "api/v1/token",
         type: "POST",
         contentType: "application/json",
         data: JSON.stringify(

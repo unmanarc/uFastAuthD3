@@ -9,6 +9,7 @@
         $("#syncServiceEnabledCreate").prop("checked", true);
         $("#canUserAutoRegisterCreate").prop("checked", true);
         $("#appSyncCanRetrieveAppAccountsListCreate").prop("checked", true);
+        $("#useEmbeddedAuthenticationCreate").prop("checked", false);
 
         // TODO:
         $('.nav-tabs a:first').tab('show')
@@ -62,6 +63,7 @@
                 applicationAttributes: {
                     canAdminModifyApplicationSecurityContext: $("#canAdminModifyApplicationSecurityContextCreate").is(":checked"),
                     canUserAutoRegister: $("#canUserAutoRegisterCreate").is(":checked"),
+                    useEmbeddedAuthentication: $("#useEmbeddedAuthenticationCreate").is(":checked"),
                     appSyncEnabled: $("#syncServiceEnabledCreate").is(":checked"),
                     appSyncCanRetrieveAppAccountsList: $("#appSyncCanRetrieveAppAccountsListCreate").is(":checked")
                 },
@@ -218,6 +220,16 @@
                                 </div>
                             </div>
 
+                            <div class="row mb-2">
+                                <div class="col-auto">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="useEmbeddedAuthenticationCreate">
+                                        <label class="form-check-label" for="useEmbeddedAuthenticationCreate">
+                                            Use Embedded Authentication
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
 
                             <div class="row mb-2">
                                 <div class="col-auto">

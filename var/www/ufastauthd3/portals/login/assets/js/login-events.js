@@ -5,7 +5,7 @@
 $(document).ready(function () {
     // Fetch and display app description
     $.ajax({
-        url: "/api/v1/getAppDescription",
+        url: "api/v1/getAppDescription",
         type: "GET",
         data: JSON.stringify(
             {
@@ -40,7 +40,7 @@ $(document).ready(function () {
 
     if (!appName) {
         // Override appName to IAM_USRPORTAL
-        window.location.href = "/?app=IAM_USRPORTAL";
+        window.location.href = "./?app=IAM_USRPORTAL";
     }
 
     // Validate if 'redirectURI' exists and is a valid base64 string

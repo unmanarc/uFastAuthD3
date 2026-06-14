@@ -7,7 +7,7 @@
     <div class="modal-dialog modal-dialog-scrollable modal-xl">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="modalEditApplicationLabel">Edit Application - <b><span id="editApplicationName"></span></b></h5>
+                <h5 class="modal-title" id="modalEditApplicationLabel">Edit Application - <b><span id="editApplicationName"></span><i class="fas fa-exclamation-triangle text-danger ms-2" id="applicationNameWarning" style="display: none;" title=""></i></span></b></h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
@@ -89,6 +89,57 @@
 
 
 <script>
+    function updateTabVisibility(appName) {
+        const restrictedApp = "IAM_LOGINPORTAL";
+        const noDeleteApps = ["IAM_USRPORTAL", "IAM_ADMPORTAL"];
+        const isRestricted = (appName === restrictedApp);
+        const isNoDelete = noDeleteApps.includes(appName);
+
+        // Referencias a los botones de las pestañas
+        const detailsTab = $('#details-tab');
+        const tokensTab = $('#tokens-tab');
+        const loginflowTab = $('#loginflow-tab');
+        const scopesTab = $('#scopes-tab');
+        const rolesTab = $('#roles-tab');
+        const accountsTab = $('#accounts-tab');
+        const activitiesTab = $('#activities-tab');
+        const advancedTab = $('#advanced-tab');
+
+        // Todos los tabs
+        const allTabs = [detailsTab, tokensTab, loginflowTab, scopesTab, rolesTab, accountsTab, activitiesTab, advancedTab];
+
+        // === STEP 1: RESET COMPLETO ===
+        // Mostrar todos los tabs
+        allTabs.forEach(tab => tab.parent().show());
+
+        // Remover clase active de todos
+        allTabs.forEach(tab => tab.removeClass('active'));
+
+        // Remover clases show/active del contenido de tabs
+        $('.tab-pane').removeClass('show active');
+
+        // === STEP 2: Establecer details-tab como activo por defecto ===
+        detailsTab.addClass('active');
+        $('#details').addClass('show active');
+
+        // === STEP 3: Aplicar restricciones ===
+        if (isRestricted) {
+            // Ocultar todas menos activities
+            const hiddenTabs = [detailsTab, tokensTab, loginflowTab, scopesTab, rolesTab, accountsTab, advancedTab];
+            hiddenTabs.forEach(tab => tab.parent().hide());
+
+            // Activar activities tab
+            detailsTab.removeClass('active');
+            $('#details').removeClass('show active');
+            activitiesTab.addClass('active');
+            $('#activities').addClass('show active');
+        } else if (isNoDelete) {
+            // Ocultar solo advanced tab
+            advancedTab.parent().hide();
+        }
+        // else: ya está todo reseteado con details activo
+    }
+
     function populateApplication() {
         $.ajax({
             url: '/api/v1/getApplicationInfo',
@@ -127,6 +178,9 @@
         currentApplication = atob(b64ApplicationName);
 
         ajaxValidateAndPopulateApplication();
+
+        // Controlar visibilidad de pestañas segun la aplicacion
+        updateTabVisibility(currentApplication);
 
         var hash = location.hash;
         if (hash == "#applications") {

@@ -124,7 +124,7 @@ function decodeBase64(str) {
                 },
                 success: function (response) {
                     console.log('[Local Logout] SUCCESS. Reloading page...');
-                    window.location.href = "/?app=" + data.appName;
+                    window.location.href = "./?app=" + data.appName;
                 },
                 error: function (xhr, status, error) {
                     console.error('[Local Logout] FAILED:', error, 'XHR status:', xhr.status);
@@ -135,7 +135,7 @@ function decodeBase64(str) {
             });
         } else {
             console.log('[Main] All external logouts completed. data.keepAuthentication is false, skipping local logout.');
-            window.location.href = "/?app=" + data.appName ;
+            window.location.href = "./?app=" + data.appName ;
 
         }
     });

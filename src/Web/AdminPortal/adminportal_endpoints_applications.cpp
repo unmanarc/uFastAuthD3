@@ -447,8 +447,8 @@ json AdminPortal_Endpoints_Applications::getLoginFlowDetails(const std::string &
 {
     json payloadOut;
 
-    std::list<std::string> webLoginOrigins      = Globals::getIdentityManager()->applications->listWebLoginOriginUrlsFromApplication(appName);
-    std::list<std::string> acceptedRedirectURIs = Globals::getIdentityManager()->applications->listWebLoginAllowedRedirectURIsFromApplication(appName);
+    std::set<std::string> webLoginOrigins      = Globals::getIdentityManager()->applications->listWebLoginOriginUrlsFromApplication(appName);
+    std::set<std::string> acceptedRedirectURIs = Globals::getIdentityManager()->applications->listWebLoginAllowedRedirectURIsFromApplication(appName);
 
     payloadOut["callbackURI"]        = Globals::getIdentityManager()->applications->getApplicationCallbackURI(appName);
     payloadOut["defaultRedirectURI"] = Globals::getIdentityManager()->applications->getWebLoginDefaultRedirectURIForApplication(appName);

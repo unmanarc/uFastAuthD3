@@ -40,6 +40,18 @@
         </tr>
 
         <tr>
+            <td align="right" style="white-space: nowrap; width: 1%;">Use Embedded Authentication: </td>
+            <td>
+                <div class="input-group">
+                    <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="useEmbeddedAuthentication"
+                        onchange="onEmbeddedAuthChanged()">
+                    </div>
+                </div>
+            </td>
+        </tr>
+
+        <tr>
             <td align="right" style="white-space: nowrap; width: 1%;">Enable Synchronization Service: </td>
             <td>
                 <div class="input-group">
@@ -83,14 +95,27 @@
 
 
 <script>
+    function onEmbeddedAuthChanged() {
+        displayUpdateFunction();
+        // Re-validate login flow when embedded auth changes
+        if (typeof validateLoginFlowForEmbeddedMode === 'function') {
+            validateLoginFlowForEmbeddedMode();
+        }
+    }
+
     function populateApplicationDetails(details, attributes) {
         document.getElementById("description").value = details["description"];
         document.getElementById("newAppKey").value = '';
 
         document.getElementById("canUserAutoRegister").checked = attributes.canUserAutoRegister ?? false;
+        document.getElementById("useEmbeddedAuthentication").checked = attributes.useEmbeddedAuthentication ?? false;
         document.getElementById("syncServiceEnabled").checked = attributes.appSyncEnabled ?? false;
         document.getElementById("appSyncCanRetrieveAppAccountsList").checked = attributes.appSyncCanRetrieveAppAccountsList ?? false;
 
+        // Re-validate login flow after populating details
+        if (typeof validateLoginFlowForEmbeddedMode === 'function') {
+            validateLoginFlowForEmbeddedMode();
+        }
     }
 
     function discardApplicationDetails() {
@@ -112,6 +137,7 @@
                 description: description,
                 applicationAttributes: {
                     canUserAutoRegister: $("#canUserAutoRegister").is(":checked"),
+                    useEmbeddedAuthentication: $("#useEmbeddedAuthentication").is(":checked"),
                     appSyncEnabled: $("#syncServiceEnabled").is(":checked"),
                     appSyncCanRetrieveAppAccountsList: $("#appSyncCanRetrieveAppAccountsList").is(":checked")
                 },
@@ -140,7 +166,6 @@
             },
             error: commonFunctionError
         });
-
     }
 
 
