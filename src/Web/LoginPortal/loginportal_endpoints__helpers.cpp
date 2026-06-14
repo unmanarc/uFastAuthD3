@@ -1,8 +1,6 @@
 #include "IdentityManager/ds_authentication.h"
 #include "Mantids30/Protocol_HTTP/api_return.h"
-#include "Tokens/tokensmanager.h"
 #include "loginportal_endpoints.h"
-#include "json/value.h"
 #include <Mantids30/Helpers/json.h>
 
 #include "globals.h"
@@ -10,7 +8,6 @@
 #include <cstdint>
 #include <json/config.h>
 #include <memory>
-#include <optional>
 #include <string>
 
 using namespace Mantids30;
@@ -46,47 +43,6 @@ std::vector<AuthenticationSchemeUsedSlot> LoginPortal_Endpoints::calculateRequir
 
     return filteredAuthSlots;
 }
-/*
-bool LoginPortal_Endpoints::validateAndMerge_AccessTokenIfExist(const RequestParameters &request, LoginPortal_Endpoints::APIReturn &response, std::shared_ptr<TransientAuthenticationContext> authContext)
-{
-    JWT::Token accessToken;
-    std::string cookieAccessTokenStr = request.clientRequest->getCookie("AccessToken");
-
-    if (!cookieAccessTokenStr.empty())
-    {
-        if (!request.jwtValidator->verify(cookieAccessTokenStr, &accessToken))
-        {
-            // Failed to load the intermediary...
-            response.setError(HTTP::Status::S_403_FORBIDDEN, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::UNAUTHENTICATED)),
-                              authResultToString(AuthenticationResult::UNAUTHENTICATED));
-            return false;
-        }
-        if (accessToken.getClaim("app") != IAM_LOGINPORTAL_APPNAME || accessToken.getClaim("type") != "access")
-        {
-            // This Token is not for this cookie...
-            response.setError(HTTP::Status::S_403_FORBIDDEN, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::UNAUTHENTICATED)),
-                              authResultToString(AuthenticationResult::UNAUTHENTICATED));
-            return false;
-        }
-        if (accessToken.getSubject() != authContext->accountName)
-        {
-            // This Token is not for this cookie... (other username... logout first please!)
-            response.setError(HTTP::Status::S_403_FORBIDDEN, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::UNAUTHENTICATED)),
-                              authResultToString(AuthenticationResult::UNAUTHENTICATED));
-            return false;
-        }
-
-        // We have an access token!
-        std::set<uint32_t> authenticatedSlotsOnAccessToken = Mantids30::Helpers::jsonToUInt32Set(accessToken.getClaim("slotIds"));
-        // Merge.
-        for (const auto &i : authenticatedSlotsOnAccessToken)
-        {
-            authContext->authenticatedSlots.insert(i);
-        }
-    }
-
-    return true;
-}*/
 
 void LoginPortal_Endpoints::deleteLoginCookies(void *, const RequestParameters &request, ClientDetails &, APIReturn *response)
 {
@@ -95,8 +51,8 @@ void LoginPortal_Endpoints::deleteLoginCookies(void *, const RequestParameters &
         return;
     }
 
-    response->cookiesMap["AccessToken"] = HTTP::Headers::Cookie();
-    response->cookiesMap["AccessToken"].deleteCookie();
+    response->cookiesMap["LPToken"] = HTTP::Headers::Cookie();
+    response->cookiesMap["LPToken"].deleteCookie();
 
     response->cookiesMap["loggedIn"] = HTTP::Headers::Cookie();
     response->cookiesMap["loggedIn"].deleteCookie();

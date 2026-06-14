@@ -14,28 +14,28 @@
 
 struct TransientAuthenticationContext
 {
-    bool validateAndMerge_AccessTokenIfExist(const std::string &cookieAccessTokenStr, Mantids30::API::APIReturn &response, const std::shared_ptr<Mantids30::DataFormat::JWT> jwtValidator)
+    bool validateAndMerge_LPTokenIfExist(const std::string &cookieLPTokenStr, Mantids30::API::APIReturn &response, const std::shared_ptr<Mantids30::DataFormat::JWT> jwtValidator)
     {
-        Mantids30::DataFormat::JWT::Token accessToken;
+        Mantids30::DataFormat::JWT::Token lpToken;
         //std::string cookieAccessTokenStr = request.clientRequest->getCookie("AccessToken");
 
-        if (!cookieAccessTokenStr.empty())
+        if (!cookieLPTokenStr.empty())
         {
-            if (!jwtValidator->verify(cookieAccessTokenStr, &accessToken))
+            if (!jwtValidator->verify(cookieLPTokenStr, &lpToken))
             {
                 // Failed to load the intermediary...
                 response.setError(Mantids30::Network::Protocols::HTTP::Status::S_403_FORBIDDEN, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::UNAUTHENTICATED)),
                                   authResultToString(AuthenticationResult::UNAUTHENTICATED));
                 return false;
             }
-            if (accessToken.getClaim("app") != IAM_LOGINPORTAL_APPNAME || accessToken.getClaim("type") != "access")
+            if (lpToken.getClaim("app") != IAM_LOGINPORTAL_APPNAME || lpToken.getClaim("type") != "access")
             {
                 // This Token is not for this cookie...
                 response.setError(Mantids30::Network::Protocols::HTTP::Status::S_403_FORBIDDEN, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::UNAUTHENTICATED)),
                                   authResultToString(AuthenticationResult::UNAUTHENTICATED));
                 return false;
             }
-            if (accessToken.getSubject() != accountName)
+            if (lpToken.getSubject() != accountName)
             {
                 // This Token is not for this cookie... (other username... logout first please!)
                 response.setError(Mantids30::Network::Protocols::HTTP::Status::S_401_UNAUTHORIZED, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::BAD_ACCOUNT)),
@@ -43,16 +43,16 @@ struct TransientAuthenticationContext
                 return false;
             }
 
-            // We have an access token!
-            std::set<uint32_t> authenticatedSlotsOnAccessToken = Mantids30::Helpers::jsonToUInt32Set(accessToken.getClaim("slotIds"));
+            // We have an LPToken!
+            std::set<uint32_t> authenticatedSlotsOnLPToken = Mantids30::Helpers::jsonToUInt32Set(lpToken.getClaim("slotIds"));
             // Merge auth slots.
-            for (const auto &i : authenticatedSlotsOnAccessToken)
+            for (const auto &i : authenticatedSlotsOnLPToken)
             {
                 authenticatedSlots.insert(i);
             }
             // Merge schemes and apps also...
-            jAuthenticatedSchemes = accessToken.getClaim("authenticatedSchemes");
-            jAuthenticatedAppsCallbackURLs = accessToken.getClaim("authenticatedAppsCallbackURLs");
+            jAuthenticatedSchemes = lpToken.getClaim("authenticatedSchemes");
+            jAuthenticatedAppsCallbackURLs = lpToken.getClaim("authenticatedAppsCallbackURLs");
         }
 
         return true;

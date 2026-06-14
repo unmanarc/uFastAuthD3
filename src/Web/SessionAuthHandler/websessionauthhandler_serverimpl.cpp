@@ -55,15 +55,42 @@ bool JWTDynamicTokenValidatorFunction(const std::string& accessTokenStr, const s
     return true;
 }
 
-bool myDynamicOriginValidatorFunction(const std::string& origin, const std::string& xAPIKeyStr)
+// The app proxied the /auth to this service, so the origin should be what we define in the DB.
+bool myDynamicOriginValidatorFunction(const std::string& origin, const std::string& xAPIKeyStr, const std::set<std::string> & configPermittedAPIOrigins)
 {
     IdentityManager *identityManager = Globals::getIdentityManager();
 
     std::string appNameStr = identityManager->applications->getApplicationNameByAPIKey(xAPIKeyStr);
 
-    std::list<std::string> origins = Globals::getIdentityManager()->applications->listWebLoginOriginUrlsFromApplication(appNameStr);
+    std::set<std::string> origins = Globals::getIdentityManager()->applications->listWebLoginOriginUrlsFromApplication(appNameStr);
 
-    return std::find(origins.begin(), origins.end(), origin) != origins.end();
+    return origins.count(origin);
+}
+
+
+bool myDynamicCallbackOriginValidatorFunction(const std::string& requestOrigin, const std::string& xAPIKeyStr, const std::set<std::string> & permittedCallbackOrigins)
+{
+    std::string appName = Globals::getIdentityManager()->applications->getApplicationNameByAPIKey(xAPIKeyStr);
+
+    if (appName.empty())
+    {
+        LOG_APP->log2(__func__, "", "", Logs::LEVEL_SECURITY_ALERT, "Invalid API key provided. Application not found. (callback)");
+        return false;
+    }
+
+    auto attribs = Globals::getIdentityManager()->applications->getApplicationAttributes(appName);
+
+    if (!attribs->useEmbeddedAuthentication)
+    {
+        // Use the original (config) permitted Callback Origins
+        return permittedCallbackOrigins.count(requestOrigin);
+    }
+    else
+    {
+        // Using embedded auth, the origin should be the same app URLs.
+        std::set<std::string> origins = Globals::getIdentityManager()->applications->listWebLoginOriginUrlsFromApplication(appName);
+        return origins.find(requestOrigin) != origins.end();
+    }
 }
 
 bool WebSessionAuthHandler_ServerImpl::createService()
@@ -94,6 +121,9 @@ bool WebSessionAuthHandler_ServerImpl::createService()
 
     // Specific origin validator given the Origin: and an API Key specifying the APP
     webSessionAuthHandlerServer->config.dynamicOriginValidator = myDynamicOriginValidatorFunction;
+
+    // Specific callback origin validator given the Origin: and an API Key specifying the APP
+    webSessionAuthHandlerServer->config.dynamicLoginCallbackOriginValidator = myDynamicCallbackOriginValidatorFunction;
 
     // Setup the methods handler for version 1:
     webSessionAuthHandlerServer->endpointsHandler[1] = std::make_shared<API::RESTful::Endpoints>();

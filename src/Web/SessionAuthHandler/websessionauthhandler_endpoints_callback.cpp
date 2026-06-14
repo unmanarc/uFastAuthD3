@@ -21,10 +21,18 @@ API::APIReturn WebSessionAuthHandler_Endpoints::callback(void *context, const Re
     API::APIReturn response;
     IdentityManager *identityManager = Globals::getIdentityManager();
 
+    // HTTP CLIENT VARS:
     std::string modeStr = request.clientRequest->getVars(HTTP::VARS_POST)->getStringValue("mode");
+    std::string accessTokenStr = request.clientRequest->getVars(HTTP::VARS_POST)->getStringValue("accessToken");
+    std::string refreshTokenStr = request.clientRequest->getVars(HTTP::VARS_POST)->getStringValue("refreshToken");
+    std::string redirectURIStr = request.clientRequest->getVars(HTTP::VARS_POST)->getStringValue("redirectURI");
+    std::string xAPIKeyStr = request.clientRequest->getHeaderOption("x-api-key");
+
     if ( modeStr == "logout" )
     {
-        std::string allowedOrigin = Globals::pConfig.get<std::string>("AppVars.LoginPortalURL", "");
+        std::string allowedOrigin;
+        // TODO: check on dynamic token validator?
+        allowedOrigin = Globals::pConfig.get<std::string>("AppVars.LoginPortalURL", "");
         if ( request.clientRequest->getOrigin() != allowedOrigin )
         {
             LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LEVEL_SECURITY_ALERT, "Logout is not allowed from Origin='%s'.",request.clientRequest->getOrigin().c_str());
@@ -39,11 +47,7 @@ API::APIReturn WebSessionAuthHandler_Endpoints::callback(void *context, const Re
         options.configureAPIReturnOptionsHeaders(r, request.clientRequest->getOrigin());
         return r;
     }
-    // HTTP CLIENT VARS:
-    std::string accessTokenStr = request.clientRequest->getVars(HTTP::VARS_POST)->getStringValue("accessToken");
-    std::string refreshTokenStr = request.clientRequest->getVars(HTTP::VARS_POST)->getStringValue("refreshToken");
-    std::string redirectURIStr = request.clientRequest->getVars(HTTP::VARS_POST)->getStringValue("redirectURI");
-    std::string xAPIKeyStr = request.clientRequest->getHeaderOption("x-api-key");
+
 
     // VARS:
     std::string appNameStr = identityManager->applications->getApplicationNameByAPIKey(xAPIKeyStr);
@@ -84,9 +88,9 @@ API::APIReturn WebSessionAuthHandler_Endpoints::callback(void *context, const Re
     }
 
     // Verify the redirection... (VERY IMPORTANT)
-    std::list<std::string> redirectURLS = identityManager->applications->listWebLoginAllowedRedirectURIsFromApplication(appNameStr);
+    std::set<std::string> redirectURLS = identityManager->applications->listWebLoginAllowedRedirectURIsFromApplication(appNameStr);
 
-    if (std::find(redirectURLS.begin(), redirectURLS.end(), redirectURIStr) == redirectURLS.end())
+    if (redirectURLS.count(redirectURIStr)==0)
     {
         LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LEVEL_SECURITY_ALERT, "Redirect URI '%s' is not allowed for application '%s'.", redirectURIStr.c_str(), appNameStr.c_str());
         response.setError(HTTP::Status::S_403_FORBIDDEN, "invalid_redirect_uri", "The requested redirect URI is not authorized.");

@@ -42,9 +42,8 @@ static void setLogoutCookies(API::APIReturn &response, const ApplicationTokenPro
     response.cookiesMap["KeepAuthentication"] = HTTP::Headers::Cookie();
     response.cookiesMap["KeepAuthentication"].deleteCookie();
     response.cookiesMap["KeepAuthentication"].path = "/";
-
-
 }
+
 
 API::APIReturn WebSessionAuthHandler_Endpoints::appLogout(void *context, const RequestParameters &request, IdentityManager::ClientDetails &authClientDetails)
 {
@@ -99,13 +98,15 @@ WebSessionAuthHandler_Endpoints::APIReturn WebSessionAuthHandler_Endpoints::getL
         return response;
     }
 
+    auto attribs = identityManager->applications->getApplicationAttributes(appName);
+
     json payloadOut;
 
     //  Configuration parameters:
     auto config = Globals::pConfig;
-    std::string loginPortalURL = config.get<std::string>("AppVars.LoginPortalURL", "about:blank");
 
-    payloadOut["url"] = loginPortalURL + "/logout/";
+    std::string logoutURL = attribs->useEmbeddedAuthentication?  "/login/logout/" : config.get<std::string>("AppVars.LoginPortalURL", "about:blank") + "/logout/";
+    payloadOut["url"] = logoutURL;
     payloadOut["appName"] = appName;
 
     return payloadOut;

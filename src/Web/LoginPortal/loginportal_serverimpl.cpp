@@ -17,6 +17,33 @@ using namespace Network::Sockets;
 using namespace Network::Servers;
 using namespace Program;
 
+bool appOriginValidatorFunction(const std::string &requestOrigin, const std::string &apikey, const std::set<std::string> &configPermittedAPIOrigins)
+{
+    if (!apikey.empty())
+    {
+        std::string appName = Globals::getIdentityManager()->applications->getApplicationNameByAPIKey(apikey);
+
+        if (appName.empty())
+        {
+            LOG_APP->log2(__func__, "", "", Logs::LEVEL_SECURITY_ALERT, "Invalid API key provided. Application not found.");
+            return false;
+        }
+
+        auto attribs = Globals::getIdentityManager()->applications->getApplicationAttributes(appName);
+
+        if (!attribs->useEmbeddedAuthentication)
+        {
+            LOG_APP->log2(__func__, "", "", Logs::LEVEL_SECURITY_ALERT, "App '%s' lacks embedded auth.", appName.c_str());
+            return false;
+        }
+
+        std::set<std::string> origins = Globals::getIdentityManager()->applications->listWebLoginOriginUrlsFromApplication(appName);
+        return origins.find(requestOrigin) != origins.end();
+    }
+    else
+        return configPermittedAPIOrigins.count(requestOrigin);
+}
+
 bool LoginPortal_ServerImpl::createService()
 {
     boost::property_tree::ptree config = Globals::pConfig;
@@ -31,7 +58,8 @@ bool LoginPortal_ServerImpl::createService()
         return false;
     }
 
-    RESTful::Engine *loginWebServer = Program::Config::RESTful_Engine::createRESTfulEngine(config, LOG_APP, LOG_RPC, "Web Login", IAM_LOGINPORTAL_DEF_WEBROOTDIR, Program::Config::REST_ENGINE_MANDATORY_SSL);
+    RESTful::Engine *loginWebServer = Program::Config::RESTful_Engine::createRESTfulEngine(config, LOG_APP, LOG_RPC, "Web Login", IAM_LOGINPORTAL_DEF_WEBROOTDIR,
+                                                                                           Program::Config::REST_ENGINE_MANDATORY_SSL);
 
     if (!loginWebServer)
         return false;
@@ -49,12 +77,18 @@ bool LoginPortal_ServerImpl::createService()
     // Setup the methods handler for version 1:
     loginWebServer->endpointsHandler[1] = std::make_shared<API::RESTful::Endpoints>();
 
+    // Set the validations against the LPToken
+    loginWebServer->jwtAccessTokenName = "LPToken";
+
+    // Set the login portal dynamic origin validation enabling some apps to embbed the service.
+    loginWebServer->config.dynamicOriginValidator = appOriginValidatorFunction;
+
     // Add authentication methods
     LoginPortal_Endpoints::addEndpoints(loginWebServer->endpointsHandler[1]);
 
     loginWebServer->startInBackground();
 
-    for (const auto & i : loginWebServer->getListenerSockets())
+    for (const auto &i : loginWebServer->getListenerSockets())
     {
         LOG_APP->log0(__func__, Logs::LEVEL_INFO, "Web Login Service Listening @%s", i->getLastBindAddress().c_str());
     }

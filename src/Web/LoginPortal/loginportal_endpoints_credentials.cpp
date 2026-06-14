@@ -49,29 +49,6 @@ API::APIReturn LoginPortal_Endpoints::changeCredential(void *context, const Requ
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Internal Error: Failed to change the credential.");
     }
-/*    else
-    {
-        // Excellent! give the new transient token again..
-        //authContext->removeSlotFromMustChangeInTheTransientAuthToken( slotId );
-
-        std::vector<AuthenticationSchemeUsedSlot> requiredAuthSlots;
-        if (!authContext->validateAndMerge_AccessTokenIfExist(request.clientRequest->getCookie("AccessToken"), response, request.jwtValidator))
-        {
-            // Invalid Access Token. (Relogin)
-            return response;
-        }
-
-        requiredAuthSlots = calculateRequiredAuthSlotsLeftForTheNewTransientAuthToken(authContext, &response);
-
-        // Issue the same transient token but without the must change resolved id.
-        (*jResponse)["transientToken"] = authContext->issueSignedTransientTokenFromCurrentToken(request.jwtSigner);
-
-        if (requiredAuthSlots.empty() && authContext->mustChangeSlots.empty())
-        {
-            // Validation is finished here! emit the cookie for the /token api endpoint.
-            TokensManager::issueLoginAccessTokenCookie(response, request, authContext);
-        }
-    }*/
 
     return response;
 }

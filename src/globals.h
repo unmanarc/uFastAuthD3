@@ -5,7 +5,7 @@
 #include <Mantids30/Program_Logs/applog.h>
 #include <Mantids30/Program_Logs/rpclog.h>
 #include <Mantids30/Protocol_FastRPC1/fastrpc.h>
-#include <Mantids30/Server_WebCore/apienginecore.h>
+#include <Mantids30/Server_WebCore/apiserver_core.h>
 
 #include "IdentityManager/identitymanager.h"
 #include "defs.h"

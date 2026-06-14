@@ -32,6 +32,7 @@ void WebSessionAuthHandler_Endpoints::addEndpoints(std::shared_ptr<Endpoints> en
     // Web triggered events:
     endpoints->addEndpoint(Endpoints::GET, "getLogoutCallbackURL", SecurityOptions::NO_AUTH, {}, nullptr,  &getLogoutCallbackURL);
     endpoints->addEndpoint(Endpoints::POST, "refreshAccessToken", SecurityOptions::NO_AUTH, {}, nullptr, &refreshAccessToken);
+    endpoints->addEndpoint(Endpoints::POST, "logout", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {}, nullptr, &appLogout);
     endpoints->addEndpoint(Endpoints::POST, "callback", SecurityOptions::NO_AUTH, {}, nullptr, &callback);
     endpoints->setEndpointOptions("callback", API::OptionsHandlerConfig()
                                                .insertAllowedOrigin(Globals::pConfig.get<std::string>("AppVars.LoginPortalURL", ""))
