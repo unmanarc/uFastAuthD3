@@ -48,7 +48,7 @@ void AppSync_Endpoints::updateAppScopes( const std::string & appName, const std:
     if (proposedScopes.isArray())
     {
         std::set<std::string> proposedScopeIds;
-        for (const auto &scope : proposedScopes)
+        for (const json &scope : proposedScopes)
         {
             std::string id = JSON_ASSTRING(scope, "id", "");
             if (!id.empty())
@@ -162,7 +162,7 @@ void AppSync_Endpoints::updateAppRoles( const std::string & appName, const std::
 
             // Collect proposed scope IDs
             std::set<std::string> proposedScopeIds;
-            for (const auto &scope : roleScopes)
+            for (const json &scope : roleScopes)
             {
                 std::string scopeId = scope.asString();
                 if (!scopeId.empty())
@@ -183,7 +183,7 @@ void AppSync_Endpoints::updateAppRoles( const std::string & appName, const std::
             }
 
             // Remove scopes that should no longer be assigned to this role
-            for (const auto &currentScopeId : currentScopeIdsForRole)
+            for (const std::string &currentScopeId : currentScopeIdsForRole)
             {
                 if (proposedScopeIds.find(currentScopeId) == proposedScopeIds.end())
                 {
@@ -211,7 +211,7 @@ void AppSync_Endpoints::updateAppActivities( const std::string & appName, const 
     {
         std::set<std::string> proposedActivityNames;
 
-        for (const auto &act : proposedActivities)
+        for (const json &act : proposedActivities)
         {
             std::string name = JSON_ASSTRING(act, "id", "");
             if (name.empty())
@@ -311,7 +311,7 @@ AppSync_Endpoints::APIReturn AppSync_Endpoints::updateAccessControlContext(void 
     std::string appName;
     std::optional<IdentityManager::Applications::ApplicationAttributes> attribs;
 
-    auto result = validateAndFetchApplicationAttributes(request, authClientDetails, appName, attribs);
+    APIReturn result = validateAndFetchApplicationAttributes(request, authClientDetails, appName, attribs);
     if (result.getHTTPResponseCode() != HTTP::Status::S_200_OK)
         return result;
 
@@ -331,7 +331,7 @@ AppSync_Endpoints::APIReturn AppSync_Endpoints::getApplicationAccountsList(void 
     std::string appName;
     std::optional<IdentityManager::Applications::ApplicationAttributes> attribs;
 
-    auto result = validateAndFetchApplicationAttributes(request, authClientDetails, appName, attribs);
+    APIReturn result = validateAndFetchApplicationAttributes(request, authClientDetails, appName, attribs);
     if (result.getHTTPResponseCode() != HTTP::Status::S_200_OK)
         return result;
 
@@ -367,7 +367,7 @@ AppSync_Endpoints::APIReturn AppSync_Endpoints::getApplicationJWTConfig(void *co
     std::string appName;
     std::optional<IdentityManager::Applications::ApplicationAttributes> attribs;
 
-    auto result = validateAndFetchApplicationAttributes(request, authClientDetails, appName, attribs);
+    APIReturn result = validateAndFetchApplicationAttributes(request, authClientDetails, appName, attribs);
     if (result.getHTTPResponseCode() != HTTP::Status::S_200_OK)
         return result;
 
@@ -386,7 +386,7 @@ AppSync_Endpoints::APIReturn AppSync_Endpoints::getApplicationJWTSigningKey(void
     std::string appName;
     std::optional<IdentityManager::Applications::ApplicationAttributes> attribs;
 
-    auto result = validateAndFetchApplicationAttributes(request, authClientDetails, appName, attribs);
+    APIReturn result = validateAndFetchApplicationAttributes(request, authClientDetails, appName, attribs);
     if (result.getHTTPResponseCode() != HTTP::Status::S_200_OK)
         return result;
 
@@ -405,7 +405,7 @@ AppSync_Endpoints::APIReturn AppSync_Endpoints::getApplicationJWTValidationKey(v
     std::string appName;
     std::optional<IdentityManager::Applications::ApplicationAttributes> attribs;
 
-    auto result = validateAndFetchApplicationAttributes(request, authClientDetails, appName, attribs);
+    APIReturn result = validateAndFetchApplicationAttributes(request, authClientDetails, appName, attribs);
     if (result.getHTTPResponseCode() != HTTP::Status::S_200_OK)
         return result;
 

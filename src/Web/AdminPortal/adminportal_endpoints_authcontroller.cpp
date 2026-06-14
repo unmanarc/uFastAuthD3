@@ -31,8 +31,6 @@ void AdminPortal_Endpoints_AuthController::addEndpoints_AuthController(std::shar
 }
 AdminPortal_Endpoints_AuthController::APIReturn AdminPortal_Endpoints_AuthController::updateDefaultAuthScheme(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
-    auto authController = Globals::getIdentityManager()->authController;
-
     // Extract the new default authentication scheme ID from the request body
     uint32_t newDefaultSchemeId = JSON_ASUINT(*request.inputJSON,"defaultSchemeId",std::numeric_limits<uint32_t>::max());
 
@@ -41,7 +39,7 @@ AdminPortal_Endpoints_AuthController::APIReturn AdminPortal_Endpoints_AuthContro
         return APIReturn(HTTP::Status::S_400_BAD_REQUEST,"invalid_request", "Missing or invalid 'defaultSchemeId' in request body");
     }
 
-    if (!authController->updateDefaultAuthScheme(authClientDetails, request.jwtToken->getSubject(), newDefaultSchemeId))
+    if (!Globals::getIdentityManager()->authController->updateDefaultAuthScheme(authClientDetails, request.jwtToken->getSubject(), newDefaultSchemeId))
     {
         return APIReturn(HTTP::Status::S_500_INTERNAL_SERVER_ERROR,"invalid_request", "Internal server error while updating default authentication slot");
     }
@@ -51,11 +49,8 @@ AdminPortal_Endpoints_AuthController::APIReturn AdminPortal_Endpoints_AuthContro
 
 AdminPortal_Endpoints_AuthController::APIReturn AdminPortal_Endpoints_AuthController::getDefaultAuthScheme(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
-    auto authController = Globals::getIdentityManager()->authController;
-
     // Retrieve the current default authentication slot
-    std::optional<uint32_t> defaultScheme = authController->getDefaultAuthScheme();
-
+    std::optional<uint32_t> defaultScheme = Globals::getIdentityManager()->authController->getDefaultAuthScheme();
 
     if (!defaultScheme.has_value())
     {
@@ -86,7 +81,7 @@ API::APIReturn AdminPortal_Endpoints_AuthController::listAuthenticationSchemes(v
     std::map<uint32_t, std::string> slots = Globals::getIdentityManager()->authController->listAuthenticationSchemes();
     json r;
 
-    auto defaultScheme = Globals::getIdentityManager()->authController->getDefaultAuthScheme();
+    std::optional<uint32_t> defaultScheme = Globals::getIdentityManager()->authController->getDefaultAuthScheme();
 
     if (defaultScheme.has_value())
         r["defaultSchemeId"] = *defaultScheme;
@@ -146,7 +141,7 @@ API::APIReturn AdminPortal_Endpoints_AuthController::listAuthenticationSlotsUsed
     r["usedSlots"] = Json::arrayValue;
 
     std::set<uint32_t> usedSlots;
-    for (const auto & slot : slots)
+    for (const AuthenticationSchemeUsedSlot & slot : slots)
     {
         usedSlots.insert(slot.slotId);
 

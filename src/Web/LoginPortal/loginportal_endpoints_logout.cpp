@@ -114,7 +114,7 @@ HTTP::Status::Codes LoginPortal_Endpoints::handleLogoutDynamicRequest(const std:
     boost::replace_all(page, "DEFAULTAPPCALLBACK_PLACEHOLDER", xstrValue);
 
     bool originValidated = dontUseOriginValidation || retrieveAndValidateAppOrigin(request, appName, USING_HEADER_ORIGIN);
-    auto currentOrigin = request->getHeaderOption("Origin");
+    std::string currentOrigin = request->getHeaderOption("Origin");
 
     if (!originValidated)
     {

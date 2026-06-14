@@ -72,7 +72,7 @@ bool WebSessionAuthHandler_Endpoints::validateAPIKey(const std::string &app, API
 std::string WebSessionAuthHandler_Endpoints::signApplicationToken(JWT::Token &accessToken, const ApplicationTokenProperties &tokenProperties)
 {
     std::string appName = JSON_ASSTRING_D(accessToken.getClaim("app"), "");
-    auto signingJWT = Globals::getIdentityManager()->applications->getAppJWTSigner(appName);
+    std::shared_ptr<JWT> signingJWT = Globals::getIdentityManager()->applications->getAppJWTSigner(appName);
     if (!signingJWT)
     {
         return std::string();

@@ -226,7 +226,7 @@ API::APIReturn AdminPortal_Endpoints_Accounts::getAccountApplications(void *cont
     std::set<std::string> listAccountApplications = Globals::getIdentityManager()->applications->listAccountApplications(accountName);
     std::set<ApplicationScope> directScopes = Globals::getIdentityManager()->authController->getAccountDirectApplicationScopes(accountName);
 
-    for (const auto &applicationName : listAccountApplications)
+    for (const std::string &applicationName : listAccountApplications)
     {
         std::set<ApplicationScope> usableScopes = Globals::getIdentityManager()->authController->getAccountUsableApplicationScopes(applicationName,accountName);
 

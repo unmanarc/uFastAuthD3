@@ -68,7 +68,7 @@ bool UserPortal_ServerImpl::createService()
 
     userPortalWebServer->startInBackground();
 
-    for (const auto & i : userPortalWebServer->getListenerSockets())
+    for (const std::shared_ptr<Sockets::Socket_Stream> & i : userPortalWebServer->getListenerSockets())
     {
         LOG_APP->log0(__func__, Logs::LEVEL_INFO, "IAM User Portal Web Server Listening @%s", i->getLastBindAddress().c_str());
     }

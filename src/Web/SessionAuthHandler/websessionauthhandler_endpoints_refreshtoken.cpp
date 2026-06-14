@@ -104,7 +104,7 @@ API::APIReturn WebSessionAuthHandler_Endpoints::refreshAccessToken(void *context
     Json::Value jSlotIds = refreshTokenVerified.getClaim("slotIds");
     if (!jSlotIds.isNull() && jSlotIds.isArray())
     {
-        for (const auto &slotIdNode : jSlotIds)
+        for (const Json::Value &slotIdNode : jSlotIds)
         {
             const uint32_t slotId = JSON_ASUINT_D(slotIdNode, 0xFFFFFFFF);
             currentAuthenticatedSlotIds.insert(slotId);

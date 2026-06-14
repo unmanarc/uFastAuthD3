@@ -55,7 +55,7 @@ bool AppSync_ServerImpl::createService()
 
     webSessionAuthHandlerServer->startInBackground();
 
-    for (const auto & i : webSessionAuthHandlerServer->getListenerSockets())
+    for (const std::shared_ptr<Sockets::Socket_Stream> & i : webSessionAuthHandlerServer->getListenerSockets())
     {
         LOG_APP->log0(__func__, Logs::LEVEL_INFO, "Application Synchronization Service Listening @%s", i->getLastBindAddress().c_str());
     }

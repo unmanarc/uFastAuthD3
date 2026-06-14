@@ -78,7 +78,13 @@ bool myDynamicCallbackOriginValidatorFunction(const std::string& requestOrigin, 
         return false;
     }
 
-    auto attribs = Globals::getIdentityManager()->applications->getApplicationAttributes(appName);
+    std::optional<IdentityManager::Applications::ApplicationAttributes> attribs = Globals::getIdentityManager()->applications->getApplicationAttributes(appName);
+
+    if (!attribs.has_value())
+    {
+        LOG_APP->log2(__func__, "", "", Logs::LEVEL_SECURITY_ALERT, "Failed to obtain the application attributes from app %s", appName.c_str());
+        return false;
+    }
 
     if (!attribs->useEmbeddedAuthentication)
     {
@@ -136,7 +142,7 @@ bool WebSessionAuthHandler_ServerImpl::createService()
 
     webSessionAuthHandlerServer->startInBackground();
 
-    for (const auto & i : webSessionAuthHandlerServer->getListenerSockets())
+    for (const std::shared_ptr<Sockets::Socket_Stream> & i : webSessionAuthHandlerServer->getListenerSockets())
     {
         LOG_APP->log0(__func__, Logs::LEVEL_INFO, "Web Session Auth Handler Service Listening @%s", i->getLastBindAddress().c_str());
     }
