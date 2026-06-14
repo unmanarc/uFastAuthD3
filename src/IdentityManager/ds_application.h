@@ -34,19 +34,19 @@ struct AccountApplicationInfo
 
         // Roles as array
         Json::Value rolesArray(Json::arrayValue);
-        for (const auto &role : roles)
+        for (const std::string &role : roles)
             rolesArray.append(role);
         app["roles"] = rolesArray;
 
         // Direct scopes as array
         Json::Value directScopesArray(Json::arrayValue);
-        for (const auto &scope : directScopes)
+        for (const std::string &scope : directScopes)
             directScopesArray.append(scope);
         app["directScopes"] = directScopesArray;
 
         // All scopes (union) as array
         Json::Value allScopesArray(Json::arrayValue);
-        for (const auto &scope : allScopes)
+        for (const std::string &scope : allScopes)
             allScopesArray.append(scope);
         app["allScopes"] = allScopesArray;
 

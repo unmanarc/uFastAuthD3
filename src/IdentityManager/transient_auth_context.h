@@ -46,7 +46,7 @@ struct TransientAuthenticationContext
             // We have an LPToken!
             std::set<uint32_t> authenticatedSlotsOnLPToken = Mantids30::Helpers::jsonToUInt32Set(lpToken.getClaim("slotIds"));
             // Merge auth slots.
-            for (const auto &i : authenticatedSlotsOnLPToken)
+            for (const uint32_t &i : authenticatedSlotsOnLPToken)
             {
                 authenticatedSlots.insert(i);
             }
@@ -124,7 +124,7 @@ struct TransientAuthenticationContext
 
     void fillVars_FromTransientTokenClaims()
     {
-        auto claims = transientAuthToken.getAllClaimsAsJSON();
+        Json::Value claims = transientAuthToken.getAllClaimsAsJSON();
 
         accountName = JSON_ASSTRING(claims, "preAuthUser", "");
         appName = JSON_ASSTRING(claims, "app", "");

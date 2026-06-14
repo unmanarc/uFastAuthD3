@@ -28,7 +28,11 @@ public:
 
     //static boost::property_tree::ptree *getConfig();
 
-    static IdentityManager *getIdentityManager();
+    static inline IdentityManager *getIdentityManager()
+    {
+        return identityManager;
+    }
+
     static void setIdentityManager(IdentityManager *value);
 
     static bool getResetAdminPasswd();

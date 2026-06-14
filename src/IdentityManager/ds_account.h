@@ -141,7 +141,7 @@ struct AccountDetails
         Json::Value r;
 
         r["fields"] = json::null;
-        for (auto &i : fields)
+        for (const std::pair<const std::string, AccountDetailFieldValue> &i : fields)
         {
             r["fields"][i.first] = i.second.toJSON();
         }
