@@ -59,7 +59,7 @@ bool IdentityManager_DB::initializeDatabase()
                                               `f_appCreator`                                 VARCHAR(256)  NOT NULL,
                                               `appDescription`                               VARCHAR(4096) NOT NULL,
                                               `apiKey`                                       VARCHAR(512)  NOT NULL,
-                                              `appAttributesJSON`                            TEXT NOT NULL DEFAULT '{"canAdminModifyApplicationSecurityContext":false,"canUserAutoRegister":false,"useEmbeddedAuthentication":false,"appSyncEnabled":true,"appSyncCanRetrieveAppAccountsList":true,"useSessionBasedRefreshToken":false}',
+                                              `appAttributesJSON`                            TEXT NOT NULL DEFAULT '{"canAdminModifyApplicationSecurityContext":false,"canUserAutoRegister":false,"useEmbeddedAuthentication":false,"appSyncEnabled":true,"appSyncCanRetrieveAppAccountsList":true,"allowKeepMeSignedIn":false}',
                                               `appIcon`                                      BLOB DEFAULT NULL,
                                               `appLogo`                                      BLOB DEFAULT NULL,
                                                FOREIGN KEY(`f_appCreator`) REFERENCES accounts(`accountName`) ON DELETE CASCADE

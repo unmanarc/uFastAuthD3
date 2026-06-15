@@ -75,12 +75,12 @@
             </td>
         </tr>
 
-        <tr>
-            <td align="right" style="white-space: nowrap; width: 1%;">Use Session-Based Refresh Token: </td>
+        <tr id="allowKeepMeSignedInRowEdit">
+            <td align="right" style="white-space: nowrap; width: 1%;">Allow "Keep Me Signed In": </td>
             <td>
                 <div class="input-group">
                     <div class="form-check form-switch">
-                        <input class="form-check-input" type="checkbox" id="useSessionBasedRefreshToken"
+                        <input class="form-check-input" type="checkbox" id="allowKeepMeSignedIn"
                             onchange="displayUpdateFunction()">
                     </div>
                 </div>
@@ -107,8 +107,15 @@
 
 
 <script>
+    function toggleKeepMeSignedInVisibility() {
+        const embedded = document.getElementById('useEmbeddedAuthentication').checked;
+        const row = document.getElementById('allowKeepMeSignedInRowEdit');
+        row.style.display = embedded ? 'table-row' : 'none';
+    }
+
     function onEmbeddedAuthChanged() {
         displayUpdateFunction();
+        toggleKeepMeSignedInVisibility();
         // Re-validate login flow when embedded auth changes
         if (typeof validateLoginFlowForEmbeddedMode === 'function') {
             validateLoginFlowForEmbeddedMode();
@@ -123,7 +130,10 @@
         document.getElementById("useEmbeddedAuthentication").checked = attributes.useEmbeddedAuthentication ?? false;
         document.getElementById("syncServiceEnabled").checked = attributes.appSyncEnabled ?? false;
         document.getElementById("appSyncCanRetrieveAppAccountsList").checked = attributes.appSyncCanRetrieveAppAccountsList ?? false;
-        document.getElementById("useSessionBasedRefreshToken").checked = attributes.useSessionBasedRefreshToken ?? false;
+        document.getElementById("allowKeepMeSignedIn").checked = attributes.allowKeepMeSignedIn ?? false;
+
+        // Toggle visibility of "Allow Keep Me Signed In" based on embedded auth
+        toggleKeepMeSignedInVisibility();
 
         // Re-validate login flow after populating details
         if (typeof validateLoginFlowForEmbeddedMode === 'function') {
@@ -153,7 +163,7 @@
                     useEmbeddedAuthentication: $("#useEmbeddedAuthentication").is(":checked"),
                     appSyncEnabled: $("#syncServiceEnabled").is(":checked"),
                     appSyncCanRetrieveAppAccountsList: $("#appSyncCanRetrieveAppAccountsList").is(":checked"),
-                    useSessionBasedRefreshToken: $("#useSessionBasedRefreshToken").is(":checked")
+                    allowKeepMeSignedIn: $("#allowKeepMeSignedIn").is(":checked")
                 },
             }),
             success: function (response, textStatus, xhr) {

@@ -412,7 +412,7 @@ public:
     {
     public:
         virtual ~Applications() {}
-        struct ApplicationAttributes
+   struct ApplicationAttributes
         {
             Json::Value toJSON() const
             {
@@ -422,7 +422,7 @@ public:
                 root["useEmbeddedAuthentication"] = useEmbeddedAuthentication;
                 root["appSyncEnabled"] = appSyncEnabled;
                 root["appSyncCanRetrieveAppAccountsList"] = appSyncCanRetrieveAppAccountsList;
-                root["useSessionBasedRefreshToken"] = useSessionBasedRefreshToken;
+                root["allowKeepMeSignedIn"] = allowKeepMeSignedIn;
                 return root;
             }
 
@@ -433,7 +433,7 @@ public:
                 appSyncEnabled = JSON_ASBOOL(root, "appSyncEnabled", false);
                 useEmbeddedAuthentication = JSON_ASBOOL(root, "useEmbeddedAuthentication", false);
                 appSyncCanRetrieveAppAccountsList = JSON_ASBOOL(root, "appSyncCanRetrieveAppAccountsList", false);
-                useSessionBasedRefreshToken = JSON_ASBOOL(root, "useSessionBasedRefreshToken", false);
+                allowKeepMeSignedIn = JSON_ASBOOL(root, "allowKeepMeSignedIn", false);
             }
 
             std::string toString() const
@@ -443,14 +443,14 @@ public:
                      + ", useEmbeddedAuth=" + std::to_string(useEmbeddedAuthentication)
                      + ", syncEnabled=" + std::to_string(appSyncEnabled)
                      + ", syncCanRetrieveAccounts=" + std::to_string(appSyncCanRetrieveAppAccountsList)
-                     + ", sessionRefreshToken=" + std::to_string(useSessionBasedRefreshToken);
+                     + ", keepMeSignedIn=" + std::to_string(allowKeepMeSignedIn);
             }
             bool canAdminModifyApplicationSecurityContext = false;
             bool canUserAutoRegister = false;
             bool useEmbeddedAuthentication = false;
             bool appSyncEnabled = false;
             bool appSyncCanRetrieveAppAccountsList = false;
-            bool useSessionBasedRefreshToken = false;
+            bool allowKeepMeSignedIn = false;
         };
 
         /////////////////////////////////////////////////////////////////////////////////

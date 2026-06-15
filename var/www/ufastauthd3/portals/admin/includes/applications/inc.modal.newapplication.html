@@ -1,5 +1,11 @@
 <script>
 
+    function toggleKeepMeSignedInVisibilityCreate() {
+        const embedded = document.getElementById('useEmbeddedAuthenticationCreate').checked;
+        const row = document.getElementById('allowKeepMeSignedInRowCreate');
+        row.style.display = embedded ? 'block' : 'none';
+    }
+
     function createApplicationClearParameters() {
         generateRandomKey("appKeyCreate");
         $("#appNameCreate").val('');
@@ -10,7 +16,8 @@
         $("#canUserAutoRegisterCreate").prop("checked", true);
         $("#appSyncCanRetrieveAppAccountsListCreate").prop("checked", true);
         $("#useEmbeddedAuthenticationCreate").prop("checked", false);
-        $("#useSessionBasedRefreshTokenCreate").prop("checked", false);
+        $("#allowKeepMeSignedInCreate").prop("checked", false);
+        toggleKeepMeSignedInVisibilityCreate();
 
         // TODO:
         $('.nav-tabs a:first').tab('show')
@@ -67,7 +74,7 @@
                     useEmbeddedAuthentication: $("#useEmbeddedAuthenticationCreate").is(":checked"),
                     appSyncEnabled: $("#syncServiceEnabledCreate").is(":checked"),
                     appSyncCanRetrieveAppAccountsList: $("#appSyncCanRetrieveAppAccountsListCreate").is(":checked"),
-                    useSessionBasedRefreshToken: $("#useSessionBasedRefreshTokenCreate").is(":checked")
+                    allowKeepMeSignedIn: $("#allowKeepMeSignedInCreate").is(":checked")
                 },
                 initializeDefaults: $("#initializeDefaultsCreate").is(":checked"),
                 appKey: $("#appKeyCreate").val()
@@ -225,7 +232,7 @@
                             <div class="row mb-2">
                                 <div class="col-auto">
                                     <div class="form-check form-switch">
-                                        <input class="form-check-input" type="checkbox" id="useEmbeddedAuthenticationCreate">
+                                        <input class="form-check-input" type="checkbox" id="useEmbeddedAuthenticationCreate" onchange="toggleKeepMeSignedInVisibilityCreate()">
                                         <label class="form-check-label" for="useEmbeddedAuthenticationCreate">
                                             Use Embedded Authentication
                                         </label>
@@ -233,12 +240,12 @@
                                 </div>
                             </div>
 
-                            <div class="row mb-2">
+                            <div class="row mb-2" id="allowKeepMeSignedInRowCreate">
                                 <div class="col-auto">
                                     <div class="form-check form-switch">
-                                        <input class="form-check-input" type="checkbox" id="useSessionBasedRefreshTokenCreate">
-                                        <label class="form-check-label" for="useSessionBasedRefreshTokenCreate">
-                                            Use Session-Based Refresh Token
+                                        <input class="form-check-input" type="checkbox" id="allowKeepMeSignedInCreate">
+                                        <label class="form-check-label" for="allowKeepMeSignedInCreate">
+                                            Allow "Keep Me Signed In"
                                         </label>
                                     </div>
                                 </div>
