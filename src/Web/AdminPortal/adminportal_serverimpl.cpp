@@ -34,7 +34,7 @@ bool AdminPortal_ServerImpl::createService()
     vars["APIKEY"] = Globals::getIdentityManager()->applications->getApplicationAPIKey(IAM_ADMPORTAL_APPNAME);
 
     RESTful::Engine *adminPortalWebServer = Program::Config::RESTful_Engine::createRESTfulEngine(config, LOG_APP, LOG_RPC, "AdminPortal", IAM_ADMPORTAL_DEF_WEBROOTDIR,
-                                                                                           Program::Config::REST_ENGINE_NOCONFIG_JWT | Program::Config::REST_ENGINE_MANDATORY_SSL, vars);
+                                                                                                 Program::Config::REST_ENGINE_NOCONFIG_JWT | Program::Config::REST_ENGINE_MANDATORY_SSL, vars);
 
     if (!adminPortalWebServer)
         return false;
@@ -61,7 +61,7 @@ bool AdminPortal_ServerImpl::createService()
 
     adminPortalWebServer->startInBackground();
 
-    for (const std::shared_ptr<Sockets::Socket_Stream> & i : adminPortalWebServer->getListenerSockets())
+    for (const std::shared_ptr<Sockets::Socket_Stream> &i : adminPortalWebServer->getListenerSockets())
     {
         LOG_APP->log0(__func__, Logs::LEVEL_INFO, "IAM Admin Portal Web Server Listening @%s", i->getLastBindAddress().c_str());
     }

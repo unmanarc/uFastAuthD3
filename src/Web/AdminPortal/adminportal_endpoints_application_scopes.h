@@ -25,8 +25,7 @@ protected:
 
     static APIReturn searchApplicationScopes(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
 
-
-/*
+    /*
     static APIReturn updateApplicationScopeDescription(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
     static APIReturn listApplicationScopes(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
     static APIReturn getApplicationRolesForScope(void *context, const RequestParameters &request, ClientDetails &authClientDetails);

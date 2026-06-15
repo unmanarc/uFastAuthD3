@@ -5,7 +5,6 @@
 using namespace Mantids30;
 using namespace Mantids30::DataFormat;
 
-
 IdentityManager::~IdentityManager()
 {
     if (accounts)
@@ -61,7 +60,7 @@ bool IdentityManager::initializeAdminAccountWithPassword(const std::string &acco
     if (!accounts->doesAccountExist(accountName))
     {
         r = r && accounts->createAdminAccount(accountName);
-        r = r && authController->setAccountPasswordOnScheme(clientDetails,performedBy, accountName, adminPW, schemeId);
+        r = r && authController->setAccountPasswordOnScheme(clientDetails, performedBy, accountName, adminPW, schemeId);
         *alreadyExist = false;
     }
     else
@@ -71,7 +70,8 @@ bool IdentityManager::initializeAdminAccountWithPassword(const std::string &acco
     return r;
 }
 
-bool IdentityManager::initializeApplicationWithScheme(const std::string &appName, const std::string &appDescription, const std::string &appURL, const uint32_t &schemeId, const std::string &owner, bool *alreadyExist)
+bool IdentityManager::initializeApplicationWithScheme(const std::string &appName, const std::string &appDescription, const std::string &appURL, const uint32_t &schemeId, const std::string &owner,
+                                                      bool *alreadyExist)
 {
     bool r = true;
     ClientDetails clientDetails;
@@ -79,7 +79,9 @@ bool IdentityManager::initializeApplicationWithScheme(const std::string &appName
 
     if (!applications->doesApplicationExist(appName))
     {
-        r = r && applications->addApplication(clientDetails,performedBy, appName, appDescription, appURL, Mantids30::Helpers::Random::createRandomString(32), owner, Applications::ApplicationAttributes(), true);
+        r = r
+            && applications->addApplication(clientDetails, performedBy, appName, appDescription, appURL, Mantids30::Helpers::Random::createRandomString(32), owner,
+                                            Applications::ApplicationAttributes(), true);
         *alreadyExist = false;
     }
     else
@@ -181,5 +183,3 @@ IdentityManager::AuthController::AuthController(IdentityManager *parent)
     m_authLogGC.startGarbageCollector(markExpiredAuthLogSessions, this, "GC:AuthLogSessions");
     m_parent = parent;
 }
-
-

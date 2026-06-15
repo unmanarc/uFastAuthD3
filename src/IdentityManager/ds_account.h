@@ -14,7 +14,6 @@ enum AccountDetailsToShow
     ACCOUNT_DETAILS_TOKEN
 };
 
-
 struct AccountDetailFieldValue
 {
     std::string name;
@@ -52,7 +51,6 @@ struct AccountDetailFieldValue
     }
 };
 
-
 struct AccountDetailField
 {
     std::string description;
@@ -61,15 +59,9 @@ struct AccountDetailField
     bool isUnique = false;
     json extendedAttributes;
 
-    std::string getRegexpValidatorText() const
-    {
-        return JSON_ASSTRING(extendedAttributes["behavior"],"regexpValidator","");
-    }
+    std::string getRegexpValidatorText() const { return JSON_ASSTRING(extendedAttributes["behavior"], "regexpValidator", ""); }
 
-    bool canUserEdit() const
-    {
-        return JSON_ASBOOL(extendedAttributes["security"],"canUserEdit",false);
-    }
+    bool canUserEdit() const { return JSON_ASBOOL(extendedAttributes["security"], "canUserEdit", false); }
 
     Json::Value toJSON() const
     {

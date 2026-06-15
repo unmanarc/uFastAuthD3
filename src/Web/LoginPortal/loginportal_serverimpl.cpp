@@ -45,7 +45,9 @@ bool appOriginValidatorFunction(const std::string &requestOrigin, const std::str
 
         std::set<std::string> origins = Globals::getIdentityManager()->applications->listWebLoginOriginUrlsFromApplication(appName);
         return origins.find(requestOrigin) != origins.end();
-    } else {
+    }
+    else
+    {
         return configPermittedAPIOrigins.count(requestOrigin);
     }
 }
@@ -58,7 +60,7 @@ Protocols::HTTP::Status::Codes dynamicInitialChecks(Mantids30::Network::Protocol
 
     if (!xApiHeader.empty())
     {
-        if ( !keepAuthCookie.empty() || !accessTokenCookie.empty() )
+        if (!keepAuthCookie.empty() || !accessTokenCookie.empty())
         {
             return response->setRedirectLocation("/");
         }
@@ -84,7 +86,8 @@ bool LoginPortal_ServerImpl::createService()
     RESTful::Engine *loginWebServer = Program::Config::RESTful_Engine::createRESTfulEngine(config, LOG_APP, LOG_RPC, "Web Login", IAM_LOGINPORTAL_DEF_WEBROOTDIR,
                                                                                            Program::Config::REST_ENGINE_MANDATORY_SSL);
 
-    if (!loginWebServer) {
+    if (!loginWebServer)
+    {
         return false;
     }
 

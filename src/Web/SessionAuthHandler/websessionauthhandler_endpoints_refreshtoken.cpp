@@ -134,8 +134,6 @@ API::APIReturn WebSessionAuthHandler_Endpoints::refreshAccessToken(void *context
 }
 */
 
-
-
 API::APIReturn WebSessionAuthHandler_Endpoints::refreshAccessToken(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;

@@ -1,8 +1,8 @@
 #include "appsync_serverimpl.h"
+#include "appsync_endpoints.h"
 #include "config.h"
 #include "defs.h"
 #include "globals.h"
-#include "appsync_endpoints.h"
 
 #include <Mantids30/Server_RESTfulWebAPI/config_builder.h>
 #include <Mantids30/Server_RESTfulWebAPI/engine.h>
@@ -31,11 +31,7 @@ bool AppSync_ServerImpl::createService()
         return false;
     }
 
-    RESTful::Engine *webSessionAuthHandlerServer = Program::Config::RESTful_Engine::createRESTfulEngine(config,
-                                                                                                        LOG_APP,
-                                                                                                        LOG_RPC,
-                                                                                                        "Application Synchronization Service",
-                                                                                                        IAM_LOGINPORTAL_DEF_WEBROOTDIR,
+    RESTful::Engine *webSessionAuthHandlerServer = Program::Config::RESTful_Engine::createRESTfulEngine(config, LOG_APP, LOG_RPC, "Application Synchronization Service", IAM_LOGINPORTAL_DEF_WEBROOTDIR,
                                                                                                         Program::Config::REST_ENGINE_NOCONFIG_JWT);
 
     if (!webSessionAuthHandlerServer)
@@ -55,11 +51,10 @@ bool AppSync_ServerImpl::createService()
 
     webSessionAuthHandlerServer->startInBackground();
 
-    for (const std::shared_ptr<Sockets::Socket_Stream> & i : webSessionAuthHandlerServer->getListenerSockets())
+    for (const std::shared_ptr<Sockets::Socket_Stream> &i : webSessionAuthHandlerServer->getListenerSockets())
     {
         LOG_APP->log0(__func__, Logs::LEVEL_INFO, "Application Synchronization Service Listening @%s", i->getLastBindAddress().c_str());
     }
-
 
     return true;
 }

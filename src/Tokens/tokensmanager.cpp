@@ -42,7 +42,7 @@ void TokensManager::configureApplicationAccessToken(Mantids30::DataFormat::JWT::
     if (commonParams.tokenProperties.includeApplicationScopes)
     {
         std::set<ApplicationScope> x = identityManager->authController->getAccountUsableApplicationScopes(commonParams.appName, commonParams.jwtAccountName);
-        for (const ApplicationScope &appScope: x)
+        for (const ApplicationScope &appScope : x)
         {
             accessToken.addScope(appScope.id);
         }
@@ -106,12 +106,12 @@ void TokensManager::issueLPTokenCookie(APIReturn &response, const RequestParamet
     lpToken.setSubject(authContext->accountName);
     lpToken.setIssuedAt(time(nullptr));
     lpToken.setExpirationTime(accountExpirationTime == 0 ? expectedRefresherTokenTimeoutTime :       // Token does not expire.
-                                      std::min(accountExpirationTime, expectedRefresherTokenTimeoutTime) // Token expires, take the min time between two...
+                                  std::min(accountExpirationTime, expectedRefresherTokenTimeoutTime) // Token expires, take the min time between two...
     );
     lpToken.setNotBefore(time(nullptr) - 30);
-    lpToken.setClaim("slotIds",                 authContext->getAllAuthenticatedSlotsIds());
-    lpToken.setClaim("authenticatedSchemes",    authContext->getAllAuthenticatedSchemes());
-    lpToken.setClaim("authenticatedAppsCallbackURLs",    authContext->getAllAuthenticatedAppsCallbackURLs());
+    lpToken.setClaim("slotIds", authContext->getAllAuthenticatedSlotsIds());
+    lpToken.setClaim("authenticatedSchemes", authContext->getAllAuthenticatedSchemes());
+    lpToken.setClaim("authenticatedAppsCallbackURLs", authContext->getAllAuthenticatedAppsCallbackURLs());
     lpToken.setClaim("type", "access");
     lpToken.setClaim("app", IAM_LOGINPORTAL_APPNAME);
     lpToken.setClaim("keepAuthenticated", authContext->keepAuthenticated);

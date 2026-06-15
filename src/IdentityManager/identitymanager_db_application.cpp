@@ -18,24 +18,22 @@ using namespace Mantids30::Database;
 using namespace Mantids30::Helpers;
 using namespace Mantids30;
 
-
-bool IdentityManager_DB::Applications_DB::addApplication(const ClientDetails &clientDetails, const std::string &performedBy,const std::string &appName, const std::string &applicationDescription, const std::string &appURL, const std::string &apiKey,
-                                                         const std::string &creatorAccountName, const ApplicationAttributes &appAttributes, bool initializeDefaultValues)
+bool IdentityManager_DB::Applications_DB::addApplication(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &applicationDescription,
+                                                         const std::string &appURL, const std::string &apiKey, const std::string &creatorAccountName, const ApplicationAttributes &appAttributes,
+                                                         bool initializeDefaultValues)
 {
-
     bool tokenInsertSuccess;
     {
         Threads::Sync::Lock_RW lock(_parent->m_mutex);
 
         // Insert into iam.applications.
-        bool appInsertSuccess = _parent->m_sqlConnector->qExecuteEx(
-            "INSERT INTO iam.applications (`appName`, `f_appCreator`, `appDescription`, `apiKey`, `appAttributesJSON`) VALUES (:appName, "
-            ":appCreator, :description, :apiKey, :appAttributesJSON);",
-            {{":appName", MAKE_VAR(STRING, appName)},
-             {":appCreator", MAKE_VAR(STRING, creatorAccountName)},
-             {":description", MAKE_VAR(STRING, applicationDescription)},
-             {":apiKey", MAKE_VAR(STRING, Encoders::encodeToBase64Obf(apiKey))},
-             {":appAttributesJSON", MAKE_VAR(STRING, appAttributes.toJSON().toStyledString())}});
+        bool appInsertSuccess = _parent->m_sqlConnector->qExecuteEx("INSERT INTO iam.applications (`appName`, `f_appCreator`, `appDescription`, `apiKey`, `appAttributesJSON`) VALUES (:appName, "
+                                                                    ":appCreator, :description, :apiKey, :appAttributesJSON);",
+                                                                    {{":appName", MAKE_VAR(STRING, appName)},
+                                                                     {":appCreator", MAKE_VAR(STRING, creatorAccountName)},
+                                                                     {":description", MAKE_VAR(STRING, applicationDescription)},
+                                                                     {":apiKey", MAKE_VAR(STRING, Encoders::encodeToBase64Obf(apiKey))},
+                                                                     {":appAttributesJSON", MAKE_VAR(STRING, appAttributes.toJSON().toStyledString())}});
 
         // If the insertion is successful, insert another row default values into iam.applicationsJWTTokenConfig.
         if (appInsertSuccess)
@@ -57,11 +55,11 @@ bool IdentityManager_DB::Applications_DB::addApplication(const ClientDetails &cl
     {
         if (!setApplicationWebLoginCallbackURI(clientDetails, performedBy, appName, appURL + "/auth/api/v1/callback"))
             return false;
-        if (!addWebLoginOriginURLToApplication(clientDetails, performedBy,appName, appURL))
+        if (!addWebLoginOriginURLToApplication(clientDetails, performedBy, appName, appURL))
             return false;
-        if (!addWebLoginAllowedRedirectURIToApplication(clientDetails, performedBy,appName, appURL + "/"))
+        if (!addWebLoginAllowedRedirectURIToApplication(clientDetails, performedBy, appName, appURL + "/"))
             return false;
-        if (!updateWebLoginDefaultRedirectURIForApplication(clientDetails, performedBy,appName, appURL + "/"))
+        if (!updateWebLoginDefaultRedirectURIForApplication(clientDetails, performedBy, appName, appURL + "/"))
             return false;
     }
 
@@ -73,7 +71,7 @@ bool IdentityManager_DB::Applications_DB::addApplication(const ClientDetails &cl
     return tokenInsertSuccess;
 }
 
-bool IdentityManager_DB::Applications_DB::removeApplication(const ClientDetails &clientDetails, const std::string &performedBy,const std::string &appName)
+bool IdentityManager_DB::Applications_DB::removeApplication(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
     bool result = _parent->m_sqlConnector->qExecuteEx("DELETE FROM iam.applications WHERE `appName`=:appName;", {{":appName", MAKE_VAR(STRING, appName)}});
@@ -92,17 +90,16 @@ bool IdentityManager_DB::Applications_DB::doesApplicationExist(const std::string
     return ret;
 }
 
-bool IdentityManager_DB::Applications_DB::updateApplicationAttributes(const ClientDetails &clientDetails, const std::string &performedBy,const std::string &appName, const ApplicationAttributes &appAttributes)
+bool IdentityManager_DB::Applications_DB::updateApplicationAttributes(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName,
+                                                                      const ApplicationAttributes &appAttributes)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
     bool result = _parent->m_sqlConnector->qExecuteEx("UPDATE iam.applications SET "
-                                                 "`appAttributesJSON`=:appAttributesJSON WHERE `appName`=:appName;",
-                                                 {{":appName", MAKE_VAR(STRING, appName)},
-                                                  {":appAttributesJSON", MAKE_VAR(STRING, appAttributes.toJSON().toStyledString())}});
+                                                      "`appAttributesJSON`=:appAttributesJSON WHERE `appName`=:appName;",
+                                                      {{":appName", MAKE_VAR(STRING, appName)}, {":appAttributesJSON", MAKE_VAR(STRING, appAttributes.toJSON().toStyledString())}});
     if (result)
     {
-        _parent->logSecurityEventOnApplications(appName, SecurityEventAction::UPDATE, "Updated attributes: " + appAttributes.toString(),
-                                                 performedBy, clientDetails);
+        _parent->logSecurityEventOnApplications(appName, SecurityEventAction::UPDATE, "Updated attributes: " + appAttributes.toString(), performedBy, clientDetails);
     }
     return result;
 }
@@ -114,8 +111,7 @@ std::optional<IdentityManager::Applications::ApplicationAttributes> IdentityMana
 
     if (_parent->m_sqlConnector->qSelectSingleRow("SELECT `appAttributesJSON` "
                                                   "FROM iam.applications WHERE `appName`=:appName LIMIT 1;",
-                                                  {{":appName", MAKE_VAR(STRING, appName)}},
-                                                  {&appAttributesJSON}))
+                                                  {{":appName", MAKE_VAR(STRING, appName)}}, {&appAttributesJSON}))
     {
         IdentityManager::Applications::ApplicationAttributes attrs;
         Json::Value root;
@@ -153,11 +149,11 @@ std::string IdentityManager_DB::Applications_DB::getApplicationAPIKey(const std:
     return "";
 }
 
-bool IdentityManager_DB::Applications_DB::updateApplicationAPIKey(const ClientDetails &clientDetails, const std::string &performedBy,const std::string &appName, const std::string &apiKey)
+bool IdentityManager_DB::Applications_DB::updateApplicationAPIKey(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &apiKey)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
     bool result = _parent->m_sqlConnector->qExecuteEx("UPDATE iam.applications SET `apiKey`=:apiKey WHERE `appName`=:appName;",
-                                               {{":appName", MAKE_VAR(STRING, appName)}, {":apiKey", MAKE_VAR(STRING, Encoders::encodeToBase64Obf(apiKey))}});
+                                                      {{":appName", MAKE_VAR(STRING, appName)}, {":apiKey", MAKE_VAR(STRING, Encoders::encodeToBase64Obf(apiKey))}});
     if (result)
     {
         _parent->logSecurityEventOnApplications(appName, SecurityEventAction::UPDATE, "Updated API key", performedBy, clientDetails);
@@ -165,11 +161,12 @@ bool IdentityManager_DB::Applications_DB::updateApplicationAPIKey(const ClientDe
     return result;
 }
 
-bool IdentityManager_DB::Applications_DB::updateApplicationDescription(const ClientDetails &clientDetails, const std::string &performedBy,const std::string &appName, const std::string &applicationDescription)
+bool IdentityManager_DB::Applications_DB::updateApplicationDescription(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName,
+                                                                       const std::string &applicationDescription)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
     bool result = _parent->m_sqlConnector->qExecuteEx("UPDATE iam.applications SET `appDescription`=:description WHERE `appName`=:appName;",
-                                               {{":appName", MAKE_VAR(STRING, appName)}, {":description", MAKE_VAR(STRING, applicationDescription)}});
+                                                      {{":appName", MAKE_VAR(STRING, appName)}, {":description", MAKE_VAR(STRING, applicationDescription)}});
     if (result)
     {
         _parent->logSecurityEventOnApplications(appName, SecurityEventAction::UPDATE, "Updated description", performedBy, clientDetails);
@@ -231,8 +228,8 @@ std::set<std::string> IdentityManager_DB::Applications_DB::listApplicationAdmins
     Threads::Sync::Lock_RD lock(_parent->m_mutex);
 
     Abstract::STRING accountName;
-    std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelect("SELECT `f_accountName` FROM iam.applicationAccounts WHERE `f_appName`=:appName AND `isAppAdmin`='1';", {{":appName", MAKE_VAR(STRING, appName)}},
-                                              {&accountName});
+    std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelect("SELECT `f_accountName` FROM iam.applicationAccounts WHERE `f_appName`=:appName AND `isAppAdmin`='1';",
+                                                                {{":appName", MAKE_VAR(STRING, appName)}}, {&accountName});
     while (i && i->isSuccessful() && i->step())
     {
         ret.insert(accountName.getValue());
@@ -247,7 +244,8 @@ std::set<std::string> IdentityManager_DB::Applications_DB::listApplicationAccoun
     Threads::Sync::Lock_RD lock(_parent->m_mutex);
 
     Abstract::STRING accountName;
-    std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelect("SELECT `f_accountName` FROM iam.applicationAccounts WHERE `f_appName`=:appName;", {{":appName", MAKE_VAR(STRING, appName)}}, {&accountName});
+    std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelect("SELECT `f_accountName` FROM iam.applicationAccounts WHERE `f_appName`=:appName;", {{":appName", MAKE_VAR(STRING, appName)}},
+                                                                {&accountName});
     while (i && i->isSuccessful() && i->step())
     {
         ret.insert(accountName.getValue());
@@ -262,8 +260,8 @@ std::set<std::string> IdentityManager_DB::Applications_DB::listAccountApplicatio
     Threads::Sync::Lock_RD lock(_parent->m_mutex);
 
     Abstract::STRING applicationName;
-    std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelect("SELECT `f_appName` FROM iam.applicationAccounts WHERE `f_accountName`=:accountName;", {{":accountName", MAKE_VAR(STRING, accountName)}},
-                                              {&applicationName});
+    std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelect("SELECT `f_appName` FROM iam.applicationAccounts WHERE `f_accountName`=:accountName;",
+                                                                {{":accountName", MAKE_VAR(STRING, accountName)}}, {&applicationName});
     while (i && i->isSuccessful() && i->step())
     {
         ret.insert(applicationName.getValue());
@@ -272,11 +270,11 @@ std::set<std::string> IdentityManager_DB::Applications_DB::listAccountApplicatio
     return ret;
 }
 
-bool IdentityManager_DB::Applications_DB::addAccountToApplication(const ClientDetails &clientDetails, const std::string &performedBy,const std::string &appName, const std::string &accountName)
+bool IdentityManager_DB::Applications_DB::addAccountToApplication(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &accountName)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
     bool result = _parent->m_sqlConnector->qExecuteEx("INSERT INTO iam.applicationAccounts (`f_accountName`,`f_appName`) VALUES(:accountName,:appName);",
-                                               {{":appName", MAKE_VAR(STRING, appName)}, {":accountName", MAKE_VAR(STRING, accountName)}});
+                                                      {{":appName", MAKE_VAR(STRING, appName)}, {":accountName", MAKE_VAR(STRING, accountName)}});
     if (result)
     {
         _parent->logSecurityEventOnApplications(appName, SecurityEventAction::ASSIGN_ACCOUNT, "Assigned account '" + accountName + "'", performedBy, clientDetails);
@@ -284,12 +282,12 @@ bool IdentityManager_DB::Applications_DB::addAccountToApplication(const ClientDe
     return result;
 }
 
-bool IdentityManager_DB::Applications_DB::removeAccountFromApplication(const ClientDetails &clientDetails, const std::string &performedBy,const std::string &appName, const std::string &accountName)
+bool IdentityManager_DB::Applications_DB::removeAccountFromApplication(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &accountName)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
 
     bool ret = _parent->m_sqlConnector->qExecuteEx("DELETE FROM iam.applicationAccounts WHERE `f_appName`=:appName AND `f_accountName`=:accountName;",
-                                              {{":appName", MAKE_VAR(STRING, appName)}, {":accountName", MAKE_VAR(STRING, accountName)}});
+                                                   {{":appName", MAKE_VAR(STRING, appName)}, {":accountName", MAKE_VAR(STRING, accountName)}});
     if (ret)
     {
         _parent->logSecurityEventOnApplications(appName, SecurityEventAction::REVOKE_ACCOUNT, "Revoked account '" + accountName + "'", performedBy, clientDetails);
@@ -297,12 +295,13 @@ bool IdentityManager_DB::Applications_DB::removeAccountFromApplication(const Cli
     return ret;
 }
 
-bool IdentityManager_DB::Applications_DB::changeApplicationAdmin(const ClientDetails &clientDetails, const std::string &performedBy,const std::string &appName, const std::string &accountName, bool isAppAdmin)
+bool IdentityManager_DB::Applications_DB::changeApplicationAdmin(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &accountName,
+                                                                 bool isAppAdmin)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
 
     bool result = _parent->m_sqlConnector->qExecuteEx("UPDATE iam.applicationAccounts SET `isAppAdmin`=:isAppAdmin WHERE `f_accountName`=:accountName AND `f_appName`=:appName;",
-                                               {{":appName", MAKE_VAR(STRING, appName)}, {":accountName", MAKE_VAR(STRING, accountName)}, {":isAppAdmin", MAKE_VAR(BOOL, isAppAdmin)}});
+                                                      {{":appName", MAKE_VAR(STRING, appName)}, {":accountName", MAKE_VAR(STRING, accountName)}, {":isAppAdmin", MAKE_VAR(BOOL, isAppAdmin)}});
     if (result)
     {
         _parent->logSecurityEventOnApplications(appName, SecurityEventAction::UPDATE, "Set account '" + accountName + "' as admin=" + std::to_string(isAppAdmin), performedBy, clientDetails);
@@ -343,9 +342,9 @@ Json::Value IdentityManager_DB::Applications_DB::searchApplications(const json &
     {
         Abstract::STRING appName, appCreator, appDescription;
         std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelectWithFilters(sqlQueryStr, whereFilters, {{":SEARCHWORDS", MAKE_VAR(STRING, searchValue)}}, {&appName, &appCreator, &appDescription},
-                                                             orderByStatement, // Order by
-                                                             limit,            // LIMIT
-                                                             offset            // OFFSET
+                                                                               orderByStatement, // Order by
+                                                                               limit,            // LIMIT
+                                                                               offset            // OFFSET
         );
 
         while (i && i->isSuccessful() && i->step())
@@ -384,10 +383,10 @@ std::vector<AccountApplicationInfo> IdentityManager_DB::Applications_DB::listAcc
         Abstract::DATETIME enrollmentDate;
 
         std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelect("SELECT a.`f_appName`, ap.`appDescription`, a.`isAppAdmin`, a.`enrollmentDate` "
-                                                   "FROM iam.applicationAccounts a "
-                                                   "JOIN iam.applications ap ON a.`f_appName` = ap.`appName` "
-                                                   "WHERE a.`f_accountName` = :accountName;",
-                                                   {{":accountName", MAKE_VAR(STRING, accountName)}}, {&appName, &appDescription, &isAppAdmin, &enrollmentDate});
+                                                                    "FROM iam.applicationAccounts a "
+                                                                    "JOIN iam.applications ap ON a.`f_appName` = ap.`appName` "
+                                                                    "WHERE a.`f_accountName` = :accountName;",
+                                                                    {{":accountName", MAKE_VAR(STRING, accountName)}}, {&appName, &appDescription, &isAppAdmin, &enrollmentDate});
 
         while (i && i->isSuccessful() && i->step())
         {
@@ -401,14 +400,14 @@ std::vector<AccountApplicationInfo> IdentityManager_DB::Applications_DB::listAcc
         }
     }
 
-    for ( AccountApplicationInfo & info: ret )
+    for (AccountApplicationInfo &info : ret)
     {
         // Query 2: Obtener roles del account en esta app
         {
             Abstract::STRING roleName;
             std::shared_ptr<Query> j = _parent->m_sqlConnector->qSelect("SELECT `f_roleName` FROM iam.applicationRolesAccounts "
-                                                      "WHERE `f_accountName` = :accountName AND `f_appName` = :appName;",
-                                                      {{":accountName", MAKE_VAR(STRING, accountName)}, {":appName", MAKE_VAR(STRING, info.appName)}}, {&roleName});
+                                                                        "WHERE `f_accountName` = :accountName AND `f_appName` = :appName;",
+                                                                        {{":accountName", MAKE_VAR(STRING, accountName)}, {":appName", MAKE_VAR(STRING, info.appName)}}, {&roleName});
 
             while (j && j->isSuccessful() && j->step())
             {
@@ -417,14 +416,13 @@ std::vector<AccountApplicationInfo> IdentityManager_DB::Applications_DB::listAcc
             }
         }
 
-
-        for (const std::string & currentRole : info.roles)
+        for (const std::string &currentRole : info.roles)
         {
             // Query 3: Obtener scopes de este rol
             Abstract::STRING scopeId;
             std::shared_ptr<Query> k = _parent->m_sqlConnector->qSelect("SELECT `f_scopeId` FROM iam.applicationRolesScopes "
-                                                      "WHERE `f_appName` = :appName AND `f_roleName` = :roleName;",
-                                                      {{":appName", MAKE_VAR(STRING, info.appName)}, {":roleName", MAKE_VAR(STRING, currentRole)}}, {&scopeId});
+                                                                        "WHERE `f_appName` = :appName AND `f_roleName` = :roleName;",
+                                                                        {{":appName", MAKE_VAR(STRING, info.appName)}, {":roleName", MAKE_VAR(STRING, currentRole)}}, {&scopeId});
 
             while (k && k->isSuccessful() && k->step())
             {
@@ -437,9 +435,8 @@ std::vector<AccountApplicationInfo> IdentityManager_DB::Applications_DB::listAcc
             // Query 4: Obtener scopes directos del account en esta app
             // desde iam.applicationScopeAccounts unido con iam.applicationScopes
             Abstract::STRING scopeId;
-            std::shared_ptr<Query> l = _parent->m_sqlConnector->qSelect(
-                "SELECT `f_scopeId` FROM iam.applicationScopeAccounts  WHERE `f_accountName` = :accountName AND `f_appName` = :appName;",
-                {{":accountName", MAKE_VAR(STRING, accountName)}, {":appName", MAKE_VAR(STRING, info.appName)}}, {&scopeId});
+            std::shared_ptr<Query> l = _parent->m_sqlConnector->qSelect("SELECT `f_scopeId` FROM iam.applicationScopeAccounts  WHERE `f_accountName` = :accountName AND `f_appName` = :appName;",
+                                                                        {{":accountName", MAKE_VAR(STRING, accountName)}, {":appName", MAKE_VAR(STRING, info.appName)}}, {&scopeId});
 
             while (l && l->isSuccessful() && l->step())
             {
@@ -450,16 +447,15 @@ std::vector<AccountApplicationInfo> IdentityManager_DB::Applications_DB::listAcc
         }
     }
 
-
-
     return ret;
 }
 
-bool IdentityManager_DB::Applications_DB::addWebLoginAllowedRedirectURIToApplication(const ClientDetails &clientDetails, const std::string &performedBy,const std::string &appName, const std::string &loginRedirectURI)
+bool IdentityManager_DB::Applications_DB::addWebLoginAllowedRedirectURIToApplication(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName,
+                                                                                     const std::string &loginRedirectURI)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
     bool result = _parent->m_sqlConnector->qExecuteEx("INSERT INTO iam.applicationsWebLoginAllowedRedirectURIs (`f_appName`, `loginRedirectURI`) VALUES (:appName, :loginRedirectURI);",
-                                               {{":appName", MAKE_VAR(STRING, appName)}, {":loginRedirectURI", MAKE_VAR(STRING, loginRedirectURI)}});
+                                                      {{":appName", MAKE_VAR(STRING, appName)}, {":loginRedirectURI", MAKE_VAR(STRING, loginRedirectURI)}});
     if (result)
     {
         _parent->logSecurityEventOnApplications(appName, SecurityEventAction::CREATE, "Added redirect URI '" + loginRedirectURI + "'", performedBy, clientDetails);
@@ -467,11 +463,12 @@ bool IdentityManager_DB::Applications_DB::addWebLoginAllowedRedirectURIToApplica
     return result;
 }
 
-bool IdentityManager_DB::Applications_DB::removeWebLoginAllowedRedirectURIToApplication(const ClientDetails &clientDetails, const std::string &performedBy,const std::string &appName, const std::string &loginRedirectURI)
+bool IdentityManager_DB::Applications_DB::removeWebLoginAllowedRedirectURIToApplication(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName,
+                                                                                        const std::string &loginRedirectURI)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
     bool result = _parent->m_sqlConnector->qExecuteEx("DELETE FROM iam.applicationsWebLoginAllowedRedirectURIs WHERE `f_appName`=:appName AND `loginRedirectURI`=:loginRedirectURI;",
-                                               {{":appName", MAKE_VAR(STRING, appName)}, {":loginRedirectURI", MAKE_VAR(STRING, loginRedirectURI)}});
+                                                      {{":appName", MAKE_VAR(STRING, appName)}, {":loginRedirectURI", MAKE_VAR(STRING, loginRedirectURI)}});
     if (result)
     {
         _parent->logSecurityEventOnApplications(appName, SecurityEventAction::DELETE, "Removed redirect URI '" + loginRedirectURI + "'", performedBy, clientDetails);
@@ -486,8 +483,8 @@ std::set<std::string> IdentityManager_DB::Applications_DB::listWebLoginAllowedRe
     Abstract::STRING loginRedirectURI;
     std::set<std::string> redirectURIs;
 
-    std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelect("SELECT `loginRedirectURI` FROM iam.applicationsWebLoginAllowedRedirectURIs WHERE `f_appName`=:appName;", {{":appName", MAKE_VAR(STRING, appName)}},
-                                              {&loginRedirectURI});
+    std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelect("SELECT `loginRedirectURI` FROM iam.applicationsWebLoginAllowedRedirectURIs WHERE `f_appName`=:appName;",
+                                                                {{":appName", MAKE_VAR(STRING, appName)}}, {&loginRedirectURI});
     while (i && i->isSuccessful() && i->step())
     {
         redirectURIs.insert(loginRedirectURI.getValue());
@@ -495,11 +492,12 @@ std::set<std::string> IdentityManager_DB::Applications_DB::listWebLoginAllowedRe
     return redirectURIs;
 }
 
-bool IdentityManager_DB::Applications_DB::updateWebLoginDefaultRedirectURIForApplication(const ClientDetails &clientDetails, const std::string &performedBy,const std::string &appName, const std::string &loginRedirectURI)
+bool IdentityManager_DB::Applications_DB::updateWebLoginDefaultRedirectURIForApplication(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName,
+                                                                                         const std::string &loginRedirectURI)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
     bool result = _parent->m_sqlConnector->qExecuteEx("INSERT OR REPLACE INTO iam.applicationsWebLoginDefaultRedirectURI (`f_appName`, `f_loginRedirectURI`) VALUES (:appName, :loginRedirectURI);",
-                                               {{":appName", MAKE_VAR(STRING, appName)}, {":loginRedirectURI", MAKE_VAR(STRING, loginRedirectURI)}});
+                                                      {{":appName", MAKE_VAR(STRING, appName)}, {":loginRedirectURI", MAKE_VAR(STRING, loginRedirectURI)}});
     if (result)
     {
         _parent->logSecurityEventOnApplications(appName, SecurityEventAction::UPDATE, "Set default redirect URI '" + loginRedirectURI + "'", performedBy, clientDetails);
@@ -520,7 +518,8 @@ std::string IdentityManager_DB::Applications_DB::getWebLoginDefaultRedirectURIFo
     return "";
 }
 
-bool IdentityManager_DB::Applications_DB::setApplicationWebLoginCallbackURI(const ClientDetails &clientDetails, const std::string &performedBy,const std::string &appName, const std::string &callbackURI)
+bool IdentityManager_DB::Applications_DB::setApplicationWebLoginCallbackURI(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName,
+                                                                            const std::string &callbackURI)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
 
@@ -556,11 +555,11 @@ std::string IdentityManager_DB::Applications_DB::getApplicationCallbackURI(const
     return "";
 }
 
-bool IdentityManager_DB::Applications_DB::addWebLoginOriginURLToApplication(const ClientDetails &clientDetails, const std::string &performedBy,const std::string &appName, const std::string &originUrl)
+bool IdentityManager_DB::Applications_DB::addWebLoginOriginURLToApplication(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &originUrl)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
     bool result = _parent->m_sqlConnector->qExecuteEx("INSERT INTO iam.applicationsWebLoginOrigins (`f_appName`, `originUrl`) VALUES (:appName, :originUrl);",
-                                               {{":appName", MAKE_VAR(STRING, appName)}, {":originUrl", MAKE_VAR(STRING, originUrl)}});
+                                                      {{":appName", MAKE_VAR(STRING, appName)}, {":originUrl", MAKE_VAR(STRING, originUrl)}});
     if (result)
     {
         _parent->logSecurityEventOnApplications(appName, SecurityEventAction::CREATE, "Added origin URL '" + originUrl + "'", performedBy, clientDetails);
@@ -568,11 +567,12 @@ bool IdentityManager_DB::Applications_DB::addWebLoginOriginURLToApplication(cons
     return result;
 }
 
-bool IdentityManager_DB::Applications_DB::removeWebLoginOriginURLToApplication(const ClientDetails &clientDetails, const std::string &performedBy,const std::string &appName, const std::string &originUrl)
+bool IdentityManager_DB::Applications_DB::removeWebLoginOriginURLToApplication(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName,
+                                                                               const std::string &originUrl)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
     bool result = _parent->m_sqlConnector->qExecuteEx("DELETE FROM iam.applicationsWebLoginOrigins WHERE `f_appName`=:appName AND `originUrl`=:originUrl;",
-                                               {{":appName", MAKE_VAR(STRING, appName)}, {":originUrl", MAKE_VAR(STRING, originUrl)}});
+                                                      {{":appName", MAKE_VAR(STRING, appName)}, {":originUrl", MAKE_VAR(STRING, originUrl)}});
     if (result)
     {
         _parent->logSecurityEventOnApplications(appName, SecurityEventAction::DELETE, "Removed origin URL '" + originUrl + "'", performedBy, clientDetails);
@@ -587,7 +587,8 @@ std::set<std::string> IdentityManager_DB::Applications_DB::listWebLoginOriginUrl
     Abstract::STRING originUrl;
     std::set<std::string> originUrls;
 
-    std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelect("SELECT `originUrl` FROM iam.applicationsWebLoginOrigins WHERE `f_appName`=:appName;", {{":appName", MAKE_VAR(STRING, appName)}}, {&originUrl});
+    std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelect("SELECT `originUrl` FROM iam.applicationsWebLoginOrigins WHERE `f_appName`=:appName;", {{":appName", MAKE_VAR(STRING, appName)}},
+                                                                {&originUrl});
     while (i && i->isSuccessful() && i->step())
     {
         originUrls.insert(originUrl.getValue());
@@ -595,24 +596,24 @@ std::set<std::string> IdentityManager_DB::Applications_DB::listWebLoginOriginUrl
     return originUrls;
 }
 
-bool IdentityManager_DB::Applications_DB::updateWebLoginJWTConfigForApplication(const ClientDetails &clientDetails, const std::string &performedBy,const ApplicationTokenProperties &tokenInfo)
+bool IdentityManager_DB::Applications_DB::updateWebLoginJWTConfigForApplication(const ClientDetails &clientDetails, const std::string &performedBy, const ApplicationTokenProperties &tokenInfo)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
     bool result = _parent->m_sqlConnector->qExecuteEx("UPDATE iam.applicationsJWTTokenConfig SET "
-                                               "sessionInactivityTimeout=:sessionInactivityTimeout, "
-                                               "tokenType=:tokenType, includeApplicationScopes=:includeApplicationScopes, "
-                                               "includeBasicAccountInfo=:includeBasicAccountInfo, allowRefreshTokenRenovation=:allowRefreshTokenRenovation, "
-                                               "tokensConfigJSON=:tokensConfigJSON, "
-                                               "maintainRevocationAndLogoutInfo=:maintainRevocationAndLogoutInfo WHERE f_appName=:appName;",
-                                               {{":appName", MAKE_VAR(STRING, tokenInfo.appName)},
-                                                {":sessionInactivityTimeout", MAKE_VAR(UINT32, tokenInfo.sessionInactivityTimeout)},
-                                                {":tokenType", MAKE_VAR(STRING, tokenInfo.signAlgorithm)},
-                                                {":includeApplicationScopes", MAKE_VAR(BOOL, tokenInfo.includeApplicationScopes)},
-                                                {":includeBasicAccountInfo", MAKE_VAR(BOOL, tokenInfo.includeBasicAccountInfo)},
-                                                {":allowRefreshTokenRenovation", MAKE_VAR(BOOL, tokenInfo.allowRefreshTokenRenovation)},
-                                                {":allowRefreshTokenRenovation", MAKE_VAR(BOOL, tokenInfo.allowRefreshTokenRenovation)},
-                                                {":tokensConfigJSON", MAKE_VAR(STRING, tokenInfo.tokensConfiguration.toStyledString())},
-                                                {":maintainRevocationAndLogoutInfo", MAKE_VAR(BOOL, tokenInfo.maintainRevocationAndLogoutInfo)}});
+                                                      "sessionInactivityTimeout=:sessionInactivityTimeout, "
+                                                      "tokenType=:tokenType, includeApplicationScopes=:includeApplicationScopes, "
+                                                      "includeBasicAccountInfo=:includeBasicAccountInfo, allowRefreshTokenRenovation=:allowRefreshTokenRenovation, "
+                                                      "tokensConfigJSON=:tokensConfigJSON, "
+                                                      "maintainRevocationAndLogoutInfo=:maintainRevocationAndLogoutInfo WHERE f_appName=:appName;",
+                                                      {{":appName", MAKE_VAR(STRING, tokenInfo.appName)},
+                                                       {":sessionInactivityTimeout", MAKE_VAR(UINT32, tokenInfo.sessionInactivityTimeout)},
+                                                       {":tokenType", MAKE_VAR(STRING, tokenInfo.signAlgorithm)},
+                                                       {":includeApplicationScopes", MAKE_VAR(BOOL, tokenInfo.includeApplicationScopes)},
+                                                       {":includeBasicAccountInfo", MAKE_VAR(BOOL, tokenInfo.includeBasicAccountInfo)},
+                                                       {":allowRefreshTokenRenovation", MAKE_VAR(BOOL, tokenInfo.allowRefreshTokenRenovation)},
+                                                       {":allowRefreshTokenRenovation", MAKE_VAR(BOOL, tokenInfo.allowRefreshTokenRenovation)},
+                                                       {":tokensConfigJSON", MAKE_VAR(STRING, tokenInfo.tokensConfiguration.toStyledString())},
+                                                       {":maintainRevocationAndLogoutInfo", MAKE_VAR(BOOL, tokenInfo.maintainRevocationAndLogoutInfo)}});
     if (result)
     {
         _parent->logSecurityEventOnApplications(tokenInfo.appName, SecurityEventAction::UPDATE, "Updated JWT token config", performedBy, clientDetails);
@@ -652,7 +653,8 @@ ApplicationTokenProperties IdentityManager_DB::Applications_DB::getWebLoginJWTCo
     return tokenInfo;
 }
 
-bool IdentityManager_DB::Applications_DB::setWebLoginJWTSigningKeyForApplication(const ClientDetails &clientDetails, const std::string &performedBy,const std::string &appName, const std::string &signingKey)
+bool IdentityManager_DB::Applications_DB::setWebLoginJWTSigningKeyForApplication(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName,
+                                                                                 const std::string &signingKey)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
     return _parent->m_sqlConnector->qExecuteEx("UPDATE iam.applicationsJWTTokenConfig SET accessTokenSigningKey=:signingKey WHERE f_appName=:appName;",
@@ -673,7 +675,8 @@ std::string IdentityManager_DB::Applications_DB::getWebLoginJWTSigningKeyForAppl
     return "";
 }
 
-bool IdentityManager_DB::Applications_DB::setWebLoginJWTValidationKeyForApplication(const ClientDetails &clientDetails, const std::string &performedBy,const std::string &appName, const std::string &validationKey)
+bool IdentityManager_DB::Applications_DB::setWebLoginJWTValidationKeyForApplication(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName,
+                                                                                    const std::string &validationKey)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
     return _parent->m_sqlConnector->qExecuteEx("UPDATE iam.applicationsJWTTokenConfig SET accessTokenValidationKey=:validationKey WHERE f_appName=:appName;",

@@ -25,7 +25,7 @@ bool LoginPortal_Endpoints::token_validateRedirectURI(const std::string &app, co
     std::string callbackURI = identityManager->applications->getApplicationCallbackURI(app);
 
     // Validate if the redirect URI is acceptable by the application.
-    if (!redirectURI.empty() && redirectURIs.count(redirectURI)==0)
+    if (!redirectURI.empty() && redirectURIs.count(redirectURI) == 0)
     {
         // This token is not available for retrieving app tokens...
         LOG_APP->log2(__func__, user, ipAddress, Logs::LEVEL_SECURITY_ALERT, "Invalid return URL '%s': The provided URI does not match any recognized redirect URIs for application '%s'.",
@@ -53,14 +53,9 @@ std::optional<std::string> LoginPortal_Endpoints::token_signApplicationJWT(JWT::
     return signingJWT->signFromToken(accessToken, false);
 }
 
-bool LoginPortal_Endpoints::token_createAndSignApplicationRefreshAndAccessJWTs(const JWT::Token *jwtToken,
-                                                                        const bool & useEmbeddedAuthentication,
-                                                                        const bool & keepAuthenticated,
-                                                                        const std::string &app,
-                                                                        const std::string &user,
-                                                                        const uint32_t &schemeId,
-                                                                        const std::string &redirectURI,
-                                                                        APIReturn &response, ClientDetails &authClientDetails)
+bool LoginPortal_Endpoints::token_createAndSignApplicationRefreshAndAccessJWTs(const JWT::Token *jwtToken, const bool &useEmbeddedAuthentication, const bool &keepAuthenticated, const std::string &app,
+                                                                               const std::string &user, const uint32_t &schemeId, const std::string &redirectURI, APIReturn &response,
+                                                                               ClientDetails &authClientDetails)
 {
     ApplicationTokenProperties tokenProperties = Globals::getIdentityManager()->applications->getWebLoginJWTConfigFromApplication(app);
 
@@ -73,7 +68,7 @@ bool LoginPortal_Endpoints::token_createAndSignApplicationRefreshAndAccessJWTs(c
     std::set<uint32_t> authenticatedSlotIdsSet = Mantids30::Helpers::jsonToUInt32Set(jwtToken->getClaim("slotIds"));
     std::string refreshTokenId = Mantids30::Helpers::Random::createRandomString(16);
 
-    JWT::Token accessToken, refreshToken;//, logoutToken;
+    JWT::Token accessToken, refreshToken; //, logoutToken;
 
     TokensManager::ApplicationTokenCommonParams params;
     params.refreshTokenId = refreshTokenId;
@@ -86,8 +81,8 @@ bool LoginPortal_Endpoints::token_createAndSignApplicationRefreshAndAccessJWTs(c
     refreshExtraParams.keepAuthenticated = keepAuthenticated;
     refreshExtraParams.useEmbeddedAuthentication = useEmbeddedAuthentication;
 
-    TokensManager::configureApplicationRefreshToken(refreshToken,params,refreshExtraParams);
-    TokensManager::configureApplicationAccessToken(accessToken,params);
+    TokensManager::configureApplicationRefreshToken(refreshToken, params, refreshExtraParams);
+    TokensManager::configureApplicationAccessToken(accessToken, params);
 
     // Sign access token
     std::optional<std::string> accessTokenStr = token_signApplicationJWT(accessToken);
@@ -105,9 +100,8 @@ bool LoginPortal_Endpoints::token_createAndSignApplicationRefreshAndAccessJWTs(c
         return false;
     }
 
-
-    Globals::getIdentityManager()->authController->insertApplicationAccountAccessAuthLog(user, app, schemeId, authClientDetails, refreshTokenId, accessToken.getJwtId(), accessToken.getExpirationTime(),
-                                                                           refreshToken.getExpirationTime());
+    Globals::getIdentityManager()->authController->insertApplicationAccountAccessAuthLog(user, app, schemeId, authClientDetails, refreshTokenId, accessToken.getJwtId(),
+                                                                                         accessToken.getExpirationTime(), refreshToken.getExpirationTime());
 
     // Here is the effective logging in the app.
     (*response.responseJSON())["accessToken"] = accessTokenStr.value();
@@ -130,9 +124,8 @@ bool LoginPortal_Endpoints::token_validateJwtClaims(const JWT::Token *jwtToken, 
     return true;
 }
 
-
-bool LoginPortal_Endpoints::token_validateAuthenticationScheme(const JWT::Token *jwtToken, const std::string &requestedApp, const std::string &requestedActivity,
-                                        uint32_t &requestedSchemeId, const std::string &authenticatedUser, const std::string &ipAddress)
+bool LoginPortal_Endpoints::token_validateAuthenticationScheme(const JWT::Token *jwtToken, const std::string &requestedApp, const std::string &requestedActivity, uint32_t &requestedSchemeId,
+                                                               const std::string &authenticatedUser, const std::string &ipAddress)
 {
     IdentityManager *identityManager = Globals::getIdentityManager();
 

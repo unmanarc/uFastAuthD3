@@ -35,7 +35,6 @@ void WebSessionAuthHandler_Endpoints::addEndpoints(std::shared_ptr<Endpoints> en
     endpoints->setEndpointOptions("callback", API::OptionsHandlerConfig().insertAllowedOrigin(Globals::pConfig.get<std::string>("AppVars.LoginPortalURL", "")).setAllowCredentials(true));
 }
 
-
 /**
  * Valida y decodifica el Refresh Token.
  * @param refreshTokenStr El token en string.
@@ -120,7 +119,7 @@ bool WebSessionAuthHandler_Endpoints::validateAndDecodeRefreshToken(const std::s
     outData.user = refreshTokenUser;
     outData.jwtId = refreshTokenVerified.getJwtId();
     outData.slotIds = Mantids30::Helpers::jsonToUInt32Set(refreshTokenVerified.getClaim("slotIds"));
-    outData.useEmbeddedAuthentication = JSON_ASBOOL_D(refreshTokenVerified.getClaim("useEmbeddedAuthentication"),false);
+    outData.useEmbeddedAuthentication = JSON_ASBOOL_D(refreshTokenVerified.getClaim("useEmbeddedAuthentication"), false);
     outData.tokenProps = tokenProps;
 
     return true;

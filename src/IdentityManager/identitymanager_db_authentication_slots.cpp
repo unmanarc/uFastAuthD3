@@ -21,16 +21,17 @@ std::optional<uint32_t> IdentityManager_DB::AuthController_DB::addNewAuthenticat
 
     uint32_t newSlotId = 0;
     {
-        std::shared_ptr<Query> i = _parent->m_sqlConnector->qExecute("INSERT INTO iam.authenticationSlots (`description`,`function`,`defaultExpirationSeconds`,`strengthJSONValidator`,`totp2FAStepsToleranceWindow`, `canSkipWhenExpired`) "
-                                                   "VALUES(:description,:function,:defaultExpirationSeconds,:strengthJSONValidator,:totp2FAStepsToleranceWindow,:canSkipWhenExpired);",
-                                                   {{":description", MAKE_VAR(STRING, details.description)},
-                                                    {":function", MAKE_VAR(UINT32, details.passwordFunction)},
-                                                    {":defaultExpirationSeconds", MAKE_VAR(UINT32, details.defaultExpirationSeconds)},
-                                                    {":totp2FAStepsToleranceWindow", MAKE_VAR(UINT32, details.totp2FAStepsToleranceWindow)},
-                                                    {":strengthJSONValidator", MAKE_VAR(STRING, details.strengthJSONValidator.toStyledString())},
-                                                    {":canSkipWhenExpired", MAKE_VAR(BOOL, details.canSkipWhenExpired)},
-                                                   }
-                                                   );
+        std::shared_ptr<Query> i = _parent->m_sqlConnector->qExecute(
+            "INSERT INTO iam.authenticationSlots (`description`,`function`,`defaultExpirationSeconds`,`strengthJSONValidator`,`totp2FAStepsToleranceWindow`, `canSkipWhenExpired`) "
+            "VALUES(:description,:function,:defaultExpirationSeconds,:strengthJSONValidator,:totp2FAStepsToleranceWindow,:canSkipWhenExpired);",
+            {
+                {":description", MAKE_VAR(STRING, details.description)},
+                {":function", MAKE_VAR(UINT32, details.passwordFunction)},
+                {":defaultExpirationSeconds", MAKE_VAR(UINT32, details.defaultExpirationSeconds)},
+                {":totp2FAStepsToleranceWindow", MAKE_VAR(UINT32, details.totp2FAStepsToleranceWindow)},
+                {":strengthJSONValidator", MAKE_VAR(STRING, details.strengthJSONValidator.toStyledString())},
+                {":canSkipWhenExpired", MAKE_VAR(BOOL, details.canSkipWhenExpired)},
+            });
         if (!i || !i->isSuccessful())
             return std::nullopt;
 
@@ -84,7 +85,6 @@ bool IdentityManager_DB::AuthController_DB::updateAuthenticationSlotDetails(cons
     return success;
 }
 
-
 std::map<uint32_t, AuthenticationSlotDetails> IdentityManager_DB::AuthController_DB::listAllAuthenticationSlots()
 {
     Threads::Sync::Lock_RD lock(_parent->m_mutex);
@@ -106,21 +106,17 @@ std::map<uint32_t, AuthenticationSlotDetails> IdentityManager_DB::AuthController
     Abstract::UINT32 uTotp2FAStepsToleranceWindow;
     Abstract::BOOL canSkipWhenExpired;
 
-    std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelect("SELECT `slotId`, `description`, `function`, `defaultExpirationSeconds`, `strengthJSONValidator`,`totp2FAStepsToleranceWindow`,`canSkipWhenExpired` "
-                                              "FROM iam.authenticationSlots;",
-                                              {}, {&uSlotId, &sDescription, &uFunction, &uDefaultExpirationSeconds, &sStrengthJSONValidator, &uTotp2FAStepsToleranceWindow, &canSkipWhenExpired});
+    std::shared_ptr<Query> i = _parent->m_sqlConnector
+                                   ->qSelect("SELECT `slotId`, `description`, `function`, `defaultExpirationSeconds`, `strengthJSONValidator`,`totp2FAStepsToleranceWindow`,`canSkipWhenExpired` "
+                                             "FROM iam.authenticationSlots;",
+                                             {}, {&uSlotId, &sDescription, &uFunction, &uDefaultExpirationSeconds, &sStrengthJSONValidator, &uTotp2FAStepsToleranceWindow, &canSkipWhenExpired});
 
     // Iterate:
     while (i && i->isSuccessful() && i->step())
     {
         // Build AuthenticationSlotDetails and insert it to the maps
-        ret.insert({uSlotId.getValue(), AuthenticationSlotDetails(sDescription.getValue(),
-                                                                  (HashFunction) uFunction.getValue(),
-                                                                  parse(sStrengthJSONValidator.getValue().c_str()),
-                                                                  uDefaultExpirationSeconds.getValue(),
-                                                                  uTotp2FAStepsToleranceWindow.getValue(),
-                                                                  canSkipWhenExpired.getValue()
-                                                          )});
+        ret.insert({uSlotId.getValue(), AuthenticationSlotDetails(sDescription.getValue(), (HashFunction) uFunction.getValue(), parse(sStrengthJSONValidator.getValue().c_str()),
+                                                                  uDefaultExpirationSeconds.getValue(), uTotp2FAStepsToleranceWindow.getValue(), canSkipWhenExpired.getValue())});
     }
 
     return ret;

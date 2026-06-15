@@ -54,15 +54,13 @@ API::APIReturn LoginPortal_Endpoints::preAuthorize(void *context, const API::RES
         std::optional<IdentityManager::Applications::ApplicationAttributes> appAttrs = identityManager->applications->getApplicationAttributes(appName);
         if (!appAttrs.has_value())
         {
-            LOG_APP->log2(__func__, appName, authClientDetails.ipAddress, Logs::LEVEL_SECURITY_ALERT, "Application attributes not found for app: %s",
-                          appName.c_str());
+            LOG_APP->log2(__func__, appName, authClientDetails.ipAddress, Logs::LEVEL_SECURITY_ALERT, "Application attributes not found for app: %s", appName.c_str());
             response.setError(HTTP::Status::S_404_NOT_FOUND, "not_found", "Application not found.");
             return response;
         }
         if (!appAttrs.value().useEmbeddedAuthentication)
         {
-            LOG_APP->log2(__func__, appName, authClientDetails.ipAddress, Logs::LEVEL_SECURITY_ALERT, "API key access attempted for non-embedded application. App: %s",
-                          appName.c_str());
+            LOG_APP->log2(__func__, appName, authClientDetails.ipAddress, Logs::LEVEL_SECURITY_ALERT, "API key access attempted for non-embedded application. App: %s", appName.c_str());
             response.setError(HTTP::Status::S_403_FORBIDDEN, "security_error", "Application does not support embedded authentication via API key.");
             return response;
         }

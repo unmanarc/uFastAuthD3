@@ -21,5 +21,4 @@ protected:
     static APIReturn removeRole(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
     static APIReturn addApplicationRoleToAccount(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
     static APIReturn removeApplicationRoleFromAccount(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
-
 };

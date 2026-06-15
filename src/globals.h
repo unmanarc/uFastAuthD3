@@ -28,10 +28,7 @@ public:
 
     //static boost::property_tree::ptree *getConfig();
 
-    static inline IdentityManager *getIdentityManager()
-    {
-        return identityManager;
-    }
+    static inline IdentityManager *getIdentityManager() { return identityManager; }
 
     static void setIdentityManager(IdentityManager *value);
 
@@ -43,7 +40,7 @@ public:
 
     static Mantids30::Network::Servers::Web::APIServerCore *getWebLoginServer();
     static void setWebLoginServer(Mantids30::Network::Servers::Web::APIServerCore *newWebLoginServer);
-/*
+    /*
     static Mantids30::Network::Protocols::FastRPC::FastRPC1 *getFastRPC();
     static void setFastRPC(Mantids30::Network::Protocols::FastRPC::FastRPC1 *newFastRPC);
 */
@@ -56,5 +53,5 @@ private:
     static LoginDirectoryManager *loginDirManager;
     static IdentityManager *identityManager;
     static Mantids30::Network::Servers::Web::APIServerCore *webLoginServer;
-//    static Mantids30::Network::Protocols::FastRPC::FastRPC1 *fastRPC;
+    //    static Mantids30::Network::Protocols::FastRPC::FastRPC1 *fastRPC;
 };

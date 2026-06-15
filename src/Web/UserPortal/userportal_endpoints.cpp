@@ -59,20 +59,20 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::changeCredential(void *con
         return response;
     }
 
-    if (JSON_ASSTRING(challengeToken.getClaim("details"),"operation", "") != "changeCredential")
+    if (JSON_ASSTRING(challengeToken.getClaim("details"), "operation", "") != "changeCredential")
     {
         response.setError(HTTP::Status::S_401_UNAUTHORIZED, "change_credential_failed", "Invalid Operation for Challenge Token");
         return response;
     }
 
     std::string accountName = challengeToken.getSubject();
-    uint32_t slotId = JSON_ASUINT_D(challengeToken.getClaim("slotId"),0);
+    uint32_t slotId = JSON_ASUINT_D(challengeToken.getClaim("slotId"), 0);
 
     Credential cred;
     cred.fromJSON((*request.inputJSON)["credential"]);
     cred.setExpirationTimeAutomatically();
 
-    if (!Globals::getIdentityManager()->authController->changeAccountCredential(clientDetails,accountName, accountName, cred, slotId))
+    if (!Globals::getIdentityManager()->authController->changeAccountCredential(clientDetails, accountName, accountName, cred, slotId))
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "change_credential_failed", "Failed to change credential");
     }
@@ -87,7 +87,7 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::createChallengeToken(void 
     std::string accountName = request.jwtToken->getSubject();
 
     // Parse input parameters
-    if (!request.inputJSON->isMember("slotId") || !request.inputJSON->isMember("verification") ||  !request.inputJSON->isMember("details"))
+    if (!request.inputJSON->isMember("slotId") || !request.inputJSON->isMember("verification") || !request.inputJSON->isMember("details"))
     {
         response.setError(HTTP::Status::S_400_BAD_REQUEST, "missing_fields", "slotId + verification + details are required");
         return response;
@@ -97,15 +97,10 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::createChallengeToken(void 
     std::string verification = JSON_ASSTRING((*request.inputJSON), "verification", "");
     AuthenticationResult authResult = Globals::getIdentityManager()->authController->authenticateCredential(clientDetails, accountName, verification, slotId);
 
-
     // Log the authentication result
-    LOG_APP->log2(__func__, accountName, clientDetails.ipAddress,
-                  authResult != AuthenticationResult::AUTHENTICATED ? Logs::LEVEL_SECURITY_ALERT : Logs::LEVEL_INFO,
-                  "Account Authorization Result: %" PRIu16 " - %s, for application '%s', and slotId = '%" PRIu32 "'",
-                  (uint16_t)authResult,
-                  authResultToString(authResult),
-                  request.jwtToken->getClaim("app").asString().c_str(),
-                  slotId);
+    LOG_APP->log2(__func__, accountName, clientDetails.ipAddress, authResult != AuthenticationResult::AUTHENTICATED ? Logs::LEVEL_SECURITY_ALERT : Logs::LEVEL_INFO,
+                  "Account Authorization Result: %" PRIu16 " - %s, for application '%s', and slotId = '%" PRIu32 "'", (uint16_t) authResult, authResultToString(authResult),
+                  request.jwtToken->getClaim("app").asString().c_str(), slotId);
 
     if (!IS_CREDENTIAL_AUTHENTICATED(authResult))
     {
@@ -114,16 +109,16 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::createChallengeToken(void 
     }
 
     JWT::Token token;
-    token.setExpirationTime(time(nullptr)+120); // 2 min token.
+    token.setExpirationTime(time(nullptr) + 120); // 2 min token.
     token.setSubject(request.jwtToken->getSubject());
-    token.setClaim("type","challenge");
-    token.setClaim("app",request.jwtToken->getClaim("app"));
+    token.setClaim("type", "challenge");
+    token.setClaim("app", request.jwtToken->getClaim("app"));
     token.setClaim("parentTokenId", request.jwtToken->getJwtId());
     token.setClaim("slotId", slotId);
     token.setClaim("details", (*request.inputJSON)["details"]);
 
     HTTP::Headers::Cookie cookie = HTTP::Headers::Cookie();
-    cookie.value = request.jwtSigner->signFromToken(token,false);
+    cookie.value = request.jwtSigner->signFromToken(token, false);
     cookie.expires = HTTP::Date(token.getExpirationTime());
     response.cookiesMap["ChallengeToken"] = cookie;
     return response;
@@ -133,7 +128,7 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::listAllAuthCredentialSlots
 {
     Json::Value result(Json::arrayValue);
     std::string accountName = request.jwtToken->getSubject();
-    std::map<uint32_t,std::pair<bool,Credential>> creds = Globals::getIdentityManager()->authController->listAllAuthCredentialSlotsPublicDataForAccount(accountName);
+    std::map<uint32_t, std::pair<bool, Credential>> creds = Globals::getIdentityManager()->authController->listAllAuthCredentialSlotsPublicDataForAccount(accountName);
     const AuthenticationPolicy &authPolicy = Globals::getIdentityManager()->authController->getGlobalAuthenticationPolicy();
 
     for (const std::pair<uint32_t, std::pair<bool, Credential>> &credEntry : creds)
@@ -186,7 +181,7 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::updateAccountDetailFieldsV
     }
 
     // Update account detail fields values
-    if (!Globals::getIdentityManager()->accounts->updateAccountDetailFieldValues(clientDetails,accountName,accountName, fieldValues, false))
+    if (!Globals::getIdentityManager()->accounts->updateAccountDetailFieldValues(clientDetails, accountName, accountName, fieldValues, false))
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to update account detail fields values");
         return response;
@@ -285,9 +280,9 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::activateCredential(void *c
         return response;
     }
 
-    uint32_t slotId =  JSON_ASUINT((*request.inputJSON),"slotId",0);
-    std::string hash = JSON_ASSTRING((*request.inputJSON),"hash","");
-    std::string ssalt = JSON_ASSTRING((*request.inputJSON),"ssalt","");
+    uint32_t slotId = JSON_ASUINT((*request.inputJSON), "slotId", 0);
+    std::string hash = JSON_ASSTRING((*request.inputJSON), "hash", "");
+    std::string ssalt = JSON_ASSTRING((*request.inputJSON), "ssalt", "");
 
     // Check if credential already exists using the new function
     if (Globals::getIdentityManager()->authController->doesCredentialSlotExistOnAccount(accountName, slotId))
@@ -296,7 +291,7 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::activateCredential(void *c
         return response;
     }
 
-    if (!Globals::getIdentityManager()->authController->activateAccountCredential(clientDetails,accountName,accountName, slotId, hash, ssalt))
+    if (!Globals::getIdentityManager()->authController->activateAccountCredential(clientDetails, accountName, accountName, slotId, hash, ssalt))
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "activation_failed", "Failed to activate credential");
         return response;
@@ -304,7 +299,6 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::activateCredential(void *c
 
     return response;
 }
-
 
 UserPortal_Endpoints::APIReturn UserPortal_Endpoints::activateOTP(void *context, const RequestParameters &request, ClientDetails &clientDetails)
 {
@@ -318,8 +312,8 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::activateOTP(void *context,
         return response;
     }
 
-    uint32_t slotId =  JSON_ASUINT((*request.inputJSON),"slotId",0);
-    std::string seed = JSON_ASSTRING((*request.inputJSON),"seed","");
+    uint32_t slotId = JSON_ASUINT((*request.inputJSON), "slotId", 0);
+    std::string seed = JSON_ASSTRING((*request.inputJSON), "seed", "");
 
     if (Globals::getIdentityManager()->authController->doesCredentialSlotExistOnAccount(accountName, slotId))
     {
@@ -327,7 +321,7 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::activateOTP(void *context,
         return response;
     }
 
-    if (!Globals::getIdentityManager()->authController->activateAccountCredential(clientDetails,accountName,accountName, slotId, seed, ""))
+    if (!Globals::getIdentityManager()->authController->activateAccountCredential(clientDetails, accountName, accountName, slotId, seed, ""))
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "activation_failed", "Failed to activate OTP credential");
         return response;
@@ -343,7 +337,8 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::removeCredential(void *con
     std::string accountName = request.jwtToken->getSubject();
 
     // Parse input parameters
-    if (!request.inputJSON->isMember("slotId") || !request.inputJSON->isMember("verification")) {
+    if (!request.inputJSON->isMember("slotId") || !request.inputJSON->isMember("verification"))
+    {
         response.setError(HTTP::Status::S_400_BAD_REQUEST, "missing_fields", "slotId and verification is required");
         return response;
     }
@@ -351,16 +346,12 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::removeCredential(void *con
     uint32_t slotId = JSON_ASUINT((*request.inputJSON), "slotId", 0);
     std::string verification = JSON_ASSTRING((*request.inputJSON), "verification", "");
 
-    AuthenticationResult authResult = Globals::getIdentityManager()->authController->authenticateCredential(clientDetails,accountName, verification,slotId);
+    AuthenticationResult authResult = Globals::getIdentityManager()->authController->authenticateCredential(clientDetails, accountName, verification, slotId);
 
     // Log the authentication result
-    LOG_APP->log2(__func__, accountName, clientDetails.ipAddress,
-                  authResult != AuthenticationResult::AUTHENTICATED ? Logs::LEVEL_SECURITY_ALERT : Logs::LEVEL_INFO,
-                  "Account Authorization Result: %" PRIu16 " - %s, for application '%s', and slotId = '%" PRIu32 "'",
-                  (uint16_t)authResult,
-                  authResultToString(authResult),
-                  request.jwtToken->getClaim("app").asString().c_str(),
-                  slotId);
+    LOG_APP->log2(__func__, accountName, clientDetails.ipAddress, authResult != AuthenticationResult::AUTHENTICATED ? Logs::LEVEL_SECURITY_ALERT : Logs::LEVEL_INFO,
+                  "Account Authorization Result: %" PRIu16 " - %s, for application '%s', and slotId = '%" PRIu32 "'", (uint16_t) authResult, authResultToString(authResult),
+                  request.jwtToken->getClaim("app").asString().c_str(), slotId);
 
     if (!IS_CREDENTIAL_AUTHENTICATED(authResult))
     {
@@ -368,7 +359,7 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::removeCredential(void *con
         return response;
     }
 
-    if (!Globals::getIdentityManager()->authController->removeAccountCredential(clientDetails,accountName,accountName, slotId))
+    if (!Globals::getIdentityManager()->authController->removeAccountCredential(clientDetails, accountName, accountName, slotId))
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "deletion_failed", "Failed to delete credential");
         return response;
@@ -376,4 +367,3 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::removeCredential(void *con
 
     return response;
 }
-

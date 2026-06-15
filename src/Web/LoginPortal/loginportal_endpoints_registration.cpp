@@ -22,8 +22,8 @@ using namespace Network::Protocols;
 
 API::APIReturn LoginPortal_Endpoints::registerAccount(void *context, const RequestParameters &request, ClientDetails &clientDetails)
 {
-        API::APIReturn response;
-/*
+    API::APIReturn response;
+    /*
     IdentityManager *identityManager = Globals::getIdentityManager();
 
     auto config = Globals::pConfig;
@@ -106,7 +106,7 @@ API::APIReturn LoginPortal_Endpoints::registerAccount(void *context, const Reque
                       !r ? "Failed to change initial password on account '%s'" : "Initial password for account '%s' changed.", accountToCreate.c_str());
     }
     */
-return response;
+    return response;
 }
 
 // TODO: llenar los details del user.

@@ -1,8 +1,8 @@
 #include "adminportal_endpoints_account_credentials.h"
 
 #include "globals.h"
-#include <json/value.h>
 #include <Mantids30/Program_Logs/applog.h>
+#include <json/value.h>
 #include <utility>
 
 using namespace Mantids30::Program;
@@ -14,11 +14,11 @@ void AdminPortal_Endpoints_AccountCredentials::addEndpoints_AccountCredentials(s
     using SecurityOptions = Mantids30::API::RESTful::Endpoints::SecurityOptions;
 
     // Account Credential Slots:
-    endpoints->addEndpoint(Endpoints::GET,    "getAccountCredentialSlots",        SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_READ"},    nullptr, &getAccountCredentialSlots);
-    endpoints->addEndpoint(Endpoints::DELETE, "removeAccountCredentialSlot",      SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"},  nullptr, &removeAccountCredentialSlot);
-    endpoints->addEndpoint(Endpoints::PUT,   "setCredentialLockedStatus",        SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"},  nullptr, &setCredentialLockedStatus);
-    endpoints->addEndpoint(Endpoints::PUT,   "setMustChangeCredential",         SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"},  nullptr, &setMustChangeCredential);
-    endpoints->addEndpoint(Endpoints::POST,   "generateMasterPassword",            SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"},  nullptr, &generateMasterPassword);
+    endpoints->addEndpoint(Endpoints::GET, "getAccountCredentialSlots", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_READ"}, nullptr, &getAccountCredentialSlots);
+    endpoints->addEndpoint(Endpoints::DELETE, "removeAccountCredentialSlot", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"}, nullptr, &removeAccountCredentialSlot);
+    endpoints->addEndpoint(Endpoints::PUT, "setCredentialLockedStatus", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"}, nullptr, &setCredentialLockedStatus);
+    endpoints->addEndpoint(Endpoints::PUT, "setMustChangeCredential", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"}, nullptr, &setMustChangeCredential);
+    endpoints->addEndpoint(Endpoints::POST, "generateMasterPassword", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"}, nullptr, &generateMasterPassword);
 }
 
 API::APIReturn AdminPortal_Endpoints_AccountCredentials::getAccountCredentialSlots(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
@@ -60,7 +60,6 @@ API::APIReturn AdminPortal_Endpoints_AccountCredentials::getAccountCredentialSlo
         jResponse["slots"].append(rSlot);
     }
 
-
     return jResponse;
 }
 
@@ -91,7 +90,7 @@ API::APIReturn AdminPortal_Endpoints_AccountCredentials::removeAccountCredential
     }
 
     // Delete the credential slot for the account
-    if (!Globals::getIdentityManager()->authController->removeAccountCredential(authClientDetails,request.jwtToken->getSubject(),accountName, slotId))
+    if (!Globals::getIdentityManager()->authController->removeAccountCredential(authClientDetails, request.jwtToken->getSubject(), accountName, slotId))
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to delete the credential slot");
         return response;
@@ -122,7 +121,7 @@ API::APIReturn AdminPortal_Endpoints_AccountCredentials::setCredentialLockedStat
     }
 
     // Block the credential slot for the account
-    if (!Globals::getIdentityManager()->authController->setCredentialLockedStatus(authClientDetails,request.jwtToken->getSubject(), accountName, slotId, lockedStatus))
+    if (!Globals::getIdentityManager()->authController->setCredentialLockedStatus(authClientDetails, request.jwtToken->getSubject(), accountName, slotId, lockedStatus))
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to set the lock state on the credential slot");
         return response;
@@ -131,7 +130,6 @@ API::APIReturn AdminPortal_Endpoints_AccountCredentials::setCredentialLockedStat
     return response;
 }
 
-
 API::APIReturn AdminPortal_Endpoints_AccountCredentials::setMustChangeCredential(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
@@ -139,7 +137,7 @@ API::APIReturn AdminPortal_Endpoints_AccountCredentials::setMustChangeCredential
     // Extract and validate input
     std::string accountName = JSON_ASSTRING(*request.inputJSON, "accountName", "");
     uint32_t slotId = JSON_ASUINT(*request.inputJSON, "slotId", 0);
-    bool mustChange = JSON_ASBOOL(*request.inputJSON, "mustChange",true);
+    bool mustChange = JSON_ASBOOL(*request.inputJSON, "mustChange", true);
 
     if (accountName.empty())
     {
@@ -154,7 +152,7 @@ API::APIReturn AdminPortal_Endpoints_AccountCredentials::setMustChangeCredential
     }
 
     // Force credential expiration for the account slot
-    if (!Globals::getIdentityManager()->authController->setCredentialMustChange(authClientDetails,request.jwtToken->getSubject(),accountName, slotId, mustChange))
+    if (!Globals::getIdentityManager()->authController->setCredentialMustChange(authClientDetails, request.jwtToken->getSubject(), accountName, slotId, mustChange))
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to change credential flag to change");
         return response;
@@ -178,8 +176,7 @@ API::APIReturn AdminPortal_Endpoints_AccountCredentials::generateMasterPassword(
 
     // Generate a new master password for the account
     std::string newTempPassword;
-    bool ok = Globals::getIdentityManager()->authController->recoverAccountMasterCredential(authClientDetails,request.jwtToken->getSubject(),
-                                                                                            accountName,&newTempPassword);
+    bool ok = Globals::getIdentityManager()->authController->recoverAccountMasterCredential(authClientDetails, request.jwtToken->getSubject(), accountName, &newTempPassword);
 
     if (!ok)
     {

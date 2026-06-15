@@ -32,8 +32,8 @@ void CredentialValidator::cleanupExpiredTokens(void *asv)
     _asv->cleanupExpiredTokens();
 }
 
-AuthenticationResult CredentialValidator::validateStoredCredential(const std::string &accountName, const Credential &storedCredential, const std::string &passwordInput, const std::string &challengeSalt,
-                                                     Mode authMode)
+AuthenticationResult CredentialValidator::validateStoredCredential(const std::string &accountName, const Credential &storedCredential, const std::string &passwordInput,
+                                                                   const std::string &challengeSalt, Mode authMode)
 {
     AuthenticationResult r = AuthenticationResult::NOT_IMPLEMENTED;
     //  bool saltedHash = false;

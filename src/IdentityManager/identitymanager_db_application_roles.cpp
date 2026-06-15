@@ -1,36 +1,37 @@
 #include "identitymanager_db.h"
+#include <Mantids30/Helpers/datatables.h>
 #include <Mantids30/Memory/a_string.h>
 #include <Mantids30/Memory/a_uint64.h>
 #include <Mantids30/Threads/lock_shared.h>
-#include <Mantids30/Helpers/datatables.h>
 
 using namespace Mantids30::Memory;
 using namespace Mantids30::Database;
 using namespace Mantids30;
 
-bool IdentityManager_DB::ApplicationRoles_DB::addRole(const ClientDetails &clientDetails, const std::string &performedBy,const std::string &appName, const std::string &roleName, const std::string &roleDescription)
+bool IdentityManager_DB::ApplicationRoles_DB::addRole(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &roleName,
+                                                      const std::string &roleDescription)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
     bool success = _parent->m_sqlConnector->qExecuteEx("INSERT INTO iam.applicationRoles (`f_appName`,`roleName`,`roleDescription`) VALUES(:appName,:roleName,:roleDescription);",
-                                               {{":appName", MAKE_VAR(STRING, appName)}, {":roleName", MAKE_VAR(STRING, roleName)}, {":roleDescription", MAKE_VAR(STRING, roleDescription)}});
+                                                       {{":appName", MAKE_VAR(STRING, appName)}, {":roleName", MAKE_VAR(STRING, roleName)}, {":roleDescription", MAKE_VAR(STRING, roleDescription)}});
 
     if (success)
     {
-        _parent->logSecurityEventOnApplicationRoles(appName, roleName,"", SecurityEventAction::CREATE, "New application role added", performedBy, clientDetails);
+        _parent->logSecurityEventOnApplicationRoles(appName, roleName, "", SecurityEventAction::CREATE, "New application role added", performedBy, clientDetails);
     }
 
     return success;
 }
 
-bool IdentityManager_DB::ApplicationRoles_DB::removeRole(const ClientDetails &clientDetails, const std::string &performedBy,const std::string &appName, const std::string &roleName)
+bool IdentityManager_DB::ApplicationRoles_DB::removeRole(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &roleName)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
     bool success = _parent->m_sqlConnector->qExecuteEx("DELETE FROM iam.applicationRoles WHERE `roleName`=:roleName AND `f_appName`=:appName;",
-                                               {{":roleName", MAKE_VAR(STRING, roleName)}, {":appName", MAKE_VAR(STRING, appName)}});
+                                                       {{":roleName", MAKE_VAR(STRING, roleName)}, {":appName", MAKE_VAR(STRING, appName)}});
 
     if (success)
     {
-        _parent->logSecurityEventOnApplicationRoles(appName, roleName,"", SecurityEventAction::DELETE, "Application role removed", performedBy, clientDetails);
+        _parent->logSecurityEventOnApplicationRoles(appName, roleName, "", SecurityEventAction::DELETE, "Application role removed", performedBy, clientDetails);
     }
 
     return success;
@@ -43,21 +44,23 @@ bool IdentityManager_DB::ApplicationRoles_DB::doesRoleExist(const std::string &a
                                                      {{":roleName", MAKE_VAR(STRING, roleName)}, {":appName", MAKE_VAR(STRING, appName)}}, {});
 }
 
-bool IdentityManager_DB::ApplicationRoles_DB::addAccountToRole(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &roleName, const std::string &accountName)
+bool IdentityManager_DB::ApplicationRoles_DB::addAccountToRole(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &roleName,
+                                                               const std::string &accountName)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
     bool success = _parent->m_sqlConnector->qExecuteEx("INSERT INTO iam.applicationRolesAccounts (`f_roleName`,`f_accountName`,`f_appName`) VALUES(:roleName,:accountName,:appName);",
-                                               {{":roleName", MAKE_VAR(STRING, roleName)}, {":appName", MAKE_VAR(STRING, appName)}, {":accountName", MAKE_VAR(STRING, accountName)}});
+                                                       {{":roleName", MAKE_VAR(STRING, roleName)}, {":appName", MAKE_VAR(STRING, appName)}, {":accountName", MAKE_VAR(STRING, accountName)}});
 
     if (success)
     {
-        _parent->logSecurityEventOnApplicationRoles(appName, roleName,accountName, SecurityEventAction::ASSIGN_ACCOUNT, "Account added to role", performedBy, clientDetails);
+        _parent->logSecurityEventOnApplicationRoles(appName, roleName, accountName, SecurityEventAction::ASSIGN_ACCOUNT, "Account added to role", performedBy, clientDetails);
     }
 
     return success;
 }
 
-bool IdentityManager_DB::ApplicationRoles_DB::removeAccountFromRole(const ClientDetails &clientDetails, const std::string &performedBy,const std::string &appName, const std::string &roleName, const std::string &accountName, bool lock)
+bool IdentityManager_DB::ApplicationRoles_DB::removeAccountFromRole(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &roleName,
+                                                                    const std::string &accountName, bool lock)
 {
     bool ret = false;
 
@@ -77,15 +80,16 @@ bool IdentityManager_DB::ApplicationRoles_DB::removeAccountFromRole(const Client
     return ret;
 }
 
-bool IdentityManager_DB::ApplicationRoles_DB::updateRoleDescription(const ClientDetails &clientDetails, const std::string &performedBy,const std::string &appName, const std::string &roleName, const std::string &roleDescription)
+bool IdentityManager_DB::ApplicationRoles_DB::updateRoleDescription(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &roleName,
+                                                                    const std::string &roleDescription)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
     bool success = _parent->m_sqlConnector->qExecuteEx("UPDATE iam.applicationRoles SET `roleDescription`=:roleDescription WHERE `roleName`=:roleName AND `f_appName`=:appName;",
-                                               {{":roleName", MAKE_VAR(STRING, roleName)}, {":roleDescription", MAKE_VAR(STRING, roleDescription)}, {":appName", MAKE_VAR(STRING, appName)}});
+                                                       {{":roleName", MAKE_VAR(STRING, roleName)}, {":roleDescription", MAKE_VAR(STRING, roleDescription)}, {":appName", MAKE_VAR(STRING, appName)}});
 
     if (success)
     {
-        _parent->logSecurityEventOnApplicationRoles(appName, roleName,"", SecurityEventAction::UPDATE, "Application role description updated", performedBy, clientDetails);
+        _parent->logSecurityEventOnApplicationRoles(appName, roleName, "", SecurityEventAction::UPDATE, "Application role description updated", performedBy, clientDetails);
     }
 
     return success;
@@ -97,7 +101,7 @@ std::set<std::string> IdentityManager_DB::ApplicationRoles_DB::listApplicationSc
     std::set<std::string> scopes;
     Abstract::STRING scopeId;
     std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelect("SELECT `f_scopeId` FROM iam.applicationRolesScopes WHERE `f_appName`=:appName AND `f_roleName`=:roleName;",
-                                              {{":appName", MAKE_VAR(STRING, appName)}, {":roleName", MAKE_VAR(STRING, roleName)}}, {&scopeId});
+                                                                {{":appName", MAKE_VAR(STRING, appName)}, {":roleName", MAKE_VAR(STRING, roleName)}}, {&scopeId});
     if (i && i->isSuccessful())
     {
         while (i->step())
@@ -127,7 +131,7 @@ std::set<ApplicationRole> IdentityManager_DB::ApplicationRoles_DB::getApplicatio
 
     Abstract::STRING roleId, description;
     std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelect("SELECT `roleName`,`roleDescription` FROM iam.applicationRoles WHERE `f_appName`=:appName;", {{":appName", MAKE_VAR(STRING, appName)}},
-                                              {&roleId, &description});
+                                                                {&roleId, &description});
     while (i && i->isSuccessful() && i->step())
     {
         ApplicationRole r;
@@ -149,7 +153,7 @@ std::set<std::string> IdentityManager_DB::ApplicationRoles_DB::getApplicationRol
 
     Abstract::STRING accountName;
     std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelect("SELECT `f_accountName` FROM iam.applicationRolesAccounts WHERE `f_roleName`=:roleName AND `f_appName`=:appName;",
-                                              {{":appName", MAKE_VAR(STRING, appName)}, {":roleName", MAKE_VAR(STRING, roleName)}}, {&accountName});
+                                                                {{":appName", MAKE_VAR(STRING, appName)}, {":roleName", MAKE_VAR(STRING, roleName)}}, {&accountName});
     while (i && i->isSuccessful() && i->step())
     {
         ret.insert(accountName.getValue());
@@ -195,10 +199,10 @@ Json::Value IdentityManager_DB::ApplicationRoles_DB::searchApplicationRoles(cons
     {
         Abstract::STRING roleName, roleDescription;
         std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelectWithFilters(sqlQueryStr, whereFilters, {{":SEARCHWORDS", MAKE_VAR(STRING, searchValue)}, {":APPNAME", MAKE_VAR(STRING, appName)}},
-                                                             {&roleName, &roleDescription},
-                                                             orderByStatement, // Order by
-                                                             limit,            // LIMIT
-                                                             offset            // OFFSET
+                                                                               {&roleName, &roleDescription},
+                                                                               orderByStatement, // Order by
+                                                                               limit,            // LIMIT
+                                                                               offset            // OFFSET
         );
 
         while (i && i->isSuccessful() && i->step())

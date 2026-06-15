@@ -17,7 +17,7 @@ using namespace Network::Sockets;
 using namespace Network::Servers;
 using namespace Program;
 
-bool JWTDynamicTokenValidatorFunction(const std::string& accessTokenStr, const std::string& xAPIKeyStr, Mantids30::DataFormat::JWT::Token * accessToken)
+bool JWTDynamicTokenValidatorFunction(const std::string &accessTokenStr, const std::string &xAPIKeyStr, Mantids30::DataFormat::JWT::Token *accessToken)
 {
     IdentityManager *identityManager = Globals::getIdentityManager();
 
@@ -34,7 +34,7 @@ bool JWTDynamicTokenValidatorFunction(const std::string& accessTokenStr, const s
     ApplicationTokenProperties tokenProps = identityManager->applications->getWebLoginJWTConfigFromApplication(appNameStr);
     std::shared_ptr<Mantids30::DataFormat::JWT> validator = identityManager->applications->getAppJWTValidator(appNameStr);
 
-    if (!validator->verify(accessTokenStr,accessToken))
+    if (!validator->verify(accessTokenStr, accessToken))
     {
         LOG_APP->log1(__func__, "", Logs::LEVEL_SECURITY_ALERT, "Invalid Signature for JWT Token at app %s.", appNameStr.c_str());
         return false;
@@ -56,7 +56,7 @@ bool JWTDynamicTokenValidatorFunction(const std::string& accessTokenStr, const s
 }
 
 // The app proxied the /auth to this service, so the origin should be what we define in the DB.
-bool myDynamicOriginValidatorFunction(const std::string& origin, const std::string& xAPIKeyStr, const std::set<std::string> & configPermittedAPIOrigins)
+bool myDynamicOriginValidatorFunction(const std::string &origin, const std::string &xAPIKeyStr, const std::set<std::string> &configPermittedAPIOrigins)
 {
     IdentityManager *identityManager = Globals::getIdentityManager();
 
@@ -67,8 +67,7 @@ bool myDynamicOriginValidatorFunction(const std::string& origin, const std::stri
     return origins.count(origin);
 }
 
-
-bool myDynamicCallbackOriginValidatorFunction(const std::string& requestOrigin, const std::string& xAPIKeyStr, const std::set<std::string> & permittedCallbackOrigins)
+bool myDynamicCallbackOriginValidatorFunction(const std::string &requestOrigin, const std::string &xAPIKeyStr, const std::set<std::string> &permittedCallbackOrigins)
 {
     std::string appName = Globals::getIdentityManager()->applications->getApplicationNameByAPIKey(xAPIKeyStr);
 
@@ -113,14 +112,14 @@ bool WebSessionAuthHandler_ServerImpl::createService()
         return false;
     }
 
-    RESTful::Engine *webSessionAuthHandlerServer = Program::Config::RESTful_Engine::createRESTfulEngine(config, LOG_APP, LOG_RPC, "Web Session Auth Handler", IAM_LOGINPORTAL_DEF_WEBROOTDIR, Program::Config::REST_ENGINE_NOCONFIG_JWT);
+    RESTful::Engine *webSessionAuthHandlerServer = Program::Config::RESTful_Engine::createRESTfulEngine(config, LOG_APP, LOG_RPC, "Web Session Auth Handler", IAM_LOGINPORTAL_DEF_WEBROOTDIR,
+                                                                                                        Program::Config::REST_ENGINE_NOCONFIG_JWT);
 
     if (!webSessionAuthHandlerServer)
         return false;
 
     // Set the software version:
     webSessionAuthHandlerServer->config.setSoftwareVersion(atoi(PROJECT_VER_MAJOR), atoi(PROJECT_VER_MINOR), atoi(PROJECT_VER_PATCH), "a");
-
 
     // Specific JWT Token Validator given an API Key specifying the APP
     webSessionAuthHandlerServer->config.dynamicTokenValidator = JWTDynamicTokenValidatorFunction;
@@ -142,7 +141,7 @@ bool WebSessionAuthHandler_ServerImpl::createService()
 
     webSessionAuthHandlerServer->startInBackground();
 
-    for (const std::shared_ptr<Sockets::Socket_Stream> & i : webSessionAuthHandlerServer->getListenerSockets())
+    for (const std::shared_ptr<Sockets::Socket_Stream> &i : webSessionAuthHandlerServer->getListenerSockets())
     {
         LOG_APP->log0(__func__, Logs::LEVEL_INFO, "Web Session Auth Handler Service Listening @%s", i->getLastBindAddress().c_str());
     }

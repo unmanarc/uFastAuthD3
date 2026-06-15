@@ -36,8 +36,6 @@ protected:
     static APIReturn changeApplicationAdmin(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
 
 private:
-    static json getLoginFlowDetails(const std::string & appName);
-    static json getApplicationAccountDetails(const std::string & appName);
-
+    static json getLoginFlowDetails(const std::string &appName);
+    static json getApplicationAccountDetails(const std::string &appName);
 };
-

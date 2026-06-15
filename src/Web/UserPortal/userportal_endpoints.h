@@ -1,6 +1,5 @@
 #pragma once
 
-
 #include <json/json.h>
 
 #include <Mantids30/API_EndpointsAndSessions/api_restful_endpoints.h>
@@ -34,7 +33,6 @@ public:
     static APIReturn createChallengeToken(void *context, const RequestParameters &request, ClientDetails &clientDetails);
     static APIReturn changeCredential(void *context, const RequestParameters &request, ClientDetails &clientDetails);
 
-
     /**
      * @brief Returns the last login time for the authenticated user.
      * @param context Unused context pointer.
@@ -43,5 +41,4 @@ public:
      * @return APIReturn with lastLogin timestamp and ISO string.
      */
     static APIReturn getLastLogin(void *context, const RequestParameters &request, ClientDetails &clientDetails);
-
 };

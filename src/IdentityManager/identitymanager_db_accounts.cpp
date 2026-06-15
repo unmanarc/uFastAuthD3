@@ -49,8 +49,7 @@ bool IdentityManager_DB::Accounts_DB::addAccount(const std::string &accountName,
 
     if (r)
     {
-        _parent->logSecurityEventOnAccounts(accountName, SecurityEventAction::CREATE, "New account created",
-                                  sCreatorAccountName.empty() ? accountName : sCreatorAccountName, clientDetails);
+        _parent->logSecurityEventOnAccounts(accountName, SecurityEventAction::CREATE, "New account created", sCreatorAccountName.empty() ? accountName : sCreatorAccountName, clientDetails);
     }
 
     return r;
@@ -93,8 +92,8 @@ bool IdentityManager_DB::Accounts_DB::disableAccount(const ClientDetails &client
                                                       {{":enabled", MAKE_VAR(BOOL, !disabled)}, {":accountName", MAKE_VAR(STRING, accountName)}});
     if (result)
     {
-        _parent->logSecurityEventOnAccounts(accountName, disabled ? SecurityEventAction::DISABLE : SecurityEventAction::ENABLE,
-                                  disabled ? "Account disabled" : "Account enabled", performedBy, clientDetails);
+        _parent->logSecurityEventOnAccounts(accountName, disabled ? SecurityEventAction::DISABLE : SecurityEventAction::ENABLE, disabled ? "Account disabled" : "Account enabled", performedBy,
+                                            clientDetails);
     }
     return result;
 }
@@ -298,10 +297,10 @@ Json::Value IdentityManager_DB::Accounts_DB::searchFields(const json &dataTables
         Abstract::STRING fieldName, fieldDescription, fieldType;
         Abstract::BOOL isOptionalField, isUnique;
         std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelectWithFilters(sqlQueryStr, whereFilters, {{":SEARCHWORDS", MAKE_VAR(STRING, searchValue)}},
-                                                             {&fieldName, &fieldDescription, &fieldType, &isOptionalField, &isUnique},
-                                                             orderByStatement, // Order by
-                                                             limit,            // LIMIT
-                                                             offset            // OFFSET
+                                                                               {&fieldName, &fieldDescription, &fieldType, &isOptionalField, &isUnique},
+                                                                               orderByStatement, // Order by
+                                                                               limit,            // LIMIT
+                                                                               offset            // OFFSET
         );
 
         while (i && i->isSuccessful() && i->step())
@@ -390,10 +389,11 @@ Json::Value IdentityManager_DB::Accounts_DB::searchAccounts(const json &dataTabl
         Abstract::STRING creator;
 
         std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelectWithFilters(sqlQueryStr, whereFilters, {{":SEARCHWORDS", MAKE_VAR(STRING, searchValue)}},
-                                                             {&accountName, &creation, &expiration, &lastLogin, &lastChange, &isAdmin, &isEnabled, &isBlocked, &isAccountConfirmed, &creator},
-                                                             orderByStatement, // Order by
-                                                             limit,            // LIMIT
-                                                             offset            // OFFSET
+                                                                               {&accountName, &creation, &expiration, &lastLogin, &lastChange, &isAdmin, &isEnabled, &isBlocked, &isAccountConfirmed,
+                                                                                &creator},
+                                                                               orderByStatement, // Order by
+                                                                               limit,            // LIMIT
+                                                                               offset            // OFFSET
         );
 
         while (i && i->isSuccessful() && i->step())
@@ -459,8 +459,8 @@ std::set<ApplicationRole> IdentityManager_DB::Accounts_DB::getAccountApplication
         Abstract::STRING role;
         Abstract::STRING roleDescription;
         std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelect("SELECT ar.f_roleName, r.roleDescription FROM iam.applicationRolesAccounts ar LEFT JOIN iam.applicationRoles r ON "
-                                                  "ar.f_roleName = r.roleName AND ar.f_appName = r.f_appName WHERE ar.f_accountName=:accountName AND ar.f_appName = :appName;",
-                                                  {{":accountName", MAKE_VAR(STRING, accountName)}, {":appName", MAKE_VAR(STRING, appName)}}, {&role, &roleDescription});
+                                                                    "ar.f_roleName = r.roleName AND ar.f_appName = r.f_appName WHERE ar.f_accountName=:accountName AND ar.f_appName = :appName;",
+                                                                    {{":accountName", MAKE_VAR(STRING, accountName)}, {":appName", MAKE_VAR(STRING, appName)}}, {&role, &roleDescription});
         while (i && i->isSuccessful() && i->step())
         {
             ApplicationRole appRole;
@@ -645,8 +645,9 @@ std::map<std::string, AccountDetailField> IdentityManager_DB::Accounts_DB::listA
     Abstract::BOOL isOptionalField, isUnique;
     Abstract::STRING jsonExtendedAttribsText;
 
-    std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelect("SELECT `fieldName`, `fieldDescription`, `fieldType`, `isOptionalField`, `isUnique`, `jsonExtendedAttribs` FROM `iam`.`accountDetailFields`;", {},
-                                              {&fieldName, &fieldDescription, &fieldType, &isOptionalField, &isUnique, &jsonExtendedAttribsText});
+    std::shared_ptr<Query> i = _parent->m_sqlConnector
+                                   ->qSelect("SELECT `fieldName`, `fieldDescription`, `fieldType`, `isOptionalField`, `isUnique`, `jsonExtendedAttribs` FROM `iam`.`accountDetailFields`;", {},
+                                             {&fieldName, &fieldDescription, &fieldType, &isOptionalField, &isUnique, &jsonExtendedAttribsText});
 
     if (i && i->isSuccessful())
     {
@@ -743,8 +744,7 @@ bool IdentityManager_DB::Accounts_DB::changeAccountDetails(const ClientDetails &
         }
     }
 
-    _parent->logSecurityEventOnAccounts(accountName, SecurityEventAction::UPDATE, resetAllValues ? "All account details reset" : "Account details updated", performedBy,
-                              clientDetails);
+    _parent->logSecurityEventOnAccounts(accountName, SecurityEventAction::UPDATE, resetAllValues ? "All account details reset" : "Account details updated", performedBy, clientDetails);
 
     return true;
 }
@@ -856,8 +856,7 @@ bool IdentityManager_DB::Accounts_DB::updateAccountDetailFieldValues(const Clien
         }
     }
 
-    _parent->logSecurityEventOnAccounts(accountName, SecurityEventAction::UPDATE,
-                              "Account detail field values updated", performedBy, clientDetails);
+    _parent->logSecurityEventOnAccounts(accountName, SecurityEventAction::UPDATE, "Account detail field values updated", performedBy, clientDetails);
 
     _parent->m_sqlConnector->commitTransaction();
     return true;

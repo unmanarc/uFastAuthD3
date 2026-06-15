@@ -26,7 +26,7 @@ API::APIReturn LoginPortal_Endpoints::changeCredential(void *context, const Requ
     // LOCAL CONTEXT:
     std::shared_ptr<TransientAuthenticationContext> authContext = std::make_shared<TransientAuthenticationContext>();
     std::string transientAuthTokenStr = request.clientRequest->getAuthorizationBearer();
-  //  Json::Value *jResponse = response.responseJSON();
+    //  Json::Value *jResponse = response.responseJSON();
 
     // Decode the bearer transient token... (and get the Account Name)
     if (!authContext->validateAndMerge_TransientAuthTokenIfExist(transientAuthTokenStr, request.inputJSON, request.jwtValidator))

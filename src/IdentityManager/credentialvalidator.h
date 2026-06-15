@@ -2,8 +2,8 @@
 
 #include "json/value.h"
 #include <Mantids30/API_EndpointsAndSessions/session.h>
-#include <Mantids30/Threads/garbagecollector.h>
 #include <Mantids30/DataFormat_JWT/jwt.h>
+#include <Mantids30/Threads/garbagecollector.h>
 
 #include <mutex>
 #include <string>
@@ -142,7 +142,7 @@ public:
      *       enforce policies such as account locking or throttling after repeated failed attempts.
      */
     virtual AuthenticationResult authenticateCredential(const Mantids30::Sessions::ClientDetails &clientDetails, const std::string &accountName, const std::string &password, const uint32_t &slotId,
-                                          const Mode &authMode = MODE_PLAIN, const std::string &challengeSalt = "", std::shared_ptr<TransientAuthenticationContext> authContext = nullptr)
+                                                        const Mode &authMode = MODE_PLAIN, const std::string &challengeSalt = "", std::shared_ptr<TransientAuthenticationContext> authContext = nullptr)
         = 0;
 
     /**

@@ -16,7 +16,6 @@ using namespace Mantids30::API::RESTful;
 using namespace Mantids30::Network::Protocols;
 using namespace Mantids30::DataFormat;
 
-
 bool LoginPortal_Endpoints::retrieveAndValidateAppOrigin(HTTPv1_Base::Request *request, const std::string &appName, const OriginSource &originSource)
 {
     std::set<std::string> origins = Globals::getIdentityManager()->applications->listWebLoginOriginUrlsFromApplication(appName);
@@ -45,7 +44,6 @@ HTTP::Status::Codes LoginPortal_Endpoints::handleLogoutDynamicRequest(const std:
     if (request->requestLine.getHTTPMethod() != "POST")
         return HTTP::Status::S_400_BAD_REQUEST;
 
-
     // Determine appName: prioritize x-api-key header, fallback to "app" POST field
     std::string apiKey = request->getHeaderOption("x-api-key");
     bool dontUseOriginValidation = false;
@@ -55,8 +53,7 @@ HTTP::Status::Codes LoginPortal_Endpoints::handleLogoutDynamicRequest(const std:
         appName = Globals::getIdentityManager()->applications->getApplicationNameByAPIKey(apiKey);
         if (appName.empty())
         {
-            LOG_APP->log2(__func__, "", request->networkClientInfo.REMOTE_ADDR, Logs::LEVEL_SECURITY_ALERT,
-                          "Invalid API key provided. Application not found.");
+            LOG_APP->log2(__func__, "", request->networkClientInfo.REMOTE_ADDR, Logs::LEVEL_SECURITY_ALERT, "Invalid API key provided. Application not found.");
             API::APIReturn response;
             return HTTP::Status::S_401_UNAUTHORIZED;
         }
@@ -67,7 +64,6 @@ HTTP::Status::Codes LoginPortal_Endpoints::handleLogoutDynamicRequest(const std:
         appName = request->getVars(HTTP::VARS_POST)->getStringValue("appName");
         dontUseOriginValidation = false;
     }
-
 
     std::string keepAuthentication = request->getVars(HTTP::VARS_POST)->getStringValue("keepAuthentication");
 
@@ -87,8 +83,7 @@ HTTP::Status::Codes LoginPortal_Endpoints::handleLogoutDynamicRequest(const std:
 
     if (!std::regex_match(appName, appRegex))
     {
-        LOG_APP->log2(__func__, "", request->networkClientInfo.REMOTE_ADDR, Logs::LEVEL_SECURITY_ALERT,
-                      "Invalid APP Name '%s' ", appName.c_str());
+        LOG_APP->log2(__func__, "", request->networkClientInfo.REMOTE_ADDR, Logs::LEVEL_SECURITY_ALERT, "Invalid APP Name '%s' ", appName.c_str());
 
         return HTTP::Status::S_400_BAD_REQUEST;
     }
@@ -132,7 +127,6 @@ HTTP::Status::Codes LoginPortal_Endpoints::handleLogoutDynamicRequest(const std:
 API::APIReturn LoginPortal_Endpoints::logout(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
-    deleteLoginCookies(context,request,authClientDetails,&response);
+    deleteLoginCookies(context, request, authClientDetails, &response);
     return response;
 }
-

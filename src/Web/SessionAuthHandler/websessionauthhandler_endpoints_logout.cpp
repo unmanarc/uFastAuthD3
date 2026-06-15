@@ -44,7 +44,6 @@ static void setLogoutCookies(API::APIReturn &response, const ApplicationTokenPro
     response.cookiesMap["KeepAuthentication"].path = "/";
 }
 
-
 API::APIReturn WebSessionAuthHandler_Endpoints::appLogout(void *context, const RequestParameters &request, IdentityManager::ClientDetails &authClientDetails)
 {
     // Helper to extract common request parameters safely
@@ -71,8 +70,7 @@ API::APIReturn WebSessionAuthHandler_Endpoints::appLogout(void *context, const R
     std::string jwtId = request.clientRequest->getCookie("RefreshTokenId");
 
     // 6. Close Session in Database
-    identityManager->authController->logoutApplicationAuthLog(user, appName, jwtId,
-                                                              IdentityManager::LogoutReason::UserInitiated);
+    identityManager->authController->logoutApplicationAuthLog(user, appName, jwtId, IdentityManager::LogoutReason::UserInitiated);
 
     // TODO: invalidate the token in the token manager... (put the id in the blacklist)
     // identityManager->tokenBlacklist->add(refreshTokenVerified.getJwtId());
@@ -112,7 +110,7 @@ WebSessionAuthHandler_Endpoints::APIReturn WebSessionAuthHandler_Endpoints::getL
     //  Configuration parameters:
     boost::property_tree::ptree config = Globals::pConfig;
 
-    std::string logoutURL = attribs->useEmbeddedAuthentication?  "/login/logout/" : config.get<std::string>("AppVars.LoginPortalURL", "about:blank") + "/logout/";
+    std::string logoutURL = attribs->useEmbeddedAuthentication ? "/login/logout/" : config.get<std::string>("AppVars.LoginPortalURL", "about:blank") + "/logout/";
     payloadOut["url"] = logoutURL;
     payloadOut["appName"] = appName;
 

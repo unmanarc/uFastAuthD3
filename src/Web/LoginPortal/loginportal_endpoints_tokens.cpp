@@ -51,13 +51,13 @@ API::APIReturn LoginPortal_Endpoints::token(void *context, const RequestParamete
 
         if (!appAttrs.has_value())
         {
-            LOG_APP->log2(__func__, appName, authClientDetails.ipAddress, Logs::LEVEL_SECURITY_ALERT, "Application attributes not found for app: %s",appName.c_str());
+            LOG_APP->log2(__func__, appName, authClientDetails.ipAddress, Logs::LEVEL_SECURITY_ALERT, "Application attributes not found for app: %s", appName.c_str());
             response.setError(HTTP::Status::S_404_NOT_FOUND, "not_found", "Application not found.");
             return response;
         }
         if (!appAttrs.value().useEmbeddedAuthentication)
         {
-            LOG_APP->log2(__func__, appName, authClientDetails.ipAddress, Logs::LEVEL_SECURITY_ALERT, "API key access attempted for non-embedded application. App: %s",appName.c_str());
+            LOG_APP->log2(__func__, appName, authClientDetails.ipAddress, Logs::LEVEL_SECURITY_ALERT, "API key access attempted for non-embedded application. App: %s", appName.c_str());
             response.setError(HTTP::Status::S_403_FORBIDDEN, "security_error", "Application does not support embedded authentication via API key.");
             return response;
         }
@@ -140,7 +140,8 @@ API::APIReturn LoginPortal_Endpoints::token(void *context, const RequestParamete
     //// -------------------------       TOKEN CREATION       --------------------------- ////
     //////////////////////////////////////////////////////////////////////////////////////////
     // Create and sign tokens
-    if (!token_createAndSignApplicationRefreshAndAccessJWTs(request.jwtToken, useEmbeddedAuthentication, keepAuthenticated, appName, authenticatedUser, schemeId, redirectURI, response, authClientDetails))
+    if (!token_createAndSignApplicationRefreshAndAccessJWTs(request.jwtToken, useEmbeddedAuthentication, keepAuthenticated, appName, authenticatedUser, schemeId, redirectURI, response,
+                                                            authClientDetails))
     {
         // Failed to create the token...
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::INTERNAL_ERROR)),

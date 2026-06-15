@@ -1,8 +1,8 @@
 #include "Mantids30/Program_Logs/loglevels.h"
 #include "Mantids30/Protocol_HTTP/httpv1_base.h"
 #include "websessionauthhandler_endpoints.h"
-#include <json/value.h>
 #include <Mantids30/Helpers/json.h>
+#include <json/value.h>
 
 #include <boost/algorithm/string/join.hpp>
 #include <json/config.h>
@@ -28,26 +28,25 @@ API::APIReturn WebSessionAuthHandler_Endpoints::callback(void *context, const Re
     std::string redirectURIStr = request.clientRequest->getVars(HTTP::VARS_POST)->getStringValue("redirectURI");
     std::string xAPIKeyStr = request.clientRequest->getHeaderOption("x-api-key");
 
-    if ( modeStr == "logout" )
+    if (modeStr == "logout")
     {
         std::string allowedOrigin;
         // TODO: check on dynamic token validator?
         allowedOrigin = Globals::pConfig.get<std::string>("AppVars.LoginPortalURL", "");
-        if ( request.clientRequest->getOrigin() != allowedOrigin )
+        if (request.clientRequest->getOrigin() != allowedOrigin)
         {
-            LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LEVEL_SECURITY_ALERT, "Logout is not allowed from Origin='%s'.",request.clientRequest->getOrigin().c_str());
+            LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LEVEL_SECURITY_ALERT, "Logout is not allowed from Origin='%s'.", request.clientRequest->getOrigin().c_str());
             response.setError(HTTP::Status::S_403_FORBIDDEN, "invalid_origin", "Invalid Origin.");
             return response;
         }
 
-        APIReturn r = appLogout(context,request,authClientDetails);
+        APIReturn r = appLogout(context, request, authClientDetails);
         API::OptionsHandlerConfig options;
         options.insertAllowedOrigin(allowedOrigin);
         options.setAllowCredentials(true);
         options.configureAPIReturnOptionsHeaders(r, request.clientRequest->getOrigin());
         return r;
     }
-
 
     // VARS:
     std::string appNameStr = identityManager->applications->getApplicationNameByAPIKey(xAPIKeyStr);
@@ -70,7 +69,7 @@ API::APIReturn WebSessionAuthHandler_Endpoints::callback(void *context, const Re
     bool accessTokenValid = validator->verify(accessTokenStr, &accessToken);
     bool refreshTokenValid = validator->verify(refreshTokenStr, &refreshToken);
 
-    if (!accessTokenValid || !refreshTokenValid )
+    if (!accessTokenValid || !refreshTokenValid)
     {
         std::string logMessage = "Invalid JWT token(s) provided.";
         if (!accessTokenValid)
@@ -90,7 +89,7 @@ API::APIReturn WebSessionAuthHandler_Endpoints::callback(void *context, const Re
     // Verify the redirection... (VERY IMPORTANT)
     std::set<std::string> redirectURLS = identityManager->applications->listWebLoginAllowedRedirectURIsFromApplication(appNameStr);
 
-    if (redirectURLS.count(redirectURIStr)==0)
+    if (redirectURLS.count(redirectURIStr) == 0)
     {
         LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LEVEL_SECURITY_ALERT, "Redirect URI '%s' is not allowed for application '%s'.", redirectURIStr.c_str(), appNameStr.c_str());
         response.setError(HTTP::Status::S_403_FORBIDDEN, "invalid_redirect_uri", "The requested redirect URI is not authorized.");
@@ -104,6 +103,3 @@ API::APIReturn WebSessionAuthHandler_Endpoints::callback(void *context, const Re
     response.redirectURL = redirectURIStr;
     return response;
 }
-
-
-

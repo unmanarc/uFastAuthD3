@@ -85,9 +85,9 @@ struct AuthenticationSlotDetails
         passwordFunction = (HashFunction) JSON_ASINT(j, "passwordFunction", (int) FN_NOTFOUND);
         description = JSON_ASSTRING(j, "description", "");
         defaultExpirationSeconds = JSON_ASUINT(j, "defaultExpirationSeconds", 0);
-        strengthJSONValidator = j.isMember("strengthJSONValidator")? j["strengthJSONValidator"] : Json::nullValue;
+        strengthJSONValidator = j.isMember("strengthJSONValidator") ? j["strengthJSONValidator"] : Json::nullValue;
         totp2FAStepsToleranceWindow = JSON_ASUINT(j, "totp2FAStepsToleranceWindow", 0);
-        canSkipWhenExpired = JSON_ASBOOL(j,"canSkipWhenExpired",false);
+        canSkipWhenExpired = JSON_ASBOOL(j, "canSkipWhenExpired", false);
     }
 
     json toJSON() const
@@ -182,16 +182,13 @@ struct Credential
     bool hasExceededMaxAttempts(const AuthenticationPolicy &authPolicy) const { return (badAttempts + 1) >= authPolicy.maxTries; }
     bool isExpired() const { return (time(nullptr) > expirationTimestamp && expirationTimestamp != 0); }
 
-    void setExpirationTimeAutomatically()
-    {
-        expirationTimestamp = 1;
-    }
+    void setExpirationTimeAutomatically() { expirationTimestamp = 1; }
 
     bool isLocked = false;
     bool mustChange = true;
     uint32_t badAttempts = 0;
     // 0 means that the password does not expire... 1 means that it's expired unless and when you change the password, the expiration will be set to current time + slot default time...
-    time_t expirationTimestamp = 1, lastChange=0;
+    time_t expirationTimestamp = 1, lastChange = 0;
     std::string hash;
     unsigned char ssalt[4] = {0xFF, 0xFF, 0xFF, 0xFF};
     AuthenticationSlotDetails slotDetails;
@@ -200,10 +197,10 @@ struct Credential
 
 enum class AuthenticationResult : uint16_t
 {
-    AUTHENTICATED = 0,             // AUTHENTICATED!
-    INTERNAL_ERROR = 500,          // INTERNAL ERROR (OTHER)
-    NOT_IMPLEMENTED = 501,         // AUTHENTICATION NOT IMPLEMENTED YET :(
-    DUPLICATED_SESSION = 502,      // DUPLICATED SESSION ID
+    AUTHENTICATED = 0,        // AUTHENTICATED!
+    INTERNAL_ERROR = 500,     // INTERNAL ERROR (OTHER)
+    NOT_IMPLEMENTED = 501,    // AUTHENTICATION NOT IMPLEMENTED YET :(
+    DUPLICATED_SESSION = 502, // DUPLICATED SESSION ID
 
     EXPIRED_CREDENTIAL = 100,         // VALID, user is just warned about.
     EXPIRED_ACCOUNT = 102,            // ACCOUNT EXPIRED. NOT USABLE
@@ -219,8 +216,8 @@ enum class AuthenticationResult : uint16_t
     LOCKED_CREDENTIAL = 112,          // AUTHENTICATION FAILED (LOCKED CREDENTIAL).
     MUST_CHANGE_CREDENTIAL = 113,     // AUTHENTICATION OK, but CREDENTIAL NEED TO BE CHANGED NOW TO UNLOCK.
 
-    BAD_PARAMETERS = 993,          // BAD PARAMETERS.
-    INVALID_DOMAIN = 994,          // AUTHENTICATION FAILED.
+    BAD_PARAMETERS = 993, // BAD PARAMETERS.
+    INVALID_DOMAIN = 994, // AUTHENTICATION FAILED.
     INVALID_AUTHENTICATOR = 995,
     SESSIONLIMITS_EXCEEDED = 996,
     ANSWER_TIMEDOUT = 997,
@@ -228,43 +225,65 @@ enum class AuthenticationResult : uint16_t
     UNAUTHENTICATED = 999
 };
 
-
-
 [[nodiscard]] inline bool IS_CREDENTIAL_AUTHENTICATED(AuthenticationResult result) noexcept
 {
-    return  result == AuthenticationResult::AUTHENTICATED ||
-           result == AuthenticationResult::EXPIRED_CREDENTIAL || result == AuthenticationResult::MUST_CHANGE_CREDENTIAL;
+    return result == AuthenticationResult::AUTHENTICATED || result == AuthenticationResult::EXPIRED_CREDENTIAL || result == AuthenticationResult::MUST_CHANGE_CREDENTIAL;
 }
 
-[[nodiscard]] inline const char * authResultToString(AuthenticationResult result) noexcept
+[[nodiscard]] inline const char *authResultToString(AuthenticationResult result) noexcept
 {
     switch (result)
     {
-    case AuthenticationResult::AUTHENTICATED:               return "Authenticated";
-    case AuthenticationResult::INTERNAL_ERROR:              return "Authentication Internal Error";
-    case AuthenticationResult::NOT_IMPLEMENTED:             return "Authentication not implemented yet";
-    case AuthenticationResult::DUPLICATED_SESSION:          return "Session ID Duplicated Error";
-    case AuthenticationResult::EXPIRED_CREDENTIAL:          return "Credential Expired";
-    case AuthenticationResult::EXPIRED_ACCOUNT:             return "Account Expired";
-    case AuthenticationResult::INACTIVE_ACCOUNT:            return "Account is inactive";
-    case AuthenticationResult::DISABLED_ACCOUNT:            return "Account Disabled";
-    case AuthenticationResult::UNCONFIRMED_ACCOUNT:         return "Account Unconfirmed";
-    case AuthenticationResult::BAD_ACCOUNT:                 return "Invalid Account";
-    case AuthenticationResult::AUTHENTICATION_FAILED:       return "Authentication Failed";
-    case AuthenticationResult::LOCKED_CREDENTIAL:           return "Credential Locked";
-    case AuthenticationResult::CREDENTIAL_INDEX_NOT_FOUND:  return "Authentication Slot ID Not Found";
-    case AuthenticationResult::AUTH_SCHEME_CHANGED:         return "Authentication Scheme Changed";
-    case AuthenticationResult::ACCOUNT_NOT_IN_APP:          return "Account not registered in the application";
-    case AuthenticationResult::AUTH_SCHEME_EMPTY:           return "Authentication Scheme is Empty";
-    case AuthenticationResult::BAD_PARAMETERS:              return "Bad Parameters";
-    case AuthenticationResult::INVALID_DOMAIN:              return "Invalid domain name";
-    case AuthenticationResult::INVALID_AUTHENTICATOR:       return "Invalid or undefined authenticator";
-    case AuthenticationResult::SESSIONLIMITS_EXCEEDED:      return "Sessions limits exceeded";
-    case AuthenticationResult::ANSWER_TIMEDOUT:             return "Answer timed out";
-    case AuthenticationResult::EXPIRED:                     return "Expired authentication";
-    case AuthenticationResult::UNAUTHENTICATED:             return "Not authenticated yet";
-    case AuthenticationResult::MUST_CHANGE_CREDENTIAL:      return "Credential Authenticated and must be changed.";
-    default:                                                return "Unknown authentication result";
+    case AuthenticationResult::AUTHENTICATED:
+        return "Authenticated";
+    case AuthenticationResult::INTERNAL_ERROR:
+        return "Authentication Internal Error";
+    case AuthenticationResult::NOT_IMPLEMENTED:
+        return "Authentication not implemented yet";
+    case AuthenticationResult::DUPLICATED_SESSION:
+        return "Session ID Duplicated Error";
+    case AuthenticationResult::EXPIRED_CREDENTIAL:
+        return "Credential Expired";
+    case AuthenticationResult::EXPIRED_ACCOUNT:
+        return "Account Expired";
+    case AuthenticationResult::INACTIVE_ACCOUNT:
+        return "Account is inactive";
+    case AuthenticationResult::DISABLED_ACCOUNT:
+        return "Account Disabled";
+    case AuthenticationResult::UNCONFIRMED_ACCOUNT:
+        return "Account Unconfirmed";
+    case AuthenticationResult::BAD_ACCOUNT:
+        return "Invalid Account";
+    case AuthenticationResult::AUTHENTICATION_FAILED:
+        return "Authentication Failed";
+    case AuthenticationResult::LOCKED_CREDENTIAL:
+        return "Credential Locked";
+    case AuthenticationResult::CREDENTIAL_INDEX_NOT_FOUND:
+        return "Authentication Slot ID Not Found";
+    case AuthenticationResult::AUTH_SCHEME_CHANGED:
+        return "Authentication Scheme Changed";
+    case AuthenticationResult::ACCOUNT_NOT_IN_APP:
+        return "Account not registered in the application";
+    case AuthenticationResult::AUTH_SCHEME_EMPTY:
+        return "Authentication Scheme is Empty";
+    case AuthenticationResult::BAD_PARAMETERS:
+        return "Bad Parameters";
+    case AuthenticationResult::INVALID_DOMAIN:
+        return "Invalid domain name";
+    case AuthenticationResult::INVALID_AUTHENTICATOR:
+        return "Invalid or undefined authenticator";
+    case AuthenticationResult::SESSIONLIMITS_EXCEEDED:
+        return "Sessions limits exceeded";
+    case AuthenticationResult::ANSWER_TIMEDOUT:
+        return "Answer timed out";
+    case AuthenticationResult::EXPIRED:
+        return "Expired authentication";
+    case AuthenticationResult::UNAUTHENTICATED:
+        return "Not authenticated yet";
+    case AuthenticationResult::MUST_CHANGE_CREDENTIAL:
+        return "Credential Authenticated and must be changed.";
+    default:
+        return "Unknown authentication result";
     }
 }
 

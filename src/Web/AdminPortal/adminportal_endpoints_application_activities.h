@@ -27,6 +27,4 @@ protected:
     static APIReturn removeSchemeFromApplicationActivity(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
 
     static APIReturn updateDefaultSchemeOnApplicationActivity(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
-
-
 };

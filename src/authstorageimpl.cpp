@@ -237,11 +237,11 @@ bool AuthStorageImpl::createAuth()
         }
     }
 
-    if (identityManager->applicationActivities->getApplicationActivityDefaultScheme(IAM_LOGINPORTAL_APPNAME,"LOGIN") == std::nullopt)
+    if (identityManager->applicationActivities->getApplicationActivityDefaultScheme(IAM_LOGINPORTAL_APPNAME, "LOGIN") == std::nullopt)
     {
         identityManager->applicationActivities->createLoginActivity();
         // create activities.
-        LOG_APP->log0(__func__, Logs::LEVEL_INFO, "APP '%s' LOGIN ACTIVITY successfully created.",IAM_LOGINPORTAL_APPNAME );
+        LOG_APP->log0(__func__, Logs::LEVEL_INFO, "APP '%s' LOGIN ACTIVITY successfully created.", IAM_LOGINPORTAL_APPNAME);
     }
 
     // Check account flags:

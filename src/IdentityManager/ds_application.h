@@ -1,9 +1,9 @@
 #pragma once
 
 #include <Mantids30/Helpers/json.h>
+#include <optional>
 #include <stdint.h>
 #include <string>
-#include <optional>
 
 struct ApplicationDetails
 {
@@ -19,7 +19,6 @@ struct AppError
     std::string error;
     std::string message;
 };
-
 
 struct AccountApplicationInfo
 {
@@ -57,7 +56,7 @@ struct AccountApplicationInfo
     std::set<std::string> roles;        // Roles del account en el app
     std::set<std::string> directScopes; // Scopes directos (de applicationAccounts)
     std::set<std::string> allScopes;    // Union: direct + roles' scopes
-    std::string defaultReturnURL; // Default app URL
+    std::string defaultReturnURL;       // Default app URL
     bool isAppAdmin;
     time_t enrollmentDate;
 };
@@ -77,7 +76,7 @@ struct ApplicationTokenProperties
         root["tokensConfiguration"] = tokensConfiguration;
         return root;
     }
-    std::optional<AppError> fromJSON(const Json::Value& root)
+    std::optional<AppError> fromJSON(const Json::Value &root)
     {
         appName = JSON_ASSTRING(root, "appName", "");
         if (appName.empty())
@@ -96,7 +95,7 @@ struct ApplicationTokenProperties
         includeBasicAccountInfo = JSON_ASBOOL(root, "includeBasicAccountInfo", false);
         maintainRevocationAndLogoutInfo = JSON_ASBOOL(root, "maintainRevocationAndLogoutInfo", false);
         tokensConfiguration = root["tokensConfiguration"];
-        
+
         return std::nullopt;
     }
 

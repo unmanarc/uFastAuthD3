@@ -1,9 +1,9 @@
 #include "adminportal_endpoints_application_scopes.h"
 
-#include "globals.h"
 #include "defs.h"
-#include <regex>
+#include "globals.h"
 #include <Mantids30/Program_Logs/applog.h>
+#include <regex>
 
 using namespace Mantids30::Program;
 using namespace Mantids30;
@@ -38,8 +38,7 @@ API::APIReturn AdminPortal_Endpoints_ApplicationsScopes::addApplicationScopeToAc
     }
 
     // Perform the operation
-    if (!Globals::getIdentityManager()->authController->addApplicationScopeToAccount(authClientDetails, request.jwtToken->getSubject(),
-                                                                                     {appName, scopeId}, accountName))
+    if (!Globals::getIdentityManager()->authController->addApplicationScopeToAccount(authClientDetails, request.jwtToken->getSubject(), {appName, scopeId}, accountName))
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Internal Error");
     }
@@ -62,8 +61,7 @@ API::APIReturn AdminPortal_Endpoints_ApplicationsScopes::removeApplicationScopeF
     }
 
     // Perform the operation
-    if (!Globals::getIdentityManager()->authController->removeApplicationScopeFromAccount(authClientDetails, request.jwtToken->getSubject(),
-                                                                                          {appName, scopeId}, accountName))
+    if (!Globals::getIdentityManager()->authController->removeApplicationScopeFromAccount(authClientDetails, request.jwtToken->getSubject(), {appName, scopeId}, accountName))
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Internal Error");
     }
@@ -105,8 +103,7 @@ API::APIReturn AdminPortal_Endpoints_ApplicationsScopes::addApplicationScope(voi
         return response;
     }
 
-    if (!Globals::getIdentityManager()->authController->addApplicationScope(authClientDetails, request.jwtToken->getSubject(),
-                                                                            {appName, scopeId,scopeDescription}))
+    if (!Globals::getIdentityManager()->authController->addApplicationScope(authClientDetails, request.jwtToken->getSubject(), {appName, scopeId, scopeDescription}))
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "The application scope may already exist.");
     }
@@ -141,7 +138,7 @@ API::APIReturn AdminPortal_Endpoints_ApplicationsScopes::removeApplicationScope(
         return response;
     }
 
-    if (!Globals::getIdentityManager()->authController->removeApplicationScope(authClientDetails, request.jwtToken->getSubject(),{appName, scopeId}))
+    if (!Globals::getIdentityManager()->authController->removeApplicationScope(authClientDetails, request.jwtToken->getSubject(), {appName, scopeId}))
     {
         response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Internal Error");
     }
@@ -175,7 +172,6 @@ API::APIReturn AdminPortal_Endpoints_ApplicationsScopes::removeApplicationScopeF
 
     return response;
 }
-
 
 API::APIReturn AdminPortal_Endpoints_ApplicationsScopes::searchApplicationScopes(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {

@@ -1,10 +1,9 @@
 #include "websessionauthhandler_endpoints.h"
-#include <json/value.h>
 #include <Mantids30/Helpers/json.h>
+#include <json/value.h>
 
 #include <boost/algorithm/string/join.hpp>
 #include <json/config.h>
-
 
 using namespace Mantids30;
 using namespace Mantids30::DataFormat;
@@ -15,30 +14,30 @@ using namespace Network::Protocols;
 void WebSessionAuthHandler_Endpoints::setupAccessTokenCookies(APIReturn &response, JWT::Token accessToken, const ApplicationTokenProperties &tokenProps)
 {
     CookieProperties props;
-    props.sessionCookie = JSON_ASBOOL(tokenProps.tokensConfiguration["accessToken"],"useSessionCookies",true);
+    props.sessionCookie = JSON_ASBOOL(tokenProps.tokensConfiguration["accessToken"], "useSessionCookies", true);
     props.expirationTime = accessToken.getExpirationTime(); // expire with the JWT token expiration.
-    props.path = JSON_ASSTRING(tokenProps.tokensConfiguration["accessToken"],"path","/");
+    props.path = JSON_ASSTRING(tokenProps.tokensConfiguration["accessToken"], "path", "/");
     setupCookie(response, "AccessToken", signApplicationToken(accessToken, tokenProps), props);
 }
 
 void WebSessionAuthHandler_Endpoints::setupRefreshTokenCookies(APIReturn &response, JWT::Token refreshToken, const ApplicationTokenProperties &tokenProps)
 {
-    bool keepAuthenticated = JSON_ASBOOL_D(refreshToken.getClaim("keepAuthenticated"),false);
+    bool keepAuthenticated = JSON_ASBOOL_D(refreshToken.getClaim("keepAuthenticated"), false);
 
     CookieProperties props;
     props.sessionCookie = !keepAuthenticated;
     props.expirationTime = refreshToken.getExpirationTime(); // expire with the JWT token expiration.
-    props.path = JSON_ASSTRING(tokenProps.tokensConfiguration["refreshToken"],"path","/auth");
+    props.path = JSON_ASSTRING(tokenProps.tokensConfiguration["refreshToken"], "path", "/auth");
     setupCookie(response, "RefreshToken", signApplicationToken(refreshToken, tokenProps), props);
 
     CookieProperties propsForCORSPublicData;
     propsForCORSPublicData.sessionCookie = !keepAuthenticated;
     propsForCORSPublicData.expirationTime = refreshToken.getExpirationTime(); // expire with the JWT token expiration.
-    propsForCORSPublicData.path = JSON_ASSTRING(tokenProps.tokensConfiguration["refreshToken"],"path","/auth");
+    propsForCORSPublicData.path = JSON_ASSTRING(tokenProps.tokensConfiguration["refreshToken"], "path", "/auth");
     propsForCORSPublicData.sameSitePolicy = Mantids30::Network::Protocols::HTTP::Headers::Cookie::HTTP_COOKIE_SAMESITE_NONE;
 
-    setupCookie(response, "RefreshTokenId", refreshToken.getJwtId(), propsForCORSPublicData );
-    setupCookie(response, "RefreshTokenUser", refreshToken.getSubject(), propsForCORSPublicData );
+    setupCookie(response, "RefreshTokenId", refreshToken.getJwtId(), propsForCORSPublicData);
+    setupCookie(response, "RefreshTokenUser", refreshToken.getSubject(), propsForCORSPublicData);
 
     CookieProperties propsForLocalModeRead;
     propsForLocalModeRead.httpOnly = false;
@@ -46,7 +45,7 @@ void WebSessionAuthHandler_Endpoints::setupRefreshTokenCookies(APIReturn &respon
     propsForLocalModeRead.expirationTime = refreshToken.getExpirationTime(); // expire with the JWT token expiration.
     propsForLocalModeRead.sessionCookie = !keepAuthenticated;
 
-    setupCookie(response, "KeepAuthentication", keepAuthenticated?"true":"false" , propsForLocalModeRead );
+    setupCookie(response, "KeepAuthentication", keepAuthenticated ? "true" : "false", propsForLocalModeRead);
 }
 
 void WebSessionAuthHandler_Endpoints::setupCookie(APIReturn &response, const std::string &name, const std::string &value, const CookieProperties &props)

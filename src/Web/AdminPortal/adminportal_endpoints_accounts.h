@@ -39,7 +39,6 @@ protected:
     static APIReturn addAccountToApplication(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
     static APIReturn removeAccountFromApplication(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
 
-
     /*
     static APIReturn changeCredential(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
     static APIReturn disableAccount(void *context, const RequestParameters &request, ClientDetails &authClientDetails);

@@ -3,8 +3,8 @@
 #include "IdentityManager/identitymanager.h"
 #include <Mantids30/API_EndpointsAndSessions/api_restful_endpoints.h>
 #include <Mantids30/Helpers/json.h>
-#include <Mantids30/Protocol_HTTP/httpv1_base.h>
 #include <Mantids30/Protocol_HTTP/hdr_cookie.h>
+#include <Mantids30/Protocol_HTTP/httpv1_base.h>
 
 // This template is for FastRPC
 class WebSessionAuthHandler_Endpoints
@@ -36,8 +36,8 @@ private:
     static void setupRefreshTokenCookies(APIReturn &response, JWT::Token refreshToken, const ApplicationTokenProperties &tokenProps);
     //static void setupLogoutTokenCookies(APIReturn &response, JWT::Token refreshToken, const ApplicationTokenProperties &tokenProps);
 
-
-    struct CookieProperties {
+    struct CookieProperties
+    {
         Mantids30::Network::Protocols::HTTP::Headers::Cookie::eSameSitePolicy sameSitePolicy = Mantids30::Network::Protocols::HTTP::Headers::Cookie::HTTP_COOKIE_SAMESITE_STRICT;
         bool sessionCookie = false;
         bool secure = true;
@@ -56,7 +56,7 @@ private:
     };
 
     static bool validateAndDecodeRefreshToken(const std::string &refreshTokenStr, RefreshTokenData &outData, std::string &outErrorMessage, std::string &outErrorType);
-    static void setupCookie(APIReturn &response, const std::string &name, const std::string &value, const CookieProperties & props);
+    static void setupCookie(APIReturn &response, const std::string &name, const std::string &value, const CookieProperties &props);
     static void setupMaxAgeCookie(APIReturn &response, const std::string &name, time_t expirationTime);
     static std::string signApplicationToken(JWT::Token &accessToken, const ApplicationTokenProperties &tokenProperties);
 };

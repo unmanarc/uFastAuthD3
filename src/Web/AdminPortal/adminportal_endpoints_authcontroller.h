@@ -23,7 +23,6 @@ protected:
     static APIReturn listAuthenticationSlotsUsedByScheme(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
     static APIReturn updateAuthenticationSlotsUsedByScheme(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
 
-
     static APIReturn getDefaultAuthScheme(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
     static APIReturn updateDefaultAuthScheme(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
 

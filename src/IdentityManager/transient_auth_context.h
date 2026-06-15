@@ -156,7 +156,7 @@ struct TransientAuthenticationContext
     Json::Value getAllAuthenticatedSchemes()
     {
         Json::Value r_jAuthenticatedSchemes = jAuthenticatedSchemes;
-        if (schemeId!=UINT32_MAX)
+        if (schemeId != UINT32_MAX)
             r_jAuthenticatedSchemes.append(schemeId);
         return r_jAuthenticatedSchemes;
     }

@@ -1,16 +1,15 @@
-#include <Mantids30/Program_Service/program_config.h>
-#include <Mantids30/Program_Logs/config_builder.h>
 #include <Mantids30/Helpers/file.h>
 #include <Mantids30/Memory/a_bool.h>
 #include <Mantids30/Net_Sockets/socket_tls.h>
+#include <Mantids30/Program_Logs/config_builder.h>
 #include <Mantids30/Program_Service/application.h>
+#include <Mantids30/Program_Service/program_config.h>
 
-
-#include "Web/UserPortal/userportal_serverimpl.h"
 #include "Web/AdminPortal/adminportal_serverimpl.h"
+#include "Web/AppSync/appsync_serverimpl.h"
 #include "Web/LoginPortal/loginportal_serverimpl.h"
 #include "Web/SessionAuthHandler/websessionauthhandler_serverimpl.h"
-#include "Web/AppSync/appsync_serverimpl.h"
+#include "Web/UserPortal/userportal_serverimpl.h"
 /*
 #include "RPC1LoginServer2/fastrpcimpl.h"
 #include "RPC1LoginServer2/rpc1loginserver2impl.h"
@@ -83,7 +82,8 @@ public:
                 initLog->log0(__func__, Program::Logs::LEVEL_SECURITY_ALERT,
                               "The permissions of the '%s' file are currently not set to 0600. This may leave your API key exposed to potential security threats. To mitigate this risk, "
                               "we are changing the permissions of the file to ensure that your API key remains secure. Please ensure that you take necessary precautions to protect your API key and "
-                              "update any affected applications or services as necessary.",configFile.c_str());
+                              "update any affected applications or services as necessary.",
+                              configFile.c_str());
 
                 if (Helpers::File::fixSensitiveConfigPermission(configFile))
                 {
@@ -102,19 +102,12 @@ public:
             }
             catch (const boost::property_tree::info_parser_error &ex)
             {
-                initLog->log0(__func__, Program::Logs::LEVEL_CRITICAL,
-                              "Unable to read configuration file '%s' (line %lu): %s",
-                              configFile.c_str(),
-                              static_cast<unsigned long>(ex.line()),
-                              ex.what());
+                initLog->log0(__func__, Program::Logs::LEVEL_CRITICAL, "Unable to read configuration file '%s' (line %lu): %s", configFile.c_str(), static_cast<unsigned long>(ex.line()), ex.what());
                 return false;
             }
             catch (const std::exception &ex)
             {
-                initLog->log0(__func__, Program::Logs::LEVEL_CRITICAL,
-                              "Unexpected error while reading configuration file '%s': %s",
-                              configFile.c_str(),
-                              ex.what());
+                initLog->log0(__func__, Program::Logs::LEVEL_CRITICAL, "Unexpected error while reading configuration file '%s': %s", configFile.c_str(), ex.what());
                 return false;
             }
         }
@@ -188,10 +181,7 @@ public:
         return 0;
     }
 
-    void _shutdown()
-    {
-
-    }
+    void _shutdown() {}
 };
 
 int main(int argc, char *argv[])

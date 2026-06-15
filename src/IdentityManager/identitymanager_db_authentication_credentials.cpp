@@ -136,8 +136,9 @@ Json::Value IdentityManager_DB::AuthController_DB::searchAccountCredentialsActiv
         Abstract::STRING f_accountName, logDateTime, logIP, logTLSCN, logUserAgent, logExtraData;
         Abstract::INT32 f_slotId, logStatus;
 
-        std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelectWithFilters(sqlQueryStr, whereFilters, params, {&f_accountName, &f_slotId, &logDateTime, &logIP, &logTLSCN, &logUserAgent, &logExtraData, &logStatus},
-                                                             orderByStatement, limit, offset);
+        std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelectWithFilters(sqlQueryStr, whereFilters, params,
+                                                                               {&f_accountName, &f_slotId, &logDateTime, &logIP, &logTLSCN, &logUserAgent, &logExtraData, &logStatus}, orderByStatement,
+                                                                               limit, offset);
 
         while (i && i->isSuccessful() && i->step())
         {
@@ -192,7 +193,8 @@ std::set<uint32_t> IdentityManager_DB::AuthController_DB::listUsedAuthentication
     Threads::Sync::Lock_RD lock(_parent->m_mutex);
 
     Abstract::UINT32 slotId;
-    std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelect("SELECT `f_AuthSlotId` FROM iam.accountCredentials WHERE `f_accountName`=:f_accountName;", {{":f_accountName", MAKE_VAR(STRING, accountName)}}, {&slotId});
+    std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelect("SELECT `f_AuthSlotId` FROM iam.accountCredentials WHERE `f_accountName`=:f_accountName;",
+                                                                {{":f_accountName", MAKE_VAR(STRING, accountName)}}, {&slotId});
 
     while (i && i->isSuccessful() && i->step())
     {
@@ -345,8 +347,7 @@ bool IdentityManager_DB::AuthController_DB::activateAccountCredential(const Clie
                                                         {":hash", MAKE_VAR(STRING, hash)},
                                                         {":expiration", MAKE_VAR(DATETIME, expiration)},
                                                         {":salt", MAKE_VAR(STRING, ssalt)},
-                                                        {":mustChange", MAKE_VAR(BOOL, false)}
-                                                       });
+                                                        {":mustChange", MAKE_VAR(BOOL, false)}});
 
     if (success)
     {

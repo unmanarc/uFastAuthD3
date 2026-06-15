@@ -2,12 +2,12 @@
 
 #include "IdentityManager/credentialvalidator.h"
 
-#include "Web/AdminPortal/adminportal_endpoints_accounts.h"
 #include "Web/AdminPortal/adminportal_endpoints_account_credentials.h"
-#include "Web/AdminPortal/adminportal_endpoints_applications.h"
-#include "Web/AdminPortal/adminportal_endpoints_application_scopes.h"
-#include "Web/AdminPortal/adminportal_endpoints_application_roles.h"
+#include "Web/AdminPortal/adminportal_endpoints_accounts.h"
 #include "Web/AdminPortal/adminportal_endpoints_application_activities.h"
+#include "Web/AdminPortal/adminportal_endpoints_application_roles.h"
+#include "Web/AdminPortal/adminportal_endpoints_application_scopes.h"
+#include "Web/AdminPortal/adminportal_endpoints_applications.h"
 #include "Web/AdminPortal/adminportal_endpoints_authcontroller.h"
 
 #include <json/json.h>
@@ -16,7 +16,13 @@
 #include <Mantids30/Helpers/json.h>
 #include <Mantids30/Protocol_HTTP/httpv1_base.h>
 
-class AdminPortal_Endpoints : private AdminPortal_Endpoints_Accounts, private AdminPortal_Endpoints_AccountCredentials, private AdminPortal_Endpoints_Applications, private AdminPortal_Endpoints_ApplicationsScopes, private AdminPortal_Endpoints_ApplicationRoles, private AdminPortal_Endpoints_AuthController, private AdminPortal_Endpoints_ApplicationActivities
+class AdminPortal_Endpoints : private AdminPortal_Endpoints_Accounts,
+                              private AdminPortal_Endpoints_AccountCredentials,
+                              private AdminPortal_Endpoints_Applications,
+                              private AdminPortal_Endpoints_ApplicationsScopes,
+                              private AdminPortal_Endpoints_ApplicationRoles,
+                              private AdminPortal_Endpoints_AuthController,
+                              private AdminPortal_Endpoints_ApplicationActivities
 {
 public:
     using Endpoints = Mantids30::API::RESTful::Endpoints;
