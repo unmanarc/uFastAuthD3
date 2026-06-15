@@ -45,9 +45,26 @@ bool appOriginValidatorFunction(const std::string &requestOrigin, const std::str
 
         std::set<std::string> origins = Globals::getIdentityManager()->applications->listWebLoginOriginUrlsFromApplication(appName);
         return origins.find(requestOrigin) != origins.end();
-    }
-    else
+    } else {
         return configPermittedAPIOrigins.count(requestOrigin);
+    }
+}
+
+Protocols::HTTP::Status::Codes dynamicInitialChecks(Mantids30::Network::Protocols::HTTP::HTTPv1_Base::Request *request, Mantids30::Network::Protocols::HTTP::HTTPv1_Base::Response *response)
+{
+    std::string keepAuthCookie = request->getCookie("KeepAuthentication");
+    std::string accessTokenCookie = request->getCookie("AccessToken");
+    std::string xApiHeader = request->getHeaderOption("x-api-key");
+
+    if (!xApiHeader.empty())
+    {
+        if ( !keepAuthCookie.empty() || !accessTokenCookie.empty() )
+        {
+            return response->setRedirectLocation("/");
+        }
+    }
+
+    return Protocols::HTTP::Status::S_200_OK;
 }
 
 bool LoginPortal_ServerImpl::createService()
@@ -67,11 +84,11 @@ bool LoginPortal_ServerImpl::createService()
     RESTful::Engine *loginWebServer = Program::Config::RESTful_Engine::createRESTfulEngine(config, LOG_APP, LOG_RPC, "Web Login", IAM_LOGINPORTAL_DEF_WEBROOTDIR,
                                                                                            Program::Config::REST_ENGINE_MANDATORY_SSL);
 
-    if (!loginWebServer)
+    if (!loginWebServer) {
         return false;
+    }
 
     // Handle the login function for APP personalized site:
-    //loginWebServer->config.dynamicRequestHandlersByRoute["/login"] = {&LoginPortal_Endpoints::handleLoginDynamicRequest, nullptr};
     loginWebServer->config.dynamicRequestHandlersByRoute["/logout"] = {&LoginPortal_Endpoints::handleLogoutDynamicRequest, nullptr};
 
     // Set the software version:
@@ -88,6 +105,9 @@ bool LoginPortal_ServerImpl::createService()
 
     // Set the login portal dynamic origin validation enabling some apps to embbed the service.
     loginWebServer->config.dynamicOriginValidator = appOriginValidatorFunction;
+
+    // check if there is any session cookie and it comes from the proxy (embedded app auth), then, redirect.
+    loginWebServer->config.dynamicInitialChecks = dynamicInitialChecks;
 
     // Add authentication methods
     LoginPortal_Endpoints::addEndpoints(loginWebServer->endpointsHandler[1]);
