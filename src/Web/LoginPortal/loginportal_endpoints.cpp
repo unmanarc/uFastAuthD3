@@ -66,9 +66,7 @@ LoginPortal_Endpoints::APIReturn LoginPortal_Endpoints::getLoginMode(void *conte
         if (appName.empty())
         {
             LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LogLevel::SECURITY_ALERT, "Invalid API key provided. Application not found.");
-            API::APIReturn response;
-            response.setError(HTTP::Status::Code::S_401_UNAUTHORIZED, "invalid_api_key", "The provided API key is invalid or unauthorized.");
-            return response;
+            return {HTTP::Status::Code::S_401_UNAUTHORIZED, "invalid_api_key", "The provided API key is invalid or unauthorized."};
         }
         r["mode"] = "EMBEDDED";
     }
@@ -97,9 +95,7 @@ LoginPortal_Endpoints::APIReturn LoginPortal_Endpoints::getAppDescription(void *
         if (appName.empty())
         {
             LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LogLevel::SECURITY_ALERT, "Invalid API key provided. Application not found.");
-            API::APIReturn response;
-            response.setError(HTTP::Status::Code::S_401_UNAUTHORIZED, "invalid_api_key", "The provided API key is invalid or unauthorized.");
-            return response;
+            return {HTTP::Status::Code::S_401_UNAUTHORIZED, "invalid_api_key", "The provided API key is invalid or unauthorized."};
         }
     }
     else
