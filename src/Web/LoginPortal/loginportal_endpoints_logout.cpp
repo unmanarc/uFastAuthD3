@@ -5,7 +5,7 @@
 
 using namespace Mantids30;
 using namespace API::RESTful;
-using namespace Network::Protocols;
+using namespace Network::Protocol;
 
 // Get the application token...
 
@@ -13,7 +13,7 @@ std::regex LoginPortal_Endpoints::originPattern = std::regex("^(https?://[^/]+)"
 using namespace Mantids30;
 using namespace Mantids30::Program;
 using namespace Mantids30::API::RESTful;
-using namespace Mantids30::Network::Protocols;
+using namespace Mantids30::Network::Protocol;
 using namespace Mantids30::DataFormat;
 
 bool LoginPortal_Endpoints::retrieveAndValidateAppOrigin(HTTPv1_Base::Request *request, const std::string &appName, const OriginSource &originSource)
@@ -21,11 +21,11 @@ bool LoginPortal_Endpoints::retrieveAndValidateAppOrigin(HTTPv1_Base::Request *r
     std::set<std::string> origins = Globals::getIdentityManager()->applications->listWebLoginOriginUrlsFromApplication(appName);
 
     std::string currentOrigin;
-    if (originSource == USING_HEADER_ORIGIN)
+    if (originSource == OriginSource::HTTP_HEADER_ORIGIN)
     {
         currentOrigin = request->getHeaderOption("Origin");
     }
-    else if (originSource == USING_HEADER_REFERER)
+    else if (originSource == OriginSource::HTTP_HEADER_REFERER)
     {
         std::string referer = request->getHeaderOption("Referer");
         std::smatch matches;
@@ -39,10 +39,10 @@ bool LoginPortal_Endpoints::retrieveAndValidateAppOrigin(HTTPv1_Base::Request *r
     return origins.count(currentOrigin);
 }
 
-HTTP::Status::Codes LoginPortal_Endpoints::handleLogoutDynamicRequest(const std::string &urlPostfix, HTTPv1_Base::Request *request, HTTPv1_Base::Response *response, std::shared_ptr<void>)
+HTTP::Status::Code LoginPortal_Endpoints::handleLogoutDynamicRequest(const std::string &urlPostfix, HTTPv1_Base::Request *request, HTTPv1_Base::Response *response, std::shared_ptr<void>)
 {
     if (request->requestLine.getHTTPMethod() != "POST")
-        return HTTP::Status::S_400_BAD_REQUEST;
+        return HTTP::Status::Code::S_400_BAD_REQUEST;
 
     // Determine appName: prioritize x-api-key header, fallback to "app" POST field
     std::string apiKey = request->getHeaderOption("x-api-key");
@@ -53,9 +53,9 @@ HTTP::Status::Codes LoginPortal_Endpoints::handleLogoutDynamicRequest(const std:
         appName = Globals::getIdentityManager()->applications->getApplicationNameByAPIKey(apiKey);
         if (appName.empty())
         {
-            LOG_APP->log2(__func__, "", request->networkClientInfo.REMOTE_ADDR, Logs::LEVEL_SECURITY_ALERT, "Invalid API key provided. Application not found.");
+            LOG_APP->log2(__func__, "", request->networkClientInfo.REMOTE_ADDR, Logs::LogLevel::SECURITY_ALERT, "Invalid API key provided. Application not found.");
             API::APIReturn response;
-            return HTTP::Status::S_401_UNAUTHORIZED;
+            return HTTP::Status::Code::S_401_UNAUTHORIZED;
         }
         dontUseOriginValidation = true;
     }
@@ -83,9 +83,9 @@ HTTP::Status::Codes LoginPortal_Endpoints::handleLogoutDynamicRequest(const std:
 
     if (!std::regex_match(appName, appRegex))
     {
-        LOG_APP->log2(__func__, "", request->networkClientInfo.REMOTE_ADDR, Logs::LEVEL_SECURITY_ALERT, "Invalid APP Name '%s' ", appName.c_str());
+        LOG_APP->log2(__func__, "", request->networkClientInfo.REMOTE_ADDR, Logs::LogLevel::SECURITY_ALERT, "Invalid APP Name '%s' ", appName.c_str());
 
-        return HTTP::Status::S_400_BAD_REQUEST;
+        return HTTP::Status::Code::S_400_BAD_REQUEST;
     }
 
     std::string page;
@@ -108,20 +108,20 @@ HTTP::Status::Codes LoginPortal_Endpoints::handleLogoutDynamicRequest(const std:
     // Replace placeholder with the actual default callback URL
     boost::replace_all(page, "DEFAULTAPPCALLBACK_PLACEHOLDER", xstrValue);
 
-    bool originValidated = dontUseOriginValidation || retrieveAndValidateAppOrigin(request, appName, USING_HEADER_ORIGIN);
+    bool originValidated = dontUseOriginValidation || retrieveAndValidateAppOrigin(request, appName, OriginSource::HTTP_HEADER_ORIGIN);
     std::string currentOrigin = request->getHeaderOption("Origin");
 
     if (!originValidated)
     {
-        LOG_APP->log2(__func__, "", request->networkClientInfo.REMOTE_ADDR, Logs::LEVEL_SECURITY_ALERT, "Not allowed origin '%s' for application '%s'", currentOrigin.c_str(), appName.c_str());
-        return HTTP::Status::S_403_FORBIDDEN;
+        LOG_APP->log2(__func__, "", request->networkClientInfo.REMOTE_ADDR, Logs::LogLevel::SECURITY_ALERT, "Not allowed origin '%s' for application '%s'", currentOrigin.c_str(), appName.c_str());
+        return HTTP::Status::Code::S_403_FORBIDDEN;
     }
 
-    LOG_APP->log2(__func__, "", request->networkClientInfo.REMOTE_ADDR, Logs::LEVEL_DEBUG, "Logout requested from application '%s' with origin '%s'", appName.c_str(), currentOrigin.c_str());
+    LOG_APP->log2(__func__, "", request->networkClientInfo.REMOTE_ADDR, Logs::LogLevel::DEBUG, "Logout requested from application '%s' with origin '%s'", appName.c_str(), currentOrigin.c_str());
     response->content.writer()->writeString(page);
     response->setContentType("text/html");
 
-    return HTTP::Status::S_200_OK;
+    return HTTP::Status::Code::S_200_OK;
 }
 
 API::APIReturn LoginPortal_Endpoints::logout(void *context, const RequestParameters &request, ClientDetails &authClientDetails)

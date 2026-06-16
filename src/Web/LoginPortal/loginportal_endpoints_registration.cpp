@@ -6,7 +6,7 @@
 using namespace Mantids30;
 using namespace Program;
 using namespace API::RESTful;
-using namespace Network::Protocols;
+using namespace Network::Protocol;
 
 /*
  * TODO:
@@ -56,7 +56,7 @@ API::APIReturn LoginPortal_Endpoints::registerAccount(void *context, const Reque
         }
         else
         {
-            response.setError(HTTP::Status::S_401_UNAUTHORIZED, "unauthorized", "Insufficient permissions");
+            response.setError(HTTP::Status::Code::S_401_UNAUTHORIZED, "unauthorized", "Insufficient permissions");
             return response;
         }
     }
@@ -70,11 +70,11 @@ API::APIReturn LoginPortal_Endpoints::registerAccount(void *context, const Reque
 
     if (!success)
     {
-        response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to create the account");
+        response.setError(HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to create the account");
         return response;
     }
 
-    LOG_APP->log2(__func__, request.jwtToken->getSubject(), clientDetails.ipAddress, success ? Logs::LEVEL_SECURITY_ALERT : Logs::LEVEL_INFO,
+    LOG_APP->log2(__func__, request.jwtToken->getSubject(), clientDetails.ipAddress, success ? Logs::LogLevel::SECURITY_ALERT : Logs::LogLevel::INFO,
                   !success ? "Failed to create account '%s'" : "Account '%s' created.", accountToCreate.c_str());
 
     // Set the credential:
@@ -102,7 +102,7 @@ API::APIReturn LoginPortal_Endpoints::registerAccount(void *context, const Reque
             }
         }
 
-        LOG_APP->log2(__func__, request.jwtToken->getSubject(), clientDetails.ipAddress, r ? Logs::LEVEL_SECURITY_ALERT : Logs::LEVEL_INFO,
+        LOG_APP->log2(__func__, request.jwtToken->getSubject(), clientDetails.ipAddress, r ? Logs::LogLevel::SECURITY_ALERT : Logs::LogLevel::INFO,
                       !r ? "Failed to change initial password on account '%s'" : "Initial password for account '%s' changed.", accountToCreate.c_str());
     }
     */

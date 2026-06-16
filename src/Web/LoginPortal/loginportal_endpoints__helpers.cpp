@@ -13,7 +13,7 @@
 using namespace Mantids30;
 using namespace Program;
 using namespace API::RESTful;
-using namespace Network::Protocols;
+using namespace Network::Protocol;
 using namespace Mantids30::DataFormat;
 
 std::vector<AuthenticationSchemeUsedSlot> LoginPortal_Endpoints::calculateRequiredAuthSlotsLeftForTheNewTransientAuthToken(std::shared_ptr<TransientAuthenticationContext> authContext,

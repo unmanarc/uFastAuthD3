@@ -6,29 +6,29 @@
 using namespace Mantids30;
 using namespace Mantids30::Program;
 using namespace Mantids30::API::RESTful;
-using namespace Mantids30::Network::Protocols;
+using namespace Mantids30::Network::Protocol;
 using namespace Mantids30::DataFormat;
 
 void LoginPortal_Endpoints::addEndpoints(std::shared_ptr<Endpoints> endpoints)
 {
-    using SecurityOptions = Mantids30::API::RESTful::Endpoints::SecurityOptions;
+    using SecurityRequirements = API::Security::Requirements;
 
     // AUTHENTICATION FUNCTIONS:
 
     // Web triggered events:
-    // TODO: cuando requiere REQUIRE_JWT_COOKIE_AUTH implica que necesita validar que la aplicación sea la correcta (configurada)
-    endpoints->addEndpoint(Endpoints::POST, "preAuthorize", SecurityOptions::NO_AUTH, {}, nullptr, &preAuthorize);
+    // TODO: cuando requiere JWT_COOKIE_AUTH implica que necesita validar que la aplicación sea la correcta (configurada)
+    endpoints->addEndpoint(HTTP::Method::POST, "preAuthorize", SecurityRequirements::NONE, {}, nullptr, &preAuthorize);
 
-    endpoints->addEndpoint(Endpoints::POST, "authorize", SecurityOptions::NO_AUTH, {}, nullptr, &authorize);
+    endpoints->addEndpoint(HTTP::Method::POST, "authorize", SecurityRequirements::NONE, {}, nullptr, &authorize);
 
     // Transform the current authentication to the app authentication...
-    endpoints->addEndpoint(Endpoints::POST, "token", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {}, nullptr, &token);
+    endpoints->addEndpoint(HTTP::Method::POST, "token", SecurityRequirements::JWT_COOKIE_AUTH, {}, nullptr, &token);
 
     // Logout only clear the cookie... it just does need a CSRF control method...
-    endpoints->addEndpoint(Endpoints::POST, "logout", SecurityOptions::NO_AUTH, {}, nullptr, &logout);
+    endpoints->addEndpoint(HTTP::Method::POST, "logout", SecurityRequirements::NONE, {}, nullptr, &logout);
 
     // Account registration:
-    //endpoints->addEndpoint(Endpoints::POST, "registerAccount", nullptr, SecurityOptions::NO_AUTH, {}, nullptr, &registerAccount);
+    //endpoints->addEndpoint(HTTP::Method::POST, "registerAccount", nullptr, SecurityRequirements::NONE, {}, nullptr, &registerAccount);
 
     // When requested by an external webste, no CSRF challenge could be sent by an external website... So your access token will be used to authenticate the refreshal...
     // In this premise, the refresher cookie is not know by your website (so if your website leaks the data),
@@ -39,15 +39,15 @@ void LoginPortal_Endpoints::addEndpoints(std::shared_ptr<Endpoints> endpoints)
     //   and... what you can do is: to validate the origin/referer.
 
     // Post-authenticated API:
-    //endpoints->addEndpoint(Endpoints::POST, "retokenize", nullptr, SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {}, nullptr, &retokenize);
-    endpoints->addEndpoint(Endpoints::PUT, "changeCredential", SecurityOptions::NO_AUTH, {}, nullptr, &changeCredential);
+    //endpoints->addEndpoint(HTTP::Method::POST, "retokenize", nullptr, SecurityRequirements::JWT_COOKIE_AUTH, {}, nullptr, &retokenize);
+    endpoints->addEndpoint(HTTP::Method::PUT, "changeCredential", SecurityRequirements::NONE, {}, nullptr, &changeCredential);
 
-    endpoints->addEndpoint(Endpoints::GET, "getAppDescription", SecurityOptions::NO_AUTH, {}, nullptr, &getAppDescription);
+    endpoints->addEndpoint(HTTP::Method::GET, "getAppDescription", SecurityRequirements::NONE, {}, nullptr, &getAppDescription);
 
-    endpoints->addEndpoint(Endpoints::GET, "getLoginMode", SecurityOptions::NO_AUTH, {}, nullptr, &getLoginMode);
+    endpoints->addEndpoint(HTTP::Method::GET, "getLoginMode", SecurityRequirements::NONE, {}, nullptr, &getLoginMode);
 
     // Temporal tokens are also given trough an intermediate window...
-    //endpoints->addEndpoint(Endpoints::POST, "tempMFAToken", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {}, nullptr,&tempMFAToken);
+    //endpoints->addEndpoint(HTTP::Method::POST, "tempMFAToken", SecurityRequirements::JWT_COOKIE_AUTH, {}, nullptr,&tempMFAToken);
 }
 
 LoginPortal_Endpoints::APIReturn LoginPortal_Endpoints::getLoginMode(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
@@ -64,9 +64,9 @@ LoginPortal_Endpoints::APIReturn LoginPortal_Endpoints::getLoginMode(void *conte
         appName = identityManager->applications->getApplicationNameByAPIKey(apiKey);
         if (appName.empty())
         {
-            LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LEVEL_SECURITY_ALERT, "Invalid API key provided. Application not found.");
+            LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LogLevel::SECURITY_ALERT, "Invalid API key provided. Application not found.");
             API::APIReturn response;
-            response.setError(HTTP::Status::S_401_UNAUTHORIZED, "invalid_api_key", "The provided API key is invalid or unauthorized.");
+            response.setError(HTTP::Status::Code::S_401_UNAUTHORIZED, "invalid_api_key", "The provided API key is invalid or unauthorized.");
             return response;
         }
         r["mode"] = "EMBEDDED";
@@ -95,9 +95,9 @@ LoginPortal_Endpoints::APIReturn LoginPortal_Endpoints::getAppDescription(void *
         appName = identityManager->applications->getApplicationNameByAPIKey(apiKey);
         if (appName.empty())
         {
-            LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LEVEL_SECURITY_ALERT, "Invalid API key provided. Application not found.");
+            LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LogLevel::SECURITY_ALERT, "Invalid API key provided. Application not found.");
             API::APIReturn response;
-            response.setError(HTTP::Status::S_401_UNAUTHORIZED, "invalid_api_key", "The provided API key is invalid or unauthorized.");
+            response.setError(HTTP::Status::Code::S_401_UNAUTHORIZED, "invalid_api_key", "The provided API key is invalid or unauthorized.");
             return response;
         }
     }

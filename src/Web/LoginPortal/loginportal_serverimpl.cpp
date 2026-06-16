@@ -25,7 +25,7 @@ bool appOriginValidatorFunction(const std::string &requestOrigin, const std::str
 
         if (appName.empty())
         {
-            LOG_APP->log2(__func__, "", "", Logs::LEVEL_SECURITY_ALERT, "Invalid API key provided. Application not found.");
+            LOG_APP->log2(__func__, "", "", Logs::LogLevel::SECURITY_ALERT, "Invalid API key provided. Application not found.");
             return false;
         }
 
@@ -33,13 +33,13 @@ bool appOriginValidatorFunction(const std::string &requestOrigin, const std::str
 
         if (!attribs.has_value())
         {
-            LOG_APP->log2(__func__, "", "", Logs::LEVEL_SECURITY_ALERT, "Failed to obtain app '%s' attributes.", appName.c_str());
+            LOG_APP->log2(__func__, "", "", Logs::LogLevel::SECURITY_ALERT, "Failed to obtain app '%s' attributes.", appName.c_str());
             return false;
         }
 
         if (!attribs->useEmbeddedAuthentication)
         {
-            LOG_APP->log2(__func__, "", "", Logs::LEVEL_SECURITY_ALERT, "App '%s' lacks embedded auth.", appName.c_str());
+            LOG_APP->log2(__func__, "", "", Logs::LogLevel::SECURITY_ALERT, "App '%s' lacks embedded auth.", appName.c_str());
             return false;
         }
 
@@ -52,7 +52,7 @@ bool appOriginValidatorFunction(const std::string &requestOrigin, const std::str
     }
 }
 
-Protocols::HTTP::Status::Codes dynamicInitialChecks(Mantids30::Network::Protocols::HTTP::HTTPv1_Base::Request *request, Mantids30::Network::Protocols::HTTP::HTTPv1_Base::Response *response)
+Protocol::HTTP::Status::Code dynamicInitialChecks(Mantids30::Network::Protocol::HTTP::HTTPv1_Base::Request *request, Mantids30::Network::Protocol::HTTP::HTTPv1_Base::Response *response)
 {
     std::string keepAuthCookie = request->getCookie("KeepAuthentication");
     std::string accessTokenCookie = request->getCookie("AccessToken");
@@ -66,7 +66,7 @@ Protocols::HTTP::Status::Codes dynamicInitialChecks(Mantids30::Network::Protocol
         }
     }
 
-    return Protocols::HTTP::Status::S_200_OK;
+    return Protocol::HTTP::Status::Code::S_200_OK;
 }
 
 bool LoginPortal_ServerImpl::createService()
@@ -79,7 +79,7 @@ bool LoginPortal_ServerImpl::createService()
     }
     catch (boost::property_tree::ptree_error &e)
     {
-        LOG_APP->log0(__func__, Logs::LEVEL_INFO, "Configuration error: LoginPortal not found: %s", e.what());
+        LOG_APP->log0(__func__, Logs::LogLevel::INFO, "Configuration error: LoginPortal not found: %s", e.what());
         return false;
     }
 
@@ -119,7 +119,7 @@ bool LoginPortal_ServerImpl::createService()
 
     for (const std::shared_ptr<Sockets::Socket_Stream> &i : loginWebServer->getListenerSockets())
     {
-        LOG_APP->log0(__func__, Logs::LEVEL_INFO, "Web Login Service Listening @%s", i->getLastBindAddress().c_str());
+        LOG_APP->log0(__func__, Logs::LogLevel::INFO, "Web Login Service Listening @%s", i->getLastBindAddress().c_str());
     }
 
     return true;

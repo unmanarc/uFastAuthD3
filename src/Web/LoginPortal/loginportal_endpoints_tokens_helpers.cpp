@@ -15,7 +15,7 @@ using namespace Mantids30;
 using namespace Mantids30::DataFormat;
 using namespace Program;
 using namespace API::RESTful;
-using namespace Network::Protocols;
+using namespace Network::Protocol;
 
 bool LoginPortal_Endpoints::token_validateRedirectURI(const std::string &app, const std::string &redirectURI, const std::string &user, const std::string &ipAddress)
 {
@@ -28,14 +28,14 @@ bool LoginPortal_Endpoints::token_validateRedirectURI(const std::string &app, co
     if (!redirectURI.empty() && redirectURIs.count(redirectURI) == 0)
     {
         // This token is not available for retrieving app tokens...
-        LOG_APP->log2(__func__, user, ipAddress, Logs::LEVEL_SECURITY_ALERT, "Invalid return URL '%s': The provided URI does not match any recognized redirect URIs for application '%s'.",
+        LOG_APP->log2(__func__, user, ipAddress, Logs::LogLevel::SECURITY_ALERT, "Invalid return URL '%s': The provided URI does not match any recognized redirect URIs for application '%s'.",
                       redirectURI.c_str(), app.c_str());
         return false;
     }
 
     if (callbackURI.empty())
     {
-        LOG_APP->log2(__func__, user, ipAddress, Logs::LEVEL_CRITICAL, "Configuration error: The application '%s' has not configured a callback URI yet.", app.c_str());
+        LOG_APP->log2(__func__, user, ipAddress, Logs::LogLevel::CRITICAL, "Configuration error: The application '%s' has not configured a callback URI yet.", app.c_str());
         return false;
     }
 
@@ -61,7 +61,7 @@ bool LoginPortal_Endpoints::token_createAndSignApplicationRefreshAndAccessJWTs(c
 
     if (tokenProperties.appName != app)
     {
-        LOG_APP->log1(__func__, user, Logs::LEVEL_CRITICAL, "Configuration error: The application '%s' is configured with an unsupported or invalid signing algorithm.", app.c_str());
+        LOG_APP->log1(__func__, user, Logs::LogLevel::CRITICAL, "Configuration error: The application '%s' is configured with an unsupported or invalid signing algorithm.", app.c_str());
         return false;
     }
 
@@ -88,7 +88,7 @@ bool LoginPortal_Endpoints::token_createAndSignApplicationRefreshAndAccessJWTs(c
     std::optional<std::string> accessTokenStr = token_signApplicationJWT(accessToken);
     if (!accessTokenStr.has_value())
     {
-        LOG_APP->log1(__func__, user, Logs::LEVEL_CRITICAL, "Failed to sign access token for application '%s'.", app.c_str());
+        LOG_APP->log1(__func__, user, Logs::LogLevel::CRITICAL, "Failed to sign access token for application '%s'.", app.c_str());
         return false;
     }
 
@@ -96,7 +96,7 @@ bool LoginPortal_Endpoints::token_createAndSignApplicationRefreshAndAccessJWTs(c
     std::optional<std::string> refreshTokenStr = token_signApplicationJWT(refreshToken);
     if (!refreshTokenStr.has_value())
     {
-        LOG_APP->log1(__func__, user, Logs::LEVEL_CRITICAL, "Failed to sign refresh token for application '%s'.", app.c_str());
+        LOG_APP->log1(__func__, user, Logs::LogLevel::CRITICAL, "Failed to sign refresh token for application '%s'.", app.c_str());
         return false;
     }
 
@@ -118,7 +118,7 @@ bool LoginPortal_Endpoints::token_validateJwtClaims(const JWT::Token *jwtToken, 
 {
     if (jwtToken->getClaim("app") != IAM_LOGINPORTAL_APPNAME || jwtToken->getClaim("type") != "access")
     {
-        LOG_APP->log2(__func__, user, ipAddress, Logs::LEVEL_SECURITY_ALERT, "Token request denied: Invalid or unauthorized token.");
+        LOG_APP->log2(__func__, user, ipAddress, Logs::LogLevel::SECURITY_ALERT, "Token request denied: Invalid or unauthorized token.");
         return false;
     }
     return true;
@@ -186,7 +186,7 @@ bool LoginPortal_Endpoints::token_validateAuthenticationScheme(const JWT::Token 
             }
         }
 
-        LOG_APP->log2(__func__, authenticatedUser, ipAddress, Logs::LEVEL_SECURITY_ALERT, "Token request denied: No valid authentication scheme found for the provided JWT slots.");
+        LOG_APP->log2(__func__, authenticatedUser, ipAddress, Logs::LogLevel::SECURITY_ALERT, "Token request denied: No valid authentication scheme found for the provided JWT slots.");
         return false;
     }
 
@@ -194,14 +194,14 @@ bool LoginPortal_Endpoints::token_validateAuthenticationScheme(const JWT::Token 
     // First, check if the scheme is allowed in this activity
     if (schemesInActivity.find(requestedSchemeId) == schemesInActivity.end())
     {
-        LOG_APP->log2(__func__, authenticatedUser, ipAddress, Logs::LEVEL_SECURITY_ALERT, "Token request denied: The user is requesting a scheme that is not in that activity.");
+        LOG_APP->log2(__func__, authenticatedUser, ipAddress, Logs::LogLevel::SECURITY_ALERT, "Token request denied: The user is requesting a scheme that is not in that activity.");
         return false;
     }
 
     // Then, validate the slots for the requested scheme
     if (!isSchemeValid(requestedSchemeId))
     {
-        LOG_APP->log2(__func__, authenticatedUser, ipAddress, Logs::LEVEL_SECURITY_ALERT, "Token request denied: Missing required credential slots for requested scheme.");
+        LOG_APP->log2(__func__, authenticatedUser, ipAddress, Logs::LogLevel::SECURITY_ALERT, "Token request denied: Missing required credential slots for requested scheme.");
         return false;
     }
 
@@ -213,7 +213,7 @@ bool LoginPortal_Endpoints::token_validateAppAuthorization(const JWT::Token *jwt
     std::set<std::string> authenticatedAppsSet = Mantids30::Helpers::jsonToStringSet(jwtToken->getClaim("apps"));
     if (authenticatedAppsSet.find(app) == authenticatedAppsSet.end())
     {
-        LOG_APP->log2(__func__, user, ipAddress, Logs::LEVEL_SECURITY_ALERT, "Token request denied: Unauthorized application '%s' access.", app.c_str());
+        LOG_APP->log2(__func__, user, ipAddress, Logs::LogLevel::SECURITY_ALERT, "Token request denied: Unauthorized application '%s' access.", app.c_str());
         return false;
     }
     return true;

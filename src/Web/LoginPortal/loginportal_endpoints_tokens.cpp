@@ -13,7 +13,7 @@ using namespace Mantids30;
 using namespace Mantids30::DataFormat;
 using namespace Program;
 using namespace API::RESTful;
-using namespace Network::Protocols;
+using namespace Network::Protocol;
 
 /*
     This will tranform the current authentication into the login token for an APP first access...
@@ -41,8 +41,8 @@ API::APIReturn LoginPortal_Endpoints::token(void *context, const RequestParamete
         appName = identityManager->applications->getApplicationNameByAPIKey(apiKey);
         if (appName.empty())
         {
-            LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LEVEL_SECURITY_ALERT, "Invalid API key provided. Application not found.");
-            response.setError(HTTP::Status::S_401_UNAUTHORIZED, "invalid_api_key", "The provided API key is invalid or unauthorized.");
+            LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LogLevel::SECURITY_ALERT, "Invalid API key provided. Application not found.");
+            response.setError(HTTP::Status::Code::S_401_UNAUTHORIZED, "invalid_api_key", "The provided API key is invalid or unauthorized.");
             return response;
         }
 
@@ -51,14 +51,14 @@ API::APIReturn LoginPortal_Endpoints::token(void *context, const RequestParamete
 
         if (!appAttrs.has_value())
         {
-            LOG_APP->log2(__func__, appName, authClientDetails.ipAddress, Logs::LEVEL_SECURITY_ALERT, "Application attributes not found for app: %s", appName.c_str());
-            response.setError(HTTP::Status::S_404_NOT_FOUND, "not_found", "Application not found.");
+            LOG_APP->log2(__func__, appName, authClientDetails.ipAddress, Logs::LogLevel::SECURITY_ALERT, "Application attributes not found for app: %s", appName.c_str());
+            response.setError(HTTP::Status::Code::S_404_NOT_FOUND, "not_found", "Application not found.");
             return response;
         }
         if (!appAttrs.value().useEmbeddedAuthentication)
         {
-            LOG_APP->log2(__func__, appName, authClientDetails.ipAddress, Logs::LEVEL_SECURITY_ALERT, "API key access attempted for non-embedded application. App: %s", appName.c_str());
-            response.setError(HTTP::Status::S_403_FORBIDDEN, "security_error", "Application does not support embedded authentication via API key.");
+            LOG_APP->log2(__func__, appName, authClientDetails.ipAddress, Logs::LogLevel::SECURITY_ALERT, "API key access attempted for non-embedded application. App: %s", appName.c_str());
+            response.setError(HTTP::Status::Code::S_403_FORBIDDEN, "security_error", "Application does not support embedded authentication via API key.");
             return response;
         }
         useEmbeddedAuthentication = true;
@@ -74,7 +74,7 @@ API::APIReturn LoginPortal_Endpoints::token(void *context, const RequestParamete
     //////////////////////////////////////////////////////////////////////////////////////////
     if (!token_validateJwtClaims(request.jwtToken, authenticatedUser, authClientDetails.ipAddress))
     {
-        response.setError(HTTP::Status::S_403_FORBIDDEN, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::UNAUTHENTICATED)),
+        response.setError(HTTP::Status::Code::S_403_FORBIDDEN, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::UNAUTHENTICATED)),
                           authResultToString(AuthenticationResult::UNAUTHENTICATED));
         return response;
     }
@@ -88,7 +88,7 @@ API::APIReturn LoginPortal_Endpoints::token(void *context, const RequestParamete
     {
         if (!token_validateAuthenticationScheme(request.jwtToken, IAM_LOGINPORTAL_APPNAME, "LOGIN", schemeId, authenticatedUser, authClientDetails.ipAddress))
         {
-            response.setError(HTTP::Status::S_401_UNAUTHORIZED, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::UNAUTHENTICATED)),
+            response.setError(HTTP::Status::Code::S_401_UNAUTHORIZED, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::UNAUTHENTICATED)),
                               authResultToString(AuthenticationResult::UNAUTHENTICATED));
             return response;
         }
@@ -97,7 +97,7 @@ API::APIReturn LoginPortal_Endpoints::token(void *context, const RequestParamete
     {
         if (!token_validateAuthenticationScheme(request.jwtToken, appName, activity, schemeId, authenticatedUser, authClientDetails.ipAddress))
         {
-            response.setError(HTTP::Status::S_401_UNAUTHORIZED, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::UNAUTHENTICATED)),
+            response.setError(HTTP::Status::Code::S_401_UNAUTHORIZED, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::UNAUTHENTICATED)),
                               authResultToString(AuthenticationResult::UNAUTHENTICATED));
             return response;
         }
@@ -111,10 +111,10 @@ API::APIReturn LoginPortal_Endpoints::token(void *context, const RequestParamete
     {
         // This token is not available for retrieving app tokens because the user does not have a valid account with the specified application.
         const char *reasonText = authResultToString(r);
-        LOG_APP->log2(__func__, authenticatedUser, authClientDetails.ipAddress, Logs::LEVEL_SECURITY_ALERT,
+        LOG_APP->log2(__func__, authenticatedUser, authClientDetails.ipAddress, Logs::LogLevel::SECURITY_ALERT,
                       "Token request denied: User '%s' attempted to obtain an access token for app '%s', but the account is not valid or authorized for this application. Reason: %s.",
                       authenticatedUser.c_str(), appName.c_str(), reasonText);
-        response.setError(HTTP::Status::S_401_UNAUTHORIZED, "AUTH_ERR_INVALID_ACCT", authResultToString(r));
+        response.setError(HTTP::Status::Code::S_401_UNAUTHORIZED, "AUTH_ERR_INVALID_ACCT", authResultToString(r));
         return response;
     }
 
@@ -129,7 +129,7 @@ API::APIReturn LoginPortal_Endpoints::token(void *context, const RequestParamete
 
     if (!token_validateRedirectURI(appName, redirectURI, authenticatedUser, authClientDetails.ipAddress))
     {
-        response.setError(HTTP::Status::S_406_NOT_ACCEPTABLE, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::BAD_PARAMETERS)), "Invalid Redirect URI");
+        response.setError(HTTP::Status::Code::S_406_NOT_ACCEPTABLE, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::BAD_PARAMETERS)), "Invalid Redirect URI");
         return response;
     }
 
@@ -144,7 +144,7 @@ API::APIReturn LoginPortal_Endpoints::token(void *context, const RequestParamete
                                                             authClientDetails))
     {
         // Failed to create the token...
-        response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::INTERNAL_ERROR)),
+        response.setError(HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::INTERNAL_ERROR)),
                           authResultToString(AuthenticationResult::INTERNAL_ERROR));
         return response;
     }

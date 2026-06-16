@@ -14,7 +14,7 @@ public:
     using Endpoints = Mantids30::API::RESTful::Endpoints;
     using APIReturn = Mantids30::API::APIReturn;
     using RequestParameters = Mantids30::API::RESTful::RequestParameters;
-    using HTTPv1_Base = Mantids30::Network::Protocols::HTTP::HTTPv1_Base;
+    using HTTPv1_Base = Mantids30::Network::Protocol::HTTP::HTTPv1_Base;
     using ClientDetails = Mantids30::Sessions::ClientDetails;
     using JWT = Mantids30::DataFormat::JWT;
 
@@ -24,11 +24,11 @@ public:
     */
     static void addEndpoints(std::shared_ptr<Endpoints> endpoints);
 
-    /*static Mantids30::Network::Protocols::HTTP::Status::Codes handleLoginDynamicRequest(const std::string &appName, HTTPv1_Base::Request *request, HTTPv1_Base::Response *response,
+    /*static Mantids30::Network::Protocol::HTTP::Status::Code handleLoginDynamicRequest(const std::string &appName, HTTPv1_Base::Request *request, HTTPv1_Base::Response *response,
                                                                                         std::shared_ptr<void>);*/
 
-    static Mantids30::Network::Protocols::HTTP::Status::Codes handleLogoutDynamicRequest(const std::string &appName, HTTPv1_Base::Request *request, HTTPv1_Base::Response *response,
-                                                                                         std::shared_ptr<void>);
+    static Mantids30::Network::Protocol::HTTP::Status::Code handleLogoutDynamicRequest(const std::string &appName, HTTPv1_Base::Request *request, HTTPv1_Base::Response *response,
+                                                                                       std::shared_ptr<void>);
 
 private:
     ////////////////
@@ -47,10 +47,10 @@ private:
 private:
     ////////////////
 
-    enum OriginSource
+    enum class OriginSource : uint8_t
     {
-        USING_HEADER_ORIGIN,
-        USING_HEADER_REFERER
+        HTTP_HEADER_ORIGIN,
+        HTTP_HEADER_REFERER
     };
     static bool retrieveAndValidateAppOrigin(HTTPv1_Base::Request *request, const std::string &appName, const OriginSource &originSource);
     static std::regex originPattern;
