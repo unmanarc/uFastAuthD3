@@ -43,7 +43,7 @@ bool AuthStorageImpl::createAuth()
 
         if (!dbConnector->connectInMemory())
         {
-            LOG_APP->log0(__func__, Logs::LEVEL_CRITICAL, "Error, Failed to create in-memory SQLite3 database");
+            LOG_APP->log0(__func__, Logs::LogLevel::CRITICAL, "Error, Failed to create in-memory SQLite3 database");
             delete dbConnector;
             return false;
         }
@@ -56,7 +56,7 @@ bool AuthStorageImpl::createAuth()
             std::ofstream file(path);
             if (!file.is_open())
             {
-                LOG_APP->log0(__func__, Logs::LEVEL_CRITICAL, "Failed to create database file: '%s'", path.c_str());
+                LOG_APP->log0(__func__, Logs::LogLevel::CRITICAL, "Failed to create database file: '%s'", path.c_str());
                 return false;
             }
             file.close();
@@ -85,24 +85,24 @@ bool AuthStorageImpl::createAuth()
 
         if (!dbConnector->attach(dbFilePath, "iam"))
         {
-            LOG_APP->log0(__func__, Logs::LEVEL_CRITICAL, "Error, Failed to attach IAM SQLite3 database file: '%s'", dbFilePath.c_str());
+            LOG_APP->log0(__func__, Logs::LogLevel::CRITICAL, "Error, Failed to attach IAM SQLite3 database file: '%s'", dbFilePath.c_str());
             delete dbConnector;
             return false;
         }
         else
         {
-            LOG_APP->log0(__func__, Logs::LEVEL_INFO, "Opened IAM SQLite3 database file: '%s'", dbFilePath.c_str());
+            LOG_APP->log0(__func__, Logs::LogLevel::INFO, "Opened IAM SQLite3 database file: '%s'", dbFilePath.c_str());
         }
 
         if (!dbConnector->attach(dbLogsPath, "logs"))
         {
-            LOG_APP->log0(__func__, Logs::LEVEL_CRITICAL, "Error, Failed to attach logs SQLite3 database file: '%s'", dbLogsPath.c_str());
+            LOG_APP->log0(__func__, Logs::LogLevel::CRITICAL, "Error, Failed to attach logs SQLite3 database file: '%s'", dbLogsPath.c_str());
             delete dbConnector;
             return false;
         }
         else
         {
-            LOG_APP->log0(__func__, Logs::LEVEL_INFO, "Opened logs SQLite3 database file: '%s'", dbLogsPath.c_str());
+            LOG_APP->log0(__func__, Logs::LogLevel::INFO, "Opened logs SQLite3 database file: '%s'", dbLogsPath.c_str());
         }
 
         identityManager = new IdentityManager_DB(dbConnector);
@@ -120,7 +120,7 @@ bool AuthStorageImpl::createAuth()
     }*/
     else
     {
-        LOG_APP->log0(__func__, Logs::LEVEL_CRITICAL, "Error, Authentication driver '%s' not implemented", sDriverName.c_str());
+        LOG_APP->log0(__func__, Logs::LogLevel::CRITICAL, "Error, Authentication driver '%s' not implemented", sDriverName.c_str());
     }
 
     if (!identityManager)
@@ -130,7 +130,7 @@ bool AuthStorageImpl::createAuth()
 
     if (!identityManager->initializeDatabase())
     {
-        LOG_APP->log0(__func__, Logs::LEVEL_CRITICAL, "Error (Driver: %s), Unknown error during database scheme initialization.", sDriverName.c_str());
+        LOG_APP->log0(__func__, Logs::LogLevel::CRITICAL, "Error (Driver: %s), Unknown error during database scheme initialization.", sDriverName.c_str());
         return false;
     }
 
@@ -144,7 +144,7 @@ bool AuthStorageImpl::createAuth()
         if (!schemeId.has_value())
         {
             r = false;
-            LOG_APP->log0(__func__, Logs::LEVEL_ERR, "Default password scheme for simple login does not exist anymore.");
+            LOG_APP->log0(__func__, Logs::LogLevel::ERR, "Default password scheme for simple login does not exist anymore.");
         }
         else
         {
@@ -156,11 +156,11 @@ bool AuthStorageImpl::createAuth()
         if (!schemeId.has_value())
         {
             r = false;
-            LOG_APP->log0(__func__, Logs::LEVEL_ERR, "Default password scheme for simple login can't be created.");
+            LOG_APP->log0(__func__, Logs::LogLevel::ERR, "Default password scheme for simple login can't be created.");
         }
         else
         {
-            LOG_APP->log0(__func__, Logs::LEVEL_INFO, "Default password scheme for simple login successfully created.");
+            LOG_APP->log0(__func__, Logs::LogLevel::INFO, "Default password scheme for simple login successfully created.");
         }
     }
 
@@ -171,17 +171,17 @@ bool AuthStorageImpl::createAuth()
         if (userExisted)
         {
             // User exist, do nothing.
-            LOG_APP->log0(__func__, Logs::LEVEL_DEBUG, "Default user '%s' already exist.", sDefaultUser.c_str());
+            LOG_APP->log0(__func__, Logs::LogLevel::DEBUG, "Default user '%s' already exist.", sDefaultUser.c_str());
         }
         else
         {
             if (r)
             {
-                LOG_APP->log0(__func__, Logs::LEVEL_INFO, "Default user '%s' successfully created.", sDefaultUser.c_str());
+                LOG_APP->log0(__func__, Logs::LogLevel::INFO, "Default user '%s' successfully created.", sDefaultUser.c_str());
             }
             else
             {
-                LOG_APP->log0(__func__, Logs::LEVEL_CRITICAL, "Default user '%s' can't be created.", sDefaultUser.c_str());
+                LOG_APP->log0(__func__, Logs::LogLevel::CRITICAL, "Default user '%s' can't be created.", sDefaultUser.c_str());
                 return false;
             }
         }
@@ -220,17 +220,17 @@ bool AuthStorageImpl::createAuth()
         if (appExisted)
         {
             // App already exists, this is not an error in this context
-            LOG_APP->log0(__func__, Logs::LEVEL_DEBUG, "App '%s' already exists.", app.name);
+            LOG_APP->log0(__func__, Logs::LogLevel::DEBUG, "App '%s' already exists.", app.name);
         }
         else
         {
             if (r)
             {
-                LOG_APP->log0(__func__, Logs::LEVEL_INFO, "APP '%s' successfully created.", app.name);
+                LOG_APP->log0(__func__, Logs::LogLevel::INFO, "APP '%s' successfully created.", app.name);
             }
             else
             {
-                LOG_APP->log0(__func__, Logs::LEVEL_CRITICAL, "APP '%s' can't be created.", app.name);
+                LOG_APP->log0(__func__, Logs::LogLevel::CRITICAL, "APP '%s' can't be created.", app.name);
                 // Return false immediately on failure as per original logic
                 return false;
             }
@@ -241,7 +241,7 @@ bool AuthStorageImpl::createAuth()
     {
         identityManager->applicationActivities->createLoginActivity();
         // create activities.
-        LOG_APP->log0(__func__, Logs::LEVEL_INFO, "APP '%s' LOGIN ACTIVITY successfully created.", IAM_LOGINPORTAL_APPNAME);
+        LOG_APP->log0(__func__, Logs::LogLevel::INFO, "APP '%s' LOGIN ACTIVITY successfully created.", IAM_LOGINPORTAL_APPNAME);
     }
 
     // Check account flags:
@@ -251,35 +251,35 @@ bool AuthStorageImpl::createAuth()
     if (identityManager->accounts->doesAccountExist(sDefaultUser) && !accountFlags.admin)
     {
         // This account should be marked as admin.
-        LOG_APP->log0(__func__, Logs::LEVEL_ERR, "Account '%s' detected without admin privileges. Manual intervention required to grant admin status.", sDefaultUser.c_str());
+        LOG_APP->log0(__func__, Logs::LogLevel::ERR, "Account '%s' detected without admin privileges. Manual intervention required to grant admin status.", sDefaultUser.c_str());
     }
     else if (identityManager->accounts->doesAccountExist(sDefaultUser) && identityManager->accounts->isAccountExpired(sDefaultUser))
     {
         // This account should not expire.
-        LOG_APP->log0(__func__, Logs::LEVEL_ERR, "Account '%s' is currently expired. Reactivation required immediately to ensure proper system management.", sDefaultUser.c_str());
+        LOG_APP->log0(__func__, Logs::LogLevel::ERR, "Account '%s' is currently expired. Reactivation required immediately to ensure proper system management.", sDefaultUser.c_str());
     }
     else if (identityManager->accounts->doesAccountExist(sDefaultUser) && !accountFlags.enabled)
     {
         // This account should not be disabled.
-        LOG_APP->log0(__func__, Logs::LEVEL_ERR, "Account '%s' is disabled. Enable the account to maintain essential administrative functions.", sDefaultUser.c_str());
+        LOG_APP->log0(__func__, Logs::LogLevel::ERR, "Account '%s' is disabled. Enable the account to maintain essential administrative functions.", sDefaultUser.c_str());
     }
     else if (identityManager->accounts->doesAccountExist(sDefaultUser) && !accountFlags.confirmed)
     {
         // This account should not be disabled.
-        LOG_APP->log0(__func__, Logs::LEVEL_ERR, "Account '%s' exists but is unconfirmed. Confirmation is necessary for full functionality.", sDefaultUser.c_str());
+        LOG_APP->log0(__func__, Logs::LogLevel::ERR, "Account '%s' exists but is unconfirmed. Confirmation is necessary for full functionality.", sDefaultUser.c_str());
     }
 
     // If password marked for reset, reset:
     if (Globals::getResetAdminPasswd())
     {
-        LOG_APP->log0(__func__, Logs::LEVEL_WARN, "Password marked to be reseted...");
+        LOG_APP->log0(__func__, Logs::LogLevel::WARN, "Password marked to be reseted...");
         std::string sInitPW;
         IdentityManager::ClientDetails clientDetails;
         std::string performedBy = "";
 
         if (!schemeId.has_value() || !identityManager->authController->setAccountPasswordOnScheme(clientDetails, performedBy, sDefaultUser, &sInitPW, *schemeId))
         {
-            LOG_APP->log0(__func__, Logs::LEVEL_ERR, "Password not resetted (Maybe the account '%s' does not have admin privileges?)...", sDefaultUser.c_str());
+            LOG_APP->log0(__func__, Logs::LogLevel::ERR, "Password not resetted (Maybe the account '%s' does not have admin privileges?)...", sDefaultUser.c_str());
             return false;
         }
     }
@@ -312,20 +312,20 @@ bool AuthStorageImpl::createPassFile(const std::string &sInitPW)
     std::ofstream ofstr(initPassOutFile);
     if (ofstr.fail())
     {
-        LOG_APP->log0(__func__, Logs::LEVEL_CRITICAL, "Failed to save the password account.");
+        LOG_APP->log0(__func__, Logs::LogLevel::CRITICAL, "Failed to save the password account.");
         return false;
     }
 #ifndef WIN32
     if (chmod(initPassOutFile.c_str(), 0600) != 0)
     {
-        LOG_APP->log0(__func__, Logs::LEVEL_WARN, "Failed to chmod the password file (be careful with this file and content).");
+        LOG_APP->log0(__func__, Logs::LogLevel::WARN, "Failed to chmod the password file (be careful with this file and content).");
     }
 #else
-    LOG_APP->log0(__func__, Logs::LEVEL_WARN, "Initial password was saved without special owner read-only privileges (be careful).");
+    LOG_APP->log0(__func__, Logs::LogLevel::WARN, "Initial password was saved without special owner read-only privileges (be careful).");
 #endif
     ofstr << sInitPW;
     ofstr.close();
-    LOG_APP->log0(__func__, Logs::LEVEL_INFO, "File '%s' created with the super-user password. Login and change it immediately", initPassOutFile.c_str());
+    LOG_APP->log0(__func__, Logs::LogLevel::INFO, "File '%s' created with the super-user password. Login and change it immediately", initPassOutFile.c_str());
     return true;
 }
 
@@ -355,7 +355,7 @@ bool AuthStorageImpl::configureAdminPortalApplication(IdentityManager_DB *identi
 {
     if (!identityManager->applications->doesApplicationExist(IAM_ADMPORTAL_APPNAME))
     {
-        LOG_APP->log0(__func__, Logs::LEVEL_CRITICAL, "Application '%s' does not exist, aborting.", IAM_ADMPORTAL_APPNAME);
+        LOG_APP->log0(__func__, Logs::LogLevel::CRITICAL, "Application '%s' does not exist, aborting.", IAM_ADMPORTAL_APPNAME);
         return false;
     }
 
@@ -453,22 +453,22 @@ bool AuthStorageImpl::configureAdminPortalApplication(IdentityManager_DB *identi
 
     if (!identityManager->applications->validateApplicationAccount(IAM_ADMPORTAL_APPNAME, adminUser))
     {
-        LOG_APP->log0(__func__, Logs::LEVEL_WARN, "Setting up '%s' user as application '%s' user.", adminUser.c_str(), IAM_ADMPORTAL_APPNAME);
+        LOG_APP->log0(__func__, Logs::LogLevel::WARN, "Setting up '%s' user as application '%s' user.", adminUser.c_str(), IAM_ADMPORTAL_APPNAME);
 
         if (!identityManager->applications->addAccountToApplication(clientDetails, performedBy, IAM_ADMPORTAL_APPNAME, adminUser))
         {
-            LOG_APP->log0(__func__, Logs::LEVEL_CRITICAL, "Failed to set the '%s' account as application '%s' user.", adminUser.c_str(), IAM_ADMPORTAL_APPNAME);
+            LOG_APP->log0(__func__, Logs::LogLevel::CRITICAL, "Failed to set the '%s' account as application '%s' user.", adminUser.c_str(), IAM_ADMPORTAL_APPNAME);
             return false;
         }
     }
 
     if (!identityManager->applications->isApplicationAdmin(IAM_ADMPORTAL_APPNAME, adminUser))
     {
-        LOG_APP->log0(__func__, Logs::LEVEL_WARN, "Setting up '%s' user as application '%s' admin.", adminUser.c_str(), IAM_ADMPORTAL_APPNAME);
+        LOG_APP->log0(__func__, Logs::LogLevel::WARN, "Setting up '%s' user as application '%s' admin.", adminUser.c_str(), IAM_ADMPORTAL_APPNAME);
 
         if (!identityManager->applications->changeApplicationAdmin(clientDetails, performedBy, IAM_ADMPORTAL_APPNAME, adminUser, true))
         {
-            LOG_APP->log0(__func__, Logs::LEVEL_CRITICAL, "Failed to set the '%s' account as application '%s' admin.", adminUser.c_str(), IAM_ADMPORTAL_APPNAME);
+            LOG_APP->log0(__func__, Logs::LogLevel::CRITICAL, "Failed to set the '%s' account as application '%s' admin.", adminUser.c_str(), IAM_ADMPORTAL_APPNAME);
             return false;
         }
     }
@@ -480,7 +480,7 @@ bool AuthStorageImpl::configureUserPortalApplication(IdentityManager_DB *identit
 {
     if (!identityManager->applications->doesApplicationExist(IAM_USRPORTAL_APPNAME))
     {
-        LOG_APP->log0(__func__, Logs::LEVEL_CRITICAL, "Application '%s' does not exist, aborting.", IAM_USRPORTAL_APPNAME);
+        LOG_APP->log0(__func__, Logs::LogLevel::CRITICAL, "Application '%s' does not exist, aborting.", IAM_USRPORTAL_APPNAME);
         return false;
     }
 
@@ -550,11 +550,11 @@ bool AuthStorageImpl::configureUserPortalApplication(IdentityManager_DB *identit
 
     if (!identityManager->applications->validateApplicationAccount(IAM_USRPORTAL_APPNAME, adminUser))
     {
-        LOG_APP->log0(__func__, Logs::LEVEL_WARN, "Setting up '%s' user as application '%s' user.", adminUser.c_str(), IAM_USRPORTAL_APPNAME);
+        LOG_APP->log0(__func__, Logs::LogLevel::WARN, "Setting up '%s' user as application '%s' user.", adminUser.c_str(), IAM_USRPORTAL_APPNAME);
 
         if (!identityManager->applications->addAccountToApplication(clientDetails, performedBy, IAM_USRPORTAL_APPNAME, adminUser))
         {
-            LOG_APP->log0(__func__, Logs::LEVEL_CRITICAL, "Failed to set the '%s' account as application '%s' user.", adminUser.c_str(), IAM_USRPORTAL_APPNAME);
+            LOG_APP->log0(__func__, Logs::LogLevel::CRITICAL, "Failed to set the '%s' account as application '%s' user.", adminUser.c_str(), IAM_USRPORTAL_APPNAME);
             return false;
         }
     }
@@ -562,11 +562,11 @@ bool AuthStorageImpl::configureUserPortalApplication(IdentityManager_DB *identit
     std::set<std::string> accounts = identityManager->applicationRoles->getApplicationRoleAccounts(IAM_USRPORTAL_APPNAME, "GENERIC_USER");
     if (accounts.find(adminUser) == accounts.end())
     {
-        LOG_APP->log0(__func__, Logs::LEVEL_WARN, "Setting up '%s' user with role 'GENERIC_USER' in application '%s'.", adminUser.c_str(), IAM_USRPORTAL_APPNAME);
+        LOG_APP->log0(__func__, Logs::LogLevel::WARN, "Setting up '%s' user with role 'GENERIC_USER' in application '%s'.", adminUser.c_str(), IAM_USRPORTAL_APPNAME);
 
         if (!identityManager->applicationRoles->addAccountToRole(clientDetails, performedBy, IAM_USRPORTAL_APPNAME, "GENERIC_USER", adminUser))
         {
-            LOG_APP->log0(__func__, Logs::LEVEL_CRITICAL, "Failed to set up '%s' user with role 'GENERIC_USER' in application '%s'.", adminUser.c_str(), IAM_USRPORTAL_APPNAME);
+            LOG_APP->log0(__func__, Logs::LogLevel::CRITICAL, "Failed to set up '%s' user with role 'GENERIC_USER' in application '%s'.", adminUser.c_str(), IAM_USRPORTAL_APPNAME);
             return false;
         }
     }

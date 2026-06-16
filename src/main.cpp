@@ -22,7 +22,7 @@
 #include <sys/types.h>
 
 #include <dirent.h>
-#include <inttypes.h>
+#include <cinttypes>
 #include <sys/stat.h>
 #include <unistd.h>
 
@@ -51,7 +51,7 @@ public:
     {
         // process config:
         std::shared_ptr<Mantids30::Program::Logs::AppLog> initLog = Program::Config::Logs::createInitLog();
-        unsigned int logMode = Program::Logs::MODE_STANDARD;
+        Program::Logs::Mode logMode = Program::Logs::Mode::STANDARD;
 
         Network::Sockets::Socket_TLS::prepareTLS();
 
@@ -60,11 +60,11 @@ public:
 
         std::string configFile = configDir + "/ufastauthd3.conf";
 
-        initLog->log0(__func__, Program::Logs::LEVEL_INFO, "Loading configuration: %s", (configFile).c_str());
+        initLog->log0(__func__, Program::Logs::LogLevel::INFO, "Loading configuration: %s", (configFile).c_str());
 
         if (access(configDir.c_str(), R_OK))
         {
-            initLog->log0(__func__, Program::Logs::LEVEL_CRITICAL, "Missing configuration dir: %s", configDir.c_str());
+            initLog->log0(__func__, Program::Logs::LogLevel::CRITICAL, "Missing configuration dir: %s", configDir.c_str());
             return false;
         }
 
@@ -73,13 +73,13 @@ public:
         bool isConfigFileInsecure = true;
         if (!Helpers::File::isSensitiveConfigPermissionInsecure(configFile, &isConfigFileInsecure))
         {
-            initLog->log0(__func__, Program::Logs::LEVEL_WARN, "The configuration 'ufastauthd3.conf' file is inaccessible, loading defaults...");
+            initLog->log0(__func__, Program::Logs::LogLevel::WARN, "The configuration 'ufastauthd3.conf' file is inaccessible, loading defaults...");
         }
         else
         {
             if (isConfigFileInsecure)
             {
-                initLog->log0(__func__, Program::Logs::LEVEL_SECURITY_ALERT,
+                initLog->log0(__func__, Program::Logs::LogLevel::SECURITY_ALERT,
                               "The permissions of the '%s' file are currently not set to 0600. This may leave your API key exposed to potential security threats. To mitigate this risk, "
                               "we are changing the permissions of the file to ensure that your API key remains secure. Please ensure that you take necessary precautions to protect your API key and "
                               "update any affected applications or services as necessary.",
@@ -87,11 +87,11 @@ public:
 
                 if (Helpers::File::fixSensitiveConfigPermission(configFile))
                 {
-                    initLog->log0(__func__, Program::Logs::LEVEL_SECURITY_ALERT, "The permissions of the 'ufastauthd3.conf' file has been changed to 0600.");
+                    initLog->log0(__func__, Program::Logs::LogLevel::SECURITY_ALERT, "The permissions of the 'ufastauthd3.conf' file has been changed to 0600.");
                 }
                 else
                 {
-                    initLog->log0(__func__, Program::Logs::LEVEL_CRITICAL, "The permissions of the 'ufastauthd3.conf' file can't be changed.");
+                    initLog->log0(__func__, Program::Logs::LogLevel::CRITICAL, "The permissions of the 'ufastauthd3.conf' file can't be changed.");
                     return false;
                 }
             }
@@ -102,12 +102,12 @@ public:
             }
             catch (const boost::property_tree::info_parser_error &ex)
             {
-                initLog->log0(__func__, Program::Logs::LEVEL_CRITICAL, "Unable to read configuration file '%s' (line %lu): %s", configFile.c_str(), static_cast<unsigned long>(ex.line()), ex.what());
+                initLog->log0(__func__, Program::Logs::LogLevel::CRITICAL, "Unable to read configuration file '%s' (line %lu): %s", configFile.c_str(), static_cast<unsigned long>(ex.line()), ex.what());
                 return false;
             }
             catch (const std::exception &ex)
             {
-                initLog->log0(__func__, Program::Logs::LEVEL_CRITICAL, "Unexpected error while reading configuration file '%s': %s", configFile.c_str(), ex.what());
+                initLog->log0(__func__, Program::Logs::LogLevel::CRITICAL, "Unexpected error while reading configuration file '%s': %s", configFile.c_str(), ex.what());
                 return false;
             }
         }
@@ -123,8 +123,8 @@ public:
         std::string configDir = globalArguments->getCommandLineOptionValue("config-dir")->toString();
 
         // start program.
-        LOG_APP->log0(__func__, Program::Logs::LEVEL_INFO, "Starting... (Build date %s %s), PID: %" PRIi32, __DATE__, __TIME__, getpid());
-        LOG_APP->log0(__func__, Program::Logs::LEVEL_INFO, "Using config dir: %s", configDir.c_str());
+        LOG_APP->log0(__func__, Program::Logs::LogLevel::INFO, "Starting... (Build date %s %s), PID: %" PRIi32, __DATE__, __TIME__, getpid());
+        LOG_APP->log0(__func__, Program::Logs::LogLevel::INFO, "Using config dir: %s", configDir.c_str());
 
         // TODO: for MySQL/PostgreSQL Authenticator, how reconnect takes place?
         // Initiate the authenticator
@@ -176,7 +176,7 @@ public:
             _exit(-4);
         }*/
 
-        LOG_APP->log0(__func__, Program::Logs::LEVEL_INFO, (globalArguments->getDaemonName() + " initialized with PID: %" PRIi32).c_str(), getpid());
+        LOG_APP->log0(__func__, Program::Logs::LogLevel::INFO, (globalArguments->getDaemonName() + " initialized with PID: %" PRIi32).c_str(), getpid());
 
         return 0;
     }
