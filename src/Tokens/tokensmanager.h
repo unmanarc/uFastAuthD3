@@ -15,7 +15,7 @@ public:
     TokensManager() = default;
     using APIReturn = Mantids30::API::APIReturn;
     using RequestParameters = Mantids30::API::RESTful::RequestParameters;
-    using HTTPv1_Base = Mantids30::Network::Protocols::HTTP::HTTPv1_Base;
+    using HTTPv1_Base = Mantids30::Network::Protocol::HTTP::HTTPv1_Base;
     using ClientDetails = Mantids30::Sessions::ClientDetails;
 
     struct ApplicationTokenCommonParams

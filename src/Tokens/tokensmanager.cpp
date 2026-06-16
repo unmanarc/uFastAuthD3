@@ -5,7 +5,7 @@
 #include <memory>
 
 using namespace Mantids30;
-using namespace Mantids30::Network::Protocols;
+using namespace Mantids30::Network::Protocol;
 using namespace API::RESTful;
 
 void TokensManager::configureApplicationAccessToken(Mantids30::DataFormat::JWT::Token &accessToken, const ApplicationTokenCommonParams &commonParams)

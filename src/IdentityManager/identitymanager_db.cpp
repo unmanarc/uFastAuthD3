@@ -507,7 +507,7 @@ bool IdentityManager_DB::initializeDatabase()
     {
         if (!m_sqlConnector->qExecuteEx(sql.data()))
         {
-            LOG_APP->log0(__func__, Logs::LEVEL_CRITICAL, "Failed to execute SQL: '%s'", std::string(sql).c_str());
+            LOG_APP->log0(__func__, Logs::LogLevel::CRITICAL, "Failed to execute SQL: '%s'", std::string(sql).c_str());
             success = false;
             break;
         }
