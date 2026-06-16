@@ -7,18 +7,18 @@
 
 using namespace Mantids30::Program;
 using namespace Mantids30;
-using namespace Mantids30::Network::Protocols;
+using namespace Mantids30::Network::Protocol;
 
-void AdminPortal_Endpoints_AccountCredentials::addEndpoints_AccountCredentials(std::shared_ptr<Endpoints> endpoints)
+void AdminPortal_Endpoints_AccountCredentials::addEndpoints_AccountCredentials(const std::shared_ptr<Endpoints>& endpoints)
 {
-    using SecurityOptions = Mantids30::API::RESTful::Endpoints::SecurityOptions;
+    using SecurityRequirements = API::Security::Requirements;
 
     // Account Credential Slots:
-    endpoints->addEndpoint(Endpoints::GET, "getAccountCredentialSlots", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_READ"}, nullptr, &getAccountCredentialSlots);
-    endpoints->addEndpoint(Endpoints::DELETE, "removeAccountCredentialSlot", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"}, nullptr, &removeAccountCredentialSlot);
-    endpoints->addEndpoint(Endpoints::PUT, "setCredentialLockedStatus", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"}, nullptr, &setCredentialLockedStatus);
-    endpoints->addEndpoint(Endpoints::PUT, "setMustChangeCredential", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"}, nullptr, &setMustChangeCredential);
-    endpoints->addEndpoint(Endpoints::POST, "generateMasterPassword", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"}, nullptr, &generateMasterPassword);
+    endpoints->addEndpoint(HTTP::Method::GET, "getAccountCredentialSlots", SecurityRequirements::JWT_COOKIE_AUTH, {"ACCOUNT_READ"}, nullptr, &getAccountCredentialSlots);
+    endpoints->addEndpoint(HTTP::Method::DELETE, "removeAccountCredentialSlot", SecurityRequirements::JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"}, nullptr, &removeAccountCredentialSlot);
+    endpoints->addEndpoint(HTTP::Method::PUT, "setCredentialLockedStatus", SecurityRequirements::JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"}, nullptr, &setCredentialLockedStatus);
+    endpoints->addEndpoint(HTTP::Method::PUT, "setMustChangeCredential", SecurityRequirements::JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"}, nullptr, &setMustChangeCredential);
+    endpoints->addEndpoint(HTTP::Method::POST, "generateMasterPassword", SecurityRequirements::JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"}, nullptr, &generateMasterPassword);
 }
 
 API::APIReturn AdminPortal_Endpoints_AccountCredentials::getAccountCredentialSlots(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
@@ -31,7 +31,7 @@ API::APIReturn AdminPortal_Endpoints_AccountCredentials::getAccountCredentialSlo
 
     if (accountName.empty())
     {
-        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Account name is required");
+        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Account name is required");
         return response;
     }
 
@@ -73,26 +73,26 @@ API::APIReturn AdminPortal_Endpoints_AccountCredentials::removeAccountCredential
 
     if (accountName.empty())
     {
-        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Account name is required");
+        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Account name is required");
         return response;
     }
 
     if (slotId == 0)
     {
-        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Slot ID is required");
+        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Slot ID is required");
         return response;
     }
 
     if (slotId == 1)
     {
-        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Can´t remove the credential slot 1 (Master Password)");
+        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Can´t remove the credential slot 1 (Master Password)");
         return response;
     }
 
     // Delete the credential slot for the account
     if (!Globals::getIdentityManager()->authController->removeAccountCredential(authClientDetails, request.jwtToken->getSubject(), accountName, slotId))
     {
-        response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to delete the credential slot");
+        response.setError(HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to delete the credential slot");
         return response;
     }
 
@@ -110,20 +110,20 @@ API::APIReturn AdminPortal_Endpoints_AccountCredentials::setCredentialLockedStat
 
     if (accountName.empty())
     {
-        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Account name is required");
+        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Account name is required");
         return response;
     }
 
     if (slotId == 0)
     {
-        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Slot ID is required");
+        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Slot ID is required");
         return response;
     }
 
     // Block the credential slot for the account
     if (!Globals::getIdentityManager()->authController->setCredentialLockedStatus(authClientDetails, request.jwtToken->getSubject(), accountName, slotId, lockedStatus))
     {
-        response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to set the lock state on the credential slot");
+        response.setError(HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to set the lock state on the credential slot");
         return response;
     }
 
@@ -141,20 +141,20 @@ API::APIReturn AdminPortal_Endpoints_AccountCredentials::setMustChangeCredential
 
     if (accountName.empty())
     {
-        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Account name is required");
+        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Account name is required");
         return response;
     }
 
     if (slotId == 0)
     {
-        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Slot ID is required");
+        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Slot ID is required");
         return response;
     }
 
     // Force credential expiration for the account slot
     if (!Globals::getIdentityManager()->authController->setCredentialMustChange(authClientDetails, request.jwtToken->getSubject(), accountName, slotId, mustChange))
     {
-        response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to change credential flag to change");
+        response.setError(HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to change credential flag to change");
         return response;
     }
 
@@ -170,7 +170,7 @@ API::APIReturn AdminPortal_Endpoints_AccountCredentials::generateMasterPassword(
 
     if (accountName.empty())
     {
-        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Account name is required");
+        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Account name is required");
         return response;
     }
 
@@ -180,7 +180,7 @@ API::APIReturn AdminPortal_Endpoints_AccountCredentials::generateMasterPassword(
 
     if (!ok)
     {
-        response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to generate new master password");
+        response.setError(HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to generate new master password");
         return response;
     }
 

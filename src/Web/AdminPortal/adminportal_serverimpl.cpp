@@ -26,7 +26,7 @@ bool AdminPortal_ServerImpl::createService()
     }
     catch (boost::property_tree::ptree_error &e)
     {
-        LOG_APP->log0(__func__, Logs::LEVEL_INFO, "Configuration error: AdminPortal not found: %s", e.what());
+        LOG_APP->log0(__func__, Logs::LogLevel::INFO, "Configuration error: AdminPortal not found: %s", e.what());
         return false;
     }
 
@@ -43,7 +43,7 @@ bool AdminPortal_ServerImpl::createService()
     adminPortalWebServer->config.jwtValidator = Globals::getIdentityManager()->applications->getAppJWTValidator(IAM_ADMPORTAL_APPNAME);
     if (!adminPortalWebServer->config.jwtValidator)
     {
-        LOG_APP->log0(__func__, Logs::LEVEL_CRITICAL, "We need a JWT Validator for the IAM Portal Web Server (2).");
+        LOG_APP->log0(__func__, Logs::LogLevel::CRITICAL, "We need a JWT Validator for the IAM Portal Web Server (2).");
         return false;
     }
 
@@ -63,7 +63,7 @@ bool AdminPortal_ServerImpl::createService()
 
     for (const std::shared_ptr<Sockets::Socket_Stream> &i : adminPortalWebServer->getListenerSockets())
     {
-        LOG_APP->log0(__func__, Logs::LEVEL_INFO, "IAM Admin Portal Web Server Listening @%s", i->getLastBindAddress().c_str());
+        LOG_APP->log0(__func__, Logs::LogLevel::INFO, "IAM Admin Portal Web Server Listening @%s", i->getLastBindAddress().c_str());
     }
 
     return true;

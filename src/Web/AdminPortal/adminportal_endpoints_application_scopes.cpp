@@ -7,19 +7,19 @@
 
 using namespace Mantids30::Program;
 using namespace Mantids30;
-using namespace Mantids30::Network::Protocols;
+using namespace Mantids30::Network::Protocol;
 
 void AdminPortal_Endpoints_ApplicationsScopes::addEndpoints_Scopes(std::shared_ptr<Endpoints> endpoints)
 {
-    using SecurityOptions = Mantids30::API::RESTful::Endpoints::SecurityOptions;
-    endpoints->addEndpoint(Endpoints::POST, "addApplicationScopeToAccount", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"}, nullptr, &addApplicationScopeToAccount);
-    endpoints->addEndpoint(Endpoints::DELETE, "removeApplicationScopeFromAccount", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"}, nullptr, &removeApplicationScopeFromAccount);
+    using SecurityRequirements = API::Security::Requirements;
+    endpoints->addEndpoint(HTTP::Method::POST, "addApplicationScopeToAccount", SecurityRequirements::JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"}, nullptr, &addApplicationScopeToAccount);
+    endpoints->addEndpoint(HTTP::Method::DELETE, "removeApplicationScopeFromAccount", SecurityRequirements::JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"}, nullptr, &removeApplicationScopeFromAccount);
 
-    endpoints->addEndpoint(Endpoints::POST, "addApplicationScope", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"}, nullptr, &addApplicationScope);
-    endpoints->addEndpoint(Endpoints::DELETE, "removeApplicationScope", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"}, nullptr, &removeApplicationScope);
-    endpoints->addEndpoint(Endpoints::PUT, "addApplicationScopeToRole", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"}, nullptr, &addApplicationScopeToRole);
-    endpoints->addEndpoint(Endpoints::DELETE, "removeApplicationScopeFromRole", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"}, nullptr, &removeApplicationScopeFromRole);
-    endpoints->addEndpoint(Endpoints::GET, "searchApplicationScopes", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"}, nullptr, &searchApplicationScopes);
+    endpoints->addEndpoint(HTTP::Method::POST, "addApplicationScope", SecurityRequirements::JWT_COOKIE_AUTH, {"APP_MODIFY"}, nullptr, &addApplicationScope);
+    endpoints->addEndpoint(HTTP::Method::DELETE, "removeApplicationScope", SecurityRequirements::JWT_COOKIE_AUTH, {"APP_MODIFY"}, nullptr, &removeApplicationScope);
+    endpoints->addEndpoint(HTTP::Method::PUT, "addApplicationScopeToRole", SecurityRequirements::JWT_COOKIE_AUTH, {"APP_MODIFY"}, nullptr, &addApplicationScopeToRole);
+    endpoints->addEndpoint(HTTP::Method::DELETE, "removeApplicationScopeFromRole", SecurityRequirements::JWT_COOKIE_AUTH, {"APP_MODIFY"}, nullptr, &removeApplicationScopeFromRole);
+    endpoints->addEndpoint(HTTP::Method::GET, "searchApplicationScopes", SecurityRequirements::JWT_COOKIE_AUTH, {"APP_READ"}, nullptr, &searchApplicationScopes);
 }
 
 API::APIReturn AdminPortal_Endpoints_ApplicationsScopes::addApplicationScopeToAccount(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
@@ -33,14 +33,14 @@ API::APIReturn AdminPortal_Endpoints_ApplicationsScopes::addApplicationScopeToAc
 
     if (appName.empty() || scopeId.empty() || accountName.empty())
     {
-        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_parameters", "Parameters cannot be empty");
+        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_parameters", "Parameters cannot be empty");
         return response;
     }
 
     // Perform the operation
     if (!Globals::getIdentityManager()->authController->addApplicationScopeToAccount(authClientDetails, request.jwtToken->getSubject(), {appName, scopeId}, accountName))
     {
-        response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Internal Error");
+        response.setError(HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Internal Error");
     }
     return response;
 }
@@ -56,14 +56,14 @@ API::APIReturn AdminPortal_Endpoints_ApplicationsScopes::removeApplicationScopeF
 
     if (appName.empty() || scopeId.empty() || accountName.empty())
     {
-        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_parameters", "Parameters cannot be empty");
+        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_parameters", "Parameters cannot be empty");
         return response;
     }
 
     // Perform the operation
     if (!Globals::getIdentityManager()->authController->removeApplicationScopeFromAccount(authClientDetails, request.jwtToken->getSubject(), {appName, scopeId}, accountName))
     {
-        response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Internal Error");
+        response.setError(HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Internal Error");
     }
     return response;
 }
@@ -78,13 +78,13 @@ API::APIReturn AdminPortal_Endpoints_ApplicationsScopes::addApplicationScope(voi
     // Validate input parameters
     if (appName.empty())
     {
-        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_parameters", "Application name cannot be empty");
+        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_parameters", "Application name cannot be empty");
         return response;
     }
 
     if (scopeId.empty())
     {
-        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_parameters", "Scope ID cannot be empty");
+        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_parameters", "Scope ID cannot be empty");
         return response;
     }
 
@@ -92,20 +92,20 @@ API::APIReturn AdminPortal_Endpoints_ApplicationsScopes::addApplicationScope(voi
     const std::regex scopeIdPattern("^[0-9A-Z_-]+$");
     if (!std::regex_match(scopeId, scopeIdPattern))
     {
-        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_parameters", "Scope ID must match the pattern [0-9A-Z_-]+");
+        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_parameters", "Scope ID must match the pattern [0-9A-Z_-]+");
         return response;
     }
 
     // Don't modify scope from our directory.
     if (appName == IAM_ADMPORTAL_APPNAME)
     {
-        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Can't add application scope to the IAM");
+        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Can't add application scope to the IAM");
         return response;
     }
 
     if (!Globals::getIdentityManager()->authController->addApplicationScope(authClientDetails, request.jwtToken->getSubject(), {appName, scopeId, scopeDescription}))
     {
-        response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "The application scope may already exist.");
+        response.setError(HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "The application scope may already exist.");
     }
 
     return response;
@@ -121,26 +121,26 @@ API::APIReturn AdminPortal_Endpoints_ApplicationsScopes::removeApplicationScope(
     // Validate input parameters
     if (appName.empty())
     {
-        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_parameters", "Application name cannot be empty");
+        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_parameters", "Application name cannot be empty");
         return response;
     }
 
     if (scopeId.empty())
     {
-        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_parameters", "Scope ID cannot be empty");
+        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_parameters", "Scope ID cannot be empty");
         return response;
     }
 
     // Don't modify scope from our directory.
     if (appName == IAM_ADMPORTAL_APPNAME)
     {
-        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Can't remove application scope to the IAM");
+        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Can't remove application scope to the IAM");
         return response;
     }
 
     if (!Globals::getIdentityManager()->authController->removeApplicationScope(authClientDetails, request.jwtToken->getSubject(), {appName, scopeId}))
     {
-        response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Internal Error");
+        response.setError(HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Internal Error");
     }
 
     return response;
@@ -154,7 +154,7 @@ API::APIReturn AdminPortal_Endpoints_ApplicationsScopes::addApplicationScopeToRo
                                                                                   {JSON_ASSTRING(*request.inputJSON, "appName", ""), JSON_ASSTRING(*request.inputJSON, "scopeId", "")},
                                                                                   JSON_ASSTRING(*request.inputJSON, "roleId", "")))
     {
-        response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to add the application scope to the role.");
+        response.setError(HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to add the application scope to the role.");
     }
 
     return response;
@@ -167,7 +167,7 @@ API::APIReturn AdminPortal_Endpoints_ApplicationsScopes::removeApplicationScopeF
                                                                                        {JSON_ASSTRING(*request.inputJSON, "appName", ""), JSON_ASSTRING(*request.inputJSON, "scopeId", "")},
                                                                                        JSON_ASSTRING(*request.inputJSON, "roleId", "")))
     {
-        response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Internal Error");
+        response.setError(HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Internal Error");
     }
 
     return response;

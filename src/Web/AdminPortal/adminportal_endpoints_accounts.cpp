@@ -10,7 +10,7 @@
 
 using namespace Mantids30::Program;
 using namespace Mantids30;
-using namespace Mantids30::Network::Protocols;
+using namespace Mantids30::Network::Protocol;
 
 std::map<std::string, std::string> AdminPortal_Endpoints_Accounts::jsonToMap(const json &jValue)
 {
@@ -25,28 +25,28 @@ std::map<std::string, std::string> AdminPortal_Endpoints_Accounts::jsonToMap(con
 
 void AdminPortal_Endpoints_Accounts::addEndpoints_Accounts(std::shared_ptr<Endpoints> endpoints)
 {
-    using SecurityOptions = Mantids30::API::RESTful::Endpoints::SecurityOptions;
+    using SecurityRequirements = API::Security::Requirements;
 
     // Accounts:
-    endpoints->addEndpoint(Endpoints::POST, "addAccount", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"}, nullptr, &addAccount);
-    endpoints->addEndpoint(Endpoints::GET, "doesAccountExist", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_READ"}, nullptr, &doesAccountExist);
-    endpoints->addEndpoint(Endpoints::GET, "searchAccounts", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_READ"}, nullptr, &searchAccounts);
-    endpoints->addEndpoint(Endpoints::GET, "getAccountDetailFieldsValues", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_READ"}, nullptr, &getAccountDetailFieldsValues);
-    endpoints->addEndpoint(Endpoints::PUT, "updateAccountDetailFieldsValues", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"}, nullptr, &updateAccountDetailFieldsValues);
-    endpoints->addEndpoint(Endpoints::GET, "getAccountFlags", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_READ"}, nullptr, &getAccountFlags);
-    endpoints->addEndpoint(Endpoints::PATCH, "changeAccountFlags", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"}, nullptr, &changeAccountFlags);
-    endpoints->addEndpoint(Endpoints::DELETE, "removeAccount", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_DELETE"}, nullptr, &removeAccount);
+    endpoints->addEndpoint(HTTP::Method::POST, "addAccount", SecurityRequirements::JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"}, nullptr, &addAccount);
+    endpoints->addEndpoint(HTTP::Method::GET, "doesAccountExist", SecurityRequirements::JWT_COOKIE_AUTH, {"ACCOUNT_READ"}, nullptr, &doesAccountExist);
+    endpoints->addEndpoint(HTTP::Method::GET, "searchAccounts", SecurityRequirements::JWT_COOKIE_AUTH, {"ACCOUNT_READ"}, nullptr, &searchAccounts);
+    endpoints->addEndpoint(HTTP::Method::GET, "getAccountDetailFieldsValues", SecurityRequirements::JWT_COOKIE_AUTH, {"ACCOUNT_READ"}, nullptr, &getAccountDetailFieldsValues);
+    endpoints->addEndpoint(HTTP::Method::PUT, "updateAccountDetailFieldsValues", SecurityRequirements::JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"}, nullptr, &updateAccountDetailFieldsValues);
+    endpoints->addEndpoint(HTTP::Method::GET, "getAccountFlags", SecurityRequirements::JWT_COOKIE_AUTH, {"ACCOUNT_READ"}, nullptr, &getAccountFlags);
+    endpoints->addEndpoint(HTTP::Method::PATCH, "changeAccountFlags", SecurityRequirements::JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"}, nullptr, &changeAccountFlags);
+    endpoints->addEndpoint(HTTP::Method::DELETE, "removeAccount", SecurityRequirements::JWT_COOKIE_AUTH, {"ACCOUNT_DELETE"}, nullptr, &removeAccount);
 
     // Accounts-Applications:
-    endpoints->addEndpoint(Endpoints::GET, "getAccountApplications", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_READ"}, nullptr, &getAccountApplications);
-    endpoints->addEndpoint(Endpoints::POST, "addAccountToApplication", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"}, nullptr, &addAccountToApplication);
-    endpoints->addEndpoint(Endpoints::DELETE, "removeAccountFromApplication", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"}, nullptr, &removeAccountFromApplication);
+    endpoints->addEndpoint(HTTP::Method::GET, "getAccountApplications", SecurityRequirements::JWT_COOKIE_AUTH, {"ACCOUNT_READ"}, nullptr, &getAccountApplications);
+    endpoints->addEndpoint(HTTP::Method::POST, "addAccountToApplication", SecurityRequirements::JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"}, nullptr, &addAccountToApplication);
+    endpoints->addEndpoint(HTTP::Method::DELETE, "removeAccountFromApplication", SecurityRequirements::JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"}, nullptr, &removeAccountFromApplication);
     // Fields
-    endpoints->addEndpoint(Endpoints::GET, "searchFields", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"CONFIG_READ"}, nullptr, &searchFields);
-    endpoints->addEndpoint(Endpoints::POST, "addAccountDetailField", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"CONFIG_WRITE"}, nullptr, &addAccountDetailField);
-    endpoints->addEndpoint(Endpoints::PUT, "updateAccountDetailField", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"CONFIG_WRITE"}, nullptr, &updateAccountDetailField);
-    endpoints->addEndpoint(Endpoints::DELETE, "removeAccountDetailField", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"CONFIG_WRITE"}, nullptr, &removeAccountDetailField);
-    endpoints->addEndpoint(Endpoints::GET, "getAccountDetailField", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"CONFIG_READ"}, nullptr, &getAccountDetailField);
+    endpoints->addEndpoint(HTTP::Method::GET, "searchFields", SecurityRequirements::JWT_COOKIE_AUTH, {"CONFIG_READ"}, nullptr, &searchFields);
+    endpoints->addEndpoint(HTTP::Method::POST, "addAccountDetailField", SecurityRequirements::JWT_COOKIE_AUTH, {"CONFIG_WRITE"}, nullptr, &addAccountDetailField);
+    endpoints->addEndpoint(HTTP::Method::PUT, "updateAccountDetailField", SecurityRequirements::JWT_COOKIE_AUTH, {"CONFIG_WRITE"}, nullptr, &updateAccountDetailField);
+    endpoints->addEndpoint(HTTP::Method::DELETE, "removeAccountDetailField", SecurityRequirements::JWT_COOKIE_AUTH, {"CONFIG_WRITE"}, nullptr, &removeAccountDetailField);
+    endpoints->addEndpoint(HTTP::Method::GET, "getAccountDetailField", SecurityRequirements::JWT_COOKIE_AUTH, {"CONFIG_READ"}, nullptr, &getAccountDetailField);
 }
 
 API::APIReturn AdminPortal_Endpoints_Accounts::addAccount(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
@@ -58,14 +58,14 @@ API::APIReturn AdminPortal_Endpoints_Accounts::addAccount(void *context, const R
     // Check if account already exists
     if (Globals::getIdentityManager()->accounts->doesAccountExist(accountName))
     {
-        response.setError(HTTP::Status::S_406_NOT_ACCEPTABLE, "unacceptable_request", "Account Already Exist");
+        response.setError(HTTP::Status::Code::S_406_NOT_ACCEPTABLE, "unacceptable_request", "Account Already Exist");
         return response;
     }
 
     // Validate that account name is not empty
     if (accountName.empty())
     {
-        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Account Name is Empty");
+        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Account Name is Empty");
         return response;
     }
 
@@ -73,7 +73,7 @@ API::APIReturn AdminPortal_Endpoints_Accounts::addAccount(void *context, const R
     std::regex accountNameExpr("[a-zA-Z0-9]+");
     if (!regex_match(accountName, accountNameExpr))
     {
-        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Account name have invalid characters");
+        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Account name have invalid characters");
         return response;
     }
 
@@ -84,7 +84,7 @@ API::APIReturn AdminPortal_Endpoints_Accounts::addAccount(void *context, const R
     // Add the new account to the system with specified expiration and flags
     if (!Globals::getIdentityManager()->accounts->addAccount(accountName, JSON_ASUINT64(*request.inputJSON, "expirationDate", 0), accountFlags, authClientDetails, request.jwtToken->getSubject()))
     {
-        response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to add the new account. Check if user already exists");
+        response.setError(HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to add the new account. Check if user already exists");
         return response;
     }
 
@@ -106,7 +106,7 @@ API::APIReturn AdminPortal_Endpoints_Accounts::addAccount(void *context, const R
     }
     else
     {
-        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Either tempCredential or secretTempPass must be provided");
+        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Either tempCredential or secretTempPass must be provided");
         return response;
     }
 
@@ -115,7 +115,7 @@ API::APIReturn AdminPortal_Endpoints_Accounts::addAccount(void *context, const R
     // Apply the credential to the new account
     if (!Globals::getIdentityManager()->authController->changeAccountCredential(authClientDetails, request.jwtToken->getSubject(), accountName, newCredentialData, slotId))
     {
-        response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to change the credential on the new user.");
+        response.setError(HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to change the credential on the new user.");
         return response;
     }
 
@@ -125,19 +125,19 @@ API::APIReturn AdminPortal_Endpoints_Accounts::addAccount(void *context, const R
     // Apply the credential to the new account
     if (!Globals::getIdentityManager()->accounts->changeAccountFlags(authClientDetails, request.jwtToken->getSubject(), accountName, flags))
     {
-        response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to change the credential on the new user.");
+        response.setError(HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to change the credential on the new user.");
         return response;
     }
 
     if (!Globals::getIdentityManager()->applications->addAccountToApplication(authClientDetails, request.jwtToken->getSubject(), IAM_USRPORTAL_APPNAME, accountName))
     {
-        response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to assign user with GENERIC_USER in app '" IAM_USRPORTAL_APPNAME "'.");
+        response.setError(HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to assign user with GENERIC_USER in app '" IAM_USRPORTAL_APPNAME "'.");
         return response;
     }
 
     if (!Globals::getIdentityManager()->applicationRoles->addAccountToRole(authClientDetails, request.jwtToken->getSubject(), IAM_USRPORTAL_APPNAME, "GENERIC_USER", accountName))
     {
-        response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to assign user with GENERIC_USER in app '" IAM_USRPORTAL_APPNAME "'.");
+        response.setError(HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to assign user with GENERIC_USER in app '" IAM_USRPORTAL_APPNAME "'.");
         return response;
     }
 
@@ -151,7 +151,7 @@ API::APIReturn AdminPortal_Endpoints_Accounts::getAccountFlags(void *context, co
 
     if (accountName.empty())
     {
-        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Account name is required");
+        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Account name is required");
         return response;
     }
 
@@ -165,13 +165,13 @@ API::APIReturn AdminPortal_Endpoints_Accounts::changeAccountFlags(void *context,
 
     if (!(*request.inputJSON).isMember("flags"))
     {
-        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Account flags are required");
+        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Account flags are required");
         return response;
     }
 
     if (accountName.empty())
     {
-        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Account name is required");
+        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Account name is required");
         return response;
     }
 
@@ -182,7 +182,7 @@ API::APIReturn AdminPortal_Endpoints_Accounts::changeAccountFlags(void *context,
 
     if (!changed)
     {
-        response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "The account flags could not be updated. It may be that no other admin exists or there was a database issue.");
+        response.setError(HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "The account flags could not be updated. It may be that no other admin exists or there was a database issue.");
         return response;
     }
     return response;
@@ -195,13 +195,13 @@ API::APIReturn AdminPortal_Endpoints_Accounts::doesAccountExist(void *context, c
 
     if (accountName.empty())
     {
-        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Account Name is Empty");
+        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Account Name is Empty");
         return response;
     }
 
     if (!Globals::getIdentityManager()->accounts->doesAccountExist(accountName))
     {
-        response.setError(HTTP::Status::S_404_NOT_FOUND, "not_found", "The Account does not exist in the system.");
+        response.setError(HTTP::Status::Code::S_404_NOT_FOUND, "not_found", "The Account does not exist in the system.");
         return response;
     }
     return response;
@@ -307,19 +307,19 @@ API::APIReturn AdminPortal_Endpoints_Accounts::addAccountToApplication(void *con
 
     if (accountName.empty())
     {
-        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Account name is required");
+        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Account name is required");
         return response;
     }
 
     if (appName.empty())
     {
-        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Application name is required");
+        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Application name is required");
         return response;
     }
 
     if (!Globals::getIdentityManager()->applications->addAccountToApplication(authClientDetails, request.jwtToken->getSubject(), appName, accountName))
     {
-        response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to add the account to the application.");
+        response.setError(HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to add the account to the application.");
         return response;
     }
 
@@ -335,19 +335,19 @@ API::APIReturn AdminPortal_Endpoints_Accounts::removeAccountFromApplication(void
 
     if (accountName.empty())
     {
-        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Account name is required");
+        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Account name is required");
         return response;
     }
 
     if (appName.empty())
     {
-        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Application name is required");
+        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Application name is required");
         return response;
     }
 
     if (!Globals::getIdentityManager()->applications->removeAccountFromApplication(authClientDetails, request.jwtToken->getSubject(), appName, accountName))
     {
-        response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to remove the account from the application.");
+        response.setError(HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to remove the account from the application.");
     }
     return response;
 }
@@ -366,12 +366,12 @@ API::APIReturn AdminPortal_Endpoints_Accounts::addAccountDetailField(void *conte
     std::string fieldName = JSON_ASSTRING((*request.inputJSON), "fieldName", "");
     if (fieldName.empty())
     {
-        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Field Name is Empty");
+        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Field Name is Empty");
         return response;
     }
     if (!Globals::getIdentityManager()->accounts->addAccountDetailField(authClientDetails, request.jwtToken->getSubject(), fieldName, fieldDetails))
     {
-        response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "field_already_exists", "Field already exists");
+        response.setError(HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "field_already_exists", "Field already exists");
     }
 
     return response;
@@ -385,11 +385,11 @@ AdminPortal_Endpoints_Accounts::APIReturn AdminPortal_Endpoints_Accounts::update
     std::string fieldName = JSON_ASSTRING((*request.inputJSON), "fieldName", "");
     if (fieldName.empty())
     {
-        return API::APIReturn(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Field Name is Empty");
+        return API::APIReturn(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Field Name is Empty");
     }
     if (!Globals::getIdentityManager()->accounts->updateAccountDetailField(authClientDetails, request.jwtToken->getSubject(), fieldName, fieldDetails))
     {
-        return API::APIReturn(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "field_already_exists", "Field already exists");
+        return API::APIReturn(HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "field_already_exists", "Field already exists");
     }
 
     return API::APIReturn();
@@ -402,12 +402,12 @@ API::APIReturn AdminPortal_Endpoints_Accounts::removeAccountDetailField(void *co
     std::string fieldName = JSON_ASSTRING((*request.inputJSON), "fieldName", "");
     if (fieldName.empty())
     {
-        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Field Name is Empty");
+        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Field Name is Empty");
         return response;
     }
     if (!Globals::getIdentityManager()->accounts->removeAccountDetailField(authClientDetails, request.jwtToken->getSubject(), fieldName))
     {
-        response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "field_not_found", "Field not found");
+        response.setError(HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "field_not_found", "Field not found");
     }
 
     return response;
@@ -420,13 +420,13 @@ API::APIReturn AdminPortal_Endpoints_Accounts::getAccountDetailField(void *conte
     std::string fieldName = JSON_ASSTRING((*request.inputJSON), "fieldName", "");
     if (fieldName.empty())
     {
-        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Field Name is Empty");
+        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Field Name is Empty");
         return response;
     }
     std::optional<AccountDetailField> field = Globals::getIdentityManager()->accounts->getAccountDetailField(fieldName);
     if (!field)
     {
-        response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "field_not_found", "Field not found");
+        response.setError(HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "field_not_found", "Field not found");
         return response;
     }
 
@@ -440,7 +440,7 @@ API::APIReturn AdminPortal_Endpoints_Accounts::getAccountDetailFieldsValues(void
     std::string accountName = JSON_ASSTRING((*request.inputJSON), "accountName", "");
     if (accountName.empty())
     {
-        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Account Name is Empty");
+        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Account Name is Empty");
         return response;
     }
 
@@ -462,7 +462,7 @@ API::APIReturn AdminPortal_Endpoints_Accounts::updateAccountDetailFieldsValues(v
     std::string accountName = JSON_ASSTRING((*request.inputJSON), "accountName", "");
     if (accountName.empty())
     {
-        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Account Name is Empty");
+        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Account Name is Empty");
         return response;
     }
 
@@ -470,7 +470,7 @@ API::APIReturn AdminPortal_Endpoints_Accounts::updateAccountDetailFieldsValues(v
     Json::Value fieldValuesArray = (*request.inputJSON)["fieldValues"];
     if (!fieldValuesArray.isArray())
     {
-        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Field values must be an array");
+        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Field values must be an array");
         return response;
     }
 
@@ -487,7 +487,7 @@ API::APIReturn AdminPortal_Endpoints_Accounts::updateAccountDetailFieldsValues(v
     // Update account detail fields values
     if (!Globals::getIdentityManager()->accounts->updateAccountDetailFieldValues(authClientDetails, request.jwtToken->getSubject(), accountName, fieldValues, true))
     {
-        response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to update account detail fields values");
+        response.setError(HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to update account detail fields values");
         return response;
     }
     // Return 200.
@@ -502,13 +502,13 @@ API::APIReturn AdminPortal_Endpoints_Accounts::removeAccount(void *context, cons
 
     if (accountName.empty())
     {
-        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Account name is required");
+        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Account name is required");
         return response;
     }
 
     if (!Globals::getIdentityManager()->accounts->removeAccount(authClientDetails, request.jwtToken->getSubject(), accountName))
     {
-        response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to remove the account.");
+        response.setError(HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to remove the account.");
     }
 
     return response;

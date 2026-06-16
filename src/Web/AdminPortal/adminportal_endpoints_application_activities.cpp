@@ -8,24 +8,24 @@
 using namespace Mantids30::Program;
 using namespace Mantids30;
 
-using namespace Mantids30::Network::Protocols;
+using namespace Mantids30::Network::Protocol;
 
 void AdminPortal_Endpoints_ApplicationActivities::addEndpoints_Activities(std::shared_ptr<Endpoints> endpoints)
 {
-    using SecurityOptions = Mantids30::API::RESTful::Endpoints::SecurityOptions;
+    using SecurityRequirements = API::Security::Requirements;
 
-    endpoints->addEndpoint(Endpoints::GET, "getActivityInfo", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"}, nullptr, &getActivityInfo);
-    endpoints->addEndpoint(Endpoints::GET, "listApplicationActivities", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_READ"}, nullptr, &listApplicationActivities);
-    endpoints->addEndpoint(Endpoints::POST, "addApplicationActivity", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"}, nullptr, &addApplicationActivity);
-    endpoints->addEndpoint(Endpoints::DELETE, "removeApplicationActivity", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"}, nullptr, &removeApplicationActivity);
+    endpoints->addEndpoint(HTTP::Method::GET, "getActivityInfo", SecurityRequirements::JWT_COOKIE_AUTH, {"APP_READ"}, nullptr, &getActivityInfo);
+    endpoints->addEndpoint(HTTP::Method::GET, "listApplicationActivities", SecurityRequirements::JWT_COOKIE_AUTH, {"APP_READ"}, nullptr, &listApplicationActivities);
+    endpoints->addEndpoint(HTTP::Method::POST, "addApplicationActivity", SecurityRequirements::JWT_COOKIE_AUTH, {"APP_MODIFY"}, nullptr, &addApplicationActivity);
+    endpoints->addEndpoint(HTTP::Method::DELETE, "removeApplicationActivity", SecurityRequirements::JWT_COOKIE_AUTH, {"APP_MODIFY"}, nullptr, &removeApplicationActivity);
 
-    endpoints->addEndpoint(Endpoints::PATCH, "updateActivityDescription", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"}, nullptr, &updateActivityDescription);
-    endpoints->addEndpoint(Endpoints::PATCH, "updateActivityParentActivity", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"}, nullptr, &updateActivityParentActivity);
+    endpoints->addEndpoint(HTTP::Method::PATCH, "updateActivityDescription", SecurityRequirements::JWT_COOKIE_AUTH, {"APP_MODIFY"}, nullptr, &updateActivityDescription);
+    endpoints->addEndpoint(HTTP::Method::PATCH, "updateActivityParentActivity", SecurityRequirements::JWT_COOKIE_AUTH, {"APP_MODIFY"}, nullptr, &updateActivityParentActivity);
 
-    endpoints->addEndpoint(Endpoints::POST, "addSchemeToApplicationActivity", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"}, nullptr, &addSchemeToApplicationActivity);
-    endpoints->addEndpoint(Endpoints::DELETE, "removeSchemeFromApplicationActivity", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"}, nullptr, &removeSchemeFromApplicationActivity);
+    endpoints->addEndpoint(HTTP::Method::POST, "addSchemeToApplicationActivity", SecurityRequirements::JWT_COOKIE_AUTH, {"APP_MODIFY"}, nullptr, &addSchemeToApplicationActivity);
+    endpoints->addEndpoint(HTTP::Method::DELETE, "removeSchemeFromApplicationActivity", SecurityRequirements::JWT_COOKIE_AUTH, {"APP_MODIFY"}, nullptr, &removeSchemeFromApplicationActivity);
 
-    endpoints->addEndpoint(Endpoints::PATCH, "updateDefaultSchemeOnApplicationActivity", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {"APP_MODIFY"}, nullptr, &updateDefaultSchemeOnApplicationActivity);
+    endpoints->addEndpoint(HTTP::Method::PATCH, "updateDefaultSchemeOnApplicationActivity", SecurityRequirements::JWT_COOKIE_AUTH, {"APP_MODIFY"}, nullptr, &updateDefaultSchemeOnApplicationActivity);
 }
 
 API::APIReturn AdminPortal_Endpoints_ApplicationActivities::updateDefaultSchemeOnApplicationActivity(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
@@ -38,25 +38,25 @@ API::APIReturn AdminPortal_Endpoints_ApplicationActivities::updateDefaultSchemeO
 
     if (appName.empty())
     {
-        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Application name is required");
+        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Application name is required");
         return response;
     }
 
     if (activityName.empty())
     {
-        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Activity name is required");
+        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Activity name is required");
         return response;
     }
 
     if (schemeId == 0)
     {
-        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Scheme ID is required");
+        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Scheme ID is required");
         return response;
     }
 
     if (!Globals::getIdentityManager()->applicationActivities->setApplicationActivityDefaultScheme(authClientDetails, request.jwtToken->getSubject(), appName, activityName, schemeId))
     {
-        response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to set the default authentication scheme on the activity.");
+        response.setError(HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to set the default authentication scheme on the activity.");
     }
     return response;
 }
@@ -71,25 +71,25 @@ API::APIReturn AdminPortal_Endpoints_ApplicationActivities::addSchemeToApplicati
 
     if (appName.empty())
     {
-        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Application name is required");
+        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Application name is required");
         return response;
     }
 
     if (activityName.empty())
     {
-        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Activity name is required");
+        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Activity name is required");
         return response;
     }
 
     if (schemeId == 0)
     {
-        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Scheme ID is required");
+        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Scheme ID is required");
         return response;
     }
 
     if (!Globals::getIdentityManager()->applicationActivities->addAuthenticationSchemeToApplicationActivity(authClientDetails, request.jwtToken->getSubject(), appName, activityName, schemeId))
     {
-        response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to add the authentication scheme to the activity.");
+        response.setError(HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to add the authentication scheme to the activity.");
     }
     return response;
 }
@@ -104,25 +104,25 @@ API::APIReturn AdminPortal_Endpoints_ApplicationActivities::removeSchemeFromAppl
 
     if (appName.empty())
     {
-        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Application name is required");
+        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Application name is required");
         return response;
     }
 
     if (activityName.empty())
     {
-        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Activity name is required");
+        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Activity name is required");
         return response;
     }
 
     if (schemeId == 0)
     {
-        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Scheme ID is required");
+        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Scheme ID is required");
         return response;
     }
 
     if (!Globals::getIdentityManager()->applicationActivities->removeAuthenticationSchemeFromApplicationActivity(authClientDetails, request.jwtToken->getSubject(), appName, activityName, schemeId))
     {
-        response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to remove the authentication scheme from the activity.");
+        response.setError(HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to remove the authentication scheme from the activity.");
     }
     return response;
 }
@@ -137,25 +137,25 @@ API::APIReturn AdminPortal_Endpoints_ApplicationActivities::updateActivityDescri
 
     if (appName.empty())
     {
-        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Application name is required");
+        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Application name is required");
         return response;
     }
 
     if (activityName.empty())
     {
-        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Activity name is required");
+        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Activity name is required");
         return response;
     }
 
     if (activityDescription.empty())
     {
-        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Activity description cannot be empty.");
+        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Activity description cannot be empty.");
         return response;
     }
 
     if (!Globals::getIdentityManager()->applicationActivities->setApplicationActivityDescription(authClientDetails, request.jwtToken->getSubject(), appName, activityName, activityDescription))
     {
-        response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to update the activity description.");
+        response.setError(HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to update the activity description.");
     }
     return response;
 }
@@ -170,19 +170,19 @@ API::APIReturn AdminPortal_Endpoints_ApplicationActivities::updateActivityParent
 
     if (appName.empty())
     {
-        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Application name is required");
+        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Application name is required");
         return response;
     }
 
     if (activityName.empty())
     {
-        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Activity name is required");
+        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Activity name is required");
         return response;
     }
 
     if (!Globals::getIdentityManager()->applicationActivities->setApplicationActivityParentActivity(authClientDetails, request.jwtToken->getSubject(), appName, activityName, parentActivityName))
     {
-        response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to update the activity parent activity.");
+        response.setError(HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to update the activity parent activity.");
     }
     return response;
 }
@@ -195,13 +195,13 @@ API::APIReturn AdminPortal_Endpoints_ApplicationActivities::getActivityInfo(void
 
     if (appName.empty())
     {
-        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Application name is required");
+        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Application name is required");
         return response;
     }
 
     if (activityName.empty())
     {
-        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Activitity name is required");
+        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Activitity name is required");
         return response;
     }
 
@@ -210,7 +210,7 @@ API::APIReturn AdminPortal_Endpoints_ApplicationActivities::getActivityInfo(void
 
     if (activities.find(activityName) == activities.end())
     {
-        response.setError(HTTP::Status::S_404_NOT_FOUND, "not_found", "Activitity name not found in this application");
+        response.setError(HTTP::Status::Code::S_404_NOT_FOUND, "not_found", "Activitity name not found in this application");
         return response;
     }
 
@@ -268,7 +268,7 @@ API::APIReturn AdminPortal_Endpoints_ApplicationActivities::listApplicationActiv
 
     if (appName.empty())
     {
-        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Application name is required");
+        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Application name is required");
         return response;
     }
 
@@ -295,25 +295,25 @@ API::APIReturn AdminPortal_Endpoints_ApplicationActivities::addApplicationActivi
 
     if (activityName.empty())
     {
-        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Activity name cannot be empty.");
+        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Activity name cannot be empty.");
         return response;
     }
 
     if (appName.empty())
     {
-        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Application name is required");
+        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Application name is required");
         return response;
     }
 
     if (activityDescription.empty())
     {
-        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Activity description cannot be empty.");
+        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Activity description cannot be empty.");
         return response;
     }
 
     if (!Globals::getIdentityManager()->applicationActivities->addApplicationActivity(authClientDetails, request.jwtToken->getSubject(), appName, activityName, activityDescription))
     {
-        response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to create the new activity.\nThe activity ID may already exist.");
+        response.setError(HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to create the new activity.\nThe activity ID may already exist.");
     }
     return response;
 }
@@ -327,19 +327,19 @@ API::APIReturn AdminPortal_Endpoints_ApplicationActivities::removeApplicationAct
 
     if (appName.empty())
     {
-        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Application name is required");
+        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Application name is required");
         return response;
     }
 
     if (activityName.empty())
     {
-        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Activity name is required");
+        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Activity name is required");
         return response;
     }
 
     if (!Globals::getIdentityManager()->applicationActivities->removeApplicationActivity(authClientDetails, request.jwtToken->getSubject(), appName, activityName))
     {
-        response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to remove the activity.");
+        response.setError(HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to remove the activity.");
     }
     return response;
 }

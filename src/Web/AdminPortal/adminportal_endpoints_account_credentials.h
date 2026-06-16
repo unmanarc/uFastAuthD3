@@ -13,7 +13,7 @@ public:
     using ClientDetails = Mantids30::Sessions::ClientDetails;
 
 protected:
-    static void addEndpoints_AccountCredentials(std::shared_ptr<Endpoints> endpoints);
+    static void addEndpoints_AccountCredentials(const std::shared_ptr<Endpoints>& endpoints);
 
     // Account Credential Slots:
     static APIReturn getAccountCredentialSlots(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
