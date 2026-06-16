@@ -4,33 +4,33 @@
 
 #include "json/value.h"
 #include <ctime>
-#include <inttypes.h>
+#include <cinttypes>
 
 using namespace Mantids30;
 using namespace Mantids30::Program;
 using namespace Mantids30::API::RESTful;
-using namespace Mantids30::Network::Protocols;
+using namespace Mantids30::Network::Protocol;
 using namespace Mantids30::DataFormat;
 
 void UserPortal_Endpoints::addEndpoints(std::shared_ptr<Endpoints> endpoints)
 {
-    using SecurityOptions = Mantids30::API::RESTful::Endpoints::SecurityOptions;
+    using SecurityRequirements = API::Security::Requirements;
 
     // TODO: assign permissions.
     // TODO: log password change/delete
-    endpoints->addEndpoint(Endpoints::GET, "getLastLogin", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {}, nullptr, &getLastLogin);
-    endpoints->addEndpoint(Endpoints::GET, "getDashboardData", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {}, nullptr, &getDashboardData);
-    endpoints->addEndpoint(Endpoints::GET, "searchAccountSessions", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {}, nullptr, &searchAccountSessions);
-    endpoints->addEndpoint(Endpoints::GET, "searchAccountCredentialsActivity", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {}, nullptr, &searchAccountCredentialsActivity);
-    endpoints->addEndpoint(Endpoints::GET, "getAccountDetailFieldsValues", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {}, nullptr, &getAccountDetailFieldsValues);
-    endpoints->addEndpoint(Endpoints::PUT, "updateAccountDetailFieldsValues", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {}, nullptr, &updateAccountDetailFieldsValues);
-    endpoints->addEndpoint(Endpoints::GET, "listAccountApplicationsFullInfo", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {}, nullptr, &listAccountApplicationsFullInfo);
-    endpoints->addEndpoint(Endpoints::GET, "listAllAuthCredentialSlotsPublicData", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {}, nullptr, &listAllAuthCredentialSlotsPublicData);
-    endpoints->addEndpoint(Endpoints::POST, "activateCredential", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {}, nullptr, &activateCredential);
-    endpoints->addEndpoint(Endpoints::POST, "activateOTPCredential", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {}, nullptr, &activateOTP);
-    endpoints->addEndpoint(Endpoints::DELETE, "removeCredential", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {}, nullptr, &removeCredential);
-    endpoints->addEndpoint(Endpoints::POST, "createChallengeToken", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {}, nullptr, &createChallengeToken);
-    endpoints->addEndpoint(Endpoints::POST, "changeCredential", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {}, nullptr, &changeCredential);
+    endpoints->addEndpoint(HTTP::Method::GET, "getLastLogin", SecurityRequirements::JWT_COOKIE_AUTH, {}, nullptr, &getLastLogin);
+    endpoints->addEndpoint(HTTP::Method::GET, "getDashboardData", SecurityRequirements::JWT_COOKIE_AUTH, {}, nullptr, &getDashboardData);
+    endpoints->addEndpoint(HTTP::Method::GET, "searchAccountSessions", SecurityRequirements::JWT_COOKIE_AUTH, {}, nullptr, &searchAccountSessions);
+    endpoints->addEndpoint(HTTP::Method::GET, "searchAccountCredentialsActivity", SecurityRequirements::JWT_COOKIE_AUTH, {}, nullptr, &searchAccountCredentialsActivity);
+    endpoints->addEndpoint(HTTP::Method::GET, "getAccountDetailFieldsValues", SecurityRequirements::JWT_COOKIE_AUTH, {}, nullptr, &getAccountDetailFieldsValues);
+    endpoints->addEndpoint(HTTP::Method::PUT, "updateAccountDetailFieldsValues", SecurityRequirements::JWT_COOKIE_AUTH, {}, nullptr, &updateAccountDetailFieldsValues);
+    endpoints->addEndpoint(HTTP::Method::GET, "listAccountApplicationsFullInfo", SecurityRequirements::JWT_COOKIE_AUTH, {}, nullptr, &listAccountApplicationsFullInfo);
+    endpoints->addEndpoint(HTTP::Method::GET, "listAllAuthCredentialSlotsPublicData", SecurityRequirements::JWT_COOKIE_AUTH, {}, nullptr, &listAllAuthCredentialSlotsPublicData);
+    endpoints->addEndpoint(HTTP::Method::POST, "activateCredential", SecurityRequirements::JWT_COOKIE_AUTH, {}, nullptr, &activateCredential);
+    endpoints->addEndpoint(HTTP::Method::POST, "activateOTPCredential", SecurityRequirements::JWT_COOKIE_AUTH, {}, nullptr, &activateOTP);
+    endpoints->addEndpoint(HTTP::Method::DELETE, "removeCredential", SecurityRequirements::JWT_COOKIE_AUTH, {}, nullptr, &removeCredential);
+    endpoints->addEndpoint(HTTP::Method::POST, "createChallengeToken", SecurityRequirements::JWT_COOKIE_AUTH, {}, nullptr, &createChallengeToken);
+    endpoints->addEndpoint(HTTP::Method::POST, "changeCredential", SecurityRequirements::JWT_COOKIE_AUTH, {}, nullptr, &changeCredential);
 }
 
 UserPortal_Endpoints::APIReturn UserPortal_Endpoints::changeCredential(void *context, const RequestParameters &request, ClientDetails &clientDetails)
@@ -46,22 +46,22 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::changeCredential(void *con
     {
         if (!tokenVerified)
         {
-            response.setError(HTTP::Status::S_401_UNAUTHORIZED, "change_credential_failed", "Challenge Token Expired or Invalid, Try Again.");
+            response.setError(HTTP::Status::Code::S_401_UNAUTHORIZED, "change_credential_failed", "Challenge Token Expired or Invalid, Try Again.");
         }
         else if (!appMatches)
         {
-            response.setError(HTTP::Status::S_401_UNAUTHORIZED, "change_credential_failed", "Invalid Challenge Token: App mismatch");
+            response.setError(HTTP::Status::Code::S_401_UNAUTHORIZED, "change_credential_failed", "Invalid Challenge Token: App mismatch");
         }
         else if (!typeIsChallenge)
         {
-            response.setError(HTTP::Status::S_401_UNAUTHORIZED, "change_credential_failed", "Invalid Challenge Token: Type is not 'challenge'");
+            response.setError(HTTP::Status::Code::S_401_UNAUTHORIZED, "change_credential_failed", "Invalid Challenge Token: Type is not 'challenge'");
         }
         return response;
     }
 
     if (JSON_ASSTRING(challengeToken.getClaim("details"), "operation", "") != "changeCredential")
     {
-        response.setError(HTTP::Status::S_401_UNAUTHORIZED, "change_credential_failed", "Invalid Operation for Challenge Token");
+        response.setError(HTTP::Status::Code::S_401_UNAUTHORIZED, "change_credential_failed", "Invalid Operation for Challenge Token");
         return response;
     }
 
@@ -74,7 +74,7 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::changeCredential(void *con
 
     if (!Globals::getIdentityManager()->authController->changeAccountCredential(clientDetails, accountName, accountName, cred, slotId))
     {
-        response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "change_credential_failed", "Failed to change credential");
+        response.setError(HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "change_credential_failed", "Failed to change credential");
     }
 
     return response;
@@ -89,7 +89,7 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::createChallengeToken(void 
     // Parse input parameters
     if (!request.inputJSON->isMember("slotId") || !request.inputJSON->isMember("verification") || !request.inputJSON->isMember("details"))
     {
-        response.setError(HTTP::Status::S_400_BAD_REQUEST, "missing_fields", "slotId + verification + details are required");
+        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "missing_fields", "slotId + verification + details are required");
         return response;
     }
 
@@ -98,13 +98,13 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::createChallengeToken(void 
     AuthenticationResult authResult = Globals::getIdentityManager()->authController->authenticateCredential(clientDetails, accountName, verification, slotId);
 
     // Log the authentication result
-    LOG_APP->log2(__func__, accountName, clientDetails.ipAddress, authResult != AuthenticationResult::AUTHENTICATED ? Logs::LEVEL_SECURITY_ALERT : Logs::LEVEL_INFO,
+    LOG_APP->log2(__func__, accountName, clientDetails.ipAddress, authResult != AuthenticationResult::AUTHENTICATED ? Logs::LogLevel::SECURITY_ALERT : Logs::LogLevel::INFO,
                   "Account Authorization Result: %" PRIu16 " - %s, for application '%s', and slotId = '%" PRIu32 "'", (uint16_t) authResult, authResultToString(authResult),
                   request.jwtToken->getClaim("app").asString().c_str(), slotId);
 
     if (!IS_CREDENTIAL_AUTHENTICATED(authResult))
     {
-        response.setError(HTTP::Status::S_401_UNAUTHORIZED, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(authResult)), authResultToString(authResult));
+        response.setError(HTTP::Status::Code::S_401_UNAUTHORIZED, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(authResult)), authResultToString(authResult));
         return response;
     }
 
@@ -166,7 +166,7 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::updateAccountDetailFieldsV
     Json::Value fieldValuesArray = (*request.inputJSON)["fieldValues"];
     if (!fieldValuesArray.isArray())
     {
-        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_request", "Field values must be an array");
+        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Field values must be an array");
         return response;
     }
 
@@ -183,7 +183,7 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::updateAccountDetailFieldsV
     // Update account detail fields values
     if (!Globals::getIdentityManager()->accounts->updateAccountDetailFieldValues(clientDetails, accountName, accountName, fieldValues, false))
     {
-        response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to update account detail fields values");
+        response.setError(HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to update account detail fields values");
         return response;
     }
     // Return 200.
@@ -276,7 +276,7 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::activateCredential(void *c
     // Parse input parameters
     if (!request.inputJSON->isMember("slotId") || !request.inputJSON->isMember("hash") || !request.inputJSON->isMember("ssalt"))
     {
-        response.setError(HTTP::Status::S_400_BAD_REQUEST, "missing_fields", "slotId, hash, and ssalt are required");
+        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "missing_fields", "slotId, hash, and ssalt are required");
         return response;
     }
 
@@ -287,13 +287,13 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::activateCredential(void *c
     // Check if credential already exists using the new function
     if (Globals::getIdentityManager()->authController->doesCredentialSlotExistOnAccount(accountName, slotId))
     {
-        response.setError(HTTP::Status::S_409_CONFLICT, "activation_failed", "Credential is already activated");
+        response.setError(HTTP::Status::Code::S_409_CONFLICT, "activation_failed", "Credential is already activated");
         return response;
     }
 
     if (!Globals::getIdentityManager()->authController->activateAccountCredential(clientDetails, accountName, accountName, slotId, hash, ssalt))
     {
-        response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "activation_failed", "Failed to activate credential");
+        response.setError(HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "activation_failed", "Failed to activate credential");
         return response;
     }
 
@@ -308,7 +308,7 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::activateOTP(void *context,
 
     if (!request.inputJSON->isMember("slotId") || !request.inputJSON->isMember("seed"))
     {
-        response.setError(HTTP::Status::S_400_BAD_REQUEST, "missing_fields", "slotId and seed are required");
+        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "missing_fields", "slotId and seed are required");
         return response;
     }
 
@@ -317,13 +317,13 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::activateOTP(void *context,
 
     if (Globals::getIdentityManager()->authController->doesCredentialSlotExistOnAccount(accountName, slotId))
     {
-        response.setError(HTTP::Status::S_409_CONFLICT, "activation_failed", "OTP credential is already activated");
+        response.setError(HTTP::Status::Code::S_409_CONFLICT, "activation_failed", "OTP credential is already activated");
         return response;
     }
 
     if (!Globals::getIdentityManager()->authController->activateAccountCredential(clientDetails, accountName, accountName, slotId, seed, ""))
     {
-        response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "activation_failed", "Failed to activate OTP credential");
+        response.setError(HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "activation_failed", "Failed to activate OTP credential");
         return response;
     }
 
@@ -339,7 +339,7 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::removeCredential(void *con
     // Parse input parameters
     if (!request.inputJSON->isMember("slotId") || !request.inputJSON->isMember("verification"))
     {
-        response.setError(HTTP::Status::S_400_BAD_REQUEST, "missing_fields", "slotId and verification is required");
+        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "missing_fields", "slotId and verification is required");
         return response;
     }
 
@@ -349,19 +349,19 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::removeCredential(void *con
     AuthenticationResult authResult = Globals::getIdentityManager()->authController->authenticateCredential(clientDetails, accountName, verification, slotId);
 
     // Log the authentication result
-    LOG_APP->log2(__func__, accountName, clientDetails.ipAddress, authResult != AuthenticationResult::AUTHENTICATED ? Logs::LEVEL_SECURITY_ALERT : Logs::LEVEL_INFO,
+    LOG_APP->log2(__func__, accountName, clientDetails.ipAddress, authResult != AuthenticationResult::AUTHENTICATED ? Logs::LogLevel::SECURITY_ALERT : Logs::LogLevel::INFO,
                   "Account Authorization Result: %" PRIu16 " - %s, for application '%s', and slotId = '%" PRIu32 "'", (uint16_t) authResult, authResultToString(authResult),
                   request.jwtToken->getClaim("app").asString().c_str(), slotId);
 
     if (!IS_CREDENTIAL_AUTHENTICATED(authResult))
     {
-        response.setError(HTTP::Status::S_401_UNAUTHORIZED, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(authResult)), authResultToString(authResult));
+        response.setError(HTTP::Status::Code::S_401_UNAUTHORIZED, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(authResult)), authResultToString(authResult));
         return response;
     }
 
     if (!Globals::getIdentityManager()->authController->removeAccountCredential(clientDetails, accountName, accountName, slotId))
     {
-        response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "deletion_failed", "Failed to delete credential");
+        response.setError(HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "deletion_failed", "Failed to delete credential");
         return response;
     }
 

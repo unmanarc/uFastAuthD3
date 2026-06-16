@@ -26,7 +26,7 @@ bool UserPortal_ServerImpl::createService()
     }
     catch (boost::property_tree::ptree_error &e)
     {
-        LOG_APP->log0(__func__, Logs::LEVEL_INFO, "Configuration error: UserPortal not found: %s", e.what());
+        LOG_APP->log0(__func__, Logs::LogLevel::INFO, "Configuration error: UserPortal not found: %s", e.what());
         return false;
     }
 
@@ -43,14 +43,14 @@ bool UserPortal_ServerImpl::createService()
     userPortalWebServer->config.jwtValidator = Globals::getIdentityManager()->applications->getAppJWTValidator(IAM_USRPORTAL_APPNAME);
     if (!userPortalWebServer->config.jwtValidator)
     {
-        LOG_APP->log0(__func__, Logs::LEVEL_CRITICAL, "We need a JWT Validator for the IAM User Portal Web Server.");
+        LOG_APP->log0(__func__, Logs::LogLevel::CRITICAL, "We need a JWT Validator for the IAM User Portal Web Server.");
         return false;
     }
 
     userPortalWebServer->config.jwtSigner = Globals::getIdentityManager()->applications->getAppJWTSigner(IAM_USRPORTAL_APPNAME);
     if (!userPortalWebServer->config.jwtSigner)
     {
-        LOG_APP->log0(__func__, Logs::LEVEL_CRITICAL, "We need a JWT Signer for the IAM User Portal Web Server.");
+        LOG_APP->log0(__func__, Logs::LogLevel::CRITICAL, "We need a JWT Signer for the IAM User Portal Web Server.");
         return false;
     }
 
@@ -70,7 +70,7 @@ bool UserPortal_ServerImpl::createService()
 
     for (const std::shared_ptr<Sockets::Socket_Stream> &i : userPortalWebServer->getListenerSockets())
     {
-        LOG_APP->log0(__func__, Logs::LEVEL_INFO, "IAM User Portal Web Server Listening @%s", i->getLastBindAddress().c_str());
+        LOG_APP->log0(__func__, Logs::LogLevel::INFO, "IAM User Portal Web Server Listening @%s", i->getLastBindAddress().c_str());
     }
 
     return true;
