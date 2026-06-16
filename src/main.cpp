@@ -43,8 +43,8 @@ public:
         globalArguments->addAuthor({"Aarón Mizrachi", "dev@unmanarc.com"});
         globalArguments->setVersion(atoi(PROJECT_VER_MAJOR), atoi(PROJECT_VER_MINOR), atoi(PROJECT_VER_PATCH), "a");
 
-        globalArguments->addCommandLineOption("Service Options", 'c', "config-dir", "Configuration directory", "/etc/ufastauthd3", Memory::Abstract::Var::TYPE_STRING);
-        globalArguments->addCommandLineOption("Recovery Options", 'r', "resetadmpw", "Reset Administrator Password", "false", Memory::Abstract::Var::TYPE_BOOL);
+        globalArguments->addCommandLineOption("Service Options", 'c', "config-dir", "Configuration directory", "/etc/ufastauthd3", Memory::Abstract::Var::Type::STRING);
+        globalArguments->addCommandLineOption("Recovery Options", 'r', "resetadmpw", "Reset Administrator Password", "false", Memory::Abstract::Var::Type::BOOL);
     }
 
     bool _config(int, char *argv[], Program::Arguments::GlobalArguments *globalArguments)

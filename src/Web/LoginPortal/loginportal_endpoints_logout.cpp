@@ -62,11 +62,11 @@ HTTP::Status::Code LoginPortal_Endpoints::handleLogoutDynamicRequest(const std::
     }
     else
     {
-        appName = request->getVars(HTTP::VARS_POST)->getStringValue("appName");
+        appName = request->getVarsBySource(HTTP::Source::POST)->getStringValue("appName");
         dontUseOriginValidation = false;
     }
 
-    std::string keepAuthentication = request->getVars(HTTP::VARS_POST)->getStringValue("keepAuthentication");
+    std::string keepAuthentication = request->getVarsBySource(HTTP::Source::POST)->getStringValue("keepAuthentication");
 
     // if the cookie does not exist, it's a non-persistent login session.
     std::string defaultAPPCallback = Globals::getIdentityManager()->applications->getApplicationCallbackURI(appName);

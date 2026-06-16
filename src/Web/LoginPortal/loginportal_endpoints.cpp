@@ -1,5 +1,6 @@
 #include "loginportal_endpoints.h"
 
+#include "Mantids30/Protocol_HTTP/httpv1_base.h"
 #include "globals.h"
 #include "json/value.h"
 
@@ -73,7 +74,7 @@ LoginPortal_Endpoints::APIReturn LoginPortal_Endpoints::getLoginMode(void *conte
     }
     else
     {
-        appName = request.clientRequest->getVars(HTTP::VARS_GET)->getTValue<std::string>("app");
+        appName = request.clientRequest->getVarsBySource(HTTP::Source::GET)->getTValue<std::string>("app");
         r["mode"] = "DOMAIN";
     }
 

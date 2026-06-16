@@ -14,6 +14,8 @@ using namespace Mantids30::DataFormat;
 using namespace Program;
 using namespace API::RESTful;
 using namespace Network::Protocol;
+using namespace Network::Protocol::HTTP;
+
 
 // Receives the token from the Login Portal (Via proxy, this is why we receive the X-API-Key from the intermediate app), and then, we set the refresh/access token as cookies
 API::APIReturn WebSessionAuthHandler_Endpoints::callback(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
@@ -22,10 +24,10 @@ API::APIReturn WebSessionAuthHandler_Endpoints::callback(void *context, const Re
     IdentityManager *identityManager = Globals::getIdentityManager();
 
     // HTTP CLIENT VARS:
-    std::string modeStr = request.clientRequest->getVars(HTTP::VARS_POST)->getStringValue("mode");
-    std::string accessTokenStr = request.clientRequest->getVars(HTTP::VARS_POST)->getStringValue("accessToken");
-    std::string refreshTokenStr = request.clientRequest->getVars(HTTP::VARS_POST)->getStringValue("refreshToken");
-    std::string redirectURIStr = request.clientRequest->getVars(HTTP::VARS_POST)->getStringValue("redirectURI");
+    std::string modeStr = request.clientRequest->getVarsBySource(Source::POST)->getStringValue("mode");
+    std::string accessTokenStr = request.clientRequest->getVarsBySource(Source::POST)->getStringValue("accessToken");
+    std::string refreshTokenStr = request.clientRequest->getVarsBySource(Source::POST)->getStringValue("refreshToken");
+    std::string redirectURIStr = request.clientRequest->getVarsBySource(Source::POST)->getStringValue("redirectURI");
     std::string xAPIKeyStr = request.clientRequest->getHeaderOption("x-api-key");
 
     if (modeStr == "logout")

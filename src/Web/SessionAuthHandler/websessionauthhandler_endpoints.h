@@ -38,7 +38,7 @@ private:
 
     struct CookieProperties
     {
-        Mantids30::Network::Protocol::HTTP::Headers::Cookie::eSameSitePolicy sameSitePolicy = Mantids30::Network::Protocol::HTTP::Headers::Cookie::HTTP_COOKIE_SAMESITE_STRICT;
+        Mantids30::Network::Protocol::HTTP::Headers::Cookie::SameSitePolicy sameSitePolicy = Mantids30::Network::Protocol::HTTP::Headers::Cookie::SameSitePolicy::STRICT;
         bool sessionCookie = false;
         bool secure = true;
         bool httpOnly = true;

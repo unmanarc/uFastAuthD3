@@ -34,7 +34,7 @@ void WebSessionAuthHandler_Endpoints::setupRefreshTokenCookies(APIReturn &respon
     propsForCORSPublicData.sessionCookie = !keepAuthenticated;
     propsForCORSPublicData.expirationTime = refreshToken.getExpirationTime(); // expire with the JWT token expiration.
     propsForCORSPublicData.path = JSON_ASSTRING(tokenProps.tokensConfiguration["refreshToken"], "path", "/auth");
-    propsForCORSPublicData.sameSitePolicy = Mantids30::Network::Protocol::HTTP::Headers::Cookie::HTTP_COOKIE_SAMESITE_NONE;
+    propsForCORSPublicData.sameSitePolicy = Mantids30::Network::Protocol::HTTP::Headers::Cookie::SameSitePolicy::NONE;
 
     setupCookie(response, "RefreshTokenId", refreshToken.getJwtId(), propsForCORSPublicData);
     setupCookie(response, "RefreshTokenUser", refreshToken.getSubject(), propsForCORSPublicData);
