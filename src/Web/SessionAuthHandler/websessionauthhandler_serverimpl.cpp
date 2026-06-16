@@ -67,7 +67,7 @@ bool myDynamicOriginValidatorFunction(const std::string &origin, const std::stri
     return origins.count(origin);
 }
 
-bool myDynamicCallbackOriginValidatorFunction(const std::string &requestOrigin, const std::string &xAPIKeyStr, const std::set<std::string> &permittedCallbackOrigins)
+bool dynCallbackOriginValidator(const std::string &requestOrigin, const std::string &xAPIKeyStr, const std::set<std::string> &permittedCallbackOrigins)
 {
     std::string appName = Globals::getIdentityManager()->applications->getApplicationNameByAPIKey(xAPIKeyStr);
 
@@ -129,7 +129,7 @@ bool WebSessionAuthHandler_ServerImpl::createService()
     webSessionAuthHandlerServer->config.dynamicOriginValidator = myDynamicOriginValidatorFunction;
 
     // Specific callback origin validator given the Origin: and an API Key specifying the APP
-    webSessionAuthHandlerServer->config.dynamicLoginCallbackOriginValidator = myDynamicCallbackOriginValidatorFunction;
+    webSessionAuthHandlerServer->config.dynamicLoginCallbackOriginValidator = dynCallbackOriginValidator;
 
     // Setup the methods handler for version 1:
     webSessionAuthHandlerServer->endpointsHandler[1] = std::make_shared<API::RESTful::Endpoints>();
