@@ -901,19 +901,19 @@ std::map<std::string, AccountDetailFieldValue> IdentityManager_DB::Accounts_DB::
 
             switch (detailsToShow)
             {
-            case ACCOUNT_DETAILS_SEARCH:
+            case AccountDetailsToShow::SEARCH:
                 visible = JSON_ASBOOL(extendedAttributes["visibility"], "includeInSearch", false);
                 break;
-            case ACCOUNT_DETAILS_COLUMNVIEW:
+            case AccountDetailsToShow::COLUMNVIEW:
                 visible = JSON_ASBOOL(extendedAttributes["visibility"], "includeInColumnView", false);
                 break;
-            case ACCOUNT_DETAILS_TOKEN:
+            case AccountDetailsToShow::TOKEN:
                 visible = JSON_ASBOOL(extendedAttributes["visibility"], "includeInToken", false);
                 break;
-            case ACCOUNT_DETAILS_APISYNC:
+            case AccountDetailsToShow::APISYNC:
                 visible = JSON_ASBOOL(extendedAttributes["visibility"], "includeInAPISync", false);
                 break;
-            case ACCOUNT_DETAILS_ALL:
+            case AccountDetailsToShow::ALL:
             default:
                 // no additional filter for ALL
                 visible = true;

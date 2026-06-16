@@ -91,7 +91,7 @@ public:
                                   bool resetAllValues = false) override;
         bool removeAccountDetail(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountName, const std::string &fieldName) override;
 
-        std::map<std::string, AccountDetailFieldValue> getAccountDetailFieldValues(const std::string &accountName, const AccountDetailsToShow &detailsToShow = ACCOUNT_DETAILS_ALL) override;
+        std::map<std::string, AccountDetailFieldValue> getAccountDetailFieldValues(const std::string &accountName, const AccountDetailsToShow &detailsToShow = AccountDetailsToShow::ALL) override;
         bool updateAccountDetailFieldValues(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountName,
                                             const std::list<AccountDetailFieldValue> &inputFieldValues, bool isAdmin) override;
 

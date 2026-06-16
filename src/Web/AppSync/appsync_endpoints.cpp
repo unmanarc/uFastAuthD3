@@ -344,7 +344,7 @@ AppSync_Endpoints::APIReturn AppSync_Endpoints::getApplicationAccountsList(void 
     Json::Value response = Json::arrayValue;
     for (const std::string &accountName : accountList)
     {
-        if (std::optional<AccountDetails> x = Globals::getIdentityManager()->accounts->getAccountDetails(accountName, ACCOUNT_DETAILS_APISYNC))
+        if (std::optional<AccountDetails> x = Globals::getIdentityManager()->accounts->getAccountDetails(accountName, AccountDetailsToShow::APISYNC))
         {
             response.append(x->toJSON());
         }

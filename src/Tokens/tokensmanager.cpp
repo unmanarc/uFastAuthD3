@@ -50,7 +50,7 @@ void TokensManager::configureApplicationAccessToken(Mantids30::DataFormat::JWT::
     // Get the user basic info if needed for this application...
     if (commonParams.tokenProperties.includeBasicAccountInfo)
     {
-        if (std::optional<AccountDetails> info = identityManager->accounts->getAccountDetails(commonParams.jwtAccountName, ACCOUNT_DETAILS_TOKEN))
+        if (std::optional<AccountDetails> info = identityManager->accounts->getAccountDetails(commonParams.jwtAccountName, AccountDetailsToShow::TOKEN))
         {
             accessToken.setClaim("accountInfo", info->toJSON());
         }

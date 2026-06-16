@@ -5,13 +5,13 @@
 #include <optional>
 #include <string>
 
-enum AccountDetailsToShow
+enum class AccountDetailsToShow : uint8_t
 {
-    ACCOUNT_DETAILS_ALL,
-    ACCOUNT_DETAILS_SEARCH,
-    ACCOUNT_DETAILS_COLUMNVIEW,
-    ACCOUNT_DETAILS_APISYNC,
-    ACCOUNT_DETAILS_TOKEN
+    ALL,
+    SEARCH,
+    COLUMNVIEW,
+    APISYNC,
+    TOKEN
 };
 
 struct AccountDetailFieldValue
@@ -23,7 +23,7 @@ struct AccountDetailFieldValue
     std::optional<std::string> value;
     Json::Value extendedAttribs;
 
-    Json::Value toJSON() const
+    [[nodiscard]] Json::Value toJSON() const
     {
         Json::Value fieldJson;
         fieldJson["extendedAttribs"] = extendedAttribs;
@@ -61,11 +61,11 @@ struct AccountDetailField
     bool isUnique = false;
     json extendedAttributes;
 
-    std::string getRegexpValidatorText() const { return JSON_ASSTRING(extendedAttributes["behavior"], "regexpValidator", ""); }
+    [[nodiscard]] std::string getRegexpValidatorText() const { return JSON_ASSTRING(extendedAttributes["behavior"], "regexpValidator", ""); }
 
-    bool canUserEdit() const { return JSON_ASBOOL(extendedAttributes["security"], "canUserEdit", false); }
+    [[nodiscard]] bool canUserEdit() const { return JSON_ASBOOL(extendedAttributes["security"], "canUserEdit", false); }
 
-    Json::Value toJSON() const
+    [[nodiscard]] Json::Value toJSON() const
     {
         Json::Value r;
         r["description"] = description;
@@ -130,7 +130,7 @@ struct AccountDetails
     time_t expirationDate, creationDate;
     bool expired;
 
-    Json::Value toJSON() const
+    [[nodiscard]] Json::Value toJSON() const
     {
         Json::Value r;
 
