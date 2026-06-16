@@ -41,8 +41,8 @@ public:
     static Mantids30::Network::Servers::Web::APIServerCore *getWebLoginServer();
     static void setWebLoginServer(Mantids30::Network::Servers::Web::APIServerCore *newWebLoginServer);
     /*
-    static Mantids30::Network::Protocols::FastRPC::FastRPC1 *getFastRPC();
-    static void setFastRPC(Mantids30::Network::Protocols::FastRPC::FastRPC1 *newFastRPC);
+    static Mantids30::Network::Protocol::FastRPC::FastRPC1 *getFastRPC();
+    static void setFastRPC(Mantids30::Network::Protocol::FastRPC::FastRPC1 *newFastRPC);
 */
     static std::shared_ptr<Mantids30::Program::Logs::RPCLog> rpcLog;
     static std::shared_ptr<Mantids30::Program::Logs::AppLog> appLog;
@@ -53,5 +53,5 @@ private:
     static LoginDirectoryManager *loginDirManager;
     static IdentityManager *identityManager;
     static Mantids30::Network::Servers::Web::APIServerCore *webLoginServer;
-    //    static Mantids30::Network::Protocols::FastRPC::FastRPC1 *fastRPC;
+    //    static Mantids30::Network::Protocol::FastRPC::FastRPC1 *fastRPC;
 };
