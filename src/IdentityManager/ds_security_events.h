@@ -6,7 +6,7 @@
  * Event actions for account security events logging.
  * Represents the specific action taken within an event type.
  */
-enum SecurityEventAction
+enum class SecurityEventAction : uint8_t
 {
     CREATE = 0,               // Created/activated: account, slot, credential, scheme, session, role assignment
     UPDATE = 1,               // Updated: details, flags, expiration, scheme description, slot details
@@ -37,83 +37,83 @@ inline const char *SecurityEventActionToString(SecurityEventAction action)
 {
     switch (action)
     {
-    case CREATE:
+    case SecurityEventAction::CREATE:
         return "CREATE";
-    case UPDATE:
+    case SecurityEventAction::UPDATE:
         return "UPDATE";
-    case DELETE:
+    case SecurityEventAction::DELETE:
         return "DELETE";
-    case LOCK:
+    case SecurityEventAction::LOCK:
         return "LOCK";
-    case UNLOCK:
+    case SecurityEventAction::UNLOCK:
         return "UNLOCK";
-    case EXPIRE:
+    case SecurityEventAction::EXPIRE:
         return "EXPIRE";
-    case RENEW:
+    case SecurityEventAction::RENEW:
         return "RENEW";
-    case FAILED:
+    case SecurityEventAction::FAILED:
         return "FAILED";
-    case CONFIRM:
+    case SecurityEventAction::CONFIRM:
         return "CONFIRM";
-    case FORCE_CHANGE:
+    case SecurityEventAction::FORCE_CHANGE:
         return "FORCE_CHANGE";
-    case CANCEL_FORCE_CHANGE:
+    case SecurityEventAction::CANCEL_FORCE_CHANGE:
         return "CANCEL_FORCE_CHANGE";
-    case DISABLE:
+    case SecurityEventAction::DISABLE:
         return "DISABLE";
-    case AUTO_LOCK:
+    case SecurityEventAction::AUTO_LOCK:
         return "AUTO_LOCK";
-    case LOGIN:
+    case SecurityEventAction::LOGIN:
         return "LOGIN";
-    case LOGOUT:
+    case SecurityEventAction::LOGOUT:
         return "LOGOUT";
-    case ASSIGN_ACCOUNT:
+    case SecurityEventAction::ASSIGN_ACCOUNT:
         return "ASSIGN_ACCOUNT";
-    case REVOKE_ACCOUNT:
+    case SecurityEventAction::REVOKE_ACCOUNT:
         return "REVOKE_ACCOUNT";
-    case REVOKE_ROLE:
+    case SecurityEventAction::REVOKE_ROLE:
         return "REVOKE_ROLE";
-    case ASSIGN_ROLE:
+    case SecurityEventAction::ASSIGN_ROLE:
         return "ASSIGN_ROLE";
-    case ASSIGN_SCHEME:
+    case SecurityEventAction::ASSIGN_SCHEME:
         return "ASSIGN_SCHEME";
-    case REVOKE_SCHEME:
+    case SecurityEventAction::REVOKE_SCHEME:
         return "REVOKE_SCHEME";
-    case SET_DEFAULT_ACTIVITY:
+    case SecurityEventAction::SET_DEFAULT_ACTIVITY:
         return "SET_DEFAULT_ACTIVITY";
-    case ENABLE:
+    case SecurityEventAction::ENABLE:
         return "ENABLE";
     default:
         return "UNKNOWN";
     }
 }
 
-inline Mantids30::Program::Logs::eLogLevels SecurityEventActionToLogLevel(SecurityEventAction action)
+inline Mantids30::Program::Logs::LogLevel SecurityEventActionToLogLevel(SecurityEventAction action)
 {
     switch (action)
     {
-    case LOGIN:
-    case LOGOUT:
-    case RENEW:
-    case CONFIRM:
-    case ENABLE:
-    case ASSIGN_ACCOUNT:
-    case ASSIGN_ROLE:
-    case ASSIGN_SCHEME:
-        return Mantids30::Program::Logs::eLogLevels::LEVEL_INFO;
-    case FAILED:
-    case AUTO_LOCK:
-    case LOCK:
-    case DISABLE:
-        return Mantids30::Program::Logs::eLogLevels::LEVEL_ERR;
-    case CREATE:
-    case UPDATE:
-    case DELETE:
-    case REVOKE_ACCOUNT:
-    case REVOKE_ROLE:
-    case REVOKE_SCHEME:
-        return Mantids30::Program::Logs::eLogLevels::LEVEL_WARN;
+    case SecurityEventAction::LOGIN:
+    case SecurityEventAction::LOGOUT:
+    case SecurityEventAction::RENEW:
+    case SecurityEventAction::CONFIRM:
+    case SecurityEventAction::ENABLE:
+    case SecurityEventAction::ASSIGN_ACCOUNT:
+    case SecurityEventAction::ASSIGN_ROLE:
+    case SecurityEventAction::ASSIGN_SCHEME:
+        return Mantids30::Program::Logs::LogLevel::INFO;
+    case SecurityEventAction::FAILED:
+    case SecurityEventAction::AUTO_LOCK:
+    case SecurityEventAction::LOCK:
+    case SecurityEventAction::DISABLE:
+        return Mantids30::Program::Logs::LogLevel::ERR;
+    case SecurityEventAction::CREATE:
+    case SecurityEventAction::UPDATE:
+    case SecurityEventAction::DELETE:
+    case SecurityEventAction::REVOKE_ACCOUNT:
+    case SecurityEventAction::REVOKE_ROLE:
+    case SecurityEventAction::REVOKE_SCHEME:
+        return Mantids30::Program::Logs::LogLevel::WARN;
     default:
-        return Mantids30::Program::Logs::eLogLevels::LEVEL_INFO;
+        return Mantids30::Program::Logs::LogLevel::INFO;
     }
 }

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "json/value.h"
-#include <stdint.h>
+#include <cstdint>
 #include <string>
 
 #include <Mantids30/Helpers/crypto.h>

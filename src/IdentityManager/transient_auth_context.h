@@ -24,21 +24,21 @@ struct TransientAuthenticationContext
             if (!jwtValidator->verify(cookieLPTokenStr, &lpToken))
             {
                 // Failed to load the intermediary...
-                response.setError(Mantids30::Network::Protocols::HTTP::Status::S_403_FORBIDDEN, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::UNAUTHENTICATED)),
+                response.setError(Mantids30::Network::Protocol::HTTP::Status::Code::S_403_FORBIDDEN, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::UNAUTHENTICATED)),
                                   authResultToString(AuthenticationResult::UNAUTHENTICATED));
                 return false;
             }
             if (lpToken.getClaim("app") != IAM_LOGINPORTAL_APPNAME || lpToken.getClaim("type") != "access")
             {
                 // This Token is not for this cookie...
-                response.setError(Mantids30::Network::Protocols::HTTP::Status::S_403_FORBIDDEN, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::UNAUTHENTICATED)),
+                response.setError(Mantids30::Network::Protocol::HTTP::Status::Code::S_403_FORBIDDEN, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::UNAUTHENTICATED)),
                                   authResultToString(AuthenticationResult::UNAUTHENTICATED));
                 return false;
             }
             if (lpToken.getSubject() != accountName)
             {
                 // This Token is not for this cookie... (other username... logout first please!)
-                response.setError(Mantids30::Network::Protocols::HTTP::Status::S_401_UNAUTHORIZED, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::BAD_ACCOUNT)),
+                response.setError(Mantids30::Network::Protocol::HTTP::Status::Code::S_401_UNAUTHORIZED, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::BAD_ACCOUNT)),
                                   authResultToString(AuthenticationResult::BAD_ACCOUNT));
                 return false;
             }

@@ -1,13 +1,13 @@
 #pragma once
 
 #include <Mantids30/Helpers/json.h>
+#include <cstdint>
 #include <optional>
-#include <stdint.h>
 #include <string>
 
 struct ApplicationDetails
 {
-    ApplicationDetails() {}
+    ApplicationDetails() = default;
     std::string applicationName;
     std::string appCreator;
     std::string description;
@@ -15,14 +15,14 @@ struct ApplicationDetails
 
 struct AppError
 {
-    uint32_t http_code;
+    uint16_t http_code = 999;
     std::string error;
     std::string message;
 };
 
 struct AccountApplicationInfo
 {
-    Json::Value toJSON() const
+    [[nodiscard]] Json::Value toJSON() const
     {
         Json::Value app;
         app["name"] = appName;
@@ -34,19 +34,25 @@ struct AccountApplicationInfo
         // Roles as array
         Json::Value rolesArray(Json::arrayValue);
         for (const std::string &role : roles)
+        {
             rolesArray.append(role);
+        }
         app["roles"] = rolesArray;
 
         // Direct scopes as array
         Json::Value directScopesArray(Json::arrayValue);
         for (const std::string &scope : directScopes)
+        {
             directScopesArray.append(scope);
+        }
         app["directScopes"] = directScopesArray;
 
         // All scopes (union) as array
         Json::Value allScopesArray(Json::arrayValue);
         for (const std::string &scope : allScopes)
+        {
             allScopesArray.append(scope);
+        }
         app["allScopes"] = allScopesArray;
 
         return app;
@@ -63,7 +69,7 @@ struct AccountApplicationInfo
 
 struct ApplicationTokenProperties
 {
-    Json::Value toJSON() const
+    [[nodiscard]] Json::Value toJSON() const
     {
         Json::Value root(Json::objectValue);
         root["appName"] = appName;
@@ -110,9 +116,9 @@ struct ApplicationTokenProperties
 };
 struct ApplicationScopeDetails
 {
-    ApplicationScopeDetails() {}
+    ApplicationScopeDetails() = default;
 
-    json toJSON() const
+    [[nodiscard]] json toJSON() const
     {
         json r;
         r["id"] = id;
