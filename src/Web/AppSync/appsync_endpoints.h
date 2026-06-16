@@ -13,7 +13,7 @@ public:
     using Endpoints = Mantids30::API::RESTful::Endpoints;
     using APIReturn = Mantids30::API::APIReturn;
     using RequestParameters = Mantids30::API::RESTful::RequestParameters;
-    using HTTPv1_Base = Mantids30::Network::Protocols::HTTP::HTTPv1_Base;
+    using HTTPv1_Base = Mantids30::Network::Protocol::HTTP::HTTPv1_Base;
     using ClientDetails = Mantids30::Sessions::ClientDetails;
     using JWT = Mantids30::DataFormat::JWT;
 
@@ -21,7 +21,7 @@ public:
     * @brief Adds the available login authentication methods as server functions.
     * @param methods The Endpoints to which the authentication methods will be added.
     */
-    static void addAPIEndpoints(std::shared_ptr<Endpoints> endpoints);
+    static void addAPIEndpoints(const std::shared_ptr<Endpoints>& endpoints);
 
     // Remote triggered:
     static APIReturn getApplicationAccountsList(void *context, const RequestParameters &request, ClientDetails &authClientDetails);

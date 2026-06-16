@@ -27,7 +27,7 @@ bool AppSync_ServerImpl::createService()
     }
     catch (boost::property_tree::ptree_error &e)
     {
-        LOG_APP->log0(__func__, Logs::LEVEL_INFO, "Configuration error: AppSyncWebService not found: %s", e.what());
+        LOG_APP->log0(__func__, Logs::LogLevel::INFO, "Configuration error: AppSyncWebService not found: %s", e.what());
         return false;
     }
 
@@ -53,7 +53,7 @@ bool AppSync_ServerImpl::createService()
 
     for (const std::shared_ptr<Sockets::Socket_Stream> &i : webSessionAuthHandlerServer->getListenerSockets())
     {
-        LOG_APP->log0(__func__, Logs::LEVEL_INFO, "Application Synchronization Service Listening @%s", i->getLastBindAddress().c_str());
+        LOG_APP->log0(__func__, Logs::LogLevel::INFO, "Application Synchronization Service Listening @%s", i->getLastBindAddress().c_str());
     }
 
     return true;
