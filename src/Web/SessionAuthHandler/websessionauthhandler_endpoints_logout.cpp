@@ -14,7 +14,7 @@ using namespace Mantids30;
 using namespace Mantids30::DataFormat;
 using namespace Program;
 using namespace API::RESTful;
-using namespace Network::Protocols;
+using namespace Network::Protocol;
 
 // Helper to set delete cookies for logout
 static void setLogoutCookies(API::APIReturn &response, const ApplicationTokenProperties &tokenProps)
@@ -55,8 +55,8 @@ API::APIReturn WebSessionAuthHandler_Endpoints::appLogout(void *context, const R
     std::string appName = identityManager->applications->getApplicationNameByAPIKey(apiKey);
     if (appName.empty())
     {
-        LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LEVEL_SECURITY_ALERT, "Invalid API key provided. Application not found.");
-        response.setError(HTTP::Status::S_401_UNAUTHORIZED, "invalid_api_key", "The provided API key is invalid or unauthorized.");
+        LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LogLevel::SECURITY_ALERT, "Invalid API key provided. Application not found.");
+        response.setError(HTTP::Status::Code::S_401_UNAUTHORIZED, "invalid_api_key", "The provided API key is invalid or unauthorized.");
         return response;
     }
 
@@ -91,8 +91,8 @@ WebSessionAuthHandler_Endpoints::APIReturn WebSessionAuthHandler_Endpoints::getL
     if (appName.empty())
     {
         // app key not found...
-        LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LEVEL_SECURITY_ALERT, "Invalid API key provided. Application not found.");
-        response.setError(HTTP::Status::S_401_UNAUTHORIZED, "invalid_api_key", "The provided API key is invalid or unauthorized.");
+        LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LogLevel::SECURITY_ALERT, "Invalid API key provided. Application not found.");
+        response.setError(HTTP::Status::Code::S_401_UNAUTHORIZED, "invalid_api_key", "The provided API key is invalid or unauthorized.");
         return response;
     }
 
@@ -100,8 +100,8 @@ WebSessionAuthHandler_Endpoints::APIReturn WebSessionAuthHandler_Endpoints::getL
     if (!attribs.has_value())
     {
         // app key not found...
-        LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LEVEL_SECURITY_ALERT, "Internal Error While reading the APP '%s' Attributes.", appName.c_str());
-        response.setError(HTTP::Status::S_401_UNAUTHORIZED, "invalid_app", "Internal Error While reading the APP Attributes.");
+        LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LogLevel::SECURITY_ALERT, "Internal Error While reading the APP '%s' Attributes.", appName.c_str());
+        response.setError(HTTP::Status::Code::S_401_UNAUTHORIZED, "invalid_app", "Internal Error While reading the APP Attributes.");
         return response;
     }
 

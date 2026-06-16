@@ -9,7 +9,7 @@ using namespace Mantids30;
 using namespace Mantids30::DataFormat;
 using namespace Program;
 using namespace API::RESTful;
-using namespace Network::Protocols;
+using namespace Network::Protocol;
 
 void WebSessionAuthHandler_Endpoints::setupAccessTokenCookies(APIReturn &response, JWT::Token accessToken, const ApplicationTokenProperties &tokenProps)
 {
@@ -34,7 +34,7 @@ void WebSessionAuthHandler_Endpoints::setupRefreshTokenCookies(APIReturn &respon
     propsForCORSPublicData.sessionCookie = !keepAuthenticated;
     propsForCORSPublicData.expirationTime = refreshToken.getExpirationTime(); // expire with the JWT token expiration.
     propsForCORSPublicData.path = JSON_ASSTRING(tokenProps.tokensConfiguration["refreshToken"], "path", "/auth");
-    propsForCORSPublicData.sameSitePolicy = Mantids30::Network::Protocols::HTTP::Headers::Cookie::HTTP_COOKIE_SAMESITE_NONE;
+    propsForCORSPublicData.sameSitePolicy = Mantids30::Network::Protocol::HTTP::Headers::Cookie::HTTP_COOKIE_SAMESITE_NONE;
 
     setupCookie(response, "RefreshTokenId", refreshToken.getJwtId(), propsForCORSPublicData);
     setupCookie(response, "RefreshTokenUser", refreshToken.getSubject(), propsForCORSPublicData);

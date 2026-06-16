@@ -27,7 +27,7 @@ bool JWTDynamicTokenValidatorFunction(const std::string &accessTokenStr, const s
     if (appNameStr.empty())
     {
         // app key not found...
-        LOG_APP->log1(__func__, "", Logs::LEVEL_SECURITY_ALERT, "Invalid API key provided to the dynamic validator. Application not found.");
+        LOG_APP->log1(__func__, "", Logs::LogLevel::SECURITY_ALERT, "Invalid API key provided to the dynamic validator. Application not found.");
         return false;
     }
 
@@ -36,19 +36,19 @@ bool JWTDynamicTokenValidatorFunction(const std::string &accessTokenStr, const s
 
     if (!validator->verify(accessTokenStr, accessToken))
     {
-        LOG_APP->log1(__func__, "", Logs::LEVEL_SECURITY_ALERT, "Invalid Signature for JWT Token at app %s.", appNameStr.c_str());
+        LOG_APP->log1(__func__, "", Logs::LogLevel::SECURITY_ALERT, "Invalid Signature for JWT Token at app %s.", appNameStr.c_str());
         return false;
     }
 
     if (JSON_ASSTRING_D(accessToken->getClaim("app"), "") != appNameStr)
     {
-        LOG_APP->log1(__func__, "", Logs::LEVEL_SECURITY_ALERT, "JWT Token missing app name %s.", appNameStr.c_str());
+        LOG_APP->log1(__func__, "", Logs::LogLevel::SECURITY_ALERT, "JWT Token missing app name %s.", appNameStr.c_str());
         return false;
     }
 
     if (JSON_ASSTRING_D(accessToken->getClaim("type"), "") != "access")
     {
-        LOG_APP->log1(__func__, "", Logs::LEVEL_SECURITY_ALERT, "JWT Token missing app name %s.", appNameStr.c_str());
+        LOG_APP->log1(__func__, "", Logs::LogLevel::SECURITY_ALERT, "JWT Token missing app name %s.", appNameStr.c_str());
         return false;
     }
 
@@ -73,7 +73,7 @@ bool myDynamicCallbackOriginValidatorFunction(const std::string &requestOrigin, 
 
     if (appName.empty())
     {
-        LOG_APP->log2(__func__, "", "", Logs::LEVEL_SECURITY_ALERT, "Invalid API key provided. Application not found. (callback)");
+        LOG_APP->log2(__func__, "", "", Logs::LogLevel::SECURITY_ALERT, "Invalid API key provided. Application not found. (callback)");
         return false;
     }
 
@@ -81,7 +81,7 @@ bool myDynamicCallbackOriginValidatorFunction(const std::string &requestOrigin, 
 
     if (!attribs.has_value())
     {
-        LOG_APP->log2(__func__, "", "", Logs::LEVEL_SECURITY_ALERT, "Failed to obtain the application attributes from app %s", appName.c_str());
+        LOG_APP->log2(__func__, "", "", Logs::LogLevel::SECURITY_ALERT, "Failed to obtain the application attributes from app %s", appName.c_str());
         return false;
     }
 
@@ -108,7 +108,7 @@ bool WebSessionAuthHandler_ServerImpl::createService()
     }
     catch (boost::property_tree::ptree_error &e)
     {
-        LOG_APP->log0(__func__, Logs::LEVEL_INFO, "Configuration error: WebSessionAuthHandlerService not found: %s", e.what());
+        LOG_APP->log0(__func__, Logs::LogLevel::INFO, "Configuration error: WebSessionAuthHandlerService not found: %s", e.what());
         return false;
     }
 
@@ -143,7 +143,7 @@ bool WebSessionAuthHandler_ServerImpl::createService()
 
     for (const std::shared_ptr<Sockets::Socket_Stream> &i : webSessionAuthHandlerServer->getListenerSockets())
     {
-        LOG_APP->log0(__func__, Logs::LEVEL_INFO, "Web Session Auth Handler Service Listening @%s", i->getLastBindAddress().c_str());
+        LOG_APP->log0(__func__, Logs::LogLevel::INFO, "Web Session Auth Handler Service Listening @%s", i->getLastBindAddress().c_str());
     }
 
     return true;

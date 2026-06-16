@@ -20,18 +20,18 @@
 using namespace Mantids30;
 using namespace Mantids30::Program;
 using namespace Mantids30::API::RESTful;
-using namespace Mantids30::Network::Protocols;
+using namespace Mantids30::Network::Protocol;
 using namespace Mantids30::DataFormat;
 
 void WebSessionAuthHandler_Endpoints::addEndpoints(std::shared_ptr<Endpoints> endpoints)
 {
-    using SecurityOptions = Mantids30::API::RESTful::Endpoints::SecurityOptions;
+    using SecurityRequirements = API::Security::Requirements;
 
-    endpoints->addEndpoint(Endpoints::GET, "getLogoutCallbackURL", SecurityOptions::NO_AUTH, {}, nullptr, &getLogoutCallbackURL);
-    endpoints->addEndpoint(Endpoints::POST, "refreshAccessToken", SecurityOptions::NO_AUTH, {}, nullptr, &refreshAccessToken); // Using refresh token auth.
-    endpoints->addEndpoint(Endpoints::GET, "getLoginMode", SecurityOptions::NO_AUTH, {}, nullptr, &getLoginMode);              // Using refresh token auth.
-    endpoints->addEndpoint(Endpoints::POST, "logout", SecurityOptions::REQUIRE_JWT_COOKIE_AUTH, {}, nullptr, &appLogout);
-    endpoints->addEndpoint(Endpoints::POST, "callback", SecurityOptions::NO_AUTH, {}, nullptr, &callback);
+    endpoints->addEndpoint(HTTP::Method::GET, "getLogoutCallbackURL", SecurityRequirements::NONE, {}, nullptr, &getLogoutCallbackURL);
+    endpoints->addEndpoint(HTTP::Method::POST, "refreshAccessToken", SecurityRequirements::NONE, {}, nullptr, &refreshAccessToken); // Using refresh token auth.
+    endpoints->addEndpoint(HTTP::Method::GET, "getLoginMode", SecurityRequirements::NONE, {}, nullptr, &getLoginMode);              // Using refresh token auth.
+    endpoints->addEndpoint(HTTP::Method::POST, "logout", SecurityRequirements::JWT_COOKIE_AUTH, {}, nullptr, &appLogout);
+    endpoints->addEndpoint(HTTP::Method::POST, "callback", SecurityRequirements::NONE, {}, nullptr, &callback);
     endpoints->setEndpointOptions("callback", API::OptionsHandlerConfig().insertAllowedOrigin(Globals::pConfig.get<std::string>("AppVars.LoginPortalURL", "")).setAllowCredentials(true));
 }
 
@@ -137,13 +137,13 @@ WebSessionAuthHandler_Endpoints::APIReturn WebSessionAuthHandler_Endpoints::getL
     if (!validateAndDecodeRefreshToken(refreshTokenStr, tokenData, errorMsg, errorType))
     {
         // Determinar el código HTTP basado en el tipo de error
-        HTTP::Status::Codes status = HTTP::Status::S_401_UNAUTHORIZED;
+        HTTP::Status::Code status = HTTP::Status::Code::S_401_UNAUTHORIZED;
         if (errorType == "internal_error")
         {
-            status = HTTP::Status::S_500_INTERNAL_SERVER_ERROR;
+            status = HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR;
             errorMsg = authResultToString(AuthenticationResult::INTERNAL_ERROR);
         }
-        LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LEVEL_SECURITY_ALERT, "%s", errorMsg.c_str());
+        LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LogLevel::SECURITY_ALERT, "%s", errorMsg.c_str());
         response.setError(status, errorType, errorMsg);
         return response;
     }
@@ -174,18 +174,18 @@ bool WebSessionAuthHandler_Endpoints::validateAPIKey(const std::string &app, API
 
     if (dbApiKey.empty())
     {
-        LOG_APP->log2(__func__, request.jwtToken->getSubject(), authClientDetails.ipAddress, Logs::LEVEL_SECURITY_ALERT,
+        LOG_APP->log2(__func__, request.jwtToken->getSubject(), authClientDetails.ipAddress, Logs::LogLevel::SECURITY_ALERT,
                       "Application '%s' does not exist. Pre-Auth JWT Token signature may be compromised!! Change immediately!", app.c_str());
-        response.setError(HTTP::Status::S_400_BAD_REQUEST, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::BAD_PARAMETERS)),
+        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::BAD_PARAMETERS)),
                           authResultToString(AuthenticationResult::BAD_PARAMETERS));
         return false;
     }
 
     if (dbApiKey != apiKey)
     {
-        LOG_APP->log2(__func__, request.jwtToken->getSubject(), authClientDetails.ipAddress, Logs::LEVEL_SECURITY_ALERT,
+        LOG_APP->log2(__func__, request.jwtToken->getSubject(), authClientDetails.ipAddress, Logs::LogLevel::SECURITY_ALERT,
                       "Application '%s' does not match the web application API Key. Attack or misconfiguration?", app.c_str());
-        response.setError(HTTP::Status::S_404_NOT_FOUND, "not_found", "Not Found.");
+        response.setError(HTTP::Status::Code::S_404_NOT_FOUND, "not_found", "Not Found.");
         return false;
     }
 

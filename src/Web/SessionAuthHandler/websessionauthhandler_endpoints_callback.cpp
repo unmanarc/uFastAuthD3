@@ -13,7 +13,7 @@ using namespace Mantids30;
 using namespace Mantids30::DataFormat;
 using namespace Program;
 using namespace API::RESTful;
-using namespace Network::Protocols;
+using namespace Network::Protocol;
 
 // Receives the token from the Login Portal (Via proxy, this is why we receive the X-API-Key from the intermediate app), and then, we set the refresh/access token as cookies
 API::APIReturn WebSessionAuthHandler_Endpoints::callback(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
@@ -35,8 +35,8 @@ API::APIReturn WebSessionAuthHandler_Endpoints::callback(void *context, const Re
         allowedOrigin = Globals::pConfig.get<std::string>("AppVars.LoginPortalURL", "");
         if (request.clientRequest->getOrigin() != allowedOrigin)
         {
-            LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LEVEL_SECURITY_ALERT, "Logout is not allowed from Origin='%s'.", request.clientRequest->getOrigin().c_str());
-            response.setError(HTTP::Status::S_403_FORBIDDEN, "invalid_origin", "Invalid Origin.");
+            LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LogLevel::SECURITY_ALERT, "Logout is not allowed from Origin='%s'.", request.clientRequest->getOrigin().c_str());
+            response.setError(HTTP::Status::Code::S_403_FORBIDDEN, "invalid_origin", "Invalid Origin.");
             return response;
         }
 
@@ -55,8 +55,8 @@ API::APIReturn WebSessionAuthHandler_Endpoints::callback(void *context, const Re
     if (appNameStr.empty())
     {
         // app key not found...
-        LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LEVEL_SECURITY_ALERT, "Invalid API key provided. Application not found.");
-        response.setError(HTTP::Status::S_401_UNAUTHORIZED, "invalid_api_key", "The provided API key is invalid or unauthorized.");
+        LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LogLevel::SECURITY_ALERT, "Invalid API key provided. Application not found.");
+        response.setError(HTTP::Status::Code::S_401_UNAUTHORIZED, "invalid_api_key", "The provided API key is invalid or unauthorized.");
         return response;
     }
 
@@ -81,8 +81,8 @@ API::APIReturn WebSessionAuthHandler_Endpoints::callback(void *context, const Re
             logMessage += " Refresh Token verification failed.";
         }
 
-        LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LEVEL_SECURITY_ALERT, logMessage.c_str());
-        response.setError(HTTP::Status::S_401_UNAUTHORIZED, "invalid_token", "The provided access/refresh token is invalid.");
+        LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LogLevel::SECURITY_ALERT, logMessage.c_str());
+        response.setError(HTTP::Status::Code::S_401_UNAUTHORIZED, "invalid_token", "The provided access/refresh token is invalid.");
         return response;
     }
 
@@ -91,8 +91,8 @@ API::APIReturn WebSessionAuthHandler_Endpoints::callback(void *context, const Re
 
     if (redirectURLS.count(redirectURIStr) == 0)
     {
-        LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LEVEL_SECURITY_ALERT, "Redirect URI '%s' is not allowed for application '%s'.", redirectURIStr.c_str(), appNameStr.c_str());
-        response.setError(HTTP::Status::S_403_FORBIDDEN, "invalid_redirect_uri", "The requested redirect URI is not authorized.");
+        LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LogLevel::SECURITY_ALERT, "Redirect URI '%s' is not allowed for application '%s'.", redirectURIStr.c_str(), appNameStr.c_str());
+        response.setError(HTTP::Status::Code::S_403_FORBIDDEN, "invalid_redirect_uri", "The requested redirect URI is not authorized.");
         return response;
     }
 

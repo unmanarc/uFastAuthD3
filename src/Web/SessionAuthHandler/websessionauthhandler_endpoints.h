@@ -13,7 +13,7 @@ public:
     using Endpoints = Mantids30::API::RESTful::Endpoints;
     using APIReturn = Mantids30::API::APIReturn;
     using RequestParameters = Mantids30::API::RESTful::RequestParameters;
-    using HTTPv1_Base = Mantids30::Network::Protocols::HTTP::HTTPv1_Base;
+    using HTTPv1_Base = Mantids30::Network::Protocol::HTTP::HTTPv1_Base;
     using ClientDetails = Mantids30::Sessions::ClientDetails;
     using JWT = Mantids30::DataFormat::JWT;
 
@@ -38,7 +38,7 @@ private:
 
     struct CookieProperties
     {
-        Mantids30::Network::Protocols::HTTP::Headers::Cookie::eSameSitePolicy sameSitePolicy = Mantids30::Network::Protocols::HTTP::Headers::Cookie::HTTP_COOKIE_SAMESITE_STRICT;
+        Mantids30::Network::Protocol::HTTP::Headers::Cookie::eSameSitePolicy sameSitePolicy = Mantids30::Network::Protocol::HTTP::Headers::Cookie::HTTP_COOKIE_SAMESITE_STRICT;
         bool sessionCookie = false;
         bool secure = true;
         bool httpOnly = true;

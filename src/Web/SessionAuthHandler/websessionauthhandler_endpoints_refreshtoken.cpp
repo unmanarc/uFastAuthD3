@@ -15,7 +15,7 @@ using namespace Mantids30;
 using namespace Mantids30::DataFormat;
 using namespace Program;
 using namespace API::RESTful;
-using namespace Network::Protocols;
+using namespace Network::Protocol;
 
 /*
 API::APIReturn WebSessionAuthHandler_Endpoints::refreshAccessToken(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
@@ -30,8 +30,8 @@ API::APIReturn WebSessionAuthHandler_Endpoints::refreshAccessToken(void *context
 
     if (refreshTokenStr.empty())
     {
-        LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LEVEL_SECURITY_ALERT, "Refresh token cookie is missing or empty.");
-        response.setError(HTTP::Status::S_401_UNAUTHORIZED, "invalid_refresher", "Invalid Refresh Token");
+        LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LogLevel::SECURITY_ALERT, "Refresh token cookie is missing or empty.");
+        response.setError(HTTP::Status::Code::S_401_UNAUTHORIZED, "invalid_refresher", "Invalid Refresh Token");
         return response;
     }
 
@@ -40,8 +40,8 @@ API::APIReturn WebSessionAuthHandler_Endpoints::refreshAccessToken(void *context
 
     if (!JWT::decodeNoVerify(refreshTokenStr, &refreshTokenNoVerified))
     {
-        LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LEVEL_SECURITY_ALERT, "Invalid JWT format detected in the provided access token.");
-        response.setError(HTTP::Status::S_400_BAD_REQUEST, "invalid_jwt", "The 'accessToken' must be a valid JWT string.");
+        LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LogLevel::SECURITY_ALERT, "Invalid JWT format detected in the provided access token.");
+        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_jwt", "The 'accessToken' must be a valid JWT string.");
         return response;
     }
 
@@ -52,24 +52,24 @@ API::APIReturn WebSessionAuthHandler_Endpoints::refreshAccessToken(void *context
 
     if (tokenType!="refresher")
     {
-        LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LEVEL_SECURITY_ALERT, "This is not a Refresher Token.");
-        response.setError(HTTP::Status::S_401_UNAUTHORIZED, "invalid_token", "Invalid Refresher Token");
+        LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LogLevel::SECURITY_ALERT, "This is not a Refresher Token.");
+        response.setError(HTTP::Status::Code::S_401_UNAUTHORIZED, "invalid_token", "Invalid Refresher Token");
         return response;
     }
 
     if (refreshTokenApp.empty())
     {
-        LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LEVEL_SECURITY_ALERT, "Refresh token contains invalid or missing claims.");
-        response.setError(HTTP::Status::S_401_UNAUTHORIZED, "invalid_token", "Invalid Refresher Token");
+        LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LogLevel::SECURITY_ALERT, "Refresh token contains invalid or missing claims.");
+        response.setError(HTTP::Status::Code::S_401_UNAUTHORIZED, "invalid_token", "Invalid Refresher Token");
         return response;
     }
 
     if (tokenProps.appName != refreshTokenApp)
     {
         // This token is not available for retrieving app tokens...
-        LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LEVEL_CRITICAL, "Configuration error: The application '%s' is configured with an unsupported or invalid signing algorithm.",
+        LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LogLevel::CRITICAL, "Configuration error: The application '%s' is configured with an unsupported or invalid signing algorithm.",
                       refreshTokenApp.c_str());
-        response.setError(HTTP::Status::S_500_INTERNAL_SERVER_ERROR, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::INTERNAL_ERROR)), authResultToString(AuthenticationResult::INTERNAL_ERROR));
+        response.setError(HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::INTERNAL_ERROR)), authResultToString(AuthenticationResult::INTERNAL_ERROR));
         return response;
     }
 
@@ -86,15 +86,15 @@ API::APIReturn WebSessionAuthHandler_Endpoints::refreshAccessToken(void *context
 
     if (!validator)
     {
-        LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LEVEL_SECURITY_ALERT, "No JWT validator found for application '%s'.", refreshTokenApp.c_str());
-        response.setError(HTTP::Status::S_401_UNAUTHORIZED, "invalid_app", "Application not configured");
+        LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LogLevel::SECURITY_ALERT, "No JWT validator found for application '%s'.", refreshTokenApp.c_str());
+        response.setError(HTTP::Status::Code::S_401_UNAUTHORIZED, "invalid_app", "Application not configured");
         return response;
     }
 
     if (!validator->verify(refreshTokenStr, &refreshTokenVerified))
     {
-        LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LEVEL_SECURITY_ALERT, "Failed to verify refresh token for application '%s'.", refreshTokenApp.c_str());
-        response.setError(HTTP::Status::S_401_UNAUTHORIZED, "invalid_token", "Invalid Refresh Token");
+        LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LogLevel::SECURITY_ALERT, "Failed to verify refresh token for application '%s'.", refreshTokenApp.c_str());
+        response.setError(HTTP::Status::Code::S_401_UNAUTHORIZED, "invalid_token", "Invalid Refresh Token");
         return response;
     }
 
@@ -146,14 +146,14 @@ API::APIReturn WebSessionAuthHandler_Endpoints::refreshAccessToken(void *context
     if (!validateAndDecodeRefreshToken(refreshTokenStr, tokenData, errorMsg, errorType))
     {
         // Determinar el código HTTP basado en el tipo de error
-        HTTP::Status::Codes status = HTTP::Status::S_401_UNAUTHORIZED;
+        HTTP::Status::Code status = HTTP::Status::Code::S_401_UNAUTHORIZED;
         if (errorType == "internal_error")
         {
-            status = HTTP::Status::S_500_INTERNAL_SERVER_ERROR;
+            status = HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR;
             errorMsg = authResultToString(AuthenticationResult::INTERNAL_ERROR); // Ajuste según tu mapeo
         }
 
-        LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LEVEL_SECURITY_ALERT, "%s", errorMsg.c_str());
+        LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LogLevel::SECURITY_ALERT, "%s", errorMsg.c_str());
         response.setError(status, errorType, errorMsg);
         return response;
     }
