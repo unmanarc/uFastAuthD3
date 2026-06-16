@@ -96,7 +96,7 @@ struct AccountFlags
     }
     AccountFlags() = default;
 
-    Json::Value toJSON() const
+    [[nodiscard]] Json::Value toJSON() const
     {
         Json::Value r;
         r["enabled"] = enabled;
@@ -124,11 +124,10 @@ struct AccountDetails
     AccountDetails() = default;
 
     std::map<std::string, AccountDetailFieldValue> fields;
-    //std::map<std::string, std::string> fieldValues;
     std::string accountName, creator;
     AccountFlags accountFlags;
-    time_t expirationDate, creationDate;
-    bool expired;
+    time_t expirationDate=0, creationDate=0;
+    bool expired=true;
 
     [[nodiscard]] Json::Value toJSON() const
     {
