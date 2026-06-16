@@ -38,8 +38,12 @@ std::optional<uint32_t> IdentityManager_DB::AuthController_DB::getDefaultAuthSch
 {
     Threads::Sync::Lock_RD lock(_parent->m_mutex);
     Abstract::UINT32 schemeId;
-    if (!_parent->m_sqlConnector->qSelectSingleRow("SELECT f_defaultSchemeId FROM iam.defaultAuthScheme WHERE id = 1;", {}, {&schemeId}))
+    if (!_parent->m_sqlConnector
+             ->qSelectSingleRow("SELECT f_defaultSchemeId FROM iam.defaultAuthScheme WHERE id = 1;",
+                                {},
+                                {&schemeId})) {
         return std::nullopt;
+    }
     return schemeId.getValue();
 }
 
@@ -51,8 +55,9 @@ std::optional<uint32_t> IdentityManager_DB::AuthController_DB::addAuthentication
     {
         std::shared_ptr<Query> i = _parent->m_sqlConnector->qExecute("INSERT INTO iam.authenticationSchemes (`description`) VALUES(:description);", {{":description", MAKE_VAR(STRING, description)}});
 
-        if (!i || !i->isSuccessful())
+        if (!i || !i->isSuccessful()) {
             return std::nullopt;
+        }
 
         newSchemeId = i->getLastInsertRowID();
     }
@@ -144,8 +149,10 @@ std::vector<AuthenticationSchemeUsedSlot> IdentityManager_DB::AuthController_DB:
         bool optional = uOptional.getValue();
 
         // Add the fetched slot details to the list
-        if (allAuthSlots.find(slotId) != allAuthSlots.end())
-            slotsList.push_back(AuthenticationSchemeUsedSlot{slotId, orderPriority, optional, allAuthSlots[slotId]});
+        if (allAuthSlots.find(slotId) != allAuthSlots.end()) {
+            slotsList.push_back(
+                AuthenticationSchemeUsedSlot{slotId, orderPriority, optional, allAuthSlots[slotId]});
+        }
     }
 
     return slotsList;

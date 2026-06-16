@@ -53,14 +53,27 @@ bool IdentityManager_DB::Applications_DB::addApplication(const ClientDetails &cl
 
     if (tokenInsertSuccess && initializeDefaultValues)
     {
-        if (!setApplicationWebLoginCallbackURI(clientDetails, performedBy, appName, appURL + "/auth/api/v1/callback"))
+        if (!setApplicationWebLoginCallbackURI(clientDetails,
+                                               performedBy,
+                                               appName,
+                                               appURL + "/auth/api/v1/callback")) {
             return false;
-        if (!addWebLoginOriginURLToApplication(clientDetails, performedBy, appName, appURL))
+        }
+        if (!addWebLoginOriginURLToApplication(clientDetails, performedBy, appName, appURL)) {
             return false;
-        if (!addWebLoginAllowedRedirectURIToApplication(clientDetails, performedBy, appName, appURL + "/"))
+        }
+        if (!addWebLoginAllowedRedirectURIToApplication(clientDetails,
+                                                        performedBy,
+                                                        appName,
+                                                        appURL + "/")) {
             return false;
-        if (!updateWebLoginDefaultRedirectURIForApplication(clientDetails, performedBy, appName, appURL + "/"))
+        }
+        if (!updateWebLoginDefaultRedirectURIForApplication(clientDetails,
+                                                            performedBy,
+                                                            appName,
+                                                            appURL + "/")) {
             return false;
+        }
     }
 
     if (tokenInsertSuccess)
@@ -208,9 +221,14 @@ bool IdentityManager_DB::Applications_DB::isApplicationAdmin(const std::string &
     Threads::Sync::Lock_RD lock(_parent->m_mutex);
 
     Abstract::BOOL isAppAdmin;
-    if (!_parent->m_sqlConnector->qSelectSingleRow("SELECT `isAppAdmin` FROM iam.applicationAccounts WHERE `f_accountName`=:accountName AND `f_appName`=:appName;",
-                                                   {{":appName", MAKE_VAR(STRING, appName)}, {":accountName", MAKE_VAR(STRING, accountName)}}, {&isAppAdmin}))
+    if (!_parent->m_sqlConnector
+             ->qSelectSingleRow("SELECT `isAppAdmin` FROM iam.applicationAccounts WHERE "
+                                "`f_accountName`=:accountName AND `f_appName`=:appName;",
+                                {{":appName", MAKE_VAR(STRING, appName)},
+                                 {":accountName", MAKE_VAR(STRING, accountName)}},
+                                {&isAppAdmin})) {
         return false;
+    }
 
     return !isAppAdmin.isNull() && isAppAdmin.getValue();
 }

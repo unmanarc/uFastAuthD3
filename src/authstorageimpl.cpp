@@ -51,8 +51,9 @@ bool AuthStorageImpl::createAuth()
         std::function<bool(const std::string &)> createFileIfNotExists = [](const std::string &path) -> bool
         {
             struct stat buffer;
-            if (stat(path.c_str(), &buffer) == 0)
+            if (stat(path.c_str(), &buffer) == 0) {
                 return true;
+            }
             std::ofstream file(path);
             if (!file.is_open())
             {
@@ -123,8 +124,9 @@ bool AuthStorageImpl::createAuth()
         LOG_APP->log0(__func__, Logs::LogLevel::CRITICAL, "Error, Authentication driver '%s' not implemented", sDriverName.c_str());
     }
 
-    if (!identityManager)
+    if (!identityManager) {
         return false;
+    }
 
     std::string sInitPW;
 
@@ -287,15 +289,18 @@ bool AuthStorageImpl::createAuth()
     if (!sInitPW.empty())
     {
         // Create the password file if there is a new password...
-        if (!createPassFile(sInitPW))
+        if (!createPassFile(sInitPW)) {
             return false;
+        }
     }
 
-    if (!configureAdminPortalApplication(identityManager, sDefaultUser))
+    if (!configureAdminPortalApplication(identityManager, sDefaultUser)) {
         return false;
+    }
 
-    if (!configureUserPortalApplication(identityManager, sDefaultUser))
+    if (!configureUserPortalApplication(identityManager, sDefaultUser)) {
         return false;
+    }
 
     return true;
 }

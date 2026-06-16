@@ -17,13 +17,14 @@ std::map<std::string, std::string> AdminPortal_Endpoints_Accounts::jsonToMap(con
     std::map<std::string, std::string> r;
     for (const std::string &memberName : jValue.getMemberNames())
     {
-        if (jValue[memberName].isString())
+        if (jValue[memberName].isString()) {
             r[memberName] = JSON_ASSTRING(jValue, memberName, "");
+        }
     }
     return r;
 }
 
-void AdminPortal_Endpoints_Accounts::addEndpoints_Accounts(std::shared_ptr<Endpoints> endpoints)
+void AdminPortal_Endpoints_Accounts::addEndpoints_Accounts(const std::shared_ptr<Endpoints> & endpoints)
 {
     using SecurityRequirements = API::Security::Requirements;
 
@@ -385,32 +386,29 @@ AdminPortal_Endpoints_Accounts::APIReturn AdminPortal_Endpoints_Accounts::update
     std::string fieldName = JSON_ASSTRING((*request.inputJSON), "fieldName", "");
     if (fieldName.empty())
     {
-        return API::APIReturn(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Field Name is Empty");
+        return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Field Name is Empty"};
     }
     if (!Globals::getIdentityManager()->accounts->updateAccountDetailField(authClientDetails, request.jwtToken->getSubject(), fieldName, fieldDetails))
     {
-        return API::APIReturn(HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "field_already_exists", "Field already exists");
+        return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "field_already_exists", "Field already exists"};
     }
 
-    return API::APIReturn();
+    return {};
 }
 
 API::APIReturn AdminPortal_Endpoints_Accounts::removeAccountDetailField(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
-    API::APIReturn response;
-
     std::string fieldName = JSON_ASSTRING((*request.inputJSON), "fieldName", "");
     if (fieldName.empty())
     {
-        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Field Name is Empty");
-        return response;
+        return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Field Name is Empty"};
     }
     if (!Globals::getIdentityManager()->accounts->removeAccountDetailField(authClientDetails, request.jwtToken->getSubject(), fieldName))
     {
-        response.setError(HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "field_not_found", "Field not found");
+        return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "field_not_found", "Field not found"};
     }
 
-    return response;
+    return {};
 }
 
 API::APIReturn AdminPortal_Endpoints_Accounts::getAccountDetailField(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
@@ -477,10 +475,10 @@ API::APIReturn AdminPortal_Endpoints_Accounts::updateAccountDetailFieldsValues(v
     std::list<AccountDetailFieldValue> fieldValues;
 
     // Process each field value in the array
-    for (Json::ArrayIndex i = 0; i < fieldValuesArray.size(); ++i)
+    for (const auto & i : fieldValuesArray)
     {
         AccountDetailFieldValue fieldValue;
-        fieldValue.fromJSON(fieldValuesArray[i]);
+        fieldValue.fromJSON(i);
         fieldValues.push_back(fieldValue);
     }
 

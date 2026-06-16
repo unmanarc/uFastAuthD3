@@ -46,8 +46,9 @@ bool IdentityManager::AuthController::recoverAccountMasterCredential(const Clien
 
     bool r = m_parent->authController->changeAccountCredential(clientDetails, performedBy, accountName, credentialData, authSlots.begin()->first);
 
-    if (r)
+    if (r) {
         *sInitPW = newPass;
+    }
 
     return r;
 }
@@ -67,8 +68,9 @@ Credential IdentityManager_DB::AuthController_DB::retrieveAccountCredential(cons
 
     *accountFound = _parent->accounts->doesAccountExist(accountName);
 
-    if (!*accountFound)
+    if (!*accountFound) {
         return ret;
+    }
 
     std::map<uint32_t, AuthenticationSlotDetails> authSlots = listAllAuthenticationSlots();
 
@@ -276,10 +278,12 @@ bool IdentityManager_DB::AuthController_DB::changeAccountCredential(const Client
 
     if (passwordData.expirationTimestamp == 1)
     {
-        if (authSlots[slotId].defaultExpirationSeconds == 0)
+        if (authSlots[slotId].defaultExpirationSeconds == 0) {
             passwordData.expirationTimestamp = 0;
-        else
-            passwordData.expirationTimestamp = time(nullptr) + authSlots[slotId].defaultExpirationSeconds;
+        } else {
+            passwordData.expirationTimestamp = time(nullptr)
+                                               + authSlots[slotId].defaultExpirationSeconds;
+        }
     }
 
     // Única operación SQL

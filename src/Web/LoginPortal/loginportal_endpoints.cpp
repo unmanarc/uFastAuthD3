@@ -9,7 +9,7 @@ using namespace Mantids30::API::RESTful;
 using namespace Mantids30::Network::Protocol;
 using namespace Mantids30::DataFormat;
 
-void LoginPortal_Endpoints::addEndpoints(std::shared_ptr<Endpoints> endpoints)
+void LoginPortal_Endpoints::addEndpoints(const std::shared_ptr<Endpoints> & endpoints)
 {
     using SecurityRequirements = API::Security::Requirements;
 

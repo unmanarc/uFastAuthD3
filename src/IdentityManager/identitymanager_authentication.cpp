@@ -97,12 +97,11 @@ AuthenticationResult IdentityManager::AuthController::authenticateCredential(con
         // Check if the retrieved credential
         pStoredCredentialData = retrieveAccountCredential(accountName, slotId, &accountFound, &authSlotFound);
 
-        if (accountFound == false)
+        if (accountFound == false) {
             ret = AuthenticationResult::BAD_ACCOUNT;
-        else if (authSlotFound == false)
+        } else if (authSlotFound == false) {
             ret = AuthenticationResult::CREDENTIAL_INDEX_NOT_FOUND;
-        else
-        {
+        } else {
             std::optional<std::pair<time_t, std::string>> lastLogin = getAccountLastAccess(accountName);
 
             // There is no last login..
@@ -123,29 +122,30 @@ AuthenticationResult IdentityManager::AuthController::authenticateCredential(con
 
             AccountFlags flags = m_parent->accounts->getAccountFlags(accountName);
 
-            if (!flags.confirmed)
+            if (!flags.confirmed) {
                 return AuthenticationResult::UNCONFIRMED_ACCOUNT;
 
-            else if (!flags.enabled)
+            } else if (!flags.enabled) {
                 return AuthenticationResult::DISABLED_ACCOUNT;
 
-            else if (flags.blocked)
+            } else if (flags.blocked) {
                 return AuthenticationResult::DISABLED_ACCOUNT;
 
-            else if (m_parent->accounts->isAccountExpired(accountName))
+            } else if (m_parent->accounts->isAccountExpired(accountName)) {
                 return AuthenticationResult::EXPIRED_ACCOUNT;
 
-            else if (!flags.admin && lastLogin->first + m_authenticationPolicy.abandonedAccountExpirationSeconds < time(nullptr))
+            } else if (!flags.admin
+                       && lastLogin->first + m_authenticationPolicy.abandonedAccountExpirationSeconds
+                              < time(nullptr)) {
                 return AuthenticationResult::INACTIVE_ACCOUNT;
 
-            else if (pStoredCredentialData.hasExceededMaxAttempts(m_authenticationPolicy))
+            } else if (pStoredCredentialData.hasExceededMaxAttempts(m_authenticationPolicy)) {
                 return AuthenticationResult::LOCKED_CREDENTIAL;
 
-            else if (pStoredCredentialData.isLocked)
+            } else if (pStoredCredentialData.isLocked) {
                 return AuthenticationResult::LOCKED_CREDENTIAL;
 
-            else
-            {
+            } else {
                 ret = validateStoredCredential(accountName, pStoredCredentialData, incomingPassword, challengeSalt, authMode);
             }
         }
@@ -270,14 +270,16 @@ std::set<ApplicationScope> IdentityManager::AuthController::getAccountUsableAppl
     std::set<ApplicationScope> x;
     Threads::Sync::Lock_RD lock(m_parent->m_mutex);
     // Take scope from the account
-    for (const ApplicationScope &scope : getAccountDirectApplicationScopes(accountName, false))
+    for (const ApplicationScope &scope : getAccountDirectApplicationScopes(accountName, false)) {
         x.insert(scope);
+    }
 
     // Take the scope from the belonging roles
     for (const ApplicationRole &role : m_parent->accounts->getAccountApplicationRoles(appName, accountName, false))
     {
-        for (const ApplicationScope &scope : getRoleApplicationScopes(appName, role.id, false))
+        for (const ApplicationScope &scope : getRoleApplicationScopes(appName, role.id, false)) {
             x.insert(scope);
+        }
     }
     return x;
 }
@@ -311,8 +313,9 @@ bool IdentityManager::AuthController::setAccountPasswordOnScheme(const ClientDet
 
     bool r = m_parent->authController->changeAccountCredential(clientDetails, performedBy, accountName, credentialData, authSlots.begin()->slotId);
 
-    if (r)
+    if (r) {
         *sInitPW = newPass;
+    }
 
     return r;
 
@@ -527,8 +530,9 @@ std::optional<uint32_t> IdentityManager::AuthController::initializateDefaultPass
 
         *defaultPasswordSchemesExist = false;
 
-        if (!r)
+        if (!r) {
             return std::nullopt;
+        }
 
         return schemeId;
     }

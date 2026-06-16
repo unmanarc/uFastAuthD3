@@ -8,7 +8,7 @@ using namespace Mantids30::Program;
 using namespace Mantids30;
 using namespace Mantids30::Network::Protocol;
 
-void AdminPortal_Endpoints_AuthController::addEndpoints_AuthController(std::shared_ptr<Endpoints> endpoints)
+void AdminPortal_Endpoints_AuthController::addEndpoints_AuthController(const std::shared_ptr<Endpoints> & endpoints)
 {
     using SecurityRequirements = API::Security::Requirements;
 
@@ -16,15 +16,12 @@ void AdminPortal_Endpoints_AuthController::addEndpoints_AuthController(std::shar
     endpoints->addEndpoint(HTTP::Method::POST, "addNewAuthenticationSlot", SecurityRequirements::JWT_COOKIE_AUTH, {"AUTH_WRITE"}, nullptr, &addNewAuthenticationSlot);
     endpoints->addEndpoint(HTTP::Method::DELETE, "deleteAuthenticationSlot", SecurityRequirements::JWT_COOKIE_AUTH, {"AUTH_DELETE"}, nullptr, &deleteAuthenticationSlot);
     endpoints->addEndpoint(HTTP::Method::PATCH, "updateAuthenticationSlot", SecurityRequirements::JWT_COOKIE_AUTH, {"AUTH_MODIFY"}, nullptr, &updateAuthenticationSlot);
-
     endpoints->addEndpoint(HTTP::Method::POST, "addNewAuthenticationScheme", SecurityRequirements::JWT_COOKIE_AUTH, {"AUTH_WRITE"}, nullptr, &addNewAuthenticationScheme);
     endpoints->addEndpoint(HTTP::Method::GET, "listAuthenticationSchemes", SecurityRequirements::JWT_COOKIE_AUTH, {"AUTH_READ"}, nullptr, &listAuthenticationSchemes);
     endpoints->addEndpoint(HTTP::Method::DELETE, "deleteAuthenticationScheme", SecurityRequirements::JWT_COOKIE_AUTH, {"AUTH_DELETE"}, nullptr, &deleteAuthenticationScheme);
     endpoints->addEndpoint(HTTP::Method::PATCH, "updateAuthenticationScheme", SecurityRequirements::JWT_COOKIE_AUTH, {"AUTH_DELETE"}, nullptr, &updateAuthenticationScheme);
-
     endpoints->addEndpoint(HTTP::Method::GET, "listAuthenticationSlotsUsedByScheme", SecurityRequirements::JWT_COOKIE_AUTH, {"AUTH_READ"}, nullptr, &listAuthenticationSlotsUsedByScheme);
     endpoints->addEndpoint(HTTP::Method::PATCH, "updateAuthenticationSlotsUsedByScheme", SecurityRequirements::JWT_COOKIE_AUTH, {"AUTH_MODIFY"}, nullptr, &updateAuthenticationSlotsUsedByScheme);
-
     endpoints->addEndpoint(HTTP::Method::GET, "getDefaultAuthScheme", SecurityRequirements::JWT_COOKIE_AUTH, {"AUTH_READ"}, nullptr, &getDefaultAuthScheme);
     endpoints->addEndpoint(HTTP::Method::PATCH, "updateDefaultAuthScheme", SecurityRequirements::JWT_COOKIE_AUTH, {"AUTH_MODIFY"}, nullptr, &updateDefaultAuthScheme);
 }
@@ -82,10 +79,11 @@ API::APIReturn AdminPortal_Endpoints_AuthController::listAuthenticationSchemes(v
 
     std::optional<uint32_t> defaultScheme = Globals::getIdentityManager()->authController->getDefaultAuthScheme();
 
-    if (defaultScheme.has_value())
+    if (defaultScheme.has_value()) {
         r["defaultSchemeId"] = *defaultScheme;
-    else
+    } else {
         r["defaultSchemeId"] = Json::nullValue;
+    }
 
     r["schemes"] = Json::arrayValue;
 

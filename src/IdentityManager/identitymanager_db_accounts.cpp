@@ -156,15 +156,24 @@ bool IdentityManager_DB::Accounts_DB::updateAccountApplicationRoles(const Client
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
 
-    if (!_parent->m_sqlConnector->qExecuteEx("DELETE FROM iam.applicationRolesAccounts WHERE `f_accountName`=:accountName AND `f_appName`=:appName;",
-                                             {{":accountName", MAKE_VAR(STRING, accountName)}, {":appName", MAKE_VAR(STRING, appName)}}))
+    if (!_parent->m_sqlConnector
+             ->qExecuteEx("DELETE FROM iam.applicationRolesAccounts WHERE "
+                          "`f_accountName`=:accountName AND `f_appName`=:appName;",
+                          {{":accountName", MAKE_VAR(STRING, accountName)},
+                           {":appName", MAKE_VAR(STRING, appName)}})) {
         return false;
+    }
 
     for (const std::string &role : roleSet)
     {
-        if (!_parent->m_sqlConnector->qExecuteEx("INSERT INTO iam.applicationRolesAccounts (`f_roleName`,`f_accountName`,`f_appName`) VALUES(:roleName,:accountName,:appName);",
-                                                 {{":roleName", MAKE_VAR(STRING, role)}, {":accountName", MAKE_VAR(STRING, accountName)}, {":appName", MAKE_VAR(STRING, appName)}}))
+        if (!_parent->m_sqlConnector->qExecuteEx("INSERT INTO iam.applicationRolesAccounts "
+                                                 "(`f_roleName`,`f_accountName`,`f_appName`) "
+                                                 "VALUES(:roleName,:accountName,:appName);",
+                                                 {{":roleName", MAKE_VAR(STRING, role)},
+                                                  {":accountName", MAKE_VAR(STRING, accountName)},
+                                                  {":appName", MAKE_VAR(STRING, appName)}})) {
             return false;
+        }
     }
 
     _parent->logSecurityEventOnAccounts(accountName, SecurityEventAction::UPDATE, "Application roles updated to account", performedBy, clientDetails);
@@ -220,9 +229,9 @@ std::optional<AccountDetails> IdentityManager_DB::Accounts_DB::getAccountDetails
             details.expirationDate = expiration.getValue();
             details.creationDate = creation.getValue();
             details.expired = std::time(nullptr) > details.expirationDate;
-        }
-        else
+        } else {
             return std::nullopt;
+        }
     }
 
     details.fields = getAccountDetailFieldValues(accountName, detailsToShow);
@@ -452,8 +461,9 @@ std::set<std::string> IdentityManager_DB::Accounts_DB::listAccounts()
 std::set<ApplicationRole> IdentityManager_DB::Accounts_DB::getAccountApplicationRoles(const std::string &appName, const std::string &accountName, bool lock)
 {
     std::set<ApplicationRole> ret;
-    if (lock)
+    if (lock) {
         _parent->m_mutex.lockShared();
+    }
 
     {
         Abstract::STRING role;
@@ -471,8 +481,9 @@ std::set<ApplicationRole> IdentityManager_DB::Accounts_DB::getAccountApplication
         }
     }
 
-    if (lock)
+    if (lock) {
         _parent->m_mutex.unlockShared();
+    }
 
     return ret;
 }
@@ -920,10 +931,11 @@ std::map<std::string, AccountDetailFieldValue> IdentityManager_DB::Accounts_DB::
                 field.fieldRegexpValidator = JSON_ASSTRING(extendedAttributes["behavior"], "regexpValidator", ""); // TODO: remover esta linea
                 field.extendedAttribs = extendedAttributes;
 
-                if (value.isNull())
+                if (value.isNull()) {
                     field.value = std::nullopt;
-                else
+                } else {
                     field.value = value.getValue();
+                }
 
                 detailValues[fieldName.getValue()] = field;
             }

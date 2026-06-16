@@ -15,7 +15,7 @@ public:
     /**
      * @brief Default constructor.
      */
-    CredentialData();
+    CredentialData() = default;
 
     /**
      * @brief Constructs an authentication data object with the given password, password slot id, and domain name.
@@ -29,7 +29,7 @@ public:
      * @param serializedData The string containing the serialized authentication data.
      * @return true if the deserialization was successful, false otherwise.
      */
-    bool parseJSON(const std::string &serializedData);
+    bool parseJSON(const std::string &sAuth);
 
     /**
      * @brief Deserializes authentication data from a JSON object.
@@ -42,7 +42,7 @@ public:
      * @brief Serializes authentication data to a JSON object.
      * @return A JSON object containing the authentication data.
      */
-    json toJSON() const;
+    [[nodiscard]] json toJSON() const;
 
 public:
     std::string m_password;

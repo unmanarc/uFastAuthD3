@@ -10,7 +10,7 @@ using namespace Mantids30;
 
 using namespace Mantids30::Network::Protocol;
 
-void AdminPortal_Endpoints_ApplicationActivities::addEndpoints_Activities(std::shared_ptr<Endpoints> endpoints)
+void AdminPortal_Endpoints_ApplicationActivities::addEndpoints_Activities(const std::shared_ptr<Endpoints> &endpoints)
 {
     using SecurityRequirements = API::Security::Requirements;
 

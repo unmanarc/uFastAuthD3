@@ -88,10 +88,14 @@ AuthenticationResult CredentialValidator::validateStoredCredential(const std::st
 skipAuthMode:;
 
     if (storedCredential.isExpired() && r == AuthenticationResult::AUTHENTICATED)
+    {
         r = AuthenticationResult::EXPIRED_CREDENTIAL;
+    }
 
     if (storedCredential.mustChange && r == AuthenticationResult::AUTHENTICATED)
+    {
         r = AuthenticationResult::MUST_CHANGE_CREDENTIAL;
+    }
 
     return r;
 }

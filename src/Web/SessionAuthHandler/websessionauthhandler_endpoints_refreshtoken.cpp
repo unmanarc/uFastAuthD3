@@ -1,15 +1,14 @@
-#include "Mantids30/Program_Logs/loglevels.h"
-#include "Mantids30/Protocol_HTTP/httpv1_base.h"
-#include "Tokens/tokensmanager.h"
-#include "websessionauthhandler_endpoints.h"
+#include <Mantids30/Program_Logs/loglevels.h>
+#include <Mantids30/Protocol_HTTP/httpv1_base.h>
 #include <Mantids30/Helpers/json.h>
-#include <json/value.h>
-
 #include <boost/algorithm/string/join.hpp>
 #include <json/config.h>
+#include <json/value.h>
 
 #include "Tokens/tokensmanager.h"
+#include "websessionauthhandler_endpoints.h"
 #include "globals.h"
+
 
 using namespace Mantids30;
 using namespace Mantids30::DataFormat;

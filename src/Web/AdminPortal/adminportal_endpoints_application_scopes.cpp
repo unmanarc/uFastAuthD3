@@ -9,7 +9,7 @@ using namespace Mantids30::Program;
 using namespace Mantids30;
 using namespace Mantids30::Network::Protocol;
 
-void AdminPortal_Endpoints_ApplicationsScopes::addEndpoints_Scopes(std::shared_ptr<Endpoints> endpoints)
+void AdminPortal_Endpoints_ApplicationsScopes::addEndpoints_Scopes(const std::shared_ptr<Endpoints> &endpoints)
 {
     using SecurityRequirements = API::Security::Requirements;
     endpoints->addEndpoint(HTTP::Method::POST, "addApplicationScopeToAccount", SecurityRequirements::JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"}, nullptr, &addApplicationScopeToAccount);

@@ -18,7 +18,7 @@ public:
     * @brief Adds the available login authentication methods as server functions.
     * @param methods The Endpoints to which the authentication methods will be added.
     */
-    static void addEndpoints(std::shared_ptr<Endpoints> endpoints);
+    static void addEndpoints(const std::shared_ptr<Endpoints> &endpoints);
 
     static APIReturn getDashboardData(void *context, const RequestParameters &request, ClientDetails &clientDetails);
     static APIReturn searchAccountSessions(void *context, const RequestParameters &request, ClientDetails &clientDetails);

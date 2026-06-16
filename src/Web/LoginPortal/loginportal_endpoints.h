@@ -22,13 +22,13 @@ public:
     * @brief Adds the available login authentication methods as server functions.
     * @param methods The Endpoints to which the authentication methods will be added.
     */
-    static void addEndpoints(std::shared_ptr<Endpoints> endpoints);
+    static void addEndpoints(const std::shared_ptr<Endpoints> &endpoints);
 
     /*static Mantids30::Network::Protocol::HTTP::Status::Code handleLoginDynamicRequest(const std::string &appName, HTTPv1_Base::Request *request, HTTPv1_Base::Response *response,
                                                                                         std::shared_ptr<void>);*/
 
     static Mantids30::Network::Protocol::HTTP::Status::Code handleLogoutDynamicRequest(const std::string &appName, HTTPv1_Base::Request *request, HTTPv1_Base::Response *response,
-                                                                                       std::shared_ptr<void>);
+                                                                                       const std::shared_ptr<void> &);
 
 private:
     ////////////////
@@ -69,11 +69,11 @@ private:
     static std::optional<std::string> token_signApplicationJWT(JWT::Token &accessToken);
     static bool token_validateAppAuthorization(const JWT::Token *jwtToken, const std::string &app, const std::string &user, const std::string &ipAddress);
 
-    static std::vector<AuthenticationSchemeUsedSlot> calculateRequiredAuthSlotsLeftForTheNewTransientAuthToken(std::shared_ptr<TransientAuthenticationContext> authContext,
+    static std::vector<AuthenticationSchemeUsedSlot> calculateRequiredAuthSlotsLeftForTheNewTransientAuthToken(const std::shared_ptr<TransientAuthenticationContext> &authContext,
                                                                                                                Mantids30::API::APIReturn *response);
 
     //static bool validateAndMerge_AccessTokenIfExist(const RequestParameters &request, LoginPortal_Endpoints::APIReturn &response, std::shared_ptr<TransientAuthenticationContext> authContext);
 
-    static void issueTransientAuthTokenResponse(const RequestParameters &request, Mantids30::API::APIReturn &response, std::shared_ptr<TransientAuthenticationContext> authContext,
+    static void issueTransientAuthTokenResponse(const RequestParameters &request, Mantids30::API::APIReturn &response, const std::shared_ptr<TransientAuthenticationContext> &authContext,
                                                 const std::vector<AuthenticationSchemeUsedSlot> &requiredAuthSlots, bool mustChange, bool canSkipPasswordChange);
 };

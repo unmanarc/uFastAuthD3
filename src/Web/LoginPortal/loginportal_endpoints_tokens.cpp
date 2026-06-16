@@ -133,8 +133,9 @@ API::APIReturn LoginPortal_Endpoints::token(void *context, const RequestParamete
         return response;
     }
 
-    if (mock)
+    if (mock) {
         return response;
+    }
 
     //////////////////////////////////////////////////////////////////////////////////////////
     //// -------------------------       TOKEN CREATION       --------------------------- ////

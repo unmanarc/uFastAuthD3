@@ -42,10 +42,11 @@ enum Mode
 
 static Mode getAuthModeFromString(const std::string &mode)
 {
-    if (mode == "CHALLENGE")
+    if (mode == "CHALLENGE") {
         return MODE_CHALLENGE;
-    else
+    } else {
         return MODE_PLAIN;
+    }
 }
 
 static std::string getStringFromAuthMode(const Mode &mode)
@@ -115,7 +116,7 @@ struct AuthenticationSlotDetails
         , canSkipWhenExpired(bCanSkipWhenExpired)
     {}
 
-    AuthenticationSlotDetails() {}
+    AuthenticationSlotDetails() = default;
 
     std::string description;
 
@@ -295,7 +296,7 @@ struct AuthenticationSchemeUsedSlot
         , optional(isOptional)
     {}
 
-    AuthenticationSchemeUsedSlot(uint32_t id, uint32_t priority, bool isOptional, AuthenticationSlotDetails _details)
+    AuthenticationSchemeUsedSlot(uint32_t id, uint32_t priority, bool isOptional, const AuthenticationSlotDetails & _details)
         : slotId(id)
         , orderPriority(priority)
         , optional(isOptional)
@@ -306,7 +307,7 @@ struct AuthenticationSchemeUsedSlot
      * @brief Converts the object to a JSON representation.
      * @return json The JSON object representing this structure.
      */
-    json toJSON() const
+    [[nodiscard]] json toJSON() const
     {
         json r;
         r["slotId"] = slotId;
@@ -335,7 +336,7 @@ struct AuthenticationSchemeUsedSlot
 
 struct RoleDetails
 {
-    RoleDetails() {}
+    RoleDetails() = default;
     std::string roleName;
     std::string description;
 };

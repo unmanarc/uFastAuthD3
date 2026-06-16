@@ -64,8 +64,9 @@ bool IdentityManager_DB::ApplicationRoles_DB::removeAccountFromRole(const Client
 {
     bool ret = false;
 
-    if (lock)
+    if (lock) {
         _parent->m_mutex.lock();
+    }
 
     ret = _parent->m_sqlConnector->qExecuteEx("DELETE FROM iam.applicationRolesAccounts WHERE `f_roleName`=:roleName AND `f_appName`=:appName AND `f_accountName`=:accountName;",
                                               {{":roleName", MAKE_VAR(STRING, roleName)}, {":appName", MAKE_VAR(STRING, appName)}, {":accountName", MAKE_VAR(STRING, accountName)}});
@@ -75,8 +76,9 @@ bool IdentityManager_DB::ApplicationRoles_DB::removeAccountFromRole(const Client
         _parent->logSecurityEventOnApplicationRoles(appName, roleName, accountName, SecurityEventAction::REVOKE_ACCOUNT, "Account removed from role", performedBy, clientDetails);
     }
 
-    if (lock)
+    if (lock) {
         _parent->m_mutex.unlock();
+    }
     return ret;
 }
 
@@ -148,8 +150,9 @@ std::set<ApplicationRole> IdentityManager_DB::ApplicationRoles_DB::getApplicatio
 std::set<std::string> IdentityManager_DB::ApplicationRoles_DB::getApplicationRoleAccounts(const std::string &appName, const std::string &roleName, bool lock)
 {
     std::set<std::string> ret;
-    if (lock)
+    if (lock) {
         _parent->m_mutex.lockShared();
+    }
 
     Abstract::STRING accountName;
     std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelect("SELECT `f_accountName` FROM iam.applicationRolesAccounts WHERE `f_roleName`=:roleName AND `f_appName`=:appName;",
@@ -159,8 +162,9 @@ std::set<std::string> IdentityManager_DB::ApplicationRoles_DB::getApplicationRol
         ret.insert(accountName.getValue());
     }
 
-    if (lock)
+    if (lock) {
         _parent->m_mutex.unlockShared();
+    }
     return ret;
 }
 

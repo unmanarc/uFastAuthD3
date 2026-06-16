@@ -2,8 +2,6 @@
 
 using namespace Mantids30;
 
-CredentialData::CredentialData() {}
-
 CredentialData::CredentialData(const std::string &password, const uint32_t &slotId)
 {
     this->m_password = password;
@@ -15,14 +13,20 @@ bool CredentialData::parseJSON(const std::string &sAuth)
     json x;
 
     if (sAuth.empty())
+    {
         return true;
+    }
 
     Mantids30::Helpers::JSONReader2 reader;
 
     if (!reader.parse(sAuth, x))
+    {
         return false;
+    }
     if (!x.isObject())
+    {
         return false;
+    }
 
     return setJSON(x);
 }
@@ -30,7 +34,9 @@ bool CredentialData::parseJSON(const std::string &sAuth)
 bool CredentialData::setJSON(const json &jsonObject)
 {
     if (jsonObject["pass"].isNull() || jsonObject["slotId"].isNull())
+    {
         return false;
+    }
 
     this->m_password = JSON_ASSTRING(jsonObject, "pass", "");
     this->m_slotId = JSON_ASUINT(jsonObject, "slotId", 0);

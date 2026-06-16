@@ -32,10 +32,11 @@ struct AccountDetailFieldValue
         fieldJson["type"] = fieldType;
         fieldJson["regexpValidator"] = fieldRegexpValidator;
 
-        if (value.has_value())
+        if (value.has_value()) {
             fieldJson["value"] = value.value();
-        else
+        } else {
             fieldJson["value"] = Json::Value(Json::nullValue);
+        }
         return fieldJson;
     }
 
@@ -46,8 +47,9 @@ struct AccountDetailFieldValue
         fieldType = JSON_ASSTRING(json, "type", "");
         fieldRegexpValidator = JSON_ASSTRING(json, "regexpValidator", "");
         extendedAttribs = json["extendedAttribs"];
-        if (json.isMember("value") && !json["value"].isNull())
+        if (json.isMember("value") && !json["value"].isNull()) {
             value = JSON_ASSTRING(json, "value", "");
+        }
     }
 };
 
@@ -92,7 +94,7 @@ struct AccountFlags
         this->admin = admin;
         this->blocked = blocked;
     }
-    AccountFlags() {}
+    AccountFlags() = default;
 
     Json::Value toJSON() const
     {
@@ -119,7 +121,7 @@ struct AccountFlags
 };
 struct AccountDetails
 {
-    AccountDetails() {}
+    AccountDetails() = default;
 
     std::map<std::string, AccountDetailFieldValue> fields;
     //std::map<std::string, std::string> fieldValues;

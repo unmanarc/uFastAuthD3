@@ -39,10 +39,11 @@ bool LoginPortal_Endpoints::retrieveAndValidateAppOrigin(HTTPv1_Base::Request *r
     return origins.count(currentOrigin);
 }
 
-HTTP::Status::Code LoginPortal_Endpoints::handleLogoutDynamicRequest(const std::string &urlPostfix, HTTPv1_Base::Request *request, HTTPv1_Base::Response *response, std::shared_ptr<void>)
+HTTP::Status::Code LoginPortal_Endpoints::handleLogoutDynamicRequest(const std::string &urlPostfix, HTTPv1_Base::Request *request, HTTPv1_Base::Response *response, const std::shared_ptr<void> &)
 {
-    if (request->requestLine.getHTTPMethod() != "POST")
+    if (request->requestLine.getHTTPMethod() != "POST") {
         return HTTP::Status::Code::S_400_BAD_REQUEST;
+    }
 
     // Determine appName: prioritize x-api-key header, fallback to "app" POST field
     std::string apiKey = request->getHeaderOption("x-api-key");

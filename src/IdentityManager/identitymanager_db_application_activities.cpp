@@ -283,8 +283,9 @@ std::optional<uint32_t> IdentityManager_DB::ApplicationActivities_DB::getApplica
                                                   {{":appName", MAKE_VAR(STRING, appName)}, {":activityName", MAKE_VAR(STRING, activityName)}}, {&uDefaultSchemeId}))
     {
         // Return nullopt if no default scheme is set
-        if (uDefaultSchemeId.isNull())
+        if (uDefaultSchemeId.isNull()) {
             return std::nullopt;
+        }
 
         return uDefaultSchemeId.getValue();
     }
@@ -336,8 +337,9 @@ bool IdentityManager_DB::ApplicationActivities_DB::addAuthenticationSchemeToAppl
                                                                                                 const std::string &activityName, const uint32_t &schemeId, bool lock)
 {
     // Acquire a write lock since we are modifying the database
-    if (lock)
+    if (lock) {
         _parent->m_mutex.lock();
+    }
 
     // Execute the query using direct parameter passing...
     bool r = _parent->m_sqlConnector->qExecuteEx("INSERT INTO iam.applicationActivitiesAuthSchemes (`f_appName`, `f_activityName`, `f_schemeId`) "
@@ -350,8 +352,9 @@ bool IdentityManager_DB::ApplicationActivities_DB::addAuthenticationSchemeToAppl
                                                          clientDetails);
     }
 
-    if (lock)
+    if (lock) {
         _parent->m_mutex.unlock();
+    }
     return r;
 }
 

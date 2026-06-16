@@ -13,7 +13,7 @@ public:
     using ClientDetails = Mantids30::Sessions::ClientDetails;
 
 protected:
-    static void addEndpoints_Scopes(std::shared_ptr<Endpoints> endpoints);
+    static void addEndpoints_Scopes(const std::shared_ptr<Endpoints> &endpoints);
 
     static APIReturn addApplicationScopeToAccount(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
     static APIReturn removeApplicationScopeFromAccount(void *context, const RequestParameters &request, ClientDetails &authClientDetails);

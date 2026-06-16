@@ -11,15 +11,17 @@ MultiCredentialData::MultiCredentialData()
 std::set<uint32_t> MultiCredentialData::getAuthenticationSlotsAvailable()
 {
     std::set<uint32_t> r;
-    for (const std::pair<uint32_t, CredentialData> &i : m_authenticationsSlots)
+    for (const std::pair<uint32_t, CredentialData> &i : m_authenticationsSlots) {
         r.insert(i.first);
+    }
     return r;
 }
 
 CredentialData MultiCredentialData::getAuthentication(const uint32_t &slotId)
 {
-    if (m_authenticationsSlots.find(slotId) != m_authenticationsSlots.end())
+    if (m_authenticationsSlots.find(slotId) != m_authenticationsSlots.end()) {
         return m_authenticationsSlots[slotId];
+    }
 
     CredentialData r;
     return r;
@@ -27,21 +29,24 @@ CredentialData MultiCredentialData::getAuthentication(const uint32_t &slotId)
 
 bool MultiCredentialData::parseJSON(const std::string &sAuthentications)
 {
-    if (sAuthentications.empty())
+    if (sAuthentications.empty()) {
         return true;
+    }
 
     json jAuthentications;
     Mantids30::Helpers::JSONReader2 reader;
-    if (!reader.parse(sAuthentications, jAuthentications))
+    if (!reader.parse(sAuthentications, jAuthentications)) {
         return false;
+    }
 
     return setJSON(jAuthentications);
 }
 
 bool MultiCredentialData::setJSON(const json &jAuthentications)
 {
-    if (!jAuthentications.isObject())
+    if (!jAuthentications.isObject()) {
         return false;
+    }
 
     if (jAuthentications.isObject())
     {

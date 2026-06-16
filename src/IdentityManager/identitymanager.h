@@ -46,7 +46,7 @@ public:
     {
     public:
         Accounts(IdentityManager *m_parent);
-        virtual ~Accounts() {}
+        virtual ~Accounts() = default;
 
         bool createAdminAccount(const std::string &accountName);
 
@@ -121,7 +121,7 @@ public:
     class ApplicationRoles
     {
     public:
-        virtual ~ApplicationRoles() {}
+        virtual ~ApplicationRoles() = default;
         /////////////////////////////////////////////////////////////////////////////////
         // role:
         virtual bool addRole(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &roleName, const std::string &roleDescription) = 0;
@@ -242,7 +242,7 @@ public:
 
     public:
         AuthController(IdentityManager *parent);
-        virtual ~AuthController() {}
+        virtual ~AuthController() = default;
 
         static void markExpiredAuthLogSessions(void *p) { static_cast<AuthController *>(p)->markExpiredAuthLogSessions(); }
 
@@ -436,7 +436,7 @@ public:
     class Applications
     {
     public:
-        virtual ~Applications() {}
+        virtual ~Applications() = default;
         struct ApplicationAttributes
         {
             Json::Value toJSON() const

@@ -20,14 +20,16 @@ using namespace Mantids30;
 bool IdentityManager_DB::AuthController_DB::validateApplicationScopeOnRole(const std::string &roleName, const ApplicationScope &scope, bool lock)
 {
     bool ret = false;
-    if (lock)
+    if (lock) {
         _parent->m_mutex.lockShared();
+    }
 
     ret = _parent->m_sqlConnector->qSelectSingleRow("SELECT `f_roleName` FROM iam.applicationRolesScopes WHERE `f_scopeId`=:scopeId AND `f_appName`=:appName AND `f_roleName`=:roleName;",
                                                     {{":scopeId", MAKE_VAR(STRING, scope.id)}, {":appName", MAKE_VAR(STRING, scope.appName)}, {":roleName", MAKE_VAR(STRING, roleName)}}, {});
 
-    if (lock)
+    if (lock) {
         _parent->m_mutex.unlockShared();
+    }
 
     return ret;
 }
@@ -36,8 +38,9 @@ std::set<ApplicationScope> IdentityManager_DB::AuthController_DB::getRoleApplica
 {
     std::set<ApplicationScope> ret;
 
-    if (lock)
+    if (lock) {
         _parent->m_mutex.lockShared();
+    }
 
     Abstract::STRING sScopeName, sDescription;
     std::shared_ptr<Query> i = _parent->m_sqlConnector
@@ -49,8 +52,9 @@ std::set<ApplicationScope> IdentityManager_DB::AuthController_DB::getRoleApplica
         ret.insert({appName, sScopeName.getValue(), sDescription.getValue()});
     }
 
-    if (lock)
+    if (lock) {
         _parent->m_mutex.unlockShared();
+    }
 
     return ret;
 }
@@ -58,8 +62,9 @@ std::set<ApplicationScope> IdentityManager_DB::AuthController_DB::getRoleApplica
 std::set<std::string> IdentityManager_DB::AuthController_DB::getApplicationRolesForScope(const ApplicationScope &applicationScope, bool lock)
 {
     std::set<std::string> ret;
-    if (lock)
+    if (lock) {
         _parent->m_mutex.lockShared();
+    }
 
     Abstract::STRING roleName;
     std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelect("SELECT `f_roleName` FROM iam.applicationRolesScopes WHERE `f_scopeId`=:scopeId AND `f_appName`=:appName;",
@@ -69,8 +74,9 @@ std::set<std::string> IdentityManager_DB::AuthController_DB::getApplicationRoles
         ret.insert(roleName.getValue());
     }
 
-    if (lock)
+    if (lock) {
         _parent->m_mutex.unlockShared();
+    }
     return ret;
 }
 
@@ -109,8 +115,9 @@ std::optional<std::pair<time_t, std::string>> IdentityManager_DB::AuthController
 std::set<ApplicationScope> IdentityManager_DB::AuthController_DB::getAccountDirectApplicationScopes(const std::string &accountName, bool lock)
 {
     std::set<ApplicationScope> ret;
-    if (lock)
+    if (lock) {
         _parent->m_mutex.lockShared();
+    }
 
     Abstract::STRING appName, scopeId;
     std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelect("SELECT `f_appName`,`f_scopeId` FROM iam.applicationScopeAccounts WHERE `f_accountName`=:accountName;",
@@ -120,8 +127,9 @@ std::set<ApplicationScope> IdentityManager_DB::AuthController_DB::getAccountDire
         ret.insert({appName.getValue(), scopeId.getValue()});
     }
 
-    if (lock)
+    if (lock) {
         _parent->m_mutex.unlockShared();
+    }
     return ret;
 }
 

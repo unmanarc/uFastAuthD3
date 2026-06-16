@@ -82,10 +82,15 @@ API::APIReturn LoginPortal_Endpoints::preAuthorize(void *context, const API::RES
         return response;
     }
 
-    if (activityName == "LOGIN")
+    if (activityName == "LOGIN") {
         r = identityManager->authController->getApplicableAuthenticationSchemesForAccount(IAM_LOGINPORTAL_APPNAME, activityName, authContext->accountName, authContext->authenticatedSlots);
-    else // Activity from the application.
-        r = identityManager->authController->getApplicableAuthenticationSchemesForAccount(appName, activityName, authContext->accountName, authContext->authenticatedSlots);
+    } else { // Activity from the application.
+        r = identityManager->authController
+                ->getApplicableAuthenticationSchemesForAccount(appName,
+                                                               activityName,
+                                                               authContext->accountName,
+                                                               authContext->authenticatedSlots);
+    }
 
     if (r["defaultScheme"] == Json::nullValue)
     {
@@ -102,7 +107,7 @@ API::APIReturn LoginPortal_Endpoints::preAuthorize(void *context, const API::RES
     return response;
 }
 
-void LoginPortal_Endpoints::issueTransientAuthTokenResponse(const RequestParameters &request, Mantids30::API::APIReturn &response, std::shared_ptr<TransientAuthenticationContext> authContext,
+void LoginPortal_Endpoints::issueTransientAuthTokenResponse(const RequestParameters &request, Mantids30::API::APIReturn &response, const std::shared_ptr<TransientAuthenticationContext> & authContext,
                                                             const std::vector<AuthenticationSchemeUsedSlot> &requiredAuthSlots, bool mustChangeCredential, bool canSkipPasswordChange)
 {
     // Retrieve configuration parameters from global settings.
@@ -111,8 +116,9 @@ void LoginPortal_Endpoints::issueTransientAuthTokenResponse(const RequestParamet
     Json::Value *jResponse = response.responseJSON();
 
     // There is a new authenticated current slot:
-    if (authContext->currentSlotId.has_value())
+    if (authContext->currentSlotId.has_value()) {
         authContext->authenticatedSlots.insert(authContext->currentSlotId.value());
+    }
 
     // This current slot must be changed immediatly:
     /*if (mustChange)

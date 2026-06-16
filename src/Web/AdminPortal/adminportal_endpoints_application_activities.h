@@ -13,18 +13,15 @@ public:
     using ClientDetails = Mantids30::Sessions::ClientDetails;
 
 protected:
-    static void addEndpoints_Activities(std::shared_ptr<Endpoints> endpoints);
+    static void addEndpoints_Activities(const std::shared_ptr<Endpoints> &endpoints);
 
     static APIReturn getActivityInfo(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
     static APIReturn listApplicationActivities(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
     static APIReturn addApplicationActivity(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
     static APIReturn removeApplicationActivity(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
-
     static APIReturn updateActivityParentActivity(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
     static APIReturn updateActivityDescription(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
-
     static APIReturn addSchemeToApplicationActivity(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
     static APIReturn removeSchemeFromApplicationActivity(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
-
     static APIReturn updateDefaultSchemeOnApplicationActivity(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
 };

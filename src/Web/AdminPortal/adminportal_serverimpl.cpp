@@ -36,8 +36,9 @@ bool AdminPortal_ServerImpl::createService()
     RESTful::Engine *adminPortalWebServer = Program::Config::RESTful_Engine::createRESTfulEngine(config, LOG_APP, LOG_RPC, "AdminPortal", IAM_ADMPORTAL_DEF_WEBROOTDIR,
                                                                                                  Program::Config::REST_ENGINE_NOCONFIG_JWT | Program::Config::REST_ENGINE_MANDATORY_SSL, vars);
 
-    if (!adminPortalWebServer)
+    if (!adminPortalWebServer) {
         return false;
+    }
 
     // JWT:
     adminPortalWebServer->config.jwtValidator = Globals::getIdentityManager()->applications->getAppJWTValidator(IAM_ADMPORTAL_APPNAME);

@@ -13,7 +13,7 @@ public:
     using ClientDetails = Mantids30::Sessions::ClientDetails;
 
 protected:
-    static void addEndpoints_AuthController(std::shared_ptr<Endpoints> endpoints);
+    static void addEndpoints_AuthController(const std::shared_ptr<Endpoints> &endpoints);
 
     static APIReturn addNewAuthenticationScheme(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
     static APIReturn listAuthenticationSchemes(void *context, const RequestParameters &request, ClientDetails &authClientDetails);

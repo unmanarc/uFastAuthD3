@@ -32,8 +32,9 @@ std::optional<uint32_t> IdentityManager_DB::AuthController_DB::addNewAuthenticat
                 {":strengthJSONValidator", MAKE_VAR(STRING, details.strengthJSONValidator.toStyledString())},
                 {":canSkipWhenExpired", MAKE_VAR(BOOL, details.canSkipWhenExpired)},
             });
-        if (!i || !i->isSuccessful())
+        if (!i || !i->isSuccessful()) {
             return std::nullopt;
+        }
 
         newSlotId = i->getLastInsertRowID();
     }

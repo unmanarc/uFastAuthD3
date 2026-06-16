@@ -39,7 +39,7 @@ public:
 
     //static void configureLogoutToken(const Mantids30::DataFormat::JWT::Token &refreshToken, Mantids30::DataFormat::JWT::Token &logoutToken);
 
-    static void issueLPTokenCookie(APIReturn &response, const RequestParameters &request, std::shared_ptr<TransientAuthenticationContext> authContext);
+    static void issueLPTokenCookie(APIReturn &response, const RequestParameters &request, const std::shared_ptr<TransientAuthenticationContext> &authContext);
 };
 
 #endif // TOKENSMANAGER_H
