@@ -136,10 +136,10 @@
                     <div class="card-body">
 
                         <div class="form-check form-switch mb-3">
-                            <input class="form-check-input" type="checkbox" id="useSessionCookies"
+                            <input class="form-check-input" type="checkbox" id="useSessionCookiesByDefault"
                                 oninput="displayUpdateTokensFunction()" onchange="displayUpdateTokensFunction()">
-                            <label class="form-check-label" for="useSessionCookies">
-                                Use Session Cookies (removed when navigator closes)
+                            <label class="form-check-label" for="useSessionCookiesByDefault">
+                                Use Session Cookies By Default (removed when navigator closes)
                             </label>
                         </div>
 
@@ -252,7 +252,7 @@
                 if (tokens.accessToken) {
                     document.getElementById('accessTokenPath').value = tokens.accessToken.path || '/';
                     document.getElementById('accessTokenTimeout').value = tokens.accessToken.timeout || 300;
-                    document.getElementById('useSessionCookies').checked = tokens.accessToken.useSessionCookies ?? true;
+                    document.getElementById('useSessionCookiesByDefault').checked = tokens.accessToken.useSessionCookiesByDefault ?? true;
                 }
 
                 if (tokens.refreshToken) {
@@ -293,7 +293,7 @@
             maintainRevocationAndLogoutInfo: document.getElementById('maintainRevocationAndLogoutInfo').checked,
             tokensConfiguration: {
                 accessToken: {
-                    useSessionCookies: document.getElementById('useSessionCookies').checked,
+                    useSessionCookiesByDefault: document.getElementById('useSessionCookiesByDefault').checked,
                     path: document.getElementById('accessTokenPath').value || '/',
                     timeout: parseInt(document.getElementById('accessTokenTimeout').value) || 300
                 },
