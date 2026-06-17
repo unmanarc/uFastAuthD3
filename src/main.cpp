@@ -21,8 +21,8 @@
 
 #include <sys/types.h>
 
-#include <dirent.h>
 #include <cinttypes>
+#include <dirent.h>
 #include <sys/stat.h>
 #include <unistd.h>
 
@@ -102,7 +102,8 @@ public:
             }
             catch (const boost::property_tree::info_parser_error &ex)
             {
-                initLog->log0(__func__, Program::Logs::LogLevel::CRITICAL, "Unable to read configuration file '%s' (line %lu): %s", configFile.c_str(), static_cast<unsigned long>(ex.line()), ex.what());
+                initLog->log0(__func__, Program::Logs::LogLevel::CRITICAL, "Unable to read configuration file '%s' (line %lu): %s", configFile.c_str(), static_cast<unsigned long>(ex.line()),
+                              ex.what());
                 return false;
             }
             catch (const std::exception &ex)
