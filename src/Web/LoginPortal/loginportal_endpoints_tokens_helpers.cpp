@@ -107,8 +107,6 @@ bool LoginPortal_Endpoints::token_createAndSignApplicationRefreshAndAccessJWTs(c
     (*response.responseJSON())["accessToken"] = accessTokenStr.value();
     (*response.responseJSON())["refreshToken"] = refreshTokenStr.value();
     (*response.responseJSON())["redirectURI"] = redirectURI;
-    //(*response.responseJSON())[""] = accessTokenStr.value();
-
     (*response.responseJSON())["callbackURI"] = Globals::getIdentityManager()->applications->getApplicationCallbackURI(app);
 
     return true;

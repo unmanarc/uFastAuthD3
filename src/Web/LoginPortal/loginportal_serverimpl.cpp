@@ -52,15 +52,15 @@ bool appOriginValidatorFunction(const std::string &requestOrigin, const std::str
     }
 }
 
-Protocol::HTTP::Status::Code dynamicInitialChecks(Mantids30::Network::Protocol::HTTP::HTTPv1_Base::Request *request, Mantids30::Network::Protocol::HTTP::HTTPv1_Base::Response *response)
+Protocol::HTTP::Status::Code dynInitialChecks(Mantids30::Network::Protocol::HTTP::HTTPv1_Base::Request *request, Mantids30::Network::Protocol::HTTP::HTTPv1_Base::Response *response)
 {
-    std::string keepAuthCookie = request->getCookie("KeepAuthentication");
+    std::string refreshTokenUserCookie = request->getCookie("SessionPublicData");
     std::string accessTokenCookie = request->getCookie("AccessToken");
     std::string xApiHeader = request->getHeaderOption("x-api-key");
 
     if (!xApiHeader.empty())
     {
-        if (!keepAuthCookie.empty() || !accessTokenCookie.empty())
+        if (!refreshTokenUserCookie.empty() || !accessTokenCookie.empty())
         {
             return response->setRedirectLocation("/");
         }
@@ -110,7 +110,7 @@ bool LoginPortal_ServerImpl::createService()
     loginWebServer->config.dynamicOriginValidator = appOriginValidatorFunction;
 
     // check if there is any session cookie and it comes from the proxy (embedded app auth), then, redirect.
-    loginWebServer->config.dynamicInitialChecks = dynamicInitialChecks;
+    loginWebServer->config.dynamicInitialChecks = dynInitialChecks;
 
     // Add authentication methods
     LoginPortal_Endpoints::addEndpoints(loginWebServer->endpointsHandler[1]);

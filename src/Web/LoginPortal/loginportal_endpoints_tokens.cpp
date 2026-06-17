@@ -20,23 +20,24 @@ using namespace Network::Protocol;
 */
 API::APIReturn LoginPortal_Endpoints::token(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
-    API::APIReturn response;
 
     IdentityManager *identityManager = Globals::getIdentityManager();
 
     std::string authenticatedUser = request.jwtToken->getSubject();
 
-    bool useEmbeddedAuthentication = false;
+    bool isEmbeddedAuthentication = false;
     bool keepAuthenticated = JSON_ASBOOL_D(request.jwtToken->getClaim("keepAuthenticated"), false);
     std::string activity = JSON_ASSTRING(*request.inputJSON, "activity", "");       // APP ACTIVITY NAME.
     std::string redirectURI = JSON_ASSTRING(*request.inputJSON, "redirectURI", ""); // APP REDIRECT URI.
     uint32_t schemeId = JSON_ASUINT(*request.inputJSON, "schemeId", 0);             // APP SCHEME ID.
     bool mock = JSON_ASBOOL(*request.inputJSON, "mock", false);                     // MOCK
 
+
     // Determine appName: prioritize x-api-key header, fallback to inputJSON "app" field
     std::string apiKey = request.clientRequest->getHeaderOption("x-api-key");
+    isEmbeddedAuthentication = !apiKey.empty();
     std::string appName;
-    if (!apiKey.empty())
+    if (isEmbeddedAuthentication)
     {
         appName = identityManager->applications->getApplicationNameByAPIKey(apiKey);
         if (appName.empty())
@@ -58,11 +59,9 @@ API::APIReturn LoginPortal_Endpoints::token(void *context, const RequestParamete
             LOG_APP->log2(__func__, appName, authClientDetails.ipAddress, Logs::LogLevel::SECURITY_ALERT, "API key access attempted for non-embedded application. App: %s", appName.c_str());
             return {HTTP::Status::Code::S_403_FORBIDDEN, "security_error", "Application does not support embedded authentication via API key."};
         }
-        useEmbeddedAuthentication = true;
     }
     else
     {
-        useEmbeddedAuthentication = false;
         appName = JSON_ASSTRING(*request.inputJSON, "app", "");
     }
 
@@ -127,14 +126,17 @@ API::APIReturn LoginPortal_Endpoints::token(void *context, const RequestParamete
 
     if (mock)
     {
-        return response;
+        return {};
     }
+
+
+    API::APIReturn response;
 
     //////////////////////////////////////////////////////////////////////////////////////////
     //// -------------------------       TOKEN CREATION       --------------------------- ////
     //////////////////////////////////////////////////////////////////////////////////////////
     // Create and sign tokens
-    if (!token_createAndSignApplicationRefreshAndAccessJWTs(request.jwtToken, useEmbeddedAuthentication, keepAuthenticated, appName, authenticatedUser, schemeId, redirectURI, response,
+    if (!token_createAndSignApplicationRefreshAndAccessJWTs(request.jwtToken, isEmbeddedAuthentication, keepAuthenticated, appName, authenticatedUser, schemeId, redirectURI, response,
                                                             authClientDetails))
     {
         // Failed to create the token...
@@ -145,9 +147,10 @@ API::APIReturn LoginPortal_Endpoints::token(void *context, const RequestParamete
     //////////////////////////////////////////////////////////////////////////////////////////
     //// ----------------------       KEEP AUTHENTICATION       ------------------------- ////
     //////////////////////////////////////////////////////////////////////////////////////////
-    if (keepAuthenticated == false)
+    if (!keepAuthenticated || isEmbeddedAuthentication)
     {
         // Discard access cookies upon first use. (Access tokens are short-lived, but should be discarded after the first usage)
+        // Also on embedded authentication we don't need to keep the auth here.
         deleteLoginCookies(context, request, authClientDetails, &response);
     }
 

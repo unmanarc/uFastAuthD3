@@ -42,27 +42,23 @@ void LoginPortal_Endpoints::addEndpoints(const std::shared_ptr<Endpoints> &endpo
     // Post-authenticated API:
     //endpoints->addEndpoint(HTTP::Method::POST, "retokenize", nullptr, SecurityRequirements::JWT_COOKIE_AUTH, {}, nullptr, &retokenize);
     endpoints->addEndpoint(HTTP::Method::PUT, "changeCredential", SecurityRequirements::NONE, {}, nullptr, &changeCredential);
-
-    endpoints->addEndpoint(HTTP::Method::GET, "getAppDescription", SecurityRequirements::NONE, {}, nullptr, &getAppDescription);
-
-    endpoints->addEndpoint(HTTP::Method::GET, "getLoginMode", SecurityRequirements::NONE, {}, nullptr, &getLoginMode);
+    endpoints->addEndpoint(HTTP::Method::GET, "getApplicationLoginPublicData", SecurityRequirements::NONE, {}, nullptr, &getApplicationLoginPublicData);
 
     // Temporal tokens are also given trough an intermediate window...
     //endpoints->addEndpoint(HTTP::Method::POST, "tempMFAToken", SecurityRequirements::JWT_COOKIE_AUTH, {}, nullptr,&tempMFAToken);
 }
 
-LoginPortal_Endpoints::APIReturn LoginPortal_Endpoints::getLoginMode(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+LoginPortal_Endpoints::APIReturn LoginPortal_Endpoints::getApplicationLoginPublicData(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     Json::Value r;
     // Get the identity manager from global settings to handle authentication.
-    IdentityManager *identityManager = Globals::getIdentityManager();
 
     // Determine appName: prioritize x-api-key header, fallback to inputJSON "app" field
     std::string apiKey = request.clientRequest->getHeaderOption("x-api-key");
     std::string appName;
     if (!apiKey.empty())
     {
-        appName = identityManager->applications->getApplicationNameByAPIKey(apiKey);
+        appName = Globals::getIdentityManager()->applications->getApplicationNameByAPIKey(apiKey);
         if (appName.empty())
         {
             LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LogLevel::SECURITY_ALERT, "Invalid API key provided. Application not found.");
@@ -76,34 +72,13 @@ LoginPortal_Endpoints::APIReturn LoginPortal_Endpoints::getLoginMode(void *conte
         r["mode"] = "DOMAIN";
     }
 
+
+    ApplicationTokenProperties tokenProps = Globals::getIdentityManager()->applications->getWebLoginJWTConfigFromApplication(appName);
+    //x.sessionInactivityTimeout
+
     r["app"]["name"] = appName;
-    r["app"]["description"] = identityManager->applications->getApplicationDescription(appName);
-    return r;
-}
+    r["app"]["description"] = Globals::getIdentityManager()->applications->getApplicationDescription(appName);
+    r["app"]["session"]["useSessionCookiesByDefault"] = JSON_ASBOOL(tokenProps.tokensConfiguration["accessToken"], "useSessionCookiesByDefault", true);
 
-LoginPortal_Endpoints::APIReturn LoginPortal_Endpoints::getAppDescription(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
-{
-    // Get the identity manager from global settings to handle authentication.
-    IdentityManager *identityManager = Globals::getIdentityManager();
-
-    // Determine appName: prioritize x-api-key header, fallback to inputJSON "app" field
-    std::string apiKey = request.clientRequest->getHeaderOption("x-api-key");
-    std::string appName;
-    if (!apiKey.empty())
-    {
-        appName = identityManager->applications->getApplicationNameByAPIKey(apiKey);
-        if (appName.empty())
-        {
-            LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LogLevel::SECURITY_ALERT, "Invalid API key provided. Application not found.");
-            return {HTTP::Status::Code::S_401_UNAUTHORIZED, "invalid_api_key", "The provided API key is invalid or unauthorized."};
-        }
-    }
-    else
-    {
-        appName = JSON_ASSTRING(*request.inputJSON, "app", "");
-    }
-
-    json r;
-    r["description"] = identityManager->applications->getApplicationDescription(appName);
     return r;
 }

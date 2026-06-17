@@ -1,7 +1,11 @@
 #include "globals.h"
 #include "loginportal_endpoints.h"
+#include <Mantids30/Helpers/encoders.h>
 #include <Mantids30/Helpers/json.h>
 #include <boost/algorithm/string/replace.hpp>
+#include <json/value.h>
+#include <json/writer.h>
+#include <sstream>
 
 using namespace Mantids30;
 using namespace API::RESTful;
@@ -67,14 +71,36 @@ HTTP::Status::Code LoginPortal_Endpoints::handleLogoutDynamicRequest(const std::
         dontUseOriginValidation = false;
     }
 
-    std::string keepAuthentication = request->getVarsBySource(HTTP::Source::POST)->getStringValue("keepAuthentication");
+    std::string sessionPublicData = request->getVarsBySource(HTTP::Source::POST)->getStringValue("sessionPublicData");
+
+    Json::Value jSessionPublicData;
+    if (!sessionPublicData.empty())
+    {
+        std::string decoded = Mantids30::Helpers::Encoders::decodeFromBase64(sessionPublicData);
+        Json::CharReaderBuilder readerBuilder;
+        std::string errors;
+
+        // 3. Create the CharReader via CharReaderBuilder
+        Json::CharReaderBuilder builder;
+        const std::unique_ptr<Json::CharReader> reader(builder.newCharReader());
+
+        // 4. Parse the string
+        bool parsingSuccessful = reader->parse(decoded.c_str(), decoded.c_str() + decoded.length(), &jSessionPublicData, &errors);
+
+        // 5. Check for errors and extract data
+        if (!parsingSuccessful)
+        {
+            LOG_APP->log2(__func__, "", request->networkClientInfo.REMOTE_ADDR, Logs::LogLevel::SECURITY_ALERT, "Failed to parse sessionPublicData: %s", errors.c_str());
+            return HTTP::Status::Code::S_400_BAD_REQUEST;
+        }
+    }
 
     // if the cookie does not exist, it's a non-persistent login session.
     std::string defaultAPPCallback = Globals::getIdentityManager()->applications->getApplicationCallbackURI(appName);
 
     Json::Value v;
     v["appName"] = appName;
-    v["keepAuthentication"] = keepAuthentication;
+    v["sessionPublicData"] = jSessionPublicData;
     v["defaultCallbackURL"] = defaultAPPCallback;
 
     Json::StreamWriterBuilder builder;

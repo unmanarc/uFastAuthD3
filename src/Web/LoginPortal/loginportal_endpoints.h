@@ -24,10 +24,7 @@ public:
     */
     static void addEndpoints(const std::shared_ptr<Endpoints> &endpoints);
 
-    /*static Mantids30::Network::Protocol::HTTP::Status::Code handleLoginDynamicRequest(const std::string &appName, HTTPv1_Base::Request *request, HTTPv1_Base::Response *response,
-                                                                                        std::shared_ptr<void>);*/
-
-    static Mantids30::Network::Protocol::HTTP::Status::Code handleLogoutDynamicRequest(const std::string &appName, HTTPv1_Base::Request *request, HTTPv1_Base::Response *response,
+    static Mantids30::Network::Protocol::HTTP::Status::Code handleLogoutDynamicRequest(const std::string &urlPostfix, HTTPv1_Base::Request *request, HTTPv1_Base::Response *response,
                                                                                        const std::shared_ptr<void> &);
 
 private:
@@ -39,8 +36,7 @@ private:
     static APIReturn token(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
     static APIReturn logout(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
     static APIReturn changeCredential(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
-    static APIReturn getAppDescription(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
-    static APIReturn getLoginMode(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
+    static APIReturn getApplicationLoginPublicData(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
     static APIReturn registerAccount(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
     static APIReturn callback(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
 
