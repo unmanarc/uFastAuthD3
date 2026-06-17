@@ -37,14 +37,14 @@ function decodeBase64(str) {
 // Perform logout
 (function () {
     console.log('[Main] Starting logout process...');
+    console.log(data.sessionPublicData);
     var callbackURLs = [];
-
-    if (!data.keepAuthentication) {
-        // When data.keepAuthentication is false, only use data.defaultCallbackURL (ignore cookie)
+    if (!data.sessionPublicData.keepAuthenticated) {
+        // When data.sessionPublicData.keepAuthenticated is false, only use data.defaultCallbackURL (ignore cookie)
         callbackURLs = [data.defaultCallbackURL];
-        console.log('[Main] data.keepAuthentication is false. Using only data.defaultCallbackURL:', callbackURLs);
+        console.log('[Main] data.sessionPublicData.keepAuthenticated is false. Using only data.defaultCallbackURL:', callbackURLs);
     } else {
-        // When data.keepAuthentication is true, use cookie data + ensure data.defaultCallbackURL is included
+        // When data.sessionPublicData.keepAuthenticated is true, use cookie data + ensure data.defaultCallbackURL is included
         var cookieData = getLoggedInCookie();
 
         if (cookieData) {
@@ -71,7 +71,7 @@ function decodeBase64(str) {
             console.log('[Main] No cookie data available');
         }
 
-        // Ensure data.defaultCallbackURL is included when data.keepAuthentication is true
+        // Ensure data.defaultCallbackURL is included when data.sessionPublicData.keepAuthenticated is true
         if (callbackURLs.indexOf(data.defaultCallbackURL) === -1) {
             callbackURLs.push(data.defaultCallbackURL);
             console.log('[Main] data.defaultCallbackURL was not in cookie, adding it:', data.defaultCallbackURL);
@@ -110,9 +110,9 @@ function decodeBase64(str) {
 
     console.log('[Main] Waiting for all', logoutPromises.length, 'external logout promise(s) to complete...');
 
-    // Wait for all external logouts, then perform local logout only if data.keepAuthentication is true
+    // Wait for all external logouts, then perform local logout only if data.sessionPublicData.keepAuthenticated is true
     $.when.apply($, logoutPromises).always(function () {
-        if (data.keepAuthentication) {
+        if (data.sessionPublicData.keepAuthenticated) {
             console.log('[Main] All external logouts completed (success or failure). Proceeding with local logout...');
             $.ajax({
                 url: "/api/v1/logout",
@@ -124,18 +124,17 @@ function decodeBase64(str) {
                 },
                 success: function (response) {
                     console.log('[Local Logout] SUCCESS. Reloading page...');
-                    window.location.href = "/?app=" + data.appName;
+                    window.location.href = "../?app=" + data.appName;
                 },
                 error: function (xhr, status, error) {
                     console.error('[Local Logout] FAILED:', error, 'XHR status:', xhr.status);
                     console.log('[Local Logout] Reloading page anyway...');
-//                  window.location.href = "/?app=" + data.appName;
+                    //                  window.location.href = "/?app=" + data.appName;
                 }
             });
         } else {
-            console.log('[Main] All external logouts completed. data.keepAuthentication is false, skipping local logout.');
-            window.location.href = "./?app=" + data.appName ;
-
+            console.log('[Main] All external logouts completed. data.sessionPublicData.keepAuthenticated is false, skipping local logout.');
+            window.location.href = "../?app=" + data.appName;
         }
     });
     console.log('[Main] Logout script initialized. Waiting for AJAX callbacks...');

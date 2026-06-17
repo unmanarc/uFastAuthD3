@@ -3,30 +3,6 @@
 // ============================================================
 
 $(document).ready(function () {
-
-    // Fetch and display app description
-    /*    
-        $.ajax({
-            url: "api/v1/getAppDescription",
-            type: "GET",
-            data: JSON.stringify(
-                {
-                    app: appName
-                }
-            ),
-            success: function (response) {
-                if (response.description) {
-                    $("#appDescription").text(response.description).css("font-weight", "bold");
-                }
-            },
-            error: function (xhr, status, error) {
-                // Silently fail - app description is optional
-                console.error('Failed to load app description:', error);
-            }
-        });
-    */
-
-
     // Focus on username input when the page loads
     $("#username").focus();
 
@@ -47,6 +23,12 @@ $(document).ready(function () {
         window.location.href = "./?app=IAM_USRPORTAL";
     }
     appName = loginMode.body.app.name;
+
+    // Set default "Keep me signed in" state based on session cookie configuration
+    // If session cookies are used by default, user stays logged in automatically, so unchecked
+    // If session cookies are NOT used by default, check it so user can choose to stay signed in
+    const useSessionCookiesByDefault = loginMode.body.app.session.useSessionCookiesByDefault;
+    $("#keepAuthenticated").prop("checked", !useSessionCookiesByDefault);
 
     $("#appDescription").text(loginMode.body.app.description).css("font-weight", "bold");
     document.title = loginMode.body.app.description + " Login";

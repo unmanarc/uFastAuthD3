@@ -10,13 +10,14 @@
 //<%jvar/ufad3_maxAge:maxAge%>//
 //<%jvar/ufad3_user:user%>//
 //<%jvar/ufad3_domain:domain%>//
-//<%jfunc/ufad3_loginMode:GET/v1/getLoginMode({})%>//
+//<%jfunc/ufad3_loginMode:GET/v1/getApplicationLoginPublicData({})%>//
 
 let maxAgeVar = ufad3_maxAge;
 let sessionTimeout = null;
 
 function updateSessionFailed() {
   alert("Session Update Failed");
+  window.location.href = '/login/';
 }
 
 /**
@@ -38,17 +39,38 @@ function getCookie(name) {
  * Upon successful response, it updates maxAgeVar and restarts the session timer.
  */
 function refreshAccessToken() {
-  $.ajax({
-    url: '/auth/api/v1/refreshAccessToken',
-    type: 'POST',
-    success: function (response) {
-      // Update maxAgeVar with the new value from server
-      maxAgeVar = response["maxAge"];
+  fetch('/auth/api/v1/refreshAccessToken', {
+    method: 'POST',
+  })
+  .then(response => {
+    if (!response.ok) throw new Error('Network response was not ok');
+    return response.json();
+  })
+  .then(data => {
+    // Success handler: update maxAgeVar with the new value from server
+    maxAgeVar = data["maxAge"];
 
-      // Start or restart the session timer based on the new maxAgeVar value
-      startAccessRetokenizerTimer();
-    },
-    error: updateSessionFailed
+    // Start or restart the session timer based on the new maxAgeVar value
+    startAccessRetokenizerTimer();
+  })
+  .catch(() => {
+    updateSessionFailed();
+  });
+}
+/**
+ * Sends an AJAX request to the server to refresh the access token.
+ * Upon successful response, it will go back to the site.
+ */
+function retokenizeAccessToken() {
+  fetch('/auth/api/v1/refreshAccessToken', {
+    method: 'POST',
+  })
+  .then(response => {
+    if (!response.ok) throw new Error('Network response was not ok');
+    window.location.href = '/';
+  })
+  .catch(() => {
+    window.location.href = '/login/';
   });
 }
 
@@ -59,56 +81,58 @@ function refreshAccessToken() {
 function logout() {
   // Check if login mode is EMBEDDED
   if (ufad3_loginMode.body && ufad3_loginMode.body.mode === "EMBEDDED") {
-    $.ajax({
-      url: '/auth/api/v1/logout',
-      type: 'POST',
-      success: function (response) {
-        window.location.href = '/login/';
-      },
-      error: function () {
-        alert('Failed to logout');
-      }
+    fetch('/auth/api/v1/logout', {
+      method: 'POST',
+    })
+    .then(response => {
+      if (!response.ok) throw new Error('Network response was not ok');
+      window.location.href = '/login/';
+    })
+    .catch(() => {
+      alert('Failed to logout');
     });
     return;
   }
   else {
-    // Step 1: Get the logout callback URL from the server (synchronous to ensure we have the URL before proceeding)
-    $.ajax({
-      url: '/auth/api/v1/getLogoutCallbackURL',
-      type: 'GET',
-      async: false,
-      success: function (response) {
-        var logoutURL = response["url"];
-        var appName = response["appName"];
+    // Step 1: Get the logout callback URL from the server
+    fetch('/auth/api/v1/getLogoutCallbackURL', {
+      method: 'GET',
+    })
+    .then(response => {
+      if (!response.ok) throw new Error('Network response was not ok');
+      return response.json();
+    })
+    .then(response => {
+      var logoutURL = response["url"];
+      var appName = response["appName"];
 
-        // Step 2: Create a hidden form dynamically
-        var form = document.createElement('form');
-        form.method = 'POST';
-        form.action = logoutURL;
-        form.style.display = 'none';
+      // Step 2: Create a hidden form dynamically
+      var form = document.createElement('form');
+      form.method = 'POST';
+      form.action = logoutURL;
+      form.style.display = 'none';
 
-        // Step 3: Add the appName as a hidden input field
-        var tokenInput = document.createElement('input');
-        tokenInput.type = 'hidden';
-        tokenInput.name = 'appName';
-        tokenInput.value = appName;
-        form.appendChild(tokenInput);
+      // Step 3: Add the appName as a hidden input field
+      var tokenInput = document.createElement('input');
+      tokenInput.type = 'hidden';
+      tokenInput.name = 'appName';
+      tokenInput.value = appName;
+      form.appendChild(tokenInput);
 
-        // Step 3b: Add the KeepAuthentication cookie value as a hidden input field
-        var keepAuthInput = document.createElement('input');
-        keepAuthInput.type = 'hidden';
-        keepAuthInput.name = 'keepAuthentication';
-        keepAuthInput.value = getCookie('KeepAuthentication') || '';
-        form.appendChild(keepAuthInput);
-        //alert(keepAuthInput.value);
+      // Step 3b: Add the KeepAuthentication cookie value as a hidden input field
+      var keepAuthInput = document.createElement('input');
+      keepAuthInput.type = 'hidden';
+      keepAuthInput.name = 'sessionPublicData';
+      keepAuthInput.value = getCookie('SessionPublicData') || '';
+      form.appendChild(keepAuthInput);
+      //alert(keepAuthInput.value);
 
-        // Step 4: Append the form to the document body and submit it
-        document.body.appendChild(form);
-        form.submit();
-      },
-      error: function () {
-        alert('Failed to retrieve logout URL');
-      }
+      // Step 4: Append the form to the document body and submit it
+      document.body.appendChild(form);
+      form.submit();
+    })
+    .catch(() => {
+      alert('Failed to retrieve logout URL');
     });
   }
 
@@ -137,20 +161,20 @@ function startAccessRetokenizerTimer() {
 startAccessRetokenizerTimer();
 
 /**
- * Monitors the KeepAuthentication cookie.
+ * Monitors the SessionPublicData cookie.
  * If the cookie is missing, redirects the user to /login.
  * Checks every 1 second.
  */
-function startKeepAuthenticationMonitor() {
+function startSessionPublicDataMonitor() {
   setInterval(function () {
-    if (!getCookie('KeepAuthentication')) {
+    if (!getCookie('SessionPublicData')) {
       window.location.href = '/login';
     }
   }, 1000);
 }
 
-// Start the KeepAuthentication cookie monitor
-startKeepAuthenticationMonitor();
+// Start the SessionPublicData cookie monitor
+startSessionPublicDataMonitor();
 
 //refreshAccessToken();
 
