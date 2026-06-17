@@ -175,6 +175,3 @@ function startSessionPublicDataMonitor() {
 
 // Start the SessionPublicData cookie monitor
 startSessionPublicDataMonitor();
-
-//refreshAccessToken();
-
