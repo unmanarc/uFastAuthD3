@@ -119,8 +119,66 @@ HTTP::Status::Code LoginPortal_Endpoints::handleLogoutDynamicRequest(const std::
     std::string page;
 
     page = R"(
-<HTML>
+<!DOCTYPE html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Logging Out</title>
+    <style>
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html, body {
+            height: 100%;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #e8e8e8;
+        }
+
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .card {
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            padding: 48px 56px;
+            text-align: center;
+            max-width: 420px;
+        }
+
+        .spinner {
+            width: 48px;
+            height: 48px;
+            margin: 0 auto 24px;
+            border: 4px solid #e0e0e0;
+            border-top-color: #757575;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            font-weight: 400;
+            color: #424242;
+            margin-bottom: 8px;
+        }
+
+        p {
+            font-size: 0.95rem;
+            color: #757575;
+        }
+    </style>
     <script src="../assets/js/jquery.min.js" type="text/javascript"></script>
     <script>
     let data=DEFAULTAPPCALLBACK_PLACEHOLDER;
@@ -128,9 +186,13 @@ HTTP::Status::Code LoginPortal_Endpoints::handleLogoutDynamicRequest(const std::
     <script src="../assets/js/logout.js" type="text/javascript"></script>
 </head>
 <body>
-    <h1>Logging out...</h1>
+    <main class="card">
+        <div class="spinner"></div>
+        <h1>Logging Out</h1>
+        <p>Your session is being terminated securely. Please wait...</p>
+    </main>
 </body>
-</HTML>
+</html>
 )";
 
     // Replace placeholder with the actual default callback URL
