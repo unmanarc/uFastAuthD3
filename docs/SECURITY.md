@@ -71,8 +71,7 @@ All cookies are marked as `Secure` (HTTPS only). They are configured with the fo
 |---|---|---|---|---|
 | `RefreshToken` | `/auth` | `true` | `Strict` | JWT token used to authenticate the user against the token management backend. |
 | `AccessToken` | `/` | `true` | `Strict` | Short-lived JWT used to identify the current authenticated user across the entire application. |
-| `KeepAuthentication` | `/auth` | `false` | `Strict` | JavaScript-readable flag indicating whether authentication was established via a temporary session or a persistent one. When the user logs out from this application, a logout signal is also sent to the main login portal to deauthenticate there as well. |
-| `RefreshTokenUser` | `/auth` | `true` | `None` | Current logged-in username. Used to manage the app-logout signal coming from the login portal and properly deauthenticate the user from the database. |
+| `SessionPublicData` | `/` | `false` | `None` | Current logged-in username. Used to manage the app-logout signal coming from the login portal and properly deauthenticate the user from the database. |
 | `RefreshTokenId` | `/auth` | `true` | `None` | Current refresh token ID. Used to manage the app-logout signal coming from the login portal and properly deauthenticate the session from the database. |
 
 ---
