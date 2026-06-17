@@ -3,8 +3,8 @@
 #include "globals.h"
 
 #include "json/value.h"
-#include <ctime>
 #include <cinttypes>
+#include <ctime>
 
 using namespace Mantids30;
 using namespace Mantids30::Program;
@@ -46,23 +46,21 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::changeCredential(void *con
     {
         if (!tokenVerified)
         {
-            response.setError(HTTP::Status::Code::S_401_UNAUTHORIZED, "change_credential_failed", "Challenge Token Expired or Invalid, Try Again.");
+            return {HTTP::Status::Code::S_401_UNAUTHORIZED, "change_credential_failed", "Challenge Token Expired or Invalid, Try Again."};
         }
         else if (!appMatches)
         {
-            response.setError(HTTP::Status::Code::S_401_UNAUTHORIZED, "change_credential_failed", "Invalid Challenge Token: App mismatch");
+            return {HTTP::Status::Code::S_401_UNAUTHORIZED, "change_credential_failed", "Invalid Challenge Token: App mismatch"};
         }
         else if (!typeIsChallenge)
         {
-            response.setError(HTTP::Status::Code::S_401_UNAUTHORIZED, "change_credential_failed", "Invalid Challenge Token: Type is not 'challenge'");
+            return {HTTP::Status::Code::S_401_UNAUTHORIZED, "change_credential_failed", "Invalid Challenge Token: Type is not 'challenge'"};
         }
-        return response;
     }
 
     if (JSON_ASSTRING(challengeToken.getClaim("details"), "operation", "") != "changeCredential")
     {
-        response.setError(HTTP::Status::Code::S_401_UNAUTHORIZED, "change_credential_failed", "Invalid Operation for Challenge Token");
-        return response;
+        return {HTTP::Status::Code::S_401_UNAUTHORIZED, "change_credential_failed", "Invalid Operation for Challenge Token"};
     }
 
     std::string accountName = challengeToken.getSubject();
@@ -74,7 +72,7 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::changeCredential(void *con
 
     if (!Globals::getIdentityManager()->authController->changeAccountCredential(clientDetails, accountName, accountName, cred, slotId))
     {
-        response.setError(HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "change_credential_failed", "Failed to change credential");
+        return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "change_credential_failed", "Failed to change credential"};
     }
 
     return response;
@@ -89,8 +87,7 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::createChallengeToken(void 
     // Parse input parameters
     if (!request.inputJSON->isMember("slotId") || !request.inputJSON->isMember("verification") || !request.inputJSON->isMember("details"))
     {
-        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "missing_fields", "slotId + verification + details are required");
-        return response;
+        return {HTTP::Status::Code::S_400_BAD_REQUEST, "missing_fields", "slotId + verification + details are required"};
     }
 
     uint32_t slotId = JSON_ASUINT((*request.inputJSON), "slotId", 0);
@@ -104,8 +101,7 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::createChallengeToken(void 
 
     if (!IS_CREDENTIAL_AUTHENTICATED(authResult))
     {
-        response.setError(HTTP::Status::Code::S_401_UNAUTHORIZED, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(authResult)), authResultToString(authResult));
-        return response;
+        return {HTTP::Status::Code::S_401_UNAUTHORIZED, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(authResult)), authResultToString(authResult)};
     }
 
     JWT::Token token;
@@ -131,7 +127,7 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::listAllAuthCredentialSlots
     std::map<uint32_t, std::pair<bool, Credential>> creds = Globals::getIdentityManager()->authController->listAllAuthCredentialSlotsPublicDataForAccount(accountName);
     const AuthenticationPolicy &authPolicy = Globals::getIdentityManager()->authController->getGlobalAuthenticationPolicy();
 
-    for (const std::pair<uint32_t, std::pair<bool, Credential>> &credEntry : creds)
+    for (const auto &credEntry : creds)
     {
         Json::Value entry;
         entry["slotId"] = credEntry.first;
@@ -166,25 +162,23 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::updateAccountDetailFieldsV
     Json::Value fieldValuesArray = (*request.inputJSON)["fieldValues"];
     if (!fieldValuesArray.isArray())
     {
-        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Field values must be an array");
-        return response;
+        return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Field values must be an array"};
     }
 
     std::list<AccountDetailFieldValue> fieldValues;
 
     // Process each field value in the array
-    for (Json::ArrayIndex i = 0; i < fieldValuesArray.size(); ++i)
+    for (const auto &i : fieldValuesArray)
     {
         AccountDetailFieldValue fieldValue;
-        fieldValue.fromJSON(fieldValuesArray[i]);
+        fieldValue.fromJSON(i);
         fieldValues.push_back(fieldValue);
     }
 
     // Update account detail fields values
     if (!Globals::getIdentityManager()->accounts->updateAccountDetailFieldValues(clientDetails, accountName, accountName, fieldValues, false))
     {
-        response.setError(HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to update account detail fields values");
-        return response;
+        return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to update account detail fields values"};
     }
     // Return 200.
 
@@ -200,7 +194,7 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::getAccountDetailFieldsValu
     std::map<std::string, AccountDetailFieldValue> fieldValues = Globals::getIdentityManager()->accounts->getAccountDetailFieldValues(accountName);
 
     Json::Value result(Json::arrayValue);
-    for (const std::pair<std::string, AccountDetailFieldValue> &fieldValue : fieldValues)
+    for (const auto &fieldValue : fieldValues)
     {
         result.append(fieldValue.second.toJSON());
     }
@@ -276,8 +270,7 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::activateCredential(void *c
     // Parse input parameters
     if (!request.inputJSON->isMember("slotId") || !request.inputJSON->isMember("hash") || !request.inputJSON->isMember("ssalt"))
     {
-        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "missing_fields", "slotId, hash, and ssalt are required");
-        return response;
+        return {HTTP::Status::Code::S_400_BAD_REQUEST, "missing_fields", "slotId, hash, and ssalt are required"};
     }
 
     uint32_t slotId = JSON_ASUINT((*request.inputJSON), "slotId", 0);
@@ -287,14 +280,12 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::activateCredential(void *c
     // Check if credential already exists using the new function
     if (Globals::getIdentityManager()->authController->doesCredentialSlotExistOnAccount(accountName, slotId))
     {
-        response.setError(HTTP::Status::Code::S_409_CONFLICT, "activation_failed", "Credential is already activated");
-        return response;
+        return {HTTP::Status::Code::S_409_CONFLICT, "activation_failed", "Credential is already activated"};
     }
 
     if (!Globals::getIdentityManager()->authController->activateAccountCredential(clientDetails, accountName, accountName, slotId, hash, ssalt))
     {
-        response.setError(HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "activation_failed", "Failed to activate credential");
-        return response;
+        return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "activation_failed", "Failed to activate credential"};
     }
 
     return response;
@@ -308,8 +299,7 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::activateOTP(void *context,
 
     if (!request.inputJSON->isMember("slotId") || !request.inputJSON->isMember("seed"))
     {
-        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "missing_fields", "slotId and seed are required");
-        return response;
+        return {HTTP::Status::Code::S_400_BAD_REQUEST, "missing_fields", "slotId and seed are required"};
     }
 
     uint32_t slotId = JSON_ASUINT((*request.inputJSON), "slotId", 0);
@@ -317,14 +307,12 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::activateOTP(void *context,
 
     if (Globals::getIdentityManager()->authController->doesCredentialSlotExistOnAccount(accountName, slotId))
     {
-        response.setError(HTTP::Status::Code::S_409_CONFLICT, "activation_failed", "OTP credential is already activated");
-        return response;
+        return {HTTP::Status::Code::S_409_CONFLICT, "activation_failed", "OTP credential is already activated"};
     }
 
     if (!Globals::getIdentityManager()->authController->activateAccountCredential(clientDetails, accountName, accountName, slotId, seed, ""))
     {
-        response.setError(HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "activation_failed", "Failed to activate OTP credential");
-        return response;
+        return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "activation_failed", "Failed to activate OTP credential"};
     }
 
     return response;
@@ -339,8 +327,7 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::removeCredential(void *con
     // Parse input parameters
     if (!request.inputJSON->isMember("slotId") || !request.inputJSON->isMember("verification"))
     {
-        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "missing_fields", "slotId and verification is required");
-        return response;
+        return {HTTP::Status::Code::S_400_BAD_REQUEST, "missing_fields", "slotId and verification is required"};
     }
 
     uint32_t slotId = JSON_ASUINT((*request.inputJSON), "slotId", 0);
@@ -355,14 +342,12 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::removeCredential(void *con
 
     if (!IS_CREDENTIAL_AUTHENTICATED(authResult))
     {
-        response.setError(HTTP::Status::Code::S_401_UNAUTHORIZED, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(authResult)), authResultToString(authResult));
-        return response;
+        return {HTTP::Status::Code::S_401_UNAUTHORIZED, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(authResult)), authResultToString(authResult)};
     }
 
     if (!Globals::getIdentityManager()->authController->removeAccountCredential(clientDetails, accountName, accountName, slotId))
     {
-        response.setError(HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "deletion_failed", "Failed to delete credential");
-        return response;
+        return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "deletion_failed", "Failed to delete credential"};
     }
 
     return response;
