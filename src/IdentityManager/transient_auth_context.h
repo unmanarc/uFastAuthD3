@@ -58,7 +58,7 @@ struct TransientAuthenticationContext
         return true;
     }
 
-    bool validateAndMerge_TransientAuthTokenIfExist(const std::string &transientAuthTokenStr, const Json::Value *inputJSON, const std::shared_ptr<Mantids30::DataFormat::JWT> jwtValidator)
+    bool validateAndMerge_TransientAuthTokenIfExist(const std::string &transientAuthTokenStr, const Json::Value *inputJSON, const std::shared_ptr<Mantids30::DataFormat::JWT>& jwtValidator)
     {
         // Validate the token
         if (!transientAuthTokenStr.empty() && transientAuthTokenStr != "null")
@@ -80,7 +80,7 @@ struct TransientAuthenticationContext
         return true;
     }
 
-    std::string issueSignedTransientTokenFromValues(const uint32_t &loginAuthenticationTimeout, std::optional<uint32_t> nextSlotId, std::shared_ptr<Mantids30::DataFormat::JWT> jwtSigner)
+    std::string issueSignedTransientTokenFromValues(const uint32_t &loginAuthenticationTimeout, std::optional<uint32_t> nextSlotId, const std::shared_ptr<Mantids30::DataFormat::JWT>& jwtSigner)
     {
         Mantids30::DataFormat::JWT::Token newTransientAuthToken;
 
@@ -116,7 +116,7 @@ struct TransientAuthenticationContext
         return jwtSigner->signFromToken(newTransientAuthToken, false);
     }
 
-    std::string issueSignedTransientTokenFromCurrentToken(std::shared_ptr<Mantids30::DataFormat::JWT> jwtSigner)
+    std::string issueSignedTransientTokenFromCurrentToken(const std::shared_ptr<Mantids30::DataFormat::JWT>& jwtSigner)
     {
         newTokenExpirationTime = transientAuthToken.getExpirationTime();
         return jwtSigner->signFromToken(transientAuthToken, false);
@@ -147,7 +147,7 @@ struct TransientAuthenticationContext
         doesTransientTokenNotExist = true;
     }
 
-    Json::Value getAllAuthenticatedSlotsIds()
+    [[nodiscard]] Json::Value getAllAuthenticatedSlotsIds() const
     {
         std::set<uint32_t> r = authenticatedSlots;
         if (currentSlotId.has_value())
@@ -157,7 +157,7 @@ struct TransientAuthenticationContext
         return Mantids30::Helpers::setToJSON(r);
     }
 
-    Json::Value getAllAuthenticatedSchemes()
+    [[nodiscard]] Json::Value getAllAuthenticatedSchemes() const
     {
         Json::Value r_jAuthenticatedSchemes = jAuthenticatedSchemes;
         if (schemeId != UINT32_MAX)
@@ -167,7 +167,7 @@ struct TransientAuthenticationContext
         return r_jAuthenticatedSchemes;
     }
 
-    Json::Value getAllAuthenticatedAppsCallbackURLs()
+    [[nodiscard]] Json::Value getAllAuthenticatedAppsCallbackURLs() const
     {
         Json::Value r_jAuthenticatedAppsCallbackURLs = jAuthenticatedAppsCallbackURLs;
         r_jAuthenticatedAppsCallbackURLs.append(appCallbackURL);
