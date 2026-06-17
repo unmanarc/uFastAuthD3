@@ -138,7 +138,6 @@ All API endpoints are prefixed with `/api/v1/`. The following tables list each s
 | `POST` | `/api/v1/token` | Transform current authentication to application access tokens (Access + Refresh JWT) | JWT Cookie |
 | `POST` | `/api/v1/logout` | Logout and clear authentication cookies | None |
 | `PUT` | `/api/v1/changeCredential` | Change/update user credential | None |
-| `GET` | `/api/v1/getAppDescription` | Get application description | None |
 
 
 ### 🔄 AppSync Endpoints
