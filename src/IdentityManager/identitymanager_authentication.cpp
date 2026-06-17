@@ -368,42 +368,40 @@ Credential IdentityManager::AuthController::createNewCredential(const uint32_t &
     r.mustChange = mustChange;
     r.expirationTimestamp = time(nullptr) + r.slotDetails.defaultExpirationSeconds;
 
-    switch (r.slotDetails.passwordFunction)
+    if (r.slotDetails.passwordFunction.has_value())
     {
-    case FN_NOTFOUND:
-    {
-        // Do nothing...
-    }
-    break;
-    case FN_PLAIN:
-    {
-        r.hash = passwordInput;
-    }
-    break;
-    case FN_SHA256:
-    {
-        r.hash = Helpers::Crypto::calcSHA256(passwordInput);
-    }
-    break;
-    case FN_SHA512:
-    {
-        r.hash = Helpers::Crypto::calcSHA512(passwordInput);
-    }
-    break;
-    case FN_SSHA256:
-    {
-        Mantids30::Helpers::Random::createRandomSalt32(r.ssalt);
-        r.hash = Helpers::Crypto::calcSSHA256(passwordInput, r.ssalt);
-    }
-    break;
-    case FN_SSHA512:
-    {
-        Mantids30::Helpers::Random::createRandomSalt32(r.ssalt);
-        r.hash = Helpers::Crypto::calcSSHA512(passwordInput, r.ssalt);
-    }
-    break;
-    case FN_GAUTHTIME:
-        r.hash = passwordInput;
+        switch ((HashFunction)r.slotDetails.passwordFunction.value())
+        {
+        case HashFunction::PLAIN:
+        {
+            r.hash = passwordInput;
+        }
+        break;
+        case HashFunction::SHA256:
+        {
+            r.hash = Helpers::Crypto::calcSHA256(passwordInput);
+        }
+        break;
+        case HashFunction::SHA512:
+        {
+            r.hash = Helpers::Crypto::calcSHA512(passwordInput);
+        }
+        break;
+        case HashFunction::SSHA256:
+        {
+            Mantids30::Helpers::Random::createRandomSalt32(r.ssalt);
+            r.hash = Helpers::Crypto::calcSSHA256(passwordInput, r.ssalt);
+        }
+        break;
+        case HashFunction::SSHA512:
+        {
+            Mantids30::Helpers::Random::createRandomSalt32(r.ssalt);
+            r.hash = Helpers::Crypto::calcSSHA512(passwordInput, r.ssalt);
+        }
+        break;
+        case HashFunction::GAUTHTIME:
+            r.hash = passwordInput;
+        }
     }
 
     return r;
@@ -522,7 +520,7 @@ std::optional<uint32_t> IdentityManager::AuthController::initializateDefaultPass
         if (r)
         {
             std::optional<uint32_t> opt_asi = addNewAuthenticationSlot(clientDetails, performedBy,
-                                                                       AuthenticationSlotDetails("Master Password", HashFunction::FN_SHA256, "", 3600 * 24 * 365 * 1, 0, false));
+                                                                       AuthenticationSlotDetails("Master Password", HashFunction::SHA256, "", 3600 * 24 * 365 * 1, 0, false));
             if ((r = opt_asi.has_value()))
             {
                 authSlotId = *opt_asi;

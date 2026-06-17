@@ -39,48 +39,51 @@ AuthenticationResult CredentialValidator::validateStoredCredential(const std::st
     //  bool saltedHash = false;
     std::string toCompare;
 
-    switch (storedCredential.slotDetails.passwordFunction)
+    if (!storedCredential.slotDetails.passwordFunction.has_value())
     {
-    case FN_NOTFOUND:
         return AuthenticationResult::INTERNAL_ERROR;
-    case FN_PLAIN:
+    }
+
+    switch ((HashFunction)storedCredential.slotDetails.passwordFunction.value())
+    {
+    case HashFunction::PLAIN:
     {
         toCompare = passwordInput;
     }
     break;
-    case FN_SHA256:
+    case HashFunction::SHA256:
     {
         toCompare = Mantids30::Helpers::Crypto::calcSHA256(passwordInput);
     }
     break;
-    case FN_SHA512:
+    case HashFunction::SHA512:
     {
         toCompare = Mantids30::Helpers::Crypto::calcSHA512(passwordInput);
     }
     break;
-    case FN_SSHA256:
+    case HashFunction::SSHA256:
     {
         toCompare = Mantids30::Helpers::Crypto::calcSSHA256(passwordInput, storedCredential.ssalt);
         // saltedHash = true;
     }
     break;
-    case FN_SSHA512:
+    case HashFunction::SSHA512:
     {
         toCompare = Mantids30::Helpers::Crypto::calcSSHA512(passwordInput, storedCredential.ssalt);
         //saltedHash = true;
     }
     break;
-    case FN_GAUTHTIME:
+    case HashFunction::GAUTHTIME:
         r = validateGAuth(accountName, storedCredential.hash, passwordInput); // GAuth Time Based Token comparisson (seed,token)
         goto skipAuthMode;
     }
 
     switch (authMode)
     {
-    case MODE_PLAIN:
+    case Mode::PLAIN:
         r = storedCredential.hash == toCompare ? AuthenticationResult::AUTHENTICATED : AuthenticationResult::AUTHENTICATION_FAILED; // 1-1 comparisson
         break;
-    case MODE_CHALLENGE:
+    case Mode::CHALLENGE:
         r = validateChallenge(storedCredential.hash, passwordInput, challengeSalt);
         break;
     }

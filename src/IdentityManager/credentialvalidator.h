@@ -96,7 +96,7 @@ public:
      * @param accountName The account name identifier to authenticate.
      * @param password The incoming password or credential to validate against stored data.
      * @param slotId The identifier for the specific authentication slot being used.
-     * @param authMode Specifies the mode of authentication (e.g., plain text, hashed). Default is `MODE_PLAIN`.
+     * @param authMode Specifies the mode of authentication (e.g., plain text, hashed). Default is `Mode::PLAIN`.
      * @param challengeSalt Optional salt used in challenge-based authentication methods. Default is an empty string.
      * @param authContext (Optional) A shared pointer to an `TransientAuthenticationContext` object, which provides supplementary
      *        data for authentication, such as:
@@ -126,7 +126,7 @@ public:
      *       enforce policies such as account locking or throttling after repeated failed attempts.
      */
     virtual AuthenticationResult authenticateCredential(const Mantids30::Sessions::ClientDetails &clientDetails, const std::string &accountName, const std::string &password, const uint32_t &slotId,
-                                                        const Mode &authMode = MODE_PLAIN, const std::string &challengeSalt = "", std::shared_ptr<TransientAuthenticationContext> authContext = nullptr)
+                                                        const Mode &authMode = Mode::PLAIN, const std::string &challengeSalt = "", std::shared_ptr<TransientAuthenticationContext> authContext = nullptr)
         = 0;
 
     /**

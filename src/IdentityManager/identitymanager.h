@@ -10,7 +10,6 @@
 #include "ds_account.h"
 #include "ds_application.h"
 #include "ds_security_events.h"
-
 #include "credentialvalidator.h"
 #include <Mantids30/Helpers/json.h>
 #include <string>
@@ -360,7 +359,7 @@ public:
          * @note On failure, the function ensures to increment bad attempt counters for the account and the password slot.
          */
         virtual AuthenticationResult authenticateCredential(const ClientDetails &clientDetails, const std::string &accountName, const std::string &sPassword, const uint32_t &slotId = 0,
-                                                            const Mode &authMode = MODE_PLAIN, const std::string &challengeSalt = "",
+                                                            const Mode &authMode = Mode::PLAIN, const std::string &challengeSalt = "",
                                                             std::shared_ptr<TransientAuthenticationContext> authContext = nullptr) override;
 
         /**
@@ -392,7 +391,7 @@ public:
      * @return true if changed, false if not (bad password, etc)
      */
         virtual bool changeAccountAuthenticatedCredential(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountName, uint32_t slotId,
-                                                          const std::string &sCurrentPassword, const Credential &newPasswordData, Mode authMode = MODE_PLAIN, const std::string &challengeSalt = "");
+                                                          const std::string &sCurrentPassword, const Credential &newPasswordData, Mode authMode = Mode::PLAIN, const std::string &challengeSalt = "");
 
         virtual bool removeAccountCredential(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountName, uint32_t slotId) = 0;
 

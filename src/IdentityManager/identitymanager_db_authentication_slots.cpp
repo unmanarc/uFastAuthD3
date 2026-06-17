@@ -26,7 +26,7 @@ std::optional<uint32_t> IdentityManager_DB::AuthController_DB::addNewAuthenticat
             "VALUES(:description,:function,:defaultExpirationSeconds,:strengthJSONValidator,:totp2FAStepsToleranceWindow,:canSkipWhenExpired);",
             {
                 {":description", MAKE_VAR(STRING, details.description)},
-                {":function", MAKE_VAR(UINT32, details.passwordFunction)},
+                {":function", MAKE_VAR(UINT32,  details.passwordFunction.has_value()? static_cast<uint8_t>(details.passwordFunction.value()) : 500 )},
                 {":defaultExpirationSeconds", MAKE_VAR(UINT32, details.defaultExpirationSeconds)},
                 {":totp2FAStepsToleranceWindow", MAKE_VAR(UINT32, details.totp2FAStepsToleranceWindow)},
                 {":strengthJSONValidator", MAKE_VAR(STRING, details.strengthJSONValidator.toStyledString())},
