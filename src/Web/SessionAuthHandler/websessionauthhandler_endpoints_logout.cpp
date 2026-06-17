@@ -56,8 +56,7 @@ API::APIReturn WebSessionAuthHandler_Endpoints::appLogout(void *context, const R
     if (appName.empty())
     {
         LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LogLevel::SECURITY_ALERT, "Invalid API key provided. Application not found.");
-        response.setError(HTTP::Status::Code::S_401_UNAUTHORIZED, "invalid_api_key", "The provided API key is invalid or unauthorized.");
-        return response;
+        return {HTTP::Status::Code::S_401_UNAUTHORIZED, "invalid_api_key", "The provided API key is invalid or unauthorized."};
     }
 
     // 4. Get Token Configuration for Cookie Paths
@@ -92,8 +91,7 @@ WebSessionAuthHandler_Endpoints::APIReturn WebSessionAuthHandler_Endpoints::getL
     {
         // app key not found...
         LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LogLevel::SECURITY_ALERT, "Invalid API key provided. Application not found.");
-        response.setError(HTTP::Status::Code::S_401_UNAUTHORIZED, "invalid_api_key", "The provided API key is invalid or unauthorized.");
-        return response;
+        return {HTTP::Status::Code::S_401_UNAUTHORIZED, "invalid_api_key", "The provided API key is invalid or unauthorized."};
     }
 
     std::optional<IdentityManager::Applications::ApplicationAttributes> attribs = identityManager->applications->getApplicationAttributes(appName);
@@ -101,8 +99,7 @@ WebSessionAuthHandler_Endpoints::APIReturn WebSessionAuthHandler_Endpoints::getL
     {
         // app key not found...
         LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LogLevel::SECURITY_ALERT, "Internal Error While reading the APP '%s' Attributes.", appName.c_str());
-        response.setError(HTTP::Status::Code::S_401_UNAUTHORIZED, "invalid_app", "Internal Error While reading the APP Attributes.");
-        return response;
+        return {HTTP::Status::Code::S_401_UNAUTHORIZED, "invalid_app", "Internal Error While reading the APP Attributes."};
     }
 
     json payloadOut;

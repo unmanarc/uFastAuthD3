@@ -144,8 +144,7 @@ WebSessionAuthHandler_Endpoints::APIReturn WebSessionAuthHandler_Endpoints::getL
             errorMsg = authResultToString(AuthenticationResult::INTERNAL_ERROR);
         }
         LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LogLevel::SECURITY_ALERT, "%s", errorMsg.c_str());
-        response.setError(status, errorType, errorMsg);
-        return response;
+        return {status, errorType, errorMsg};
     }
 
     // 4. Validar API Key usando la app extraída del token
@@ -176,8 +175,8 @@ bool WebSessionAuthHandler_Endpoints::validateAPIKey(const std::string &app, API
     {
         LOG_APP->log2(__func__, request.jwtToken->getSubject(), authClientDetails.ipAddress, Logs::LogLevel::SECURITY_ALERT,
                       "Application '%s' does not exist. Pre-Auth JWT Token signature may be compromised!! Change immediately!", app.c_str());
-        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::BAD_PARAMETERS)),
-                          authResultToString(AuthenticationResult::BAD_PARAMETERS));
+        response = {HTTP::Status::Code::S_400_BAD_REQUEST, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::BAD_PARAMETERS)),
+                    authResultToString(AuthenticationResult::BAD_PARAMETERS)};
         return false;
     }
 
@@ -185,7 +184,7 @@ bool WebSessionAuthHandler_Endpoints::validateAPIKey(const std::string &app, API
     {
         LOG_APP->log2(__func__, request.jwtToken->getSubject(), authClientDetails.ipAddress, Logs::LogLevel::SECURITY_ALERT,
                       "Application '%s' does not match the web application API Key. Attack or misconfiguration?", app.c_str());
-        response.setError(HTTP::Status::Code::S_404_NOT_FOUND, "not_found", "Not Found.");
+        response = {HTTP::Status::Code::S_404_NOT_FOUND, "not_found", "Not Found."};
         return false;
     }
 
@@ -198,7 +197,7 @@ std::string WebSessionAuthHandler_Endpoints::signApplicationToken(JWT::Token &ac
     std::shared_ptr<JWT> signingJWT = Globals::getIdentityManager()->applications->getAppJWTSigner(appName);
     if (!signingJWT)
     {
-        return std::string();
+        return {};
     }
     return signingJWT->signFromToken(accessToken, false);
 }

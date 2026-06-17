@@ -16,7 +16,6 @@ using namespace API::RESTful;
 using namespace Network::Protocol;
 using namespace Network::Protocol::HTTP;
 
-
 // Receives the token from the Login Portal (Via proxy, this is why we receive the X-API-Key from the intermediate app), and then, we set the refresh/access token as cookies
 API::APIReturn WebSessionAuthHandler_Endpoints::callback(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
@@ -38,8 +37,7 @@ API::APIReturn WebSessionAuthHandler_Endpoints::callback(void *context, const Re
         if (request.clientRequest->getOrigin() != allowedOrigin)
         {
             LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LogLevel::SECURITY_ALERT, "Logout is not allowed from Origin='%s'.", request.clientRequest->getOrigin().c_str());
-            response.setError(HTTP::Status::Code::S_403_FORBIDDEN, "invalid_origin", "Invalid Origin.");
-            return response;
+            return {HTTP::Status::Code::S_403_FORBIDDEN, "invalid_origin", "Invalid Origin."};
         }
 
         APIReturn r = appLogout(context, request, authClientDetails);
@@ -58,8 +56,7 @@ API::APIReturn WebSessionAuthHandler_Endpoints::callback(void *context, const Re
     {
         // app key not found...
         LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LogLevel::SECURITY_ALERT, "Invalid API key provided. Application not found.");
-        response.setError(HTTP::Status::Code::S_401_UNAUTHORIZED, "invalid_api_key", "The provided API key is invalid or unauthorized.");
-        return response;
+        return {HTTP::Status::Code::S_401_UNAUTHORIZED, "invalid_api_key", "The provided API key is invalid or unauthorized."};
     }
 
     ApplicationTokenProperties tokenProps = identityManager->applications->getWebLoginJWTConfigFromApplication(appNameStr);
@@ -84,8 +81,7 @@ API::APIReturn WebSessionAuthHandler_Endpoints::callback(void *context, const Re
         }
 
         LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LogLevel::SECURITY_ALERT, logMessage.c_str());
-        response.setError(HTTP::Status::Code::S_401_UNAUTHORIZED, "invalid_token", "The provided access/refresh token is invalid.");
-        return response;
+        return {HTTP::Status::Code::S_401_UNAUTHORIZED, "invalid_token", "The provided access/refresh token is invalid."};
     }
 
     // Verify the redirection... (VERY IMPORTANT)
@@ -94,8 +90,7 @@ API::APIReturn WebSessionAuthHandler_Endpoints::callback(void *context, const Re
     if (redirectURLS.count(redirectURIStr) == 0)
     {
         LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LogLevel::SECURITY_ALERT, "Redirect URI '%s' is not allowed for application '%s'.", redirectURIStr.c_str(), appNameStr.c_str());
-        response.setError(HTTP::Status::Code::S_403_FORBIDDEN, "invalid_redirect_uri", "The requested redirect URI is not authorized.");
-        return response;
+        return {HTTP::Status::Code::S_403_FORBIDDEN, "invalid_redirect_uri", "The requested redirect URI is not authorized."};
     }
 
     setupAccessTokenCookies(response, accessToken, tokenProps);

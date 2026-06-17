@@ -58,7 +58,8 @@ void WebSessionAuthHandler_Endpoints::setupCookie(APIReturn &response, const std
     response.cookiesMap[name].value = value;
     response.cookiesMap[name].sameSitePolicy = props.sameSitePolicy;
 
-    if (props.sessionCookie) {
+    if (props.sessionCookie)
+    {
         response.cookiesMap[name].setAsSessionCookie();
     }
 }
