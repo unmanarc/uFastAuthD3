@@ -115,7 +115,8 @@ bool WebSessionAuthHandler_ServerImpl::createService()
     RESTful::Engine *webSessionAuthHandlerServer = Program::Config::RESTful_Engine::createRESTfulEngine(config, LOG_APP, LOG_RPC, "Web Session Auth Handler", IAM_LOGINPORTAL_DEF_WEBROOTDIR,
                                                                                                         Program::Config::REST_ENGINE_NOCONFIG_JWT);
 
-    if (!webSessionAuthHandlerServer) {
+    if (!webSessionAuthHandlerServer)
+    {
         return false;
     }
 

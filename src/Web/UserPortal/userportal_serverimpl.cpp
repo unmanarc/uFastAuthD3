@@ -36,7 +36,8 @@ bool UserPortal_ServerImpl::createService()
     RESTful::Engine *userPortalWebServer = Program::Config::RESTful_Engine::createRESTfulEngine(config, LOG_APP, LOG_RPC, "UserPortal", IAM_USRPORTAL_DEF_WEBROOTDIR,
                                                                                                 Program::Config::REST_ENGINE_NOCONFIG_JWT | Program::Config::REST_ENGINE_MANDATORY_SSL, vars);
 
-    if (!userPortalWebServer) {
+    if (!userPortalWebServer)
+    {
         return false;
     }
 
