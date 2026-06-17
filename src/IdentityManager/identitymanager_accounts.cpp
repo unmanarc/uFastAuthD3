@@ -11,7 +11,8 @@ IdentityManager::Accounts::Accounts(IdentityManager *m_parent)
 bool IdentityManager::Accounts::isAccountExpired(const std::string &accountName)
 {
     time_t tAccountExpirationTime = getAccountExpirationTime(accountName);
-    if (!tAccountExpirationTime) {
+    if (!tAccountExpirationTime)
+    {
         return false;
     }
     return tAccountExpirationTime < time(nullptr);
@@ -22,7 +23,8 @@ bool IdentityManager::Accounts::hasAdminAccount()
     std::set<std::string> accounts = listAccounts();
     for (const std::string &account : accounts)
     {
-        if (getAccountFlags(account).admin) {
+        if (getAccountFlags(account).admin)
+        {
             return true;
         }
     }

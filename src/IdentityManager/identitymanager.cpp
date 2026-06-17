@@ -7,19 +7,24 @@ using namespace Mantids30::DataFormat;
 
 IdentityManager::~IdentityManager()
 {
-    if (accounts) {
+    if (accounts)
+    {
         delete accounts;
     }
-    if (applicationRoles) {
+    if (applicationRoles)
+    {
         delete applicationRoles;
     }
-    if (applications) {
+    if (applications)
+    {
         delete applications;
     }
-    if (authController) {
+    if (authController)
+    {
         delete authController;
     }
-    if (applicationActivities) {
+    if (applicationActivities)
+    {
         delete applicationActivities;
     }
 }

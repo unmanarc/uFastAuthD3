@@ -33,10 +33,7 @@ struct hash<TokenCacheKey>
 
 struct ApplicationRole
 {
-    bool operator<(const ApplicationRole &x) const
-    {
-        return ((x.appName < appName) || (x.appName == appName && x.id < id));
-    }
+    bool operator<(const ApplicationRole &x) const { return ((x.appName < appName) || (x.appName == appName && x.id < id)); }
 
     [[nodiscard]] json toJSON() const
     {
@@ -53,10 +50,7 @@ struct ApplicationRole
 
 struct ApplicationScope
 {
-    bool operator<(const ApplicationScope &x) const
-    {
-        return (x.appName < appName || (x.appName == appName && x.id < id));
-    }
+    bool operator<(const ApplicationScope &x) const { return (x.appName < appName || (x.appName == appName && x.id < id)); }
 
     [[nodiscard]] json toJSON() const
     {
@@ -161,7 +155,8 @@ protected:
      * @param authMode The mode to use for authentication.
      * @return A reason indicating whether the stored credential was valid or not.
      */
-    [[nodiscard]] AuthenticationResult validateStoredCredential(const std::string &accountName, const Credential &storedCredential, const std::string &passwordInput, const std::string &challengeSalt, Mode authMode);
+    [[nodiscard]] AuthenticationResult validateStoredCredential(const std::string &accountName, const Credential &storedCredential, const std::string &passwordInput, const std::string &challengeSalt,
+                                                                Mode authMode);
 
 private:
     /**

@@ -75,7 +75,8 @@ bool IdentityManager_DB::AuthController_DB::removeApplicationScopeFromRole(const
                                                                            const std::string &roleName, bool lock)
 {
     bool ret = false;
-    if (lock) {
+    if (lock)
+    {
         _parent->m_mutex.lock();
     }
     ret = _parent->m_sqlConnector->qExecuteEx("DELETE FROM iam.applicationRolesScopes WHERE `f_scopeId`=:scopeId and `f_appName`=:appName AND `f_roleName`=:roleName;",
@@ -89,7 +90,8 @@ bool IdentityManager_DB::AuthController_DB::removeApplicationScopeFromRole(const
                                                    clientDetails);
     }
 
-    if (lock) {
+    if (lock)
+    {
         _parent->m_mutex.unlock();
     }
     return ret;
@@ -117,7 +119,8 @@ bool IdentityManager_DB::AuthController_DB::removeApplicationScopeFromAccount(co
                                                                               const std::string &accountName, bool lock)
 {
     bool ret = false;
-    if (lock) {
+    if (lock)
+    {
         _parent->m_mutex.lock();
     }
     ret = _parent->m_sqlConnector->qExecuteEx("DELETE FROM iam.applicationScopeAccounts WHERE `f_scopeId`=:scopeId AND `f_appName`=:appName AND `f_accountName`=:accountName;",
@@ -131,7 +134,8 @@ bool IdentityManager_DB::AuthController_DB::removeApplicationScopeFromAccount(co
                                                    performedBy, clientDetails);
     }
 
-    if (lock) {
+    if (lock)
+    {
         _parent->m_mutex.unlock();
     }
     return ret;
@@ -175,7 +179,8 @@ std::set<ApplicationScope> IdentityManager_DB::AuthController_DB::listApplicatio
     Abstract::STRING sAppName, sScopeId, sDescription;
 
     std::string sqlQuery = "SELECT `f_appName`,`scopeId` FROM iam.applicationScopes;";
-    if (!applicationName.empty()) {
+    if (!applicationName.empty())
+    {
         sqlQuery = "SELECT `f_appName`,`scopeId`,`description` FROM iam.applicationScopes WHERE "
                    "`f_appName`=:appName;";
     }
@@ -191,7 +196,8 @@ std::set<ApplicationScope> IdentityManager_DB::AuthController_DB::listApplicatio
 std::set<std::string> IdentityManager_DB::AuthController_DB::listAccountsOnApplicationScope(const ApplicationScope &applicationScope, bool lock)
 {
     std::set<std::string> ret;
-    if (lock) {
+    if (lock)
+    {
         _parent->m_mutex.lockShared();
     }
 
@@ -203,7 +209,8 @@ std::set<std::string> IdentityManager_DB::AuthController_DB::listAccountsOnAppli
         ret.insert(accountName.getValue());
     }
 
-    if (lock) {
+    if (lock)
+    {
         _parent->m_mutex.unlockShared();
     }
     return ret;
@@ -227,7 +234,7 @@ Json::Value IdentityManager_DB::AuthController_DB::searchApplicationScopes(const
 
     // Extract the search value from dataTablesFilters
     std::string searchValue = JSON_ASSTRING(dataTablesFilters["search"], "value", "");
-    std::string whereFilters = "";
+    std::string whereFilters;
 
     // Build the SQL query with WHERE clause for DataTables search
     std::string sqlQueryStr = R"(

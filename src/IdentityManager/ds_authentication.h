@@ -42,9 +42,12 @@ enum Mode
 
 static Mode getAuthModeFromString(const std::string &mode)
 {
-    if (mode == "CHALLENGE") {
+    if (mode == "CHALLENGE")
+    {
         return MODE_CHALLENGE;
-    } else {
+    }
+    else
+    {
         return MODE_PLAIN;
     }
 }
@@ -296,7 +299,7 @@ struct AuthenticationSchemeUsedSlot
         , optional(isOptional)
     {}
 
-    AuthenticationSchemeUsedSlot(uint32_t id, uint32_t priority, bool isOptional, const AuthenticationSlotDetails & _details)
+    AuthenticationSchemeUsedSlot(uint32_t id, uint32_t priority, bool isOptional, const AuthenticationSlotDetails &_details)
         : slotId(id)
         , orderPriority(priority)
         , optional(isOptional)

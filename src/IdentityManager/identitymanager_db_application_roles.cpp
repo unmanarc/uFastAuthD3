@@ -64,7 +64,8 @@ bool IdentityManager_DB::ApplicationRoles_DB::removeAccountFromRole(const Client
 {
     bool ret = false;
 
-    if (lock) {
+    if (lock)
+    {
         _parent->m_mutex.lock();
     }
 
@@ -76,7 +77,8 @@ bool IdentityManager_DB::ApplicationRoles_DB::removeAccountFromRole(const Client
         _parent->logSecurityEventOnApplicationRoles(appName, roleName, accountName, SecurityEventAction::REVOKE_ACCOUNT, "Account removed from role", performedBy, clientDetails);
     }
 
-    if (lock) {
+    if (lock)
+    {
         _parent->m_mutex.unlock();
     }
     return ret;
@@ -150,7 +152,8 @@ std::set<ApplicationRole> IdentityManager_DB::ApplicationRoles_DB::getApplicatio
 std::set<std::string> IdentityManager_DB::ApplicationRoles_DB::getApplicationRoleAccounts(const std::string &appName, const std::string &roleName, bool lock)
 {
     std::set<std::string> ret;
-    if (lock) {
+    if (lock)
+    {
         _parent->m_mutex.lockShared();
     }
 
@@ -162,7 +165,8 @@ std::set<std::string> IdentityManager_DB::ApplicationRoles_DB::getApplicationRol
         ret.insert(accountName.getValue());
     }
 
-    if (lock) {
+    if (lock)
+    {
         _parent->m_mutex.unlockShared();
     }
     return ret;

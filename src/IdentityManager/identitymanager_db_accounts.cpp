@@ -83,7 +83,7 @@ bool IdentityManager_DB::Accounts_DB::disableAccount(const ClientDetails &client
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
 
-    if (disabled == true && !isThereAnotherAdmin(accountName))
+    if (disabled && !isThereAnotherAdmin(accountName))
     {
         return false;
     }
@@ -156,11 +156,10 @@ bool IdentityManager_DB::Accounts_DB::updateAccountApplicationRoles(const Client
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
 
-    if (!_parent->m_sqlConnector
-             ->qExecuteEx("DELETE FROM iam.applicationRolesAccounts WHERE "
-                          "`f_accountName`=:accountName AND `f_appName`=:appName;",
-                          {{":accountName", MAKE_VAR(STRING, accountName)},
-                           {":appName", MAKE_VAR(STRING, appName)}})) {
+    if (!_parent->m_sqlConnector->qExecuteEx("DELETE FROM iam.applicationRolesAccounts WHERE "
+                                             "`f_accountName`=:accountName AND `f_appName`=:appName;",
+                                             {{":accountName", MAKE_VAR(STRING, accountName)}, {":appName", MAKE_VAR(STRING, appName)}}))
+    {
         return false;
     }
 
@@ -169,9 +168,8 @@ bool IdentityManager_DB::Accounts_DB::updateAccountApplicationRoles(const Client
         if (!_parent->m_sqlConnector->qExecuteEx("INSERT INTO iam.applicationRolesAccounts "
                                                  "(`f_roleName`,`f_accountName`,`f_appName`) "
                                                  "VALUES(:roleName,:accountName,:appName);",
-                                                 {{":roleName", MAKE_VAR(STRING, role)},
-                                                  {":accountName", MAKE_VAR(STRING, accountName)},
-                                                  {":appName", MAKE_VAR(STRING, appName)}})) {
+                                                 {{":roleName", MAKE_VAR(STRING, role)}, {":accountName", MAKE_VAR(STRING, accountName)}, {":appName", MAKE_VAR(STRING, appName)}}))
+        {
             return false;
         }
     }
@@ -185,7 +183,7 @@ bool IdentityManager_DB::Accounts_DB::changeAccountFlags(const ClientDetails &cl
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
 
-    if ((accountFlags.confirmed == false || accountFlags.enabled == false || accountFlags.admin == false) && !isThereAnotherAdmin(accountName))
+    if ((!accountFlags.confirmed || !accountFlags.enabled || !accountFlags.admin) && !isThereAnotherAdmin(accountName))
     {
         return false;
     }
@@ -229,7 +227,9 @@ std::optional<AccountDetails> IdentityManager_DB::Accounts_DB::getAccountDetails
             details.expirationDate = expiration.getValue();
             details.creationDate = creation.getValue();
             details.expired = std::time(nullptr) > details.expirationDate;
-        } else {
+        }
+        else
+        {
             return std::nullopt;
         }
     }
@@ -461,7 +461,8 @@ std::set<std::string> IdentityManager_DB::Accounts_DB::listAccounts()
 std::set<ApplicationRole> IdentityManager_DB::Accounts_DB::getAccountApplicationRoles(const std::string &appName, const std::string &accountName, bool lock)
 {
     std::set<ApplicationRole> ret;
-    if (lock) {
+    if (lock)
+    {
         _parent->m_mutex.lockShared();
     }
 
@@ -481,7 +482,8 @@ std::set<ApplicationRole> IdentityManager_DB::Accounts_DB::getAccountApplication
         }
     }
 
-    if (lock) {
+    if (lock)
+    {
         _parent->m_mutex.unlockShared();
     }
 
@@ -724,7 +726,7 @@ bool IdentityManager_DB::Accounts_DB::changeAccountDetails(const ClientDetails &
     else
     {
         // Delete only specified fields for the account
-        for (const std::pair<std::string, std::string> &field : fieldsValues)
+        for (const auto &field : fieldsValues)
         {
             _parent->m_sqlConnector->qExecuteEx("DELETE FROM iam.accountDetailValues WHERE `f_accountName` = :accountName AND `f_fieldName` = :fieldName;",
                                                 {{":accountName", MAKE_VAR(STRING, accountName)}, {":fieldName", MAKE_VAR(STRING, field.first)}});
@@ -732,7 +734,7 @@ bool IdentityManager_DB::Accounts_DB::changeAccountDetails(const ClientDetails &
     }
 
     // Insert new values
-    for (const std::pair<std::string, std::string> &field : fieldsValues)
+    for (const auto &field : fieldsValues)
     {
         // Validate field value against regex from iam.accountDetailFields
         Abstract::STRING regex;
@@ -829,7 +831,7 @@ bool IdentityManager_DB::Accounts_DB::updateAccountDetailFieldValues(const Clien
     {
         // Collect all editable field names for this account
         std::set<std::string> editableFields;
-        for (const std::pair<std::string, AccountDetailField> &field : dbFieldsScheme)
+        for (const auto &field : dbFieldsScheme)
         {
             if ((field.second.canUserEdit() && !isAdmin) || isAdmin)
             {
@@ -931,9 +933,12 @@ std::map<std::string, AccountDetailFieldValue> IdentityManager_DB::Accounts_DB::
                 field.fieldRegexpValidator = JSON_ASSTRING(extendedAttributes["behavior"], "regexpValidator", ""); // TODO: remover esta linea
                 field.extendedAttribs = extendedAttributes;
 
-                if (value.isNull()) {
+                if (value.isNull())
+                {
                     field.value = std::nullopt;
-                } else {
+                }
+                else
+                {
                     field.value = value.getValue();
                 }
 

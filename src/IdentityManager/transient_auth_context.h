@@ -108,9 +108,9 @@ struct TransientAuthenticationContext
         newTransientAuthToken.setClaim("authenticatedSchemes", jAuthenticatedSchemes);
         newTransientAuthToken.setClaim("authenticatedAppsCallbackURLs", jAuthenticatedAppsCallbackURLs);
 
-        if (nextSlotId.has_value()) {
-            newTransientAuthToken
-                .setClaim("currentSlotId", nextSlotId.value()); // Enforce this with authentication.
+        if (nextSlotId.has_value())
+        {
+            newTransientAuthToken.setClaim("currentSlotId", nextSlotId.value()); // Enforce this with authentication.
         }
 
         return jwtSigner->signFromToken(newTransientAuthToken, false);
@@ -150,7 +150,8 @@ struct TransientAuthenticationContext
     Json::Value getAllAuthenticatedSlotsIds()
     {
         std::set<uint32_t> r = authenticatedSlots;
-        if (currentSlotId.has_value()) {
+        if (currentSlotId.has_value())
+        {
             r.insert(currentSlotId.value());
         }
         return Mantids30::Helpers::setToJSON(r);
@@ -159,7 +160,8 @@ struct TransientAuthenticationContext
     Json::Value getAllAuthenticatedSchemes()
     {
         Json::Value r_jAuthenticatedSchemes = jAuthenticatedSchemes;
-        if (schemeId != UINT32_MAX) {
+        if (schemeId != UINT32_MAX)
+        {
             r_jAuthenticatedSchemes.append(schemeId);
         }
         return r_jAuthenticatedSchemes;

@@ -46,7 +46,8 @@ bool IdentityManager::AuthController::recoverAccountMasterCredential(const Clien
 
     bool r = m_parent->authController->changeAccountCredential(clientDetails, performedBy, accountName, credentialData, authSlots.begin()->first);
 
-    if (r) {
+    if (r)
+    {
         *sInitPW = newPass;
     }
 
@@ -68,7 +69,8 @@ Credential IdentityManager_DB::AuthController_DB::retrieveAccountCredential(cons
 
     *accountFound = _parent->accounts->doesAccountExist(accountName);
 
-    if (!*accountFound) {
+    if (!*accountFound)
+    {
         return ret;
     }
 
@@ -216,7 +218,7 @@ std::map<uint32_t, std::pair<bool, Credential>> IdentityManager_DB::AuthControll
     std::set<uint32_t> configuredSlots = listUsedAuthenticationSlotsOnAccount(accountName);
 
     // For each authentication slot, create a public Credential entry
-    for (const std::pair<const uint32_t, AuthenticationSlotDetails> &i : allAuthSlots)
+    for (const auto &i : allAuthSlots)
     {
         uint32_t id = i.first;
         AuthenticationSlotDetails slotDetails = i.second;
@@ -278,11 +280,13 @@ bool IdentityManager_DB::AuthController_DB::changeAccountCredential(const Client
 
     if (passwordData.expirationTimestamp == 1)
     {
-        if (authSlots[slotId].defaultExpirationSeconds == 0) {
+        if (authSlots[slotId].defaultExpirationSeconds == 0)
+        {
             passwordData.expirationTimestamp = 0;
-        } else {
-            passwordData.expirationTimestamp = time(nullptr)
-                                               + authSlots[slotId].defaultExpirationSeconds;
+        }
+        else
+        {
+            passwordData.expirationTimestamp = time(nullptr) + authSlots[slotId].defaultExpirationSeconds;
         }
     }
 
