@@ -36,25 +36,22 @@ API::APIReturn AdminPortal_Endpoints_ApplicationRoles::updateRoleDescription(voi
 
     if (roleName.empty())
     {
-        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Role name cannot be empty.");
-        return response;
+        return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Role name cannot be empty."};
     }
 
     if (appName.empty())
     {
-        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Application name is required");
-        return response;
+        return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Application name is required"};
     }
 
     if (roleDescription.empty())
     {
-        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Role description cannot be empty.");
-        return response;
+        return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Role description cannot be empty."};
     }
 
     if (!Globals::getIdentityManager()->applicationRoles->updateRoleDescription(authClientDetails, request.jwtToken->getSubject(), appName, roleName, roleDescription))
     {
-        response.setError(HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to update the role description.");
+        return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to update the role description."};
     }
     return response;
 }
@@ -69,25 +66,22 @@ API::APIReturn AdminPortal_Endpoints_ApplicationRoles::addRole(void *context, co
 
     if (roleName.empty())
     {
-        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Role name cannot be empty.");
-        return response;
+        return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Role name cannot be empty."};
     }
 
     if (appName.empty())
     {
-        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Application name is required");
-        return response;
+        return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Application name is required"};
     }
 
     if (roleDescription.empty())
     {
-        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Role description cannot be empty.");
-        return response;
+        return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Role description cannot be empty."};
     }
 
     if (!Globals::getIdentityManager()->applicationRoles->addRole(authClientDetails, request.jwtToken->getSubject(), appName, roleName, roleDescription))
     {
-        response.setError(HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to create the new role.\nThe role ID may already exist.");
+        return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to create the new role.\nThe role ID may already exist."};
     }
 
     return response;
@@ -103,14 +97,12 @@ API::APIReturn AdminPortal_Endpoints_ApplicationRoles::getRoleInfo(void *context
 
     if (roleName.empty())
     {
-        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Role name cannot be empty.");
-        return response;
+        return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Role name cannot be empty."};
     }
 
     if (appName.empty())
     {
-        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Application name is required");
-        return response;
+        return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Application name is required"};
     }
 
     payloadOut["details"]["description"] = Globals::getIdentityManager()->applicationRoles->getApplicationRoleDescription(appName, roleName);
@@ -155,19 +147,17 @@ API::APIReturn AdminPortal_Endpoints_ApplicationRoles::removeRole(void *context,
 
     if (appName.empty())
     {
-        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Application name is required");
-        return response;
+        return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Application name is required"};
     }
 
     if (roleName.empty())
     {
-        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Role ID is required");
-        return response;
+        return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Role ID is required"};
     }
 
     if (!Globals::getIdentityManager()->applicationRoles->removeRole(authClientDetails, request.jwtToken->getSubject(), appName, roleName))
     {
-        response.setError(HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to remove the role");
+        return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to remove the role"};
     }
     return response;
 }
@@ -182,25 +172,22 @@ API::APIReturn AdminPortal_Endpoints_ApplicationRoles::addApplicationRoleToAccou
 
     if (appName.empty())
     {
-        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Application name is required");
-        return response;
+        return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Application name is required"};
     }
 
     if (roleName.empty())
     {
-        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Role ID is required");
-        return response;
+        return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Role ID is required"};
     }
 
     if (accountName.empty())
     {
-        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Account name is required");
-        return response;
+        return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Account name is required"};
     }
 
     if (!Globals::getIdentityManager()->applicationRoles->addAccountToRole(authClientDetails, request.jwtToken->getSubject(), appName, roleName, accountName))
     {
-        response.setError(HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to assign the role to the account.");
+        return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to assign the role to the account."};
     }
     return response;
 }
@@ -215,25 +202,22 @@ API::APIReturn AdminPortal_Endpoints_ApplicationRoles::removeApplicationRoleFrom
 
     if (appName.empty())
     {
-        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Application name is required");
-        return response;
+        return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Application name is required"};
     }
 
     if (roleName.empty())
     {
-        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Role ID is required");
-        return response;
+        return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Role ID is required"};
     }
 
     if (accountName.empty())
     {
-        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Account name is required");
-        return response;
+        return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Account name is required"};
     }
 
     if (!Globals::getIdentityManager()->applicationRoles->removeAccountFromRole(authClientDetails, request.jwtToken->getSubject(), appName, roleName, accountName))
     {
-        response.setError(HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to remove the role from the account.");
+        return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to remove the role from the account."};
     }
 
     return response;

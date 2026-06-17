@@ -13,7 +13,7 @@ public:
     using ClientDetails = Mantids30::Sessions::ClientDetails;
 
 protected:
-    static void addEndpoints_Applications(const std::shared_ptr<Endpoints>& endpoints);
+    static void addEndpoints_Applications(const std::shared_ptr<Endpoints> &endpoints);
 
     static APIReturn searchApplications(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
     static APIReturn removeApplication(void *context, const RequestParameters &request, ClientDetails &authClientDetails);

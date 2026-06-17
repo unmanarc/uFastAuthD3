@@ -13,7 +13,7 @@ public:
     using ClientDetails = Mantids30::Sessions::ClientDetails;
 
 protected:
-    static void addEndpoints_Roles(const std::shared_ptr<Endpoints>& endpoints);
+    static void addEndpoints_Roles(const std::shared_ptr<Endpoints> &endpoints);
     static APIReturn searchApplicationRoles(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
     static APIReturn addRole(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
     static APIReturn getRoleInfo(void *context, const RequestParameters &request, ClientDetails &authClientDetails);

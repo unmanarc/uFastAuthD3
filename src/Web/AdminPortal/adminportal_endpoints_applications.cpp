@@ -14,7 +14,7 @@ using namespace Mantids30::Network::Protocol;
 
 using ClientDetails = Mantids30::Sessions::ClientDetails;
 
-void AdminPortal_Endpoints_Applications::addEndpoints_Applications(const std::shared_ptr<Endpoints>& endpoints)
+void AdminPortal_Endpoints_Applications::addEndpoints_Applications(const std::shared_ptr<Endpoints> &endpoints)
 {
     using SecurityRequirements = API::Security::Requirements;
 
@@ -49,21 +49,18 @@ API::APIReturn AdminPortal_Endpoints_Applications::removeApplication(void *conte
 
     if (appName == IAM_ADMPORTAL_APPNAME)
     {
-        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Can't remove the IAM application");
-        return response;
+        return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Can't remove the IAM application"};
     }
 
     // Validate input data
     if (appName.empty())
     {
-        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Application name is required");
-        return response;
+        return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Application name is required"};
     }
 
     if (!Globals::getIdentityManager()->applications->removeApplication(authClientDetails, request.jwtToken->getSubject(), appName))
     {
-        response.setError(HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Internal Error");
-        return response;
+        return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Internal Error"};
     }
     return response;
 }
@@ -78,28 +75,24 @@ API::APIReturn AdminPortal_Endpoints_Applications::addApplication(void *context,
     // Validate input data
     if (appName.empty())
     {
-        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Application name is required");
-        return response;
+        return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Application name is required"};
     }
 
     if (appName.length() > 255)
     {
-        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Application name must be less than 255 characters");
-        return response;
+        return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Application name must be less than 255 characters"};
     }
 
     // Check for invalid characters in appName
     if (appName.find_first_not_of("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-") != std::string::npos)
     {
-        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Application name contains invalid characters");
-        return response;
+        return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Application name contains invalid characters"};
     }
 
     // Validate that the application doesn't already exist
     if (Globals::getIdentityManager()->applications->doesApplicationExist(appName))
     {
-        response.setError(HTTP::Status::Code::S_409_CONFLICT, "conflict", "Application already exists");
-        return response;
+        return {HTTP::Status::Code::S_409_CONFLICT, "conflict", "Application already exists"};
     }
 
     IdentityManager::Applications::ApplicationAttributes attribs;
@@ -112,8 +105,7 @@ API::APIReturn AdminPortal_Endpoints_Applications::addApplication(void *context,
                                                                      JSON_ASSTRING(*request.inputJSON, "appURL", ""), JSON_ASSTRING(*request.inputJSON, "appKey", ""), request.jwtToken->getSubject(),
                                                                      attribs, JSON_ASBOOL(*request.inputJSON, "initializeDefaults", true)))
     {
-        response.setError(HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to create application");
-        return response;
+        return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to create application"};
     }
 
     return response;
@@ -126,14 +118,12 @@ API::APIReturn AdminPortal_Endpoints_Applications::doesApplicationExist(void *co
 
     if (appName.empty())
     {
-        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Application Name is Empty");
-        return response;
+        return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Application Name is Empty"};
     }
 
     if (!Globals::getIdentityManager()->applications->doesApplicationExist(appName))
     {
-        response.setError(HTTP::Status::Code::S_404_NOT_FOUND, "not_found", "The Application does not exist in the system.");
-        return response;
+        return {HTTP::Status::Code::S_404_NOT_FOUND, "not_found", "The Application does not exist in the system."};
     }
     return response;
 }
@@ -145,23 +135,20 @@ AdminPortal_Endpoints_Applications::APIReturn AdminPortal_Endpoints_Applications
 
     if (appName.empty())
     {
-        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Application Name is Empty");
-        return response;
+        return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Application Name is Empty"};
     }
 
     std::string accountName = JSON_ASSTRING(*request.inputJSON, "accountName", "");
 
     if (accountName.empty())
     {
-        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Account Name is Empty");
-        return response;
+        return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Account Name is Empty"};
     }
 
     if (!Globals::getIdentityManager()->applications->changeApplicationAdmin(authClientDetails, request.jwtToken->getSubject(), appName, accountName,
                                                                              JSON_ASBOOL(*request.inputJSON, "isAppAdmin", false)))
     {
-        response.setError(HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Internal Error");
-        return getApplicationAccountDetails(appName);
+        return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Internal Error"};
     }
     return getApplicationAccountDetails(appName);
 }
@@ -175,8 +162,7 @@ API::APIReturn AdminPortal_Endpoints_Applications::getApplicationInfo(void *cont
 
     if (appName.empty())
     {
-        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Application Name is Empty");
-        return response;
+        return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Application Name is Empty"};
     }
 
     payloadOut["loginFlow"] = getLoginFlowDetails(appName);
@@ -185,8 +171,7 @@ API::APIReturn AdminPortal_Endpoints_Applications::getApplicationInfo(void *cont
 
     if (!attribs.has_value())
     {
-        response.setError(HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to retrieve the application attributes");
-        return response;
+        return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to retrieve the application attributes"};
     }
 
     ApplicationTokenProperties appWebLoginTokenConfig = Globals::getIdentityManager()->applications->getWebLoginJWTConfigFromApplication(appName);
@@ -210,7 +195,7 @@ API::APIReturn AdminPortal_Endpoints_Applications::getApplicationInfo(void *cont
     std::map<std::string, IdentityManager::ApplicationActivities::ActivityData> activities = Globals::getIdentityManager()->applicationActivities->listApplicationActivities(appName);
     i = 0;
     payloadOut["activities"] = Json::arrayValue;
-    for (const std::pair<std::string, IdentityManager::ApplicationActivities::ActivityData> &activity : activities)
+    for (const auto &activity : activities)
     {
         payloadOut["activities"][i] = activity.second.toJSON();
         payloadOut["activities"][i]["name"] = activity.first;
@@ -232,19 +217,17 @@ API::APIReturn AdminPortal_Endpoints_Applications::updateApplicationDetails(void
 
     if (appName.empty())
     {
-        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Application Name is Empty");
-        return response;
+        return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Application Name is Empty"};
     }
 
     if (!Globals::getIdentityManager()->applications->updateApplicationAttributes(authClientDetails, request.jwtToken->getSubject(), appName, attribs))
     {
-        response.setError(HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to update some application attributes.");
-        return response;
+        return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to update some application attributes."};
     }
 
     if (!Globals::getIdentityManager()->applications->updateApplicationDescription(authClientDetails, request.jwtToken->getSubject(), appName, JSON_ASSTRING(*request.inputJSON, "description", "")))
     {
-        response.setError(HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to update application description.");
+        return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to update application description."};
     }
     return response;
 }
@@ -257,13 +240,12 @@ API::APIReturn AdminPortal_Endpoints_Applications::updateApplicationAPIKey(void 
 
     if (appName.empty())
     {
-        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Application Name is Empty");
-        return response;
+        return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Application Name is Empty"};
     }
 
     if (!Globals::getIdentityManager()->applications->updateApplicationAPIKey(authClientDetails, request.jwtToken->getSubject(), appName, JSON_ASSTRING(*request.inputJSON, "appKey", "")))
     {
-        response.setError(HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to update application API key.");
+        return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to update application API key."};
     }
     return response;
 }
@@ -276,14 +258,12 @@ API::APIReturn AdminPortal_Endpoints_Applications::updateWebLoginJWTConfigForApp
     std::optional<AppError> err = tokenInfo.fromJSON(*request.inputJSON);
     if (err.has_value())
     {
-        response.setError((Network::Protocol::HTTP::Status::Code) err->http_code, err->error, err->message);
-        return response;
+        return {(Network::Protocol::HTTP::Status::Code) err->http_code, err->error, err->message};
     }
 
     if (!Globals::getIdentityManager()->applications->updateWebLoginJWTConfigForApplication(authClientDetails, request.jwtToken->getSubject(), tokenInfo))
     {
-        response.setError(HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to update web login JWT configuration.");
-        return response;
+        return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to update web login JWT configuration."};
     }
     return response;
 }
@@ -297,14 +277,12 @@ API::APIReturn AdminPortal_Endpoints_Applications::updateApplicationLoginCallbac
 
     if (appName.empty())
     {
-        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Application Name is Empty");
-        return response;
+        return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Application Name is Empty"};
     }
 
     if (!Globals::getIdentityManager()->applications->setApplicationWebLoginCallbackURI(authClientDetails, request.jwtToken->getSubject(), appName, callbackURI))
     {
-        response.setError(HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to update the callback URI.");
-        return response;
+        return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to update the callback URI."};
     }
 
     (*response.responseJSON()) = getLoginFlowDetails(appName);
@@ -319,15 +297,13 @@ API::APIReturn AdminPortal_Endpoints_Applications::addApplicationLoginOrigin(voi
 
     if (appName.empty())
     {
-        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Application Name is Empty");
-        return response;
+        return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Application Name is Empty"};
     }
 
     if (!Globals::getIdentityManager()->applications->addWebLoginOriginURLToApplication(authClientDetails, request.jwtToken->getSubject(), appName,
                                                                                         JSON_ASSTRING(*request.inputJSON, "loginOrigin", "")))
     {
-        response.setError(HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to add login origin. Please check if the database is accessible or if the value already exists.");
-        return response;
+        return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to add login origin. Please check if the database is accessible or if the value already exists."};
     }
 
     (*response.responseJSON()) = getLoginFlowDetails(appName);
@@ -342,15 +318,13 @@ API::APIReturn AdminPortal_Endpoints_Applications::removeApplicationLoginOrigin(
 
     if (appName.empty())
     {
-        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Application Name is Empty");
-        return response;
+        return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Application Name is Empty"};
     }
 
     if (!Globals::getIdentityManager()->applications->removeWebLoginOriginURLToApplication(authClientDetails, request.jwtToken->getSubject(), appName,
                                                                                            JSON_ASSTRING(*request.inputJSON, "loginOrigin", "")))
     {
-        response.setError(HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to remove login origin. Refresh and try again.");
-        return response;
+        return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to remove login origin. Refresh and try again."};
     }
 
     (*response.responseJSON()) = getLoginFlowDetails(appName);
@@ -365,15 +339,13 @@ API::APIReturn AdminPortal_Endpoints_Applications::addApplicationLoginRedirectUR
 
     if (appName.empty())
     {
-        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Application Name is Empty");
-        return response;
+        return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Application Name is Empty"};
     }
 
     if (!Globals::getIdentityManager()->applications->addWebLoginAllowedRedirectURIToApplication(authClientDetails, request.jwtToken->getSubject(), appName,
                                                                                                  JSON_ASSTRING(*request.inputJSON, "redirectURI", "")))
     {
-        response.setError(HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to add redirect URI. Please check if the database is accessible or if the value already exists.");
-        return response;
+        return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to add redirect URI. Please check if the database is accessible or if the value already exists."};
     }
 
     (*response.responseJSON()) = getLoginFlowDetails(appName);
@@ -388,15 +360,13 @@ API::APIReturn AdminPortal_Endpoints_Applications::removeApplicationLoginRedirec
 
     if (appName.empty())
     {
-        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Application Name is Empty");
-        return response;
+        return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Application Name is Empty"};
     }
 
     if (!Globals::getIdentityManager()->applications->removeWebLoginAllowedRedirectURIToApplication(authClientDetails, request.jwtToken->getSubject(), appName,
                                                                                                     JSON_ASSTRING(*request.inputJSON, "redirectURI", "")))
     {
-        response.setError(HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to remove redirect URI. Refresh and try again.");
-        return response;
+        return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to remove redirect URI. Refresh and try again."};
     }
 
     (*response.responseJSON()) = getLoginFlowDetails(appName);
@@ -412,15 +382,13 @@ AdminPortal_Endpoints_Applications::APIReturn AdminPortal_Endpoints_Applications
 
     if (appName.empty())
     {
-        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Application Name is Empty");
-        return response;
+        return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Application Name is Empty"};
     }
 
     if (!Globals::getIdentityManager()->applications->updateWebLoginDefaultRedirectURIForApplication(authClientDetails, request.jwtToken->getSubject(), appName,
                                                                                                      JSON_ASSTRING(*request.inputJSON, "redirectURI", "")))
     {
-        response.setError(HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to set default redirect URI. Please verify the application name and URI are valid.");
-        return response;
+        return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to set default redirect URI. Please verify the application name and URI are valid."};
     }
 
     (*response.responseJSON()) = getLoginFlowDetails(appName);

@@ -33,14 +33,13 @@ API::APIReturn AdminPortal_Endpoints_ApplicationsScopes::addApplicationScopeToAc
 
     if (appName.empty() || scopeId.empty() || accountName.empty())
     {
-        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_parameters", "Parameters cannot be empty");
-        return response;
+        return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_parameters", "Parameters cannot be empty"};
     }
 
     // Perform the operation
     if (!Globals::getIdentityManager()->authController->addApplicationScopeToAccount(authClientDetails, request.jwtToken->getSubject(), {appName, scopeId}, accountName))
     {
-        response.setError(HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Internal Error");
+        return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Internal Error"};
     }
     return response;
 }
@@ -56,14 +55,13 @@ API::APIReturn AdminPortal_Endpoints_ApplicationsScopes::removeApplicationScopeF
 
     if (appName.empty() || scopeId.empty() || accountName.empty())
     {
-        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_parameters", "Parameters cannot be empty");
-        return response;
+        return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_parameters", "Parameters cannot be empty"};
     }
 
     // Perform the operation
     if (!Globals::getIdentityManager()->authController->removeApplicationScopeFromAccount(authClientDetails, request.jwtToken->getSubject(), {appName, scopeId}, accountName))
     {
-        response.setError(HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Internal Error");
+        return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Internal Error"};
     }
     return response;
 }
@@ -78,34 +76,30 @@ API::APIReturn AdminPortal_Endpoints_ApplicationsScopes::addApplicationScope(voi
     // Validate input parameters
     if (appName.empty())
     {
-        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_parameters", "Application name cannot be empty");
-        return response;
+        return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_parameters", "Application name cannot be empty"};
     }
 
     if (scopeId.empty())
     {
-        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_parameters", "Scope ID cannot be empty");
-        return response;
+        return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_parameters", "Scope ID cannot be empty"};
     }
 
     // Validate scopeId format: [0-9A-Z_]+
     const std::regex scopeIdPattern("^[0-9A-Z_-]+$");
     if (!std::regex_match(scopeId, scopeIdPattern))
     {
-        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_parameters", "Scope ID must match the pattern [0-9A-Z_-]+");
-        return response;
+        return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_parameters", "Scope ID must match the pattern [0-9A-Z_-]+"};
     }
 
     // Don't modify scope from our directory.
     if (appName == IAM_ADMPORTAL_APPNAME)
     {
-        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Can't add application scope to the IAM");
-        return response;
+        return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Can't add application scope to the IAM"};
     }
 
     if (!Globals::getIdentityManager()->authController->addApplicationScope(authClientDetails, request.jwtToken->getSubject(), {appName, scopeId, scopeDescription}))
     {
-        response.setError(HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "The application scope may already exist.");
+        return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "The application scope may already exist."};
     }
 
     return response;
@@ -121,26 +115,23 @@ API::APIReturn AdminPortal_Endpoints_ApplicationsScopes::removeApplicationScope(
     // Validate input parameters
     if (appName.empty())
     {
-        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_parameters", "Application name cannot be empty");
-        return response;
+        return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_parameters", "Application name cannot be empty"};
     }
 
     if (scopeId.empty())
     {
-        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_parameters", "Scope ID cannot be empty");
-        return response;
+        return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_parameters", "Scope ID cannot be empty"};
     }
 
     // Don't modify scope from our directory.
     if (appName == IAM_ADMPORTAL_APPNAME)
     {
-        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Can't remove application scope to the IAM");
-        return response;
+        return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Can't remove application scope to the IAM"};
     }
 
     if (!Globals::getIdentityManager()->authController->removeApplicationScope(authClientDetails, request.jwtToken->getSubject(), {appName, scopeId}))
     {
-        response.setError(HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Internal Error");
+        return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Internal Error"};
     }
 
     return response;
@@ -154,7 +145,7 @@ API::APIReturn AdminPortal_Endpoints_ApplicationsScopes::addApplicationScopeToRo
                                                                                   {JSON_ASSTRING(*request.inputJSON, "appName", ""), JSON_ASSTRING(*request.inputJSON, "scopeId", "")},
                                                                                   JSON_ASSTRING(*request.inputJSON, "roleId", "")))
     {
-        response.setError(HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to add the application scope to the role.");
+        return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to add the application scope to the role."};
     }
 
     return response;
@@ -167,7 +158,7 @@ API::APIReturn AdminPortal_Endpoints_ApplicationsScopes::removeApplicationScopeF
                                                                                        {JSON_ASSTRING(*request.inputJSON, "appName", ""), JSON_ASSTRING(*request.inputJSON, "scopeId", "")},
                                                                                        JSON_ASSTRING(*request.inputJSON, "roleId", "")))
     {
-        response.setError(HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Internal Error");
+        return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Internal Error"};
     }
 
     return response;

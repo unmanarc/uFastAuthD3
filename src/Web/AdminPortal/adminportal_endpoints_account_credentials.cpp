@@ -9,7 +9,7 @@ using namespace Mantids30::Program;
 using namespace Mantids30;
 using namespace Mantids30::Network::Protocol;
 
-void AdminPortal_Endpoints_AccountCredentials::addEndpoints_AccountCredentials(const std::shared_ptr<Endpoints>& endpoints)
+void AdminPortal_Endpoints_AccountCredentials::addEndpoints_AccountCredentials(const std::shared_ptr<Endpoints> &endpoints)
 {
     using SecurityRequirements = API::Security::Requirements;
 
@@ -31,8 +31,7 @@ API::APIReturn AdminPortal_Endpoints_AccountCredentials::getAccountCredentialSlo
 
     if (accountName.empty())
     {
-        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Account name is required");
-        return response;
+        return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Account name is required"};
     }
 
     // Get credential slots for the account
@@ -44,7 +43,7 @@ API::APIReturn AdminPortal_Endpoints_AccountCredentials::getAccountCredentialSlo
     jResponse["slots"] = Json::arrayValue;
     jResponse["currentAuthPolicy"] = Json::nullValue;
 
-    for (const std::pair<uint32_t, AuthenticationSlotDetails> &slot : allSlots)
+    for (const auto &slot : allSlots)
     {
         json rSlot;
         rSlot["slotId"] = slot.first;
@@ -73,27 +72,23 @@ API::APIReturn AdminPortal_Endpoints_AccountCredentials::removeAccountCredential
 
     if (accountName.empty())
     {
-        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Account name is required");
-        return response;
+        return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Account name is required"};
     }
 
     if (slotId == 0)
     {
-        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Slot ID is required");
-        return response;
+        return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Slot ID is required"};
     }
 
     if (slotId == 1)
     {
-        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Can´t remove the credential slot 1 (Master Password)");
-        return response;
+        return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Can´t remove the credential slot 1 (Master Password)"};
     }
 
     // Delete the credential slot for the account
     if (!Globals::getIdentityManager()->authController->removeAccountCredential(authClientDetails, request.jwtToken->getSubject(), accountName, slotId))
     {
-        response.setError(HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to delete the credential slot");
-        return response;
+        return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to delete the credential slot"};
     }
 
     return response;
@@ -110,21 +105,18 @@ API::APIReturn AdminPortal_Endpoints_AccountCredentials::setCredentialLockedStat
 
     if (accountName.empty())
     {
-        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Account name is required");
-        return response;
+        return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Account name is required"};
     }
 
     if (slotId == 0)
     {
-        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Slot ID is required");
-        return response;
+        return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Slot ID is required"};
     }
 
     // Block the credential slot for the account
     if (!Globals::getIdentityManager()->authController->setCredentialLockedStatus(authClientDetails, request.jwtToken->getSubject(), accountName, slotId, lockedStatus))
     {
-        response.setError(HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to set the lock state on the credential slot");
-        return response;
+        return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to set the lock state on the credential slot"};
     }
 
     return response;
@@ -141,21 +133,18 @@ API::APIReturn AdminPortal_Endpoints_AccountCredentials::setMustChangeCredential
 
     if (accountName.empty())
     {
-        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Account name is required");
-        return response;
+        return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Account name is required"};
     }
 
     if (slotId == 0)
     {
-        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Slot ID is required");
-        return response;
+        return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Slot ID is required"};
     }
 
     // Force credential expiration for the account slot
     if (!Globals::getIdentityManager()->authController->setCredentialMustChange(authClientDetails, request.jwtToken->getSubject(), accountName, slotId, mustChange))
     {
-        response.setError(HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to change credential flag to change");
-        return response;
+        return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to change credential flag to change"};
     }
 
     return response;
@@ -170,8 +159,7 @@ API::APIReturn AdminPortal_Endpoints_AccountCredentials::generateMasterPassword(
 
     if (accountName.empty())
     {
-        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Account name is required");
-        return response;
+        return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Account name is required"};
     }
 
     // Generate a new master password for the account
@@ -180,8 +168,7 @@ API::APIReturn AdminPortal_Endpoints_AccountCredentials::generateMasterPassword(
 
     if (!ok)
     {
-        response.setError(HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to generate new master password");
-        return response;
+        return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to generate new master password"};
     }
 
     (*response.responseJSON())["password"] = newTempPassword;

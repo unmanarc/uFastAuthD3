@@ -8,7 +8,7 @@ using namespace Mantids30::Program;
 using namespace Mantids30;
 using namespace Mantids30::Network::Protocol;
 
-void AdminPortal_Endpoints_AuthController::addEndpoints_AuthController(const std::shared_ptr<Endpoints> & endpoints)
+void AdminPortal_Endpoints_AuthController::addEndpoints_AuthController(const std::shared_ptr<Endpoints> &endpoints)
 {
     using SecurityRequirements = API::Security::Requirements;
 
@@ -65,7 +65,7 @@ API::APIReturn AdminPortal_Endpoints_AuthController::addNewAuthenticationScheme(
                                                                                                        JSON_ASSTRING(*request.inputJSON, "description", ""));
     if (!r.has_value())
     {
-        response.setError(HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to add the new authentication scheme");
+        return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to add the new authentication scheme"};
     }
     (*response.responseJSON()) = *r;
     return response;
@@ -79,15 +79,18 @@ API::APIReturn AdminPortal_Endpoints_AuthController::listAuthenticationSchemes(v
 
     std::optional<uint32_t> defaultScheme = Globals::getIdentityManager()->authController->getDefaultAuthScheme();
 
-    if (defaultScheme.has_value()) {
+    if (defaultScheme.has_value())
+    {
         r["defaultSchemeId"] = *defaultScheme;
-    } else {
+    }
+    else
+    {
         r["defaultSchemeId"] = Json::nullValue;
     }
 
     r["schemes"] = Json::arrayValue;
 
-    for (const std::pair<uint32_t, std::string> &slot : slots)
+    for (const auto &slot : slots)
     {
         json rSlot;
         rSlot["description"] = slot.second;
@@ -105,7 +108,7 @@ API::APIReturn AdminPortal_Endpoints_AuthController::deleteAuthenticationScheme(
 
     if (!Globals::getIdentityManager()->authController->removeAuthenticationScheme(authClientDetails, request.jwtToken->getSubject(), schemeId))
     {
-        response.setError(HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to remove the new slot.");
+        return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to remove the new slot."};
     }
     return response;
 }
@@ -119,7 +122,7 @@ API::APIReturn AdminPortal_Endpoints_AuthController::updateAuthenticationScheme(
 
     if (!Globals::getIdentityManager()->authController->updateAuthenticationScheme(authClientDetails, request.jwtToken->getSubject(), schemeId, description))
     {
-        response.setError(HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to update the authentication scheme");
+        return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to update the authentication scheme"};
     }
 
     return response;
@@ -146,7 +149,7 @@ API::APIReturn AdminPortal_Endpoints_AuthController::listAuthenticationSlotsUsed
     }
 
     std::map<uint32_t, AuthenticationSlotDetails> allSlots = Globals::getIdentityManager()->authController->listAllAuthenticationSlots();
-    for (const std::pair<uint32_t, AuthenticationSlotDetails> &slot : allSlots)
+    for (const auto &slot : allSlots)
     {
         if (usedSlots.find(slot.first) == usedSlots.end())
         {
@@ -179,7 +182,7 @@ API::APIReturn AdminPortal_Endpoints_AuthController::updateAuthenticationSlotsUs
 
     if (!Globals::getIdentityManager()->authController->updateAuthenticationSlotUsedByScheme(authClientDetails, request.jwtToken->getSubject(), schemeId, slotsUsedByScheme))
     {
-        response.setError(HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to update the authentication scheme slots");
+        return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to update the authentication scheme slots"};
     }
     return response;
 }
@@ -190,7 +193,7 @@ API::APIReturn AdminPortal_Endpoints_AuthController::listAuthenticationSlots(voi
 
     std::map<uint32_t, AuthenticationSlotDetails> slots = Globals::getIdentityManager()->authController->listAllAuthenticationSlots();
     json r;
-    for (const std::pair<uint32_t, AuthenticationSlotDetails> &slot : slots)
+    for (const auto &slot : slots)
     {
         json rSlot;
         rSlot = slot.second.toJSON();
@@ -210,7 +213,7 @@ API::APIReturn AdminPortal_Endpoints_AuthController::addNewAuthenticationSlot(vo
     std::optional<uint32_t> r = Globals::getIdentityManager()->authController->addNewAuthenticationSlot(authClientDetails, request.jwtToken->getSubject(), slot);
     if (!r.has_value())
     {
-        response.setError(HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to add the new slot");
+        return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to add the new slot"};
     }
     (*response.responseJSON()) = *r;
     return response;
@@ -224,7 +227,7 @@ API::APIReturn AdminPortal_Endpoints_AuthController::deleteAuthenticationSlot(vo
 
     if (!Globals::getIdentityManager()->authController->removeAuthenticationSlot(authClientDetails, request.jwtToken->getSubject(), slotId))
     {
-        response.setError(HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to remove the new slot.");
+        return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to remove the new slot."};
     }
     return response;
 }
@@ -239,7 +242,7 @@ API::APIReturn AdminPortal_Endpoints_AuthController::updateAuthenticationSlot(vo
 
     if (!Globals::getIdentityManager()->authController->updateAuthenticationSlotDetails(authClientDetails, request.jwtToken->getSubject(), slotId, slotDetails))
     {
-        response.setError(HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to update the authentication slot");
+        return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to update the authentication slot"};
     }
 
     return response;
