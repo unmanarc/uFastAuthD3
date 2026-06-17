@@ -3,6 +3,7 @@
 #include "Mantids30/Program_Logs/loglevels.h"
 #include "Mantids30/Protocol_HTTP/httpv1_base.h"
 #include <Mantids30/Helpers/json.h>
+#include <Mantids30/Helpers/encoders.h>
 #include <json/value.h>
 
 #include <boost/algorithm/string/join.hpp>
@@ -61,7 +62,20 @@ API::APIReturn WebSessionAuthHandler_Endpoints::appLogout(void *context, const R
     // 5. Clear Cookies
     setLogoutCookies(response, tokenProps);
 
-    std::string user = request.clientRequest->getCookie("SessionPublicData");
+    std::string sessionPublicData = request.clientRequest->getCookie("SessionPublicData");
+    std::string user;
+    if (!sessionPublicData.empty())
+    {
+        std::string decoded = Mantids30::Helpers::Encoders::decodeFromBase64(sessionPublicData);
+        Json::Value jSessionPublicData;
+        Json::CharReaderBuilder builder;
+        const std::unique_ptr<Json::CharReader> reader(builder.newCharReader());
+        std::string errors;
+        if (reader->parse(decoded.c_str(), decoded.c_str() + decoded.length(), &jSessionPublicData, &errors))
+        {
+            user = jSessionPublicData.get("user", "").asString();
+        }
+    }
     std::string jwtId = request.clientRequest->getCookie("RefreshTokenId");
 
     // 6. Close Session in Database

@@ -5,7 +5,6 @@
 #include <boost/algorithm/string/replace.hpp>
 #include <json/value.h>
 #include <json/writer.h>
-#include <sstream>
 
 using namespace Mantids30;
 using namespace API::RESTful;
