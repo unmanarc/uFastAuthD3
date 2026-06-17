@@ -148,7 +148,7 @@ void AppSync_Endpoints::updateAppRoles(const std::string &appName, const std::st
     }
 
     // Process scopes for each role
-    for (const std::pair<std::string, Json::Value> &pair : proposedRoleData)
+    for (const auto &pair : proposedRoleData)
     {
         const std::string &roleId = pair.first;
         const Json::Value &roleData = pair.second;
@@ -255,7 +255,7 @@ void AppSync_Endpoints::updateAppActivities(const std::string &appName, const st
         }
 
         // Remove obsolete activities not listed in request
-        for (const std::pair<std::string, IdentityManager::ApplicationActivities::ActivityData> &pair : currentActivities)
+        for (const auto &pair : currentActivities)
         {
             const std::string &existingActivityName = pair.first;
             if (proposedActivityNames.find(existingActivityName) == proposedActivityNames.end())

@@ -34,7 +34,8 @@ bool AppSync_ServerImpl::createService()
     RESTful::Engine *webSessionAuthHandlerServer = Program::Config::RESTful_Engine::createRESTfulEngine(config, LOG_APP, LOG_RPC, "Application Synchronization Service", IAM_LOGINPORTAL_DEF_WEBROOTDIR,
                                                                                                         Program::Config::REST_ENGINE_NOCONFIG_JWT);
 
-    if (!webSessionAuthHandlerServer) {
+    if (!webSessionAuthHandlerServer)
+    {
         return false;
     }
 

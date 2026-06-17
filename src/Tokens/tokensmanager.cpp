@@ -90,7 +90,7 @@ void TokensManager::configureApplicationRefreshToken(Mantids30::DataFormat::JWT:
     refreshToken.setClaim("type", "refresher");
 }
 
-void TokensManager::issueLPTokenCookie(APIReturn &response, const RequestParameters &request, const std::shared_ptr<TransientAuthenticationContext> & authContext)
+void TokensManager::issueLPTokenCookie(APIReturn &response, const RequestParameters &request, const std::shared_ptr<TransientAuthenticationContext> &authContext)
 {
     IdentityManager *identityManager = Globals::getIdentityManager();
     Mantids30::DataFormat::JWT::Token lpToken;
