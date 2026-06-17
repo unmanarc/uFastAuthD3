@@ -399,9 +399,17 @@ bool IdentityManager_DB::AuthController_DB::setCredentialLockedStatus(const Clie
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
 
-    bool success = _parent->m_sqlConnector->qExecuteEx("UPDATE iam.accountCredentials SET `isLocked` = :isLocked "
+    bool success;
+    if (!isLocked) {
+        // When unlocking, also reset badAttempts to 0
+        success = _parent->m_sqlConnector->qExecuteEx("UPDATE iam.accountCredentials SET `isLocked` = :isLocked, `badAttempts` = 0 "
                                                        "WHERE `f_accountName` = :accountName AND `f_AuthSlotId` = :slotId;",
                                                        {{":accountName", MAKE_VAR(STRING, accountName)}, {":slotId", MAKE_VAR(UINT32, slotId)}, {":isLocked", MAKE_VAR(BOOL, isLocked)}});
+    } else {
+        success = _parent->m_sqlConnector->qExecuteEx("UPDATE iam.accountCredentials SET `isLocked` = :isLocked "
+                                                       "WHERE `f_accountName` = :accountName AND `f_AuthSlotId` = :slotId;",
+                                                       {{":accountName", MAKE_VAR(STRING, accountName)}, {":slotId", MAKE_VAR(UINT32, slotId)}, {":isLocked", MAKE_VAR(BOOL, isLocked)}});
+    }
 
     if (success)
     {
