@@ -25,10 +25,14 @@ public:
 
     // Remote triggered:
     static APIReturn refreshAccessToken(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
-    static APIReturn getLoginMode(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
+    static APIReturn getApplicationLoginPublicData(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
     static APIReturn appLogout(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
     static APIReturn callback(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
     static APIReturn getLogoutCallbackURL(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
+
+    static Mantids30::Network::Protocol::HTTP::Status::Code handleRetokenizeHTML(const std::string &appName, HTTPv1_Base::Request *request, HTTPv1_Base::Response *response,
+                                                                                       const std::shared_ptr<void> &);
+
 
 private:
     static bool validateAPIKey(const std::string &app, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);

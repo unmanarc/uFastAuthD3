@@ -34,14 +34,10 @@ static void setLogoutCookies(API::APIReturn &response, const ApplicationTokenPro
     response.cookiesMap["RefreshTokenId"].deleteCookie();
     response.cookiesMap["RefreshTokenId"].path = JSON_ASSTRING(tokenProps.tokensConfiguration["refreshToken"], "path", "/auth");
 
-    // Clear RefreshTokenUser
-    response.cookiesMap["RefreshTokenUser"] = HTTP::Headers::Cookie();
-    response.cookiesMap["RefreshTokenUser"].deleteCookie();
-    response.cookiesMap["RefreshTokenUser"].path = JSON_ASSTRING(tokenProps.tokensConfiguration["refreshToken"], "path", "/auth");
-
-    response.cookiesMap["KeepAuthentication"] = HTTP::Headers::Cookie();
-    response.cookiesMap["KeepAuthentication"].deleteCookie();
-    response.cookiesMap["KeepAuthentication"].path = "/";
+    // Clear SessionPublicData
+    response.cookiesMap["SessionPublicData"] = HTTP::Headers::Cookie();
+    response.cookiesMap["SessionPublicData"].deleteCookie();
+    response.cookiesMap["SessionPublicData"].path = "/";
 }
 
 API::APIReturn WebSessionAuthHandler_Endpoints::appLogout(void *context, const RequestParameters &request, IdentityManager::ClientDetails &authClientDetails)
@@ -65,7 +61,7 @@ API::APIReturn WebSessionAuthHandler_Endpoints::appLogout(void *context, const R
     // 5. Clear Cookies
     setLogoutCookies(response, tokenProps);
 
-    std::string user = request.clientRequest->getCookie("RefreshTokenUser");
+    std::string user = request.clientRequest->getCookie("SessionPublicData");
     std::string jwtId = request.clientRequest->getCookie("RefreshTokenId");
 
     // 6. Close Session in Database

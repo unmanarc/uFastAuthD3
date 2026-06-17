@@ -56,7 +56,7 @@ bool JWTDynamicTokenValidatorFunction(const std::string &accessTokenStr, const s
 }
 
 // The app proxied the /auth to this service, so the origin should be what we define in the DB.
-bool myDynamicOriginValidatorFunction(const std::string &origin, const std::string &xAPIKeyStr, const std::set<std::string> &configPermittedAPIOrigins)
+bool dynOriginValidatorFunction(const std::string &origin, const std::string &xAPIKeyStr, const std::set<std::string> &configPermittedAPIOrigins)
 {
     IdentityManager *identityManager = Globals::getIdentityManager();
 
@@ -120,6 +120,9 @@ bool WebSessionAuthHandler_ServerImpl::createService()
         return false;
     }
 
+    // Handle the login function for APP personalized site:
+    webSessionAuthHandlerServer->config.dynamicRequestHandlersByRoute["/retokenize"] = {&WebSessionAuthHandler_Endpoints::handleRetokenizeHTML, nullptr};
+
     // Set the software version:
     webSessionAuthHandlerServer->config.setSoftwareVersion(atoi(PROJECT_VER_MAJOR), atoi(PROJECT_VER_MINOR), atoi(PROJECT_VER_PATCH), "a");
 
@@ -127,7 +130,7 @@ bool WebSessionAuthHandler_ServerImpl::createService()
     webSessionAuthHandlerServer->config.dynamicTokenValidator = JWTDynamicTokenValidatorFunction;
 
     // Specific origin validator given the Origin: and an API Key specifying the APP
-    webSessionAuthHandlerServer->config.dynamicOriginValidator = myDynamicOriginValidatorFunction;
+    webSessionAuthHandlerServer->config.dynamicOriginValidator = dynOriginValidatorFunction;
 
     // Specific callback origin validator given the Origin: and an API Key specifying the APP
     webSessionAuthHandlerServer->config.dynamicLoginCallbackOriginValidator = dynCallbackOriginValidator;

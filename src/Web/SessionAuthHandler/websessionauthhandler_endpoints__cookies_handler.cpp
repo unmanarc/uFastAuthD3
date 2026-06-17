@@ -14,7 +14,7 @@ using namespace Network::Protocol;
 void WebSessionAuthHandler_Endpoints::setupAccessTokenCookies(APIReturn &response, JWT::Token accessToken, const ApplicationTokenProperties &tokenProps)
 {
     CookieProperties props;
-    props.sessionCookie = JSON_ASBOOL(tokenProps.tokensConfiguration["accessToken"], "useSessionCookies", true);
+    props.sessionCookie = true; // The access Token it's always a session cookie.
     props.expirationTime = accessToken.getExpirationTime(); // expire with the JWT token expiration.
     props.path = JSON_ASSTRING(tokenProps.tokensConfiguration["accessToken"], "path", "/");
     setupCookie(response, "AccessToken", signApplicationToken(accessToken, tokenProps), props);
@@ -25,6 +25,8 @@ void WebSessionAuthHandler_Endpoints::setupRefreshTokenCookies(APIReturn &respon
     bool keepAuthenticated = JSON_ASBOOL_D(refreshToken.getClaim("keepAuthenticated"), false);
 
     CookieProperties props;
+
+    // Si recibi mantenerme autenticado, entonces el refresh token no es de sesión.
     props.sessionCookie = !keepAuthenticated;
     props.expirationTime = refreshToken.getExpirationTime(); // expire with the JWT token expiration.
     props.path = JSON_ASSTRING(tokenProps.tokensConfiguration["refreshToken"], "path", "/auth");
@@ -37,15 +39,26 @@ void WebSessionAuthHandler_Endpoints::setupRefreshTokenCookies(APIReturn &respon
     propsForCORSPublicData.sameSitePolicy = Mantids30::Network::Protocol::HTTP::Headers::Cookie::SameSitePolicy::NONE;
 
     setupCookie(response, "RefreshTokenId", refreshToken.getJwtId(), propsForCORSPublicData);
-    setupCookie(response, "RefreshTokenUser", refreshToken.getSubject(), propsForCORSPublicData);
+
+    // Everyone can see if you are logged in and with what user (plus session metadata).
+    Json::Value sessionPublicData;
+    sessionPublicData["user"] = refreshToken.getSubject();
+    sessionPublicData["loginTime"] = refreshToken.getIssuedAt();
+    sessionPublicData["expirationTime"] = refreshToken.getExpirationTime();
+    sessionPublicData["keepAuthenticated"] = keepAuthenticated;
+    sessionPublicData["app"] = refreshToken.getClaim("app");
 
     CookieProperties propsForLocalModeRead;
     propsForLocalModeRead.httpOnly = false;
     propsForLocalModeRead.path = "/";
     propsForLocalModeRead.expirationTime = refreshToken.getExpirationTime(); // expire with the JWT token expiration.
     propsForLocalModeRead.sessionCookie = !keepAuthenticated;
+    propsForLocalModeRead.sameSitePolicy = Mantids30::Network::Protocol::HTTP::Headers::Cookie::SameSitePolicy::NONE;
+    setupCookie(response, "SessionPublicData",
+        Mantids30::Helpers::Encoders::encodeToBase64(sessionPublicData.toStyledString()),
+        propsForLocalModeRead);
 
-    setupCookie(response, "KeepAuthentication", keepAuthenticated ? "true" : "false", propsForLocalModeRead);
+    //setupCookie(response, "KeepAuthentication", keepAuthenticated ? "true" : "false", propsForLocalModeRead);
 }
 
 void WebSessionAuthHandler_Endpoints::setupCookie(APIReturn &response, const std::string &name, const std::string &value, const CookieProperties &props)

@@ -28,11 +28,97 @@ void WebSessionAuthHandler_Endpoints::addEndpoints(const std::shared_ptr<Endpoin
     using SecurityRequirements = API::Security::Requirements;
 
     endpoints->addEndpoint(HTTP::Method::GET, "getLogoutCallbackURL", SecurityRequirements::NONE, {}, nullptr, &getLogoutCallbackURL);
-    endpoints->addEndpoint(HTTP::Method::POST, "refreshAccessToken", SecurityRequirements::NONE, {}, nullptr, &refreshAccessToken); // Using refresh token auth.
-    endpoints->addEndpoint(HTTP::Method::GET, "getLoginMode", SecurityRequirements::NONE, {}, nullptr, &getLoginMode);              // Using refresh token auth.
+    endpoints->addEndpoint(HTTP::Method::POST, "refreshAccessToken", SecurityRequirements::NONE, {}, nullptr, &refreshAccessToken);                      // Using refresh token auth.
+    endpoints->addEndpoint(HTTP::Method::GET, "getApplicationLoginPublicData", SecurityRequirements::NONE, {}, nullptr, &getApplicationLoginPublicData); // Using refresh token auth.
     endpoints->addEndpoint(HTTP::Method::POST, "logout", SecurityRequirements::JWT_COOKIE_AUTH, {}, nullptr, &appLogout);
     endpoints->addEndpoint(HTTP::Method::POST, "callback", SecurityRequirements::NONE, {}, nullptr, &callback);
     endpoints->setEndpointOptions("callback", API::OptionsHandlerConfig().insertAllowedOrigin(Globals::pConfig.get<std::string>("AppVars.LoginPortalURL", "")).setAllowCredentials(true));
+}
+
+HTTP::Status::Code WebSessionAuthHandler_Endpoints::handleRetokenizeHTML(const std::string &urlPostfix, HTTPv1_Base::Request *request, HTTPv1_Base::Response *response, const std::shared_ptr<void> &)
+{
+    std::string page;
+    page = R"(
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Refreshing Session</title>
+    <style>
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html, body {
+            height: 100%;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #e8e8e8;
+        }
+
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .card {
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            padding: 48px 56px;
+            text-align: center;
+            max-width: 420px;
+        }
+
+        .spinner {
+            width: 48px;
+            height: 48px;
+            margin: 0 auto 24px;
+            border: 4px solid #e0e0e0;
+            border-top-color: #757575;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            font-weight: 400;
+            color: #424242;
+            margin-bottom: 8px;
+        }
+
+        p {
+            font-size: 0.95rem;
+            color: #757575;
+        }
+    </style>
+    <script src="../assets/js/auth.js" type="text/javascript"></script>
+    <script>
+        retokenizeAccessToken();
+    </script>
+</head>
+<body>
+    <main class="card">
+        <div class="spinner"></div>
+        <h1>Refreshing Session</h1>
+        <p>A new access token is being generated. Please wait...</p>
+    </main>
+</body>
+</html>
+)";
+
+    std::string currentOrigin = request->getHeaderOption("Origin");
+    LOG_APP->log2(__func__, "", request->networkClientInfo.REMOTE_ADDR, Logs::LogLevel::DEBUG, "Retokenization requested from origin '%s'", currentOrigin.c_str());
+    response->content.writer()->writeString(page);
+    response->setContentType("text/html");
+    return HTTP::Status::Code::S_200_OK;
 }
 
 /**
@@ -125,7 +211,7 @@ bool WebSessionAuthHandler_Endpoints::validateAndDecodeRefreshToken(const std::s
     return true;
 }
 
-WebSessionAuthHandler_Endpoints::APIReturn WebSessionAuthHandler_Endpoints::getLoginMode(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+WebSessionAuthHandler_Endpoints::APIReturn WebSessionAuthHandler_Endpoints::getApplicationLoginPublicData(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
     std::string refreshTokenStr = request.clientRequest->getCookies()->getSubVar("RefreshToken");
