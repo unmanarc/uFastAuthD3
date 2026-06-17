@@ -96,7 +96,7 @@ void TokensManager::issueLPTokenCookie(APIReturn &response, const RequestParamet
     Mantids30::DataFormat::JWT::Token lpToken;
     time_t accountExpirationTime = identityManager->accounts->getAccountExpirationTime(authContext->accountName);
     authContext->appCallbackURL = identityManager->applications->getApplicationCallbackURI(authContext->appName);
-    time_t expectedRefresherTokenTimeoutTime = safeAdd(time(nullptr), Globals::pConfig.get<time_t>("LoginPortal.IAMTokenTimeout", 2592000));
+    time_t expectedRefresherTokenTimeoutTime = safe_add(time(nullptr), Globals::pConfig.get<time_t>("LoginPortal.IAMTokenTimeout", 2592000));
 
     if (!authContext->keepAuthenticated)
     {
