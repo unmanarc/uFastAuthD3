@@ -8,8 +8,8 @@
 
 #include "globals.h"
 
-#include <cstdint>
 #include <cinttypes>
+#include <cstdint>
 #include <json/config.h>
 #include <memory>
 #include <optional>
@@ -46,8 +46,7 @@ API::APIReturn LoginPortal_Endpoints::preAuthorize(void *context, const API::RES
         if (appName.empty())
         {
             LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LogLevel::SECURITY_ALERT, "Invalid API key provided. Application not found.");
-            response.setError(HTTP::Status::Code::S_401_UNAUTHORIZED, "invalid_api_key", "The provided API key is invalid or unauthorized.");
-            return response;
+            return {HTTP::Status::Code::S_401_UNAUTHORIZED, "invalid_api_key", "The provided API key is invalid or unauthorized."};
         }
 
         // Check if the application has embedded authentication enabled
@@ -55,14 +54,12 @@ API::APIReturn LoginPortal_Endpoints::preAuthorize(void *context, const API::RES
         if (!appAttrs.has_value())
         {
             LOG_APP->log2(__func__, appName, authClientDetails.ipAddress, Logs::LogLevel::SECURITY_ALERT, "Application attributes not found for app: %s", appName.c_str());
-            response.setError(HTTP::Status::Code::S_404_NOT_FOUND, "not_found", "Application not found.");
-            return response;
+            return {HTTP::Status::Code::S_404_NOT_FOUND, "not_found", "Application not found."};
         }
         if (!appAttrs.value().useEmbeddedAuthentication)
         {
             LOG_APP->log2(__func__, appName, authClientDetails.ipAddress, Logs::LogLevel::SECURITY_ALERT, "API key access attempted for non-embedded application. App: %s", appName.c_str());
-            response.setError(HTTP::Status::Code::S_403_FORBIDDEN, "security_error", "Application does not support embedded authentication via API key.");
-            return response;
+            return {HTTP::Status::Code::S_403_FORBIDDEN, "security_error", "Application does not support embedded authentication via API key."};
         }
     }
     else
@@ -72,8 +69,7 @@ API::APIReturn LoginPortal_Endpoints::preAuthorize(void *context, const API::RES
 
     if (!identityManager->applications->doesApplicationExist(appName))
     {
-        response.setError(HTTP::Status::Code::S_404_NOT_FOUND, "not_found", "Invalid Application");
-        return response;
+        return {HTTP::Status::Code::S_404_NOT_FOUND, "not_found", "Invalid Application"};
     }
 
     if (!authContext->validateAndMerge_LPTokenIfExist(request.clientRequest->getCookie("LPToken"), response, request.jwtValidator))
@@ -82,21 +78,19 @@ API::APIReturn LoginPortal_Endpoints::preAuthorize(void *context, const API::RES
         return response;
     }
 
-    if (activityName == "LOGIN") {
+    if (activityName == "LOGIN")
+    {
         r = identityManager->authController->getApplicableAuthenticationSchemesForAccount(IAM_LOGINPORTAL_APPNAME, activityName, authContext->accountName, authContext->authenticatedSlots);
-    } else { // Activity from the application.
-        r = identityManager->authController
-                ->getApplicableAuthenticationSchemesForAccount(appName,
-                                                               activityName,
-                                                               authContext->accountName,
-                                                               authContext->authenticatedSlots);
+    }
+    else
+    { // Activity from the application.
+        r = identityManager->authController->getApplicableAuthenticationSchemesForAccount(appName, activityName, authContext->accountName, authContext->authenticatedSlots);
     }
 
     if (r["defaultScheme"] == Json::nullValue)
     {
         // Member not found.
-        response.setError(HTTP::Status::Code::S_404_NOT_FOUND, "not_found", "There is no Authentication Scheme Available.");
-        return response;
+        return {HTTP::Status::Code::S_404_NOT_FOUND, "not_found", "There is no Authentication Scheme Available."};
     }
 
     r["loginAuthenticationTimeout"] = loginAuthenticationTimeout;
@@ -107,7 +101,7 @@ API::APIReturn LoginPortal_Endpoints::preAuthorize(void *context, const API::RES
     return response;
 }
 
-void LoginPortal_Endpoints::issueTransientAuthTokenResponse(const RequestParameters &request, Mantids30::API::APIReturn &response, const std::shared_ptr<TransientAuthenticationContext> & authContext,
+void LoginPortal_Endpoints::issueTransientAuthTokenResponse(const RequestParameters &request, Mantids30::API::APIReturn &response, const std::shared_ptr<TransientAuthenticationContext> &authContext,
                                                             const std::vector<AuthenticationSchemeUsedSlot> &requiredAuthSlots, bool mustChangeCredential, bool canSkipPasswordChange)
 {
     // Retrieve configuration parameters from global settings.
@@ -116,7 +110,8 @@ void LoginPortal_Endpoints::issueTransientAuthTokenResponse(const RequestParamet
     Json::Value *jResponse = response.responseJSON();
 
     // There is a new authenticated current slot:
-    if (authContext->currentSlotId.has_value()) {
+    if (authContext->currentSlotId.has_value())
+    {
         authContext->authenticatedSlots.insert(authContext->currentSlotId.value());
     }
 
@@ -171,18 +166,16 @@ API::APIReturn LoginPortal_Endpoints::authorize(void *context, const RequestPara
     // If the token does not exist, it will get the data from the USER INPUT JSON
     if (!authContext->validateAndMerge_TransientAuthTokenIfExist(request.clientRequest->getAuthorizationBearer(), request.inputJSON, request.jwtValidator))
     {
-        response.setError(HTTP::Status::Code::S_403_FORBIDDEN, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::UNAUTHENTICATED)),
-                          authResultToString(AuthenticationResult::UNAUTHENTICATED));
-        return response;
+        return {HTTP::Status::Code::S_403_FORBIDDEN, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::UNAUTHENTICATED)),
+                authResultToString(AuthenticationResult::UNAUTHENTICATED)};
     }
 
     if (authContext->currentSlotId == std::nullopt)
     {
         // You don´t need to authorize anything else! it's already authenticated.
         // code warning: this nullopt check prevent usage of .value() after.
-        response.setError(HTTP::Status::Code::S_401_UNAUTHORIZED, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::AUTHENTICATION_FAILED)),
-                          authResultToString(AuthenticationResult::AUTHENTICATION_FAILED));
-        return response;
+        return {HTTP::Status::Code::S_401_UNAUTHORIZED, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::AUTHENTICATION_FAILED)),
+                authResultToString(AuthenticationResult::AUTHENTICATION_FAILED)};
     }
 
     std::map<uint32_t, AuthenticationSlotDetails> authSlots = identityManager->authController->listAllAuthenticationSlots();
@@ -212,17 +205,15 @@ API::APIReturn LoginPortal_Endpoints::authorize(void *context, const RequestPara
         if (requiredAuthSlots.empty())
         {
             // Why...? at least should exist 1 left.
-            response.setError(HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::INTERNAL_ERROR)),
-                              authResultToString(AuthenticationResult::INTERNAL_ERROR));
-            return response;
+            return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::INTERNAL_ERROR)),
+                    authResultToString(AuthenticationResult::INTERNAL_ERROR)};
         }
 
         // The current slot should be the first to avoid order change (eg. trying to try the OTP before the pass)...
         if (requiredAuthSlots.begin()->slotId != authContext->currentSlotId.value())
         {
-            response.setError(HTTP::Status::Code::S_400_BAD_REQUEST, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::BAD_PARAMETERS)),
-                              authResultToString(AuthenticationResult::BAD_PARAMETERS));
-            return response;
+            return {HTTP::Status::Code::S_400_BAD_REQUEST, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::BAD_PARAMETERS)),
+                    authResultToString(AuthenticationResult::BAD_PARAMETERS)};
         }
 
         // Remove the first element from requiredAuthSlots (which is the authenticated credential)
@@ -237,7 +228,7 @@ API::APIReturn LoginPortal_Endpoints::authorize(void *context, const RequestPara
         // Use the same auth... don't go to the next.
         (*response.responseJSON())["nextSlot"] = authContext->currentSlotId.value();
 
-        response.setError(HTTP::Status::Code::S_401_UNAUTHORIZED, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(authRetCode)), authResultToString(authRetCode));
+        return {HTTP::Status::Code::S_401_UNAUTHORIZED, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(authRetCode)), authResultToString(authRetCode)};
     }
 
     LOG_APP->log2(__func__, authContext->accountName, clientDetails.ipAddress, response.getHTTPResponseCode() != HTTP::Status::Code::S_200_OK ? Logs::LogLevel::SECURITY_ALERT : Logs::LogLevel::INFO,

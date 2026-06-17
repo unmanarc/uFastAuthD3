@@ -31,23 +31,21 @@ API::APIReturn LoginPortal_Endpoints::changeCredential(void *context, const Requ
     // Decode the bearer transient token... (and get the Account Name)
     if (!authContext->validateAndMerge_TransientAuthTokenIfExist(transientAuthTokenStr, request.inputJSON, request.jwtValidator))
     {
-        response.setError(HTTP::Status::Code::S_403_FORBIDDEN, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::UNAUTHENTICATED)),
-                          authResultToString(AuthenticationResult::UNAUTHENTICATED));
-        return response;
+        return {HTTP::Status::Code::S_403_FORBIDDEN, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::UNAUTHENTICATED)),
+                authResultToString(AuthenticationResult::UNAUTHENTICATED)};
     }
 
     //if (authContext->mustChangeSlots.find(slotId) == authContext->mustChangeSlots.end() ||
     if (authContext->authenticatedSlots.find(slotId) == authContext->authenticatedSlots.end())
     {
         // TODO: log, trying to change an unauthorized slot credential!!!
-        response.setError(HTTP::Status::Code::S_401_UNAUTHORIZED, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::AUTHENTICATION_FAILED)),
-                          authResultToString(AuthenticationResult::AUTHENTICATION_FAILED));
-        return response;
+        return {HTTP::Status::Code::S_401_UNAUTHORIZED, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::AUTHENTICATION_FAILED)),
+                authResultToString(AuthenticationResult::AUTHENTICATION_FAILED)};
     }
 
     if (!identityManager->authController->changeAccountCredential(authClientDetails, authContext->accountName, authContext->accountName, newCredential, slotId))
     {
-        response.setError(HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Internal Error: Failed to change the credential.");
+        return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Internal Error: Failed to change the credential."};
     }
 
     return response;

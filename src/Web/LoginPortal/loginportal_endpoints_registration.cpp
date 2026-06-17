@@ -56,8 +56,7 @@ API::APIReturn LoginPortal_Endpoints::registerAccount(void *context, const Reque
         }
         else
         {
-            response.setError(HTTP::Status::Code::S_401_UNAUTHORIZED, "unauthorized", "Insufficient permissions");
-            return response;
+            return {HTTP::Status::Code::S_401_UNAUTHORIZED, "unauthorized", "Insufficient permissions"};
         }
     }
 
@@ -70,8 +69,7 @@ API::APIReturn LoginPortal_Endpoints::registerAccount(void *context, const Reque
 
     if (!success)
     {
-        response.setError(HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to create the account");
-        return response;
+        return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to create the account"};
     }
 
     LOG_APP->log2(__func__, request.jwtToken->getSubject(), clientDetails.ipAddress, success ? Logs::LogLevel::SECURITY_ALERT : Logs::LogLevel::INFO,

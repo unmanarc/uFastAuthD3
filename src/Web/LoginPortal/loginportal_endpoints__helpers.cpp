@@ -16,7 +16,7 @@ using namespace API::RESTful;
 using namespace Network::Protocol;
 using namespace Mantids30::DataFormat;
 
-std::vector<AuthenticationSchemeUsedSlot> LoginPortal_Endpoints::calculateRequiredAuthSlotsLeftForTheNewTransientAuthToken(const std::shared_ptr<TransientAuthenticationContext> & authContext,
+std::vector<AuthenticationSchemeUsedSlot> LoginPortal_Endpoints::calculateRequiredAuthSlotsLeftForTheNewTransientAuthToken(const std::shared_ptr<TransientAuthenticationContext> &authContext,
                                                                                                                            API::APIReturn *response)
 {
     std::vector<AuthenticationSchemeUsedSlot> requiredAuthSlotsOnScheme;

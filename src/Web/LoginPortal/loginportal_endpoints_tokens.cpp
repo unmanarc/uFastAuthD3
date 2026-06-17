@@ -42,8 +42,7 @@ API::APIReturn LoginPortal_Endpoints::token(void *context, const RequestParamete
         if (appName.empty())
         {
             LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LogLevel::SECURITY_ALERT, "Invalid API key provided. Application not found.");
-            response.setError(HTTP::Status::Code::S_401_UNAUTHORIZED, "invalid_api_key", "The provided API key is invalid or unauthorized.");
-            return response;
+            return {HTTP::Status::Code::S_401_UNAUTHORIZED, "invalid_api_key", "The provided API key is invalid or unauthorized."};
         }
 
         // Check if the application has embedded authentication enabled
@@ -52,14 +51,12 @@ API::APIReturn LoginPortal_Endpoints::token(void *context, const RequestParamete
         if (!appAttrs.has_value())
         {
             LOG_APP->log2(__func__, appName, authClientDetails.ipAddress, Logs::LogLevel::SECURITY_ALERT, "Application attributes not found for app: %s", appName.c_str());
-            response.setError(HTTP::Status::Code::S_404_NOT_FOUND, "not_found", "Application not found.");
-            return response;
+            return {HTTP::Status::Code::S_404_NOT_FOUND, "not_found", "Application not found."};
         }
         if (!appAttrs.value().useEmbeddedAuthentication)
         {
             LOG_APP->log2(__func__, appName, authClientDetails.ipAddress, Logs::LogLevel::SECURITY_ALERT, "API key access attempted for non-embedded application. App: %s", appName.c_str());
-            response.setError(HTTP::Status::Code::S_403_FORBIDDEN, "security_error", "Application does not support embedded authentication via API key.");
-            return response;
+            return {HTTP::Status::Code::S_403_FORBIDDEN, "security_error", "Application does not support embedded authentication via API key."};
         }
         useEmbeddedAuthentication = true;
     }
@@ -74,9 +71,8 @@ API::APIReturn LoginPortal_Endpoints::token(void *context, const RequestParamete
     //////////////////////////////////////////////////////////////////////////////////////////
     if (!token_validateJwtClaims(request.jwtToken, authenticatedUser, authClientDetails.ipAddress))
     {
-        response.setError(HTTP::Status::Code::S_403_FORBIDDEN, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::UNAUTHENTICATED)),
-                          authResultToString(AuthenticationResult::UNAUTHENTICATED));
-        return response;
+        return {HTTP::Status::Code::S_403_FORBIDDEN, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::UNAUTHENTICATED)),
+                authResultToString(AuthenticationResult::UNAUTHENTICATED)};
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////
@@ -88,18 +84,16 @@ API::APIReturn LoginPortal_Endpoints::token(void *context, const RequestParamete
     {
         if (!token_validateAuthenticationScheme(request.jwtToken, IAM_LOGINPORTAL_APPNAME, "LOGIN", schemeId, authenticatedUser, authClientDetails.ipAddress))
         {
-            response.setError(HTTP::Status::Code::S_401_UNAUTHORIZED, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::UNAUTHENTICATED)),
-                              authResultToString(AuthenticationResult::UNAUTHENTICATED));
-            return response;
+            return {HTTP::Status::Code::S_401_UNAUTHORIZED, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::UNAUTHENTICATED)),
+                    authResultToString(AuthenticationResult::UNAUTHENTICATED)};
         }
     }
     else
     {
         if (!token_validateAuthenticationScheme(request.jwtToken, appName, activity, schemeId, authenticatedUser, authClientDetails.ipAddress))
         {
-            response.setError(HTTP::Status::Code::S_401_UNAUTHORIZED, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::UNAUTHENTICATED)),
-                              authResultToString(AuthenticationResult::UNAUTHENTICATED));
-            return response;
+            return {HTTP::Status::Code::S_401_UNAUTHORIZED, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::UNAUTHENTICATED)),
+                    authResultToString(AuthenticationResult::UNAUTHENTICATED)};
         }
     }
 
@@ -114,8 +108,7 @@ API::APIReturn LoginPortal_Endpoints::token(void *context, const RequestParamete
         LOG_APP->log2(__func__, authenticatedUser, authClientDetails.ipAddress, Logs::LogLevel::SECURITY_ALERT,
                       "Token request denied: User '%s' attempted to obtain an access token for app '%s', but the account is not valid or authorized for this application. Reason: %s.",
                       authenticatedUser.c_str(), appName.c_str(), reasonText);
-        response.setError(HTTP::Status::Code::S_401_UNAUTHORIZED, "AUTH_ERR_INVALID_ACCT", authResultToString(r));
-        return response;
+        return {HTTP::Status::Code::S_401_UNAUTHORIZED, "AUTH_ERR_INVALID_ACCT", authResultToString(r)};
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////
@@ -129,11 +122,11 @@ API::APIReturn LoginPortal_Endpoints::token(void *context, const RequestParamete
 
     if (!token_validateRedirectURI(appName, redirectURI, authenticatedUser, authClientDetails.ipAddress))
     {
-        response.setError(HTTP::Status::Code::S_406_NOT_ACCEPTABLE, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::BAD_PARAMETERS)), "Invalid Redirect URI");
-        return response;
+        return {HTTP::Status::Code::S_406_NOT_ACCEPTABLE, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::BAD_PARAMETERS)), "Invalid Redirect URI"};
     }
 
-    if (mock) {
+    if (mock)
+    {
         return response;
     }
 
@@ -145,9 +138,8 @@ API::APIReturn LoginPortal_Endpoints::token(void *context, const RequestParamete
                                                             authClientDetails))
     {
         // Failed to create the token...
-        response.setError(HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::INTERNAL_ERROR)),
-                          authResultToString(AuthenticationResult::INTERNAL_ERROR));
-        return response;
+        return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::INTERNAL_ERROR)),
+                authResultToString(AuthenticationResult::INTERNAL_ERROR)};
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////

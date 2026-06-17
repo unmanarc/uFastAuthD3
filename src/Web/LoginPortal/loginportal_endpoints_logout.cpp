@@ -41,7 +41,8 @@ bool LoginPortal_Endpoints::retrieveAndValidateAppOrigin(HTTPv1_Base::Request *r
 
 HTTP::Status::Code LoginPortal_Endpoints::handleLogoutDynamicRequest(const std::string &urlPostfix, HTTPv1_Base::Request *request, HTTPv1_Base::Response *response, const std::shared_ptr<void> &)
 {
-    if (request->requestLine.getHTTPMethod() != "POST") {
+    if (request->requestLine.getHTTPMethod() != "POST")
+    {
         return HTTP::Status::Code::S_400_BAD_REQUEST;
     }
 
