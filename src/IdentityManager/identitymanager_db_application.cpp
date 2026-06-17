@@ -133,7 +133,6 @@ std::optional<IdentityManager::Applications::ApplicationAttributes> IdentityMana
 
 std::string IdentityManager_DB::Applications_DB::getApplicationDescription(const std::string &appName)
 {
-    std::string ret;
     Threads::Sync::Lock_RD lock(_parent->m_mutex);
 
     Abstract::STRING description;
@@ -146,13 +145,13 @@ std::string IdentityManager_DB::Applications_DB::getApplicationDescription(const
 
 std::string IdentityManager_DB::Applications_DB::getApplicationAPIKey(const std::string &appName)
 {
-    std::string ret;
     Threads::Sync::Lock_RD lock(_parent->m_mutex);
 
     Abstract::STRING apiKey;
     if (_parent->m_sqlConnector->qSelectSingleRow("SELECT `apiKey` FROM iam.applications WHERE `appName`=:appName LIMIT 1;", {{":appName", MAKE_VAR(STRING, appName)}}, {&apiKey}))
     {
-        return Encoders::decodeFromBase64Obf(apiKey.getValue());
+        auto ret = Encoders::decodeFromBase64Obf(apiKey.getValue());
+        return ret;
     }
     return "";
 }
@@ -186,6 +185,7 @@ std::string IdentityManager_DB::Applications_DB::getApplicationNameByAPIKey(cons
 {
     Threads::Sync::Lock_RD lock(_parent->m_mutex);
     Abstract::STRING appName;
+
     if (_parent->m_sqlConnector->qSelectSingleRow("SELECT `appName` FROM iam.applications WHERE `apiKey` = :encodedApiKey LIMIT 1;",
                                                   {
                                                       {":encodedApiKey", MAKE_VAR(STRING, Encoders::encodeToBase64Obf(apiKey))},
