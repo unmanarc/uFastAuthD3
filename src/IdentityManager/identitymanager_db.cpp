@@ -116,7 +116,7 @@ bool IdentityManager_DB::initializeDatabase()
                                             `tokenType`                       VARCHAR(20)     NOT NULL DEFAULT 'HS256',
                                             `accessTokenSigningKey`           TEXT DEFAULT NULL,
                                             `accessTokenValidationKey`        TEXT DEFAULT NULL,
-                                            `tokensConfigJSON`                TEXT NOT NULL DEFAULT '{ "accessToken" : { useSessionCookies : true, "path" : "/", "timeout" : 300},"refreshToken" : {"path" : "/auth", "timeout" : 2592000} }',
+                                            `tokensConfigJSON`                TEXT NOT NULL DEFAULT '{ "accessToken" : { useSessionCookiesByDefault : true, "path" : "/", "timeout" : 300},"refreshToken" : {"path" : "/auth", "timeout" : 2592000} }',
                                             `includeApplicationScopes`        BOOLEAN NOT NULL DEFAULT TRUE,
                                             `includeBasicAccountInfo`         BOOLEAN NOT NULL DEFAULT TRUE,
                                             `maintainRevocationAndLogoutInfo` BOOLEAN NOT NULL DEFAULT FALSE,
