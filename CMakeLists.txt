@@ -93,6 +93,9 @@ set(Mantids30_LIBRARIES
     Mantids30_Program_Logs
     Mantids30_Helpers
     Mantids30_DataFormat_JWT
+    Mantids30_Config_REST
+    Mantids30_Config_JWT
+    Mantids30_Config_Logs
     Mantids30_Protocol_FastRPC1
     Mantids30_Protocol_APISync
 )
