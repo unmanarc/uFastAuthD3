@@ -4,7 +4,7 @@
 #include "globals.h"
 #include "websessionauthhandler_endpoints.h"
 
-#include <Mantids30/Server_RESTfulWebAPI/config_builder.h>
+#include <Mantids30/Config_REST/config_builder.h>
 #include <Mantids30/Server_RESTfulWebAPI/engine.h>
 
 #include <boost/algorithm/string/predicate.hpp>
@@ -69,6 +69,7 @@ bool dynOriginValidatorFunction(const std::string &origin, const std::string &xA
 
 bool dynCallbackOriginValidator(const std::string &requestOrigin, const std::string &xAPIKeyStr, const std::set<std::string> &permittedCallbackOrigins)
 {
+    // the xAPIKeyStr is generated from the proxy, not from the user. So, if you come straight without the proxy, you wont be able to access the callback.
     std::string appName = Globals::getIdentityManager()->applications->getApplicationNameByAPIKey(xAPIKeyStr);
 
     if (appName.empty())
@@ -92,7 +93,7 @@ bool dynCallbackOriginValidator(const std::string &requestOrigin, const std::str
     }
     else
     {
-        // Using embedded auth, the origin should be the same app URLs.
+        // Using embedded auth, the origin should be the same app URLs. (login website)
         std::set<std::string> origins = Globals::getIdentityManager()->applications->listWebLoginOriginUrlsFromApplication(appName);
         return origins.find(requestOrigin) != origins.end();
     }

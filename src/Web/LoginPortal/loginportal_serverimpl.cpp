@@ -4,7 +4,8 @@
 #include "globals.h"
 #include "loginportal_endpoints.h"
 
-#include <Mantids30/Server_RESTfulWebAPI/config_builder.h>
+#include <Mantids30/Config_REST/config_builder.h>
+
 #include <Mantids30/Server_RESTfulWebAPI/engine.h>
 
 #include <boost/algorithm/string/predicate.hpp>

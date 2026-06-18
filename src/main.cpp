@@ -1,7 +1,7 @@
 #include <Mantids30/Helpers/file.h>
 #include <Mantids30/Memory/a_bool.h>
 #include <Mantids30/Net_Sockets/socket_tls.h>
-#include <Mantids30/Program_Logs/config_builder.h>
+#include <Mantids30/Config_Logs/config_builder.h>
 #include <Mantids30/Program_Service/application.h>
 #include <Mantids30/Program_Service/program_config.h>
 
