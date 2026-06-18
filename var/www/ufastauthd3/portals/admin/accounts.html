@@ -30,7 +30,8 @@
   <div class="d-flex justify-content-end mb-3">
 
 
-    <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalCreateAccount" onclick="createAccountClearParameters()">
+    <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalCreateAccount"
+      onclick="createAccountClearParameters()">
       Add Account
     </button>
 
@@ -119,7 +120,32 @@
       {
         data: "applications",
         searchable: false,
-        title: "Applications"
+        title: "Applications",
+        render: function (data, type, row) {
+          if (!data || data.length === 0) return '<span class="badge bg-secondary">None</span>';
+          let badges = '';
+          data.forEach(function (app) {
+            // Create badge element safely to prevent XSS
+            const badge = document.createElement('span');
+            badge.className = 'badge bg-secondary';
+
+            // Create text node for app name (automatically escapes content)
+            const appName = document.createTextNode(app.name);
+
+            if (app.isAppAdmin) {
+              // Create <font> element with safe text assignment
+              const fontEl = document.createElement('font');
+              fontEl.color = '#ffb4b4';
+              fontEl.appendChild(appName);
+              badge.appendChild(fontEl);
+            } else {
+              badge.appendChild(appName);
+            }
+
+            badges += badge.outerHTML + ' ';
+          });
+          return badges;
+        }
       },
       {
         data: null,
@@ -128,9 +154,16 @@
         render: function (data, type, row) {
 
           let statusHtml = '<div class="d-flex flex-wrap gap-1">';
-          if (row.DT_RowData.isEnabled === true && row.DT_RowData.isAccountConfirmed === true && row.DT_RowData.isBlocked === false)
+
+          // Only show "Operational" if enabled, confirmed, not blocked, and no blocked credentials
+          const isOperational = row.DT_RowData.isEnabled === true
+            && row.DT_RowData.isAccountConfirmed === true
+            && row.DT_RowData.isBlocked === false
+            && row.DT_RowData.hasBlockedCredential !== true;
+
+          if (isOperational) {
             statusHtml += '<span class="badge bg-primary">Operational</span>';
-          else {
+          } else {
             if (row.DT_RowData.isEnabled === false)
               statusHtml += '<span class="badge bg-dark">Disabled</span>';
             if (row.DT_RowData.isAccountConfirmed === false)
@@ -138,9 +171,14 @@
             if (row.DT_RowData.isBlocked === true)
               statusHtml += '<span class="badge bg-warning">Blocked</span>';
           }
+
+          // Always show Administrator if applicable
           if (row.DT_RowData.isAdmin === true)
             statusHtml += '<span class="badge bg-danger">Administrator</span>';
 
+          // Show Credential Blocked if any credential is blocked
+          if (row.DT_RowData.hasBlockedCredential === true)
+            statusHtml += '<span class="badge bg-warning">Credential Blocked</span>';
 
           statusHtml += '</div>';
 
