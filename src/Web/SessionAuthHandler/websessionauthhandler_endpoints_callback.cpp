@@ -32,7 +32,6 @@ API::APIReturn WebSessionAuthHandler_Endpoints::callback(void *context, const Re
     if (modeStr == "logout")
     {
         std::string allowedOrigin;
-        // TODO: check on dynamic token validator?
         allowedOrigin = Globals::pConfig.get<std::string>("AppVars.LoginPortalURL", "");
         if (request.clientRequest->getOrigin() != allowedOrigin)
         {
