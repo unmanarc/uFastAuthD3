@@ -371,7 +371,11 @@ Json::Value IdentityManager_DB::Accounts_DB::searchAccounts(const json &dataTabl
         iam.accounts.isEnabled as isEnabled,
         iam.accounts.isBlocked as isBlocked,
         iam.accounts.isAccountConfirmed as isAccountConfirmed,
-        iam.accounts.creator as creator
+        iam.accounts.creator as creator,
+        EXISTS(
+            SELECT 1 FROM iam.accountCredentials ac
+            WHERE ac.f_accountName = iam.accounts.accountName AND ac.isLocked = 1
+        ) as hasBlockedCredential
     FROM iam.accounts
     LEFT JOIN (
         SELECT f_accountName, MAX(lastLogin) as lastLogin
@@ -396,10 +400,11 @@ Json::Value IdentityManager_DB::Accounts_DB::searchAccounts(const json &dataTabl
         Abstract::DATETIME creation, expiration, lastLogin, lastChange;
         Abstract::BOOL isAdmin, isEnabled, isBlocked, isAccountConfirmed;
         Abstract::STRING creator;
+        Abstract::BOOL hasBlockedCredential;
 
         std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelectWithFilters(sqlQueryStr, whereFilters, {{":SEARCHWORDS", MAKE_VAR(STRING, searchValue)}},
                                                                                {&accountName, &creation, &expiration, &lastLogin, &lastChange, &isAdmin, &isEnabled, &isBlocked, &isAccountConfirmed,
-                                                                                &creator},
+                                                                                &creator, &hasBlockedCredential},
                                                                                orderByStatement, // Order by
                                                                                limit,            // LIMIT
                                                                                offset            // OFFSET
@@ -420,15 +425,15 @@ Json::Value IdentityManager_DB::Accounts_DB::searchAccounts(const json &dataTabl
             // lastChange
             row["lastPasswordChange"] = lastChange.toJSON();
 
-            row["roles"] = "";
 
-            row["applications"] = "";
+            row["applications"] = Json::arrayValue;
 
             row["DT_RowData"]["isAdmin"] = isAdmin.getValue();
             row["DT_RowData"]["isEnabled"] = isEnabled.getValue();
             row["DT_RowData"]["isBlocked"] = isBlocked.getValue();
             row["DT_RowData"]["isAccountConfirmed"] = isAccountConfirmed.getValue();
             row["DT_RowData"]["creator"] = creator.getValue();
+            row["DT_RowData"]["hasBlockedCredential"] = hasBlockedCredential.getValue();
 
             ret["data"].append(row);
         }
@@ -438,6 +443,36 @@ Json::Value IdentityManager_DB::Accounts_DB::searchAccounts(const json &dataTabl
             ret["recordsTotal"] = i->getTotalRecordsCount();
             ret["recordsFiltered"] = i->getFilteredRecordsCount();
         }
+    }
+
+    // Now fill applications for each account (after the query scope ended to avoid DB blocking)
+    for (Json::Value &row : ret["data"])
+    {
+        std::string accountName = row["accountName"].asString();
+        Json::Value appsArray = Json::arrayValue;
+        for (const std::string &appName : _parent->applications->listAccountApplications(accountName))
+        {
+            Json::Value appObj = Json::objectValue;
+            appObj["name"] = appName;
+            appObj["isAppAdmin"] = _parent->applications->isApplicationAdmin(appName, accountName);
+            // Get last login per app from logs.applicationAccess_accountLastLogin
+            {
+                Abstract::DATETIME appLastLogin;
+                if (_parent->m_sqlConnector->qSelectSingleRow(
+                        "SELECT lastLogin FROM logs.applicationAccess_accountLastLogin WHERE f_accountName=:accountName AND f_appName=:appName;",
+                        {{":accountName", MAKE_VAR(STRING, accountName)}, {":appName", MAKE_VAR(STRING, appName)}},
+                        {&appLastLogin}))
+                {
+                    appObj["lastLogin"] = appLastLogin.toJSON();
+                }
+                else
+                {
+                    appObj["lastLogin"] = Json::nullValue;
+                }
+            }
+            appsArray.append(appObj);
+        }
+        row["applications"] = appsArray;
     }
 
     return ret;
