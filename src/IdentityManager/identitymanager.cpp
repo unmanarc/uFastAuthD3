@@ -193,3 +193,4 @@ IdentityManager::AuthController::AuthController(IdentityManager *parent)
     m_authLogGC.startGarbageCollector(markExpiredAuthLogSessions, this, "GC:AuthLogSessions");
     m_parent = parent;
 }
+
