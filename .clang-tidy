@@ -9,6 +9,7 @@ Checks: >
   -modernize-use-auto,
   -bugprone-assignment-in-if-condition,
   -cppcoreguidelines-special-member-functions,
+  -portability-avoid-pragma-once,
 
   readability-braces-around-statements,
   readability-const-return-type,
