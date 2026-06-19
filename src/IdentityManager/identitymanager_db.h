@@ -225,7 +225,7 @@ public:
         bool validateAccountDirectApplicationScope(const std::string &accountName, const ApplicationScope &applicationScope) override;
 
         // Sessions:
-        std::optional<std::pair<time_t, std::string>> getAccountLastAccess(const std::string &accountName) override;
+        LastAccountAccessResult getAccountLastAccess(const std::string &accountName) override;
         uint32_t getAccountActiveSessionsCount(const std::string &accountName) override;
 
         // Token/Logout Handling

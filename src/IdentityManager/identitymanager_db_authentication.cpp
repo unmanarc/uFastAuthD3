@@ -98,24 +98,31 @@ std::string IdentityManager_DB::AuthController_DB::getAccountConfirmationToken(c
     }
     return "";
 }
-std::optional<std::pair<time_t, std::string>> IdentityManager_DB::AuthController_DB::getAccountLastAccess(const std::string &accountName)
+IdentityManager::LastAccountAccessResult IdentityManager_DB::AuthController_DB::getAccountLastAccess(const std::string &accountName)
 {
-    Threads::Sync::Lock_RD lock(_parent->m_mutex);
+    Threads::Sync::Lock_RW lock(_parent->m_mutex);
 
+    IdentityManager::LastAccountAccessResult result;
+    Abstract::DATETIME lastLogin;
+    Abstract::STRING appName;
+    if (_parent->m_sqlConnector->qSelectSingleRow("SELECT `lastLogin`, `f_appName` FROM logs.applicationAccess_accountLastLogin "
+                                                  "WHERE `f_accountName` = :accountName;",
+                                                  {{":accountName", MAKE_VAR(STRING, accountName)}}, {&lastLogin, &appName}))
     {
-        Abstract::DATETIME lastLogin;
-        Abstract::STRING appName;
-
-        if (_parent->m_sqlConnector
-                ->qSelectSingleRow("SELECT `lastLogin`,`f_appName`  FROM logs.applicationAccess_accountLastLogin WHERE `f_accountName`=:accountName ORDER BY `lastLogin` DESC LIMIT 1;",
-                                   {{":accountName", MAKE_VAR(STRING, accountName)}}, {&lastLogin, &appName}))
-        {
-            return std::make_pair(lastLogin.getValue(), appName.getValue());
-        }
+        result.lastAccess = {lastLogin.getValue(), appName.getValue()};
     }
 
-    // no account? std::nullopt...
-    return std::nullopt;
+    Abstract::DATETIME validUntil;
+
+    // Consulta 2: Obtener extensión de inactividad si existe
+    if (_parent->m_sqlConnector->qSelectSingleRow("SELECT `validUntil` FROM iam.inactivityExtensions "
+                                                  "WHERE `accountName` = :accountName;",
+                                                  {{":accountName", MAKE_VAR(STRING, accountName)}}, {&validUntil}))
+    {
+        result.inactivityExtensionUntil = validUntil.getValue();
+    }
+
+    return result;
 }
 
 std::set<ApplicationScope> IdentityManager_DB::AuthController_DB::getAccountDirectApplicationScopes(const std::string &accountName, bool lock)

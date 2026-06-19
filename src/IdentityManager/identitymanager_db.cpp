@@ -35,6 +35,12 @@ bool IdentityManager_DB::initializeDatabase()
                                              PRIMARY KEY(`accountName`)
                                                                         );
                                     )",
+        R"(CREATE TABLE IF NOT EXISTS `iam`.`inactivityExtensions` (
+                                               `accountName` VARCHAR(256) NOT NULL,
+                                               `validUntil` DATETIME NOT NULL,
+                                               PRIMARY KEY(`accountName`),
+                                               FOREIGN KEY(`accountName`) REFERENCES accounts(`accountName`) ON DELETE CASCADE
+                                           );)",
         R"(CREATE TABLE IF NOT EXISTS `iam`.`accountDetailFields` (
                                              `fieldName`                     VARCHAR(256)   NOT NULL,
                                              `fieldDescription`              VARCHAR(4096)  NOT NULL,
