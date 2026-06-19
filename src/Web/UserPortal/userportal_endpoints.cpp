@@ -219,12 +219,12 @@ json getLastLoginJSON(const RequestParameters &request)
     Json::Value result;
 
     std::string accountName = request.jwtToken->getSubject();
-    std::optional<std::pair<time_t, std::string>> lastLoginOpt = Globals::getIdentityManager()->authController->getAccountLastAccess(accountName);
+    IdentityManager::LastAccountAccessResult lastLoginOpt = Globals::getIdentityManager()->authController->getAccountLastAccess(accountName);
 
-    if (lastLoginOpt)
+    if (lastLoginOpt.lastAccess)
     {
-        result["timestamp"] = (Json::Int64)(lastLoginOpt.value().first);
-        result["appName"] = (lastLoginOpt.value().second);
+        result["timestamp"] = static_cast<Json::Int64>(lastLoginOpt.lastAccess.value().time);
+        result["appName"] = lastLoginOpt.lastAccess.value().app;
     }
     else
     {
