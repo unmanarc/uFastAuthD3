@@ -100,7 +100,7 @@ std::string IdentityManager_DB::AuthController_DB::getAccountConfirmationToken(c
 }
 IdentityManager::LastAccountAccessResult IdentityManager_DB::AuthController_DB::getAccountLastAccess(const std::string &accountName)
 {
-    Threads::Sync::Lock_RW lock(_parent->m_mutex);
+    Threads::Sync::Lock_RD lock(_parent->m_mutex);
 
     IdentityManager::LastAccountAccessResult result;
     Abstract::DATETIME lastLogin;

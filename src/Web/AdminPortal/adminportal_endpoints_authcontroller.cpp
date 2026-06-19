@@ -24,6 +24,8 @@ void AdminPortal_Endpoints_AuthController::addEndpoints_AuthController(const std
     endpoints->addEndpoint(HTTP::Method::PATCH, "updateAuthenticationSlotsUsedByScheme", SecurityRequirements::JWT_COOKIE_AUTH, {"AUTH_MODIFY"}, nullptr, &updateAuthenticationSlotsUsedByScheme);
     endpoints->addEndpoint(HTTP::Method::GET, "getDefaultAuthScheme", SecurityRequirements::JWT_COOKIE_AUTH, {"AUTH_READ"}, nullptr, &getDefaultAuthScheme);
     endpoints->addEndpoint(HTTP::Method::PATCH, "updateDefaultAuthScheme", SecurityRequirements::JWT_COOKIE_AUTH, {"AUTH_MODIFY"}, nullptr, &updateDefaultAuthScheme);
+
+
 }
 AdminPortal_Endpoints_AuthController::APIReturn AdminPortal_Endpoints_AuthController::updateDefaultAuthScheme(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
@@ -32,12 +34,12 @@ AdminPortal_Endpoints_AuthController::APIReturn AdminPortal_Endpoints_AuthContro
 
     if (newDefaultSchemeId == std::numeric_limits<uint32_t>::max())
     {
-        return APIReturn(HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Missing or invalid 'defaultSchemeId' in request body");
+        return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Missing or invalid 'defaultSchemeId' in request body"};
     }
 
     if (!Globals::getIdentityManager()->authController->updateDefaultAuthScheme(authClientDetails, request.jwtToken->getSubject(), newDefaultSchemeId))
     {
-        return APIReturn(HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "invalid_request", "Internal server error while updating default authentication slot");
+        return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "invalid_request", "Internal server error while updating default authentication slot"};
     }
 
     return {};
@@ -50,7 +52,7 @@ AdminPortal_Endpoints_AuthController::APIReturn AdminPortal_Endpoints_AuthContro
 
     if (!defaultScheme.has_value())
     {
-        return APIReturn(HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "invalid_request", "Internal server error while retrieving default authentication slot");
+        return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "invalid_request", "Internal server error while retrieving default authentication slot"};
     }
 
     Json::Value response;

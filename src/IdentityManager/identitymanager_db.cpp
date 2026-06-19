@@ -511,7 +511,7 @@ bool IdentityManager_DB::initializeDatabase()
     bool success = true;
     for (const std::string_view &sql : sqlStatements)
     {
-        if (!m_sqlConnector->qExecuteEx(sql.data()))
+        if (!m_sqlConnector->qExecuteEx(std::string(sql)))
         {
             LOG_APP->log0(__func__, Logs::LogLevel::CRITICAL, "Failed to execute SQL: '%s'", std::string(sql).c_str());
             success = false;
