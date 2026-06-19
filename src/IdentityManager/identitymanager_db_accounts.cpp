@@ -6,6 +6,7 @@
 #include <Mantids30/Threads/lock_shared.h>
 #include <boost/regex.hpp>
 #include <json/value.h>
+#include <optional>
 #include <regex>
 
 #include <Mantids30/Memory/a_bool.h>
@@ -425,7 +426,6 @@ Json::Value IdentityManager_DB::Accounts_DB::searchAccounts(const json &dataTabl
             // lastChange
             row["lastPasswordChange"] = lastChange.toJSON();
 
-
             row["applications"] = Json::arrayValue;
 
             row["DT_RowData"]["isAdmin"] = isAdmin.getValue();
@@ -473,6 +473,7 @@ Json::Value IdentityManager_DB::Accounts_DB::searchAccounts(const json &dataTabl
             appsArray.append(appObj);
         }
         row["applications"] = appsArray;
+        row["DT_RowData"]["isInactive"] = _parent->authController->isAccountInactive( _parent->authController->getAccountLastAccess(accountName) , row["DT_RowData"]["isAdmin"].asBool()  );
     }
 
     return ret;

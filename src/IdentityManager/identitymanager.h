@@ -13,7 +13,7 @@
 #include "credentialvalidator.h"
 #include <Mantids30/Helpers/json.h>
 #include <string>
-#include <time.h>
+#include <ctime>
 
 #include <Mantids30/DataFormat_JWT/jwt.h>
 #include <Mantids30/Threads/mutex_shared.h>
@@ -27,7 +27,7 @@ public:
     /**
      * @brief Logout reasons for applicationAuthLog entries.
      */
-    enum class LogoutReason : int
+    enum class LogoutReason : uint8_t
     {
         None = 0,
         RefreshTokenExpired = 2,
@@ -35,6 +35,18 @@ public:
         Revoked = 4,
         Other = 100
     };
+
+
+    struct LastAccountAccessResult {
+        struct LastAccountAccessInfo {
+            time_t time;
+            std::string app;
+        };
+        std::optional<time_t> inactivityExtensionUntil; // Si tiene extensión activa y hasta cuándo
+        std::optional<LastAccountAccessInfo> lastAccess;         // Último login (time + app juntos, o nullopt)
+    };
+
+
 
     IdentityManager() = default;
     virtual ~IdentityManager();
@@ -146,7 +158,7 @@ public:
     public:
         struct ActivityData
         {
-            json toJSON() const
+            [[nodiscard]] json toJSON() const
             {
                 json r;
                 r["description"] = description;
@@ -241,7 +253,7 @@ public:
 
     public:
         AuthController(IdentityManager *parent);
-        virtual ~AuthController() = default;
+        ~AuthController() override = default;
 
         static void markExpiredAuthLogSessions(void *p) { static_cast<AuthController *>(p)->markExpiredAuthLogSessions(); }
 
@@ -256,7 +268,7 @@ public:
 
         virtual std::set<ApplicationScope> getAccountDirectApplicationScopes(const std::string &accountName, bool lock = true) = 0;
 
-        virtual bool validateAccountApplicationScope(const std::string &accountName, const ApplicationScope &applicationScope) override;
+        bool validateAccountApplicationScope(const std::string &accountName, const ApplicationScope &applicationScope) override;
 
         std::set<ApplicationScope> getAccountUsableApplicationScopes(const std::string &appName, const std::string &accountName);
 
@@ -307,7 +319,8 @@ public:
                                                            const time_t &refreshTokenExpiration)
             = 0;
         virtual void insertAccountAuthCredentialSlotLog(const std::string &accountName, uint32_t slotId, const ClientDetails &clientDetails, int logStatus) = 0;
-        virtual std::optional<std::pair<time_t, std::string>> getAccountLastAccess(const std::string &accountName) = 0;
+
+        virtual LastAccountAccessResult getAccountLastAccess(const std::string &accountName) = 0;
 
         virtual uint32_t getAccountActiveSessionsCount(const std::string &accountName) = 0;
         virtual std::pair<uint32_t, uint32_t> getAccountActiveCredentialsCount(const std::string &accountName) = 0;
@@ -358,9 +371,11 @@ public:
          *
          * @note On failure, the function ensures to increment bad attempt counters for the account and the password slot.
          */
-        virtual AuthenticationResult authenticateCredential(const ClientDetails &clientDetails, const std::string &accountName, const std::string &sPassword, const uint32_t &slotId = 0,
+        AuthenticationResult authenticateCredential(const ClientDetails &clientDetails, const std::string &accountName, const std::string &sPassword, const uint32_t &slotId = 0,
                                                             const Mode &authMode = Mode::PLAIN, const std::string &challengeSalt = "",
                                                             std::shared_ptr<TransientAuthenticationContext> authContext = nullptr) override;
+
+        bool isAccountInactive(const LastAccountAccessResult &lastLogin, bool isAdmin ) const;
 
         /**
      * @brief getAccountCredentialPublicData Get information for Salted Password Calculation and expiration info (Not Authenticated)
@@ -369,7 +384,7 @@ public:
      * @param slotId AuthController Slot SlotId.
      * @return Password Information (Eg. hashing function, salt, expiration, etc)
      */
-        virtual Credential getAccountCredentialPublicData(const std::string &accountName, uint32_t slotId) override;
+        Credential getAccountCredentialPublicData(const std::string &accountName, uint32_t slotId) override;
 
         /**
      * @brief getAccountAllCredentialsPublicData Get a map with slotId->public credential data for an account.
@@ -438,7 +453,7 @@ public:
         virtual ~Applications() = default;
         struct ApplicationAttributes
         {
-            Json::Value toJSON() const
+            [[nodiscard]] Json::Value toJSON() const
             {
                 Json::Value root;
                 root["canAdminModifyApplicationSecurityContext"] = canAdminModifyApplicationSecurityContext;
@@ -460,7 +475,7 @@ public:
                 allowKeepMeSignedIn = JSON_ASBOOL(root, "allowKeepMeSignedIn", false);
             }
 
-            std::string toString() const
+            [[nodiscard]] std::string toString() const
             {
                 return "adminModifySecurity=" + std::to_string(canAdminModifyApplicationSecurityContext) + ", autoRegister=" + std::to_string(canUserAutoRegister)
                        + ", useEmbeddedAuth=" + std::to_string(useEmbeddedAuthentication) + ", syncEnabled=" + std::to_string(appSyncEnabled)

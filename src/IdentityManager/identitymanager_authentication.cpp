@@ -46,6 +46,42 @@ void IdentityManager::AuthController::updateCredentialAuthStatus(const Authentic
     m_parent->authController->insertAccountAuthCredentialSlotLog(accountName, slotId, clientDetails, static_cast<uint16_t>(authResult));
 }
 
+bool IdentityManager::AuthController::isAccountInactive(const LastAccountAccessResult &lastLogin, bool isAdmin) const
+{
+    time_t currentLastLogin = 0;
+    time_t now = time(nullptr);
+
+    // Admin accounts are never considered inactive
+    if (isAdmin)
+    {
+        return false;
+    }
+
+    // Check if an active inactivity extension exists and is still valid
+    if (lastLogin.inactivityExtensionUntil.has_value() && lastLogin.inactivityExtensionUntil.value() > now)
+    {
+        // The account has a valid extension preventing inactivity
+        return false;
+    }
+
+    // Determine the last login time for inactivity calculation
+    if (lastLogin.lastAccess.has_value())
+    {
+        // Use the actual last access time
+        currentLastLogin = lastLogin.lastAccess.value().time;
+    }
+    else
+    {
+        // No last login record: use current time so the account is NOT marked inactive.
+        // (Don't penalize accounts if the log does not prove recent access,
+        //  to avoid blocking if logs are moved or corrupted.)
+        currentLastLogin = now;
+    }
+
+    // Check if the time since last access exceeds the abandoned account threshold
+    return (currentLastLogin + m_authenticationPolicy.abandonedAccountExpirationSeconds < now);
+}
+
 AuthenticationResult IdentityManager::AuthController::authenticateCredential(const ClientDetails &clientDetails, const std::string &accountName, const std::string &incomingPassword,
                                                                              const uint32_t &slotId, const Mode &authMode, const std::string &challengeSalt,
                                                                              // Extras...
@@ -56,7 +92,6 @@ AuthenticationResult IdentityManager::AuthController::authenticateCredential(con
     Credential pStoredCredentialData;
 
     // If something changes in between,
-    if (1)
     {
         Threads::Sync::Lock_RD lock(m_parent->m_mutex);
 
@@ -97,33 +132,17 @@ AuthenticationResult IdentityManager::AuthController::authenticateCredential(con
         // Check if the retrieved credential
         pStoredCredentialData = retrieveAccountCredential(accountName, slotId, &accountFound, &authSlotFound);
 
-        if (accountFound == false)
+        if (!accountFound)
         {
             ret = AuthenticationResult::BAD_ACCOUNT;
         }
-        else if (authSlotFound == false)
+        else if (!authSlotFound)
         {
             ret = AuthenticationResult::CREDENTIAL_INDEX_NOT_FOUND;
         }
         else
         {
-            std::optional<std::pair<time_t, std::string>> lastLogin = getAccountLastAccess(accountName);
-
-            // There is no last login..
-            if (lastLogin == std::nullopt)
-            {
-                // TODO: set on the app preferences.
-
-                // // use the creation date for doing the inactivity calculation...
-                // lastLogin = m_parent->accounts->getAccountCreationTime(accountName);
-
-                // Use current time. (don't invalidate accounts if the log does not prove recent access)... altough it will prevent exposure, will block/mess everything if the log is moved or corrupted.
-                lastLogin->first = time(nullptr);
-                /*                if (lastLogin == std::nullopt)
-                {
-                    lastLogin->first = 0;
-                }*/
-            }
+            LastAccountAccessResult lastLogin = getAccountLastAccess(accountName);
 
             AccountFlags flags = m_parent->accounts->getAccountFlags(accountName);
 
@@ -131,11 +150,7 @@ AuthenticationResult IdentityManager::AuthController::authenticateCredential(con
             {
                 return AuthenticationResult::UNCONFIRMED_ACCOUNT;
             }
-            else if (!flags.enabled)
-            {
-                return AuthenticationResult::DISABLED_ACCOUNT;
-            }
-            else if (flags.blocked)
+            else if (!flags.enabled || flags.blocked)
             {
                 return AuthenticationResult::DISABLED_ACCOUNT;
             }
@@ -143,15 +158,11 @@ AuthenticationResult IdentityManager::AuthController::authenticateCredential(con
             {
                 return AuthenticationResult::EXPIRED_ACCOUNT;
             }
-            else if (!flags.admin && lastLogin->first + m_authenticationPolicy.abandonedAccountExpirationSeconds < time(nullptr))
+            else if (isAccountInactive(lastLogin, flags.admin))
             {
                 return AuthenticationResult::INACTIVE_ACCOUNT;
             }
-            else if (pStoredCredentialData.hasExceededMaxAttempts(m_authenticationPolicy))
-            {
-                return AuthenticationResult::LOCKED_CREDENTIAL;
-            }
-            else if (pStoredCredentialData.isLocked)
+            else if (pStoredCredentialData.hasExceededMaxAttempts(m_authenticationPolicy) || pStoredCredentialData.isLocked)
             {
                 return AuthenticationResult::LOCKED_CREDENTIAL;
             }
@@ -370,7 +381,7 @@ Credential IdentityManager::AuthController::createNewCredential(const uint32_t &
 
     if (r.slotDetails.passwordFunction.has_value())
     {
-        switch ((HashFunction)r.slotDetails.passwordFunction.value())
+        switch (static_cast<HashFunction>(r.slotDetails.passwordFunction.value()))
         {
         case HashFunction::PLAIN:
         {
