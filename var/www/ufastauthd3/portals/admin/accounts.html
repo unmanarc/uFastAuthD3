@@ -155,11 +155,12 @@
 
           let statusHtml = '<div class="d-flex flex-wrap gap-1">';
 
-          // Only show "Operational" if enabled, confirmed, not blocked, and no blocked credentials
+          // Only show "Operational" if enabled, confirmed, not blocked, not inactive, and no blocked credentials
           const isOperational = row.DT_RowData.isEnabled === true
             && row.DT_RowData.isAccountConfirmed === true
             && row.DT_RowData.isBlocked === false
-            && row.DT_RowData.hasBlockedCredential !== true;
+            && row.DT_RowData.hasBlockedCredential !== true
+            && row.DT_RowData.isInactive !== true;
 
           if (isOperational) {
             statusHtml += '<span class="badge bg-primary">Operational</span>';
@@ -170,6 +171,8 @@
               statusHtml += '<span class="badge bg-warning">Unconfirmed</span>';
             if (row.DT_RowData.isBlocked === true)
               statusHtml += '<span class="badge bg-warning">Blocked</span>';
+            if (row.DT_RowData.isInactive === true)
+              statusHtml += '<span class="badge bg-warning">Inactive</span>';
           }
 
           // Always show Administrator if applicable
@@ -192,15 +195,49 @@
         searchable: false,
         render: function (data, type, row) {
           let b64AccountName = window.btoa(row.accountName);
-          return `<div style="text-align: right;">
-                      <button type="button" class="btn btn-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#modalEditAccount" onclick="loadAndEditAccount('${b64AccountName}')">
-                        <i class="fas fa-edit"></i>
-                      </button>
-                  </div>`;
+          let buttons = '<div style="text-align: right;">';
+
+          // Dismiss Inactivity button (only show if inactive)
+          if (row.DT_RowData.isInactive === true) {
+            buttons += `<button type="button" class="btn btn-warning btn-sm me-1" onclick="dismissInactivity('${b64AccountName}')" title="Dismiss Inactivity">
+                        <i class="fas fa-check-double"></i>
+                      </button>`;
+          }
+
+          // Edit button
+          buttons += `<button type="button" class="btn btn-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#modalEditAccount" onclick="loadAndEditAccount('${b64AccountName}')">
+                      <i class="fas fa-edit"></i>
+                      </button>`;
+
+          buttons += '</div>';
+          return buttons;
         }
       }
     ]
   });
+
+  function dismissInactivity(b64AccountName) {
+    var accountName = window.atob(b64AccountName);
+    showYesNoDialog("Do you really want to dismiss inactivity for account '" + accountName + "'?", function (result) {
+      if (result) {
+        $.ajax({
+          url: '/api/v1/extendAccountInactivity',
+          type: 'POST',
+          contentType: 'application/json',
+          data: JSON.stringify({
+            accountName: accountName,
+            validUntil: Math.floor(Date.now() / 1000) + (14 * 24 * 60 * 60)
+          }),
+          success: function (response) {
+            showToastSuccess("Inactivity dismissed for account " + accountName + ".");
+            var table = $('#accountsTable').DataTable();
+            table.ajax.reload();
+          },
+          error: commonFunctionError
+        });
+      }
+    });
+  }
 </script>
 
 

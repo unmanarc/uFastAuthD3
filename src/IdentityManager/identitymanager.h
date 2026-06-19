@@ -59,6 +59,8 @@ public:
         Accounts(IdentityManager *m_parent);
         virtual ~Accounts() = default;
 
+        virtual bool extendInactivity(const std::string &accountName, const time_t &validUntil) = 0;
+
         bool createAdminAccount(const std::string &accountName);
 
         /////////////////////////////////////////////////////////////////////////////////

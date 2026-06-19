@@ -15,6 +15,9 @@ public:
 protected:
     static void addEndpoints_Accounts(const std::shared_ptr<Endpoints> &endpoints);
 
+    static APIReturn extendInactivity(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
+
+
     // Accounts:
     static APIReturn addAccount(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
     static APIReturn doesAccountExist(void *context, const RequestParameters &request, ClientDetails &authClientDetails);

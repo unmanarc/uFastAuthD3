@@ -4,6 +4,7 @@
 #include <Mantids30/Program_Logs/applog.h>
 #include <json/value.h>
 
+#include "Mantids30/Helpers/json.h"
 #include "defs.h"
 #include "globals.h"
 #include <regex>
@@ -49,6 +50,27 @@ void AdminPortal_Endpoints_Accounts::addEndpoints_Accounts(const std::shared_ptr
     endpoints->addEndpoint(HTTP::Method::PUT, "updateAccountDetailField", SecurityRequirements::JWT_COOKIE_AUTH, {"CONFIG_WRITE"}, nullptr, &updateAccountDetailField);
     endpoints->addEndpoint(HTTP::Method::DELETE, "removeAccountDetailField", SecurityRequirements::JWT_COOKIE_AUTH, {"CONFIG_WRITE"}, nullptr, &removeAccountDetailField);
     endpoints->addEndpoint(HTTP::Method::GET, "getAccountDetailField", SecurityRequirements::JWT_COOKIE_AUTH, {"CONFIG_READ"}, nullptr, &getAccountDetailField);
+
+    endpoints->addEndpoint(HTTP::Method::POST, "extendAccountInactivity",SecurityRequirements::JWT_COOKIE_AUTH,{"ACCOUNT_MODIFY"}, nullptr, &extendInactivity );
+}
+
+AdminPortal_Endpoints_Accounts::APIReturn AdminPortal_Endpoints_Accounts::extendInactivity(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+{
+    std::string accountName = JSON_ASSTRING(*request.inputJSON, "accountName", "");
+    time_t validUntil = JSON_ASINT64(*request.inputJSON, "validUntil", 0);
+
+    // Validate that account name is not empty
+    if (accountName.empty())
+    {
+        return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Account Name is Empty"};
+    }
+
+    if (!Globals::getIdentityManager()->accounts->extendInactivity(accountName,validUntil))
+    {
+        return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed extend inactivity"};
+    }
+
+    return {};
 }
 
 API::APIReturn AdminPortal_Endpoints_Accounts::addAccount(void *context, const RequestParameters &request, ClientDetails &authClientDetails)

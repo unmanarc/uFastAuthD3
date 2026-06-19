@@ -21,6 +21,58 @@ using namespace Mantids30;
 using namespace Mantids30::Memory;
 using namespace Mantids30::Database;
 
+bool IdentityManager_DB::Accounts_DB::extendInactivity(const std::string &accountName, const time_t &validUntil)
+{
+    // Start transaction
+    if (!_parent->m_sqlConnector->beginTransaction())
+    {
+        return false;
+    }
+
+    // Step 1: Delete the existing record if it exists
+    // Note: In SQLite, if accountName is not unique, this deletes ALL matching rows.
+    // Ensure 'accountName' is unique or adjust logic if multiple rows per account are possible.
+    bool success = _parent->m_sqlConnector->qExecuteEx(R"(DELETE FROM iam.inactivityExtensions WHERE `accountName` = :accountName;)",
+                                                       {
+                                                        {":accountName", MAKE_VAR(STRING, accountName)}
+                                                       }
+                                                       );
+
+    if (!success)
+    {
+        // Rollback on failure
+        _parent->m_sqlConnector->rollbackTransaction(); // Assuming this method exists, otherwise ignore
+        return false;
+    }
+
+    // Step 2: Insert the new record
+    success = _parent->m_sqlConnector->qExecuteEx(
+        R"(INSERT INTO iam.inactivityExtensions (`accountName`, `validUntil`)
+              VALUES (:accountName, :validUntil);)",
+        {
+         {":accountName", MAKE_VAR(STRING, accountName)},
+         {":validUntil", MAKE_VAR(DATETIME, validUntil)}
+        }
+        );
+
+    if (!success)
+    {
+        // Rollback on failure
+        _parent->m_sqlConnector->rollbackTransaction();
+        return false;
+    }
+
+    // Commit the transaction
+    if (!_parent->m_sqlConnector->commitTransaction())
+    {
+        // Optional: Rollback if commit fails, depending on your connector's behavior
+        _parent->m_sqlConnector->rollbackTransaction();
+        return false;
+    }
+
+    return true;
+}
+
 bool IdentityManager_DB::Accounts_DB::addAccount(const std::string &accountName, time_t expirationDate, const AccountFlags &accountFlags, const ClientDetails &clientDetails,
                                                  const std::string &sCreatorAccountName)
 {
@@ -458,10 +510,8 @@ Json::Value IdentityManager_DB::Accounts_DB::searchAccounts(const json &dataTabl
             // Get last login per app from logs.applicationAccess_accountLastLogin
             {
                 Abstract::DATETIME appLastLogin;
-                if (_parent->m_sqlConnector->qSelectSingleRow(
-                        "SELECT lastLogin FROM logs.applicationAccess_accountLastLogin WHERE f_accountName=:accountName AND f_appName=:appName;",
-                        {{":accountName", MAKE_VAR(STRING, accountName)}, {":appName", MAKE_VAR(STRING, appName)}},
-                        {&appLastLogin}))
+                if (_parent->m_sqlConnector->qSelectSingleRow("SELECT lastLogin FROM logs.applicationAccess_accountLastLogin WHERE f_accountName=:accountName AND f_appName=:appName;",
+                                                              {{":accountName", MAKE_VAR(STRING, accountName)}, {":appName", MAKE_VAR(STRING, appName)}}, {&appLastLogin}))
                 {
                     appObj["lastLogin"] = appLastLogin.toJSON();
                 }
@@ -473,7 +523,7 @@ Json::Value IdentityManager_DB::Accounts_DB::searchAccounts(const json &dataTabl
             appsArray.append(appObj);
         }
         row["applications"] = appsArray;
-        row["DT_RowData"]["isInactive"] = _parent->authController->isAccountInactive( _parent->authController->getAccountLastAccess(accountName) , row["DT_RowData"]["isAdmin"].asBool()  );
+        row["DT_RowData"]["isInactive"] = _parent->authController->isAccountInactive(_parent->authController->getAccountLastAccess(accountName), row["DT_RowData"]["isAdmin"].asBool());
     }
 
     return ret;

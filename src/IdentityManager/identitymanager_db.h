@@ -41,7 +41,11 @@ public:
             _parent = parent;
         }
 
-        virtual ~Accounts_DB() = default;
+        ~Accounts_DB() override = default;
+
+
+        bool extendInactivity(const std::string &accountName, const time_t &validUntil) override;
+
 
         // Account Management
         bool addAccount(const std::string &accountName,
@@ -111,7 +115,7 @@ public:
             _parent = parent;
         }
 
-        virtual ~ApplicationRoles_DB() = default;
+        ~ApplicationRoles_DB() override = default;
 
         // Role Management
         bool addRole(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &roleName, const std::string &roleDescription) override;
@@ -147,7 +151,7 @@ public:
             _parent = parent;
         }
 
-        virtual ~ApplicationActivities_DB() = default;
+        ~ApplicationActivities_DB() override = default;
 
         bool createLoginActivity() override;
 
@@ -289,7 +293,7 @@ public:
             _parent = parent;
         }
 
-        virtual ~Applications_DB() = default;
+        ~Applications_DB() override = default;
 
         // Application CRUD Operations
         bool addApplication(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &applicationDescription, const std::string &appURL,
@@ -355,7 +359,7 @@ public:
     };
 
     // SQL Error Handling
-    std::list<std::string> getSqlErrorList() const;
+    [[nodiscard]] std::list<std::string> getSqlErrorList() const;
     void clearSQLErrorList();
 
 private:
