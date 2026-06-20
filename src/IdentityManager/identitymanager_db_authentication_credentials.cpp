@@ -378,7 +378,7 @@ bool IdentityManager_DB::AuthController_DB::removeAccountCredential(const Client
     return success;
 }
 
-bool IdentityManager_DB::AuthController_DB::setCredentialMustChange(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountName, uint32_t slotId, bool mustChange)
+bool IdentityManager_DB::AuthController_DB::setAccountCredentialMustChange(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountName, uint32_t slotId, bool mustChange)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
 
@@ -395,7 +395,7 @@ bool IdentityManager_DB::AuthController_DB::setCredentialMustChange(const Client
     return success;
 }
 
-bool IdentityManager_DB::AuthController_DB::setCredentialLockedStatus(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountName, uint32_t slotId, bool isLocked)
+bool IdentityManager_DB::AuthController_DB::setAccountCredentialLockedStatus(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountName, uint32_t slotId, bool isLocked)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
 

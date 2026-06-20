@@ -18,7 +18,7 @@ protected:
     // Account Credential Slots:
     static APIReturn getAccountCredentialSlots(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
     static APIReturn removeAccountCredentialSlot(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
-    static APIReturn setCredentialLockedStatus(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
+    static APIReturn setAccountCredentialLockedStatus(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
     static APIReturn setMustChangeCredential(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
     static APIReturn cancelMustChangeCredential(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
     static APIReturn generateMasterPassword(void *context, const RequestParameters &request, ClientDetails &authClientDetails);

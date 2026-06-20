@@ -16,7 +16,7 @@ void AdminPortal_Endpoints_AccountCredentials::addEndpoints_AccountCredentials(c
     // Account Credential Slots:
     endpoints->addEndpoint(HTTP::Method::GET, "getAccountCredentialSlots", SecurityRequirements::JWT_COOKIE_AUTH, {"ACCOUNT_READ"}, nullptr, &getAccountCredentialSlots);
     endpoints->addEndpoint(HTTP::Method::DELETE, "removeAccountCredentialSlot", SecurityRequirements::JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"}, nullptr, &removeAccountCredentialSlot);
-    endpoints->addEndpoint(HTTP::Method::PUT, "setCredentialLockedStatus", SecurityRequirements::JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"}, nullptr, &setCredentialLockedStatus);
+    endpoints->addEndpoint(HTTP::Method::PUT, "setAccountCredentialLockedStatus", SecurityRequirements::JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"}, nullptr, &setAccountCredentialLockedStatus);
     endpoints->addEndpoint(HTTP::Method::PUT, "setMustChangeCredential", SecurityRequirements::JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"}, nullptr, &setMustChangeCredential);
     endpoints->addEndpoint(HTTP::Method::POST, "generateMasterPassword", SecurityRequirements::JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"}, nullptr, &generateMasterPassword);
 }
@@ -94,7 +94,7 @@ API::APIReturn AdminPortal_Endpoints_AccountCredentials::removeAccountCredential
     return response;
 }
 
-API::APIReturn AdminPortal_Endpoints_AccountCredentials::setCredentialLockedStatus(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortal_Endpoints_AccountCredentials::setAccountCredentialLockedStatus(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
@@ -114,7 +114,7 @@ API::APIReturn AdminPortal_Endpoints_AccountCredentials::setCredentialLockedStat
     }
 
     // Block the credential slot for the account
-    if (!Globals::getIdentityManager()->authController->setCredentialLockedStatus(authClientDetails, request.jwtToken->getSubject(), accountName, slotId, lockedStatus))
+    if (!Globals::getIdentityManager()->authController->setAccountCredentialLockedStatus(authClientDetails, request.jwtToken->getSubject(), accountName, slotId, lockedStatus))
     {
         return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to set the lock state on the credential slot"};
     }
@@ -142,7 +142,7 @@ API::APIReturn AdminPortal_Endpoints_AccountCredentials::setMustChangeCredential
     }
 
     // Force credential expiration for the account slot
-    if (!Globals::getIdentityManager()->authController->setCredentialMustChange(authClientDetails, request.jwtToken->getSubject(), accountName, slotId, mustChange))
+    if (!Globals::getIdentityManager()->authController->setAccountCredentialMustChange(authClientDetails, request.jwtToken->getSubject(), accountName, slotId, mustChange))
     {
         return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to change credential flag to change"};
     }
