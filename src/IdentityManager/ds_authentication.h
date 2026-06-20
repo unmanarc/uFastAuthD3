@@ -159,8 +159,8 @@ struct Credential
         slotDetails.fromJSON(j["slotDetails"]);
         mustChange = JSON_ASBOOL(j, "mustChange", true);
         badAttempts = JSON_ASUINT(j, "badAttempts", 0);
-        lastChange = (time_t) JSON_ASUINT64(j, "lastChange", 0);
-        expirationTimestamp = (time_t) JSON_ASUINT64(j, "expirationTimestamp", 0);
+        lastChange = static_cast<time_t>JSON_ASUINT64(j, "lastChange", 0);
+        expirationTimestamp = static_cast<time_t>JSON_ASUINT64(j, "expirationTimestamp", 0);
         hash = JSON_ASSTRING(j, "hash", "");
         Mantids30::Helpers::Encoders::fromHex(JSON_ASSTRING(j, "ssalt", "FFFFFFFF"), ssalt, 4);
     }

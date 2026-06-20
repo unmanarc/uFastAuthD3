@@ -28,7 +28,7 @@ void CredentialValidator::cleanupExpiredTokens()
 
 void CredentialValidator::cleanupExpiredTokens(void *asv)
 {
-    CredentialValidator *_asv = (CredentialValidator *) asv;
+    CredentialValidator *_asv = static_cast<CredentialValidator *>(asv);
     _asv->cleanupExpiredTokens();
 }
 
@@ -44,7 +44,7 @@ AuthenticationResult CredentialValidator::validateStoredCredential(const std::st
         return AuthenticationResult::INTERNAL_ERROR;
     }
 
-    switch ((HashFunction)storedCredential.slotDetails.passwordFunction.value())
+    switch (static_cast<HashFunction>(storedCredential.slotDetails.passwordFunction.value()))
     {
     case HashFunction::PLAIN:
     {
