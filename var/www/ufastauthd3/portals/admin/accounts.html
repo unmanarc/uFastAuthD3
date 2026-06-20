@@ -166,9 +166,9 @@
             statusHtml += '<span class="badge bg-primary">Operational</span>';
           } else {
             if (row.DT_RowData.isEnabled === false)
-              statusHtml += '<span class="badge bg-dark">Disabled</span>';
+              statusHtml += '<span class="badge bg-warning">Disabled</span>';
             if (row.DT_RowData.isAccountConfirmed === false)
-              statusHtml += '<span class="badge bg-warning">Unconfirmed</span>';
+              statusHtml += '<span class="badge bg-black">Unconfirmed</span>';
             if (row.DT_RowData.isBlocked === true)
               statusHtml += '<span class="badge bg-warning">Blocked</span>';
             if (row.DT_RowData.isInactive === true)
