@@ -105,7 +105,7 @@ inline Mantids30::Program::Logs::LogLevel SecurityEventActionToLogLevel(Security
     case SecurityEventAction::AUTO_LOCK:
     case SecurityEventAction::LOCK:
     case SecurityEventAction::DISABLE:
-        return Mantids30::Program::Logs::LogLevel::ERR;
+        return Mantids30::Program::Logs::LogLevel::SECURITY_ALERT;
     case SecurityEventAction::CREATE:
     case SecurityEventAction::UPDATE:
     case SecurityEventAction::DELETE:
