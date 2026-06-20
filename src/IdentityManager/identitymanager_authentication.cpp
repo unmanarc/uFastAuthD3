@@ -26,7 +26,7 @@ void IdentityManager::AuthController::updateCredentialAuthStatus(const Authentic
     if (!IS_CREDENTIAL_AUTHENTICATED(authResult))
     {
         // Increment the counter and disable the account according to the policy.
-        if ((storedCredentialData.badAttempts + 1) >= m_authenticationPolicy.maxTries)
+        if (storedCredentialData.hasExceededMaxAttempts(m_authenticationPolicy))
         {
             // Disable the account...
             m_parent->accounts->disableAccount(clientDetails, accountName, accountName, true);
@@ -87,7 +87,7 @@ AuthenticationResult IdentityManager::AuthController::authenticateCredential(con
                                                                              // Extras...
                                                                              std::shared_ptr<TransientAuthenticationContext> authContext)
 {
-    AuthenticationResult ret = AuthenticationResult::BAD_ACCOUNT;
+    AuthenticationResult authResult = AuthenticationResult::BAD_ACCOUNT;
     bool accountFound = false, authSlotFound = false;
     Credential pStoredCredentialData;
 
@@ -134,11 +134,11 @@ AuthenticationResult IdentityManager::AuthController::authenticateCredential(con
 
         if (!accountFound)
         {
-            ret = AuthenticationResult::BAD_ACCOUNT;
+            authResult = AuthenticationResult::BAD_ACCOUNT;
         }
         else if (!authSlotFound)
         {
-            ret = AuthenticationResult::CREDENTIAL_INDEX_NOT_FOUND;
+            authResult = AuthenticationResult::CREDENTIAL_INDEX_NOT_FOUND;
         }
         else
         {
@@ -162,20 +162,20 @@ AuthenticationResult IdentityManager::AuthController::authenticateCredential(con
             {
                 return AuthenticationResult::INACTIVE_ACCOUNT;
             }
-            else if (pStoredCredentialData.hasExceededMaxAttempts(m_authenticationPolicy) || pStoredCredentialData.isLocked)
+            else if (pStoredCredentialData.isLocked)
             {
                 return AuthenticationResult::LOCKED_CREDENTIAL;
             }
             else
             {
-                ret = validateStoredCredential(accountName, pStoredCredentialData, incomingPassword, challengeSalt, authMode);
+                authResult = validateStoredCredential(accountName, pStoredCredentialData, incomingPassword, challengeSalt, authMode);
             }
         }
     }
 
-    updateCredentialAuthStatus(ret, accountName, pStoredCredentialData, slotId, clientDetails);
+    updateCredentialAuthStatus(authResult, accountName, pStoredCredentialData, slotId, clientDetails);
 
-    return ret;
+    return authResult;
 }
 
 std::string IdentityManager::AuthController::genRandomConfirmationToken()
