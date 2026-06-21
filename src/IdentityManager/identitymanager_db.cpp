@@ -48,6 +48,7 @@ bool IdentityManager_DB::initializeDatabase()
                                              `isUnique`                      BOOLEAN        NOT NULL DEFAULT FALSE,
                                              `isOptionalField`               BOOLEAN        NOT NULL DEFAULT TRUE,
                                              `jsonExtendedAttribs`           TEXT           DEFAULT NULL,
+                                             `orderPriority`                 INTEGER        NOT NULL,
                                               PRIMARY KEY(`fieldName`)
                                                                         );
                                        )",
