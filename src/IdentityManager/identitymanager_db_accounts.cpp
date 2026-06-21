@@ -2,6 +2,7 @@
 #include "Mantids30/Helpers/json.h"
 #include "identitymanager_db.h"
 
+#include <Mantids30/DB/transaction.h>
 #include <Mantids30/Helpers/datatables.h>
 #include <Mantids30/Threads/lock_shared.h>
 #include <boost/regex.hpp>
@@ -23,11 +24,8 @@ using namespace Mantids30::Database;
 
 bool IdentityManager_DB::Accounts_DB::extendInactivity(const std::string &accountName, const time_t &validUntil)
 {
-    // Start transaction
-    if (!_parent->m_sqlConnector->beginTransaction())
-    {
-        return false;
-    }
+    Threads::Sync::Lock_RW lock(_parent->m_mutex);
+    Database::Transaction tg(*_parent->m_sqlConnector);
 
     // Step 1: Delete the existing record if it exists
     // Note: In SQLite, if accountName is not unique, this deletes ALL matching rows.
@@ -40,9 +38,8 @@ bool IdentityManager_DB::Accounts_DB::extendInactivity(const std::string &accoun
 
     if (!success)
     {
-        // Rollback on failure
-        _parent->m_sqlConnector->rollbackTransaction(); // Assuming this method exists, otherwise ignore
-        return false;
+        // Rollback on failure and return false.
+        return tg.finalize(false);
     }
 
     // Step 2: Insert the new record
@@ -57,20 +54,19 @@ bool IdentityManager_DB::Accounts_DB::extendInactivity(const std::string &accoun
 
     if (!success)
     {
-        // Rollback on failure
-        _parent->m_sqlConnector->rollbackTransaction();
-        return false;
+        // Rollback on failure and return false.
+        return tg.finalize(false);
     }
 
     // Commit the transaction
     if (!_parent->m_sqlConnector->commitTransaction())
     {
-        // Optional: Rollback if commit fails, depending on your connector's behavior
-        _parent->m_sqlConnector->rollbackTransaction();
-        return false;
+        // Rollback on failure and return false.
+        return tg.finalize(false);
     }
 
-    return true;
+    // commit the transaction.
+    return tg.finalize();
 }
 
 bool IdentityManager_DB::Accounts_DB::addAccount(const std::string &accountName, time_t expirationDate, const AccountFlags &accountFlags, const ClientDetails &clientDetails,
@@ -803,19 +799,26 @@ bool IdentityManager_DB::Accounts_DB::changeAccountDetails(const ClientDetails &
                                                            const std::map<std::string, std::string> &fieldsValues, bool resetAllValues)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
+    Transaction tg(*_parent->m_sqlConnector);
 
     if (resetAllValues)
     {
         // Delete all values for the specified account
-        _parent->m_sqlConnector->qExecuteEx("DELETE FROM iam.accountDetailValues WHERE `f_accountName` = :accountName;", {{":accountName", MAKE_VAR(STRING, accountName)}});
+        if (!_parent->m_sqlConnector->qExecuteEx("DELETE FROM iam.accountDetailValues WHERE `f_accountName` = :accountName;", {{":accountName", MAKE_VAR(STRING, accountName)}}))
+        {
+            return tg.finalize(false);
+        }
     }
     else
     {
         // Delete only specified fields for the account
         for (const auto &field : fieldsValues)
         {
-            _parent->m_sqlConnector->qExecuteEx("DELETE FROM iam.accountDetailValues WHERE `f_accountName` = :accountName AND `f_fieldName` = :fieldName;",
-                                                {{":accountName", MAKE_VAR(STRING, accountName)}, {":fieldName", MAKE_VAR(STRING, field.first)}});
+            if (!_parent->m_sqlConnector->qExecuteEx("DELETE FROM iam.accountDetailValues WHERE `f_accountName` = :accountName AND `f_fieldName` = :fieldName;",
+                                                     {{":accountName", MAKE_VAR(STRING, accountName)}, {":fieldName", MAKE_VAR(STRING, field.first)}}))
+            {
+                return tg.finalize(false);
+            }
         }
     }
 
@@ -831,7 +834,7 @@ bool IdentityManager_DB::Accounts_DB::changeAccountDetails(const ClientDetails &
             if (!std::regex_match(field.second, reg))
             {
                 // The value does not match the regex
-                return false;
+                return tg.finalize(false);
             }
         }
 
@@ -839,13 +842,14 @@ bool IdentityManager_DB::Accounts_DB::changeAccountDetails(const ClientDetails &
         if (!_parent->m_sqlConnector->qExecuteEx("INSERT INTO iam.accountDetailValues (`f_accountName`, `f_fieldName`, `value`) VALUES(:accountName, :fieldName, :value);",
                                                  {{":accountName", MAKE_VAR(STRING, accountName)}, {":fieldName", MAKE_VAR(STRING, field.first)}, {":value", MAKE_VAR(STRING, field.second)}}))
         {
-            return false;
+            return tg.finalize(false);
         }
     }
 
+    // Commit the transaction
     _parent->logSecurityEventOnAccounts(accountName, SecurityEventAction::UPDATE, resetAllValues ? "All account details reset" : "Account details updated", performedBy, clientDetails);
 
-    return true;
+    return tg.finalize();
 }
 
 bool IdentityManager_DB::Accounts_DB::removeAccountDetail(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountName, const std::string &fieldName)
