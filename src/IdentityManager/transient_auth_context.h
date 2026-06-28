@@ -141,7 +141,7 @@ struct TransientAuthenticationContext
         loadUUIDFromAccountName();
     }
 
-    void fillVars_FromInitialJSONPOST(const json &inputJSON)
+    void fillVars_FromInitialJSONPOST(const Json::Value &inputJSON)
     {
         accountName = Helpers::JSON::ASSTRING(inputJSON, "accountName", "");
         keepAuthenticated = Helpers::JSON::ASBOOL(inputJSON, "keepAuthenticated", false);
