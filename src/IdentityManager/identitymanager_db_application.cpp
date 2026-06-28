@@ -123,7 +123,7 @@ std::optional<IdentityManager::Applications::ApplicationAttributes> IdentityMana
     {
         IdentityManager::Applications::ApplicationAttributes attrs;
         Json::Value root;
-        Mantids30::Helpers::JSON::JSONReader2 reader;
+        Helpers::JSON::JSONReader2 reader;
         reader.parse(appAttributesJSON.getValue(), root);
         attrs.fromJSON(root);
         return attrs;
@@ -658,7 +658,7 @@ ApplicationTokenProperties IdentityManager_DB::Applications_DB::getWebLoginJWTCo
         tokenInfo.includeBasicAccountInfo = includeBasicAccountInfo.getValue();
         tokenInfo.maintainRevocationAndLogoutInfo = maintainRevocationAndLogoutInfo.getValue();
         tokenInfo.allowRefreshTokenRenovation = allowRefreshTokenRenovation.getValue();
-        Mantids30::Helpers::JSON::JSONReader2 reader;
+        Helpers::JSON::JSONReader2 reader;
         reader.parse(tokensConfigJSON.getValue(), tokenInfo.tokensConfiguration);
     }
     return tokenInfo;

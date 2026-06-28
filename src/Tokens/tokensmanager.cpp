@@ -31,7 +31,7 @@ void TokensManager::configureApplicationAccessToken(Mantids30::DataFormat::JWT::
 
     accessToken.setNotBefore(time(nullptr) - 30);
     accessToken.setClaim("sessionInactivityTimeout", commonParams.tokenProperties.sessionInactivityTimeout);
-    accessToken.setClaim("slotIds", Mantids30::Helpers::setToJSON(commonParams.slotIds));
+    accessToken.setClaim("slotIds", Helpers::JSON::setToJSON(commonParams.slotIds));
     accessToken.setJwtId(tokenId);
     accessToken.setClaim("parentTokenId", commonParams.refreshTokenId);
     accessToken.setClaim("app", commonParams.appName);
@@ -82,7 +82,7 @@ void TokensManager::configureApplicationRefreshToken(Mantids30::DataFormat::JWT:
     refreshToken.setSubject(commonParams.jwtAccountName);
     refreshToken.setIssuedAt(time(nullptr));
     refreshToken.setNotBefore(time(nullptr) - 30);
-    refreshToken.setClaim("slotIds", Mantids30::Helpers::setToJSON(commonParams.slotIds));
+    refreshToken.setClaim("slotIds", Helpers::JSON::setToJSON(commonParams.slotIds));
     refreshToken.setJwtId(commonParams.refreshTokenId);
     refreshToken.setClaim("app", commonParams.appName);
     refreshToken.setClaim("keepAuthenticated", refreshParams.keepAuthenticated);
@@ -130,7 +130,7 @@ void TokensManager::issueLPTokenCookie(APIReturn &response, const RequestContext
     Json::Value authenticationPublicData;
     authenticationPublicData["exp"] = std::to_string(lpToken.getExpirationTime());
     authenticationPublicData["subject"] = authContext->accountUUID;
-    authenticationPublicData["slotIds"] = Mantids30::Helpers::setToJSON(authContext->authenticatedSlots);
+    authenticationPublicData["slotIds"] = Helpers::JSON::setToJSON(authContext->authenticatedSlots);
     authenticationPublicData["authenticatedSchemes"] = authContext->getAllAuthenticatedSchemes();
     authenticationPublicData["authenticatedAppsCallbackURLs"] = authContext->getAllAuthenticatedAppsCallbackURLs();
 

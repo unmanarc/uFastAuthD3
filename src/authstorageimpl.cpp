@@ -298,7 +298,7 @@ bool AuthStorageImpl::configureAdminPortalApplication(IdentityManager_DB *identi
         return false;
     }
 
-    AppSync_Endpoints::updateAppScopes(IAM_ADMPORTAL_APPNAME, "127.0.0.1", parseJSON(R"(
+    AppSync_Endpoints::updateAppScopes(IAM_ADMPORTAL_APPNAME, "127.0.0.1", Helpers::JSON::parseJSON(R"(
         [
             {
                 "id": "SELF_PWDCHANGE",
@@ -423,7 +423,7 @@ bool AuthStorageImpl::configureUserPortalApplication(IdentityManager_DB *identit
         return false;
     }
 
-    AppSync_Endpoints::updateAppScopes(IAM_USRPORTAL_APPNAME, "127.0.0.1", parseJSON(R"(
+    AppSync_Endpoints::updateAppScopes(IAM_USRPORTAL_APPNAME, "127.0.0.1", Helpers::JSON::parseJSON(R"(
     [
       {
         "id": "LOGIN",
@@ -464,7 +464,7 @@ bool AuthStorageImpl::configureUserPortalApplication(IdentityManager_DB *identit
     ]
     )"));
 
-    AppSync_Endpoints::updateAppRoles(IAM_USRPORTAL_APPNAME, "127.0.0.1", parseJSON(R"(
+    AppSync_Endpoints::updateAppRoles(IAM_USRPORTAL_APPNAME, "127.0.0.1", Helpers::JSON::parseJSON(R"(
     [
       {
         "id": "GENERIC_USER",
