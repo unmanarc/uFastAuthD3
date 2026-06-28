@@ -1,4 +1,1 @@
 - All the project must be written in english.
-- Never check at end
-- Keep focused on what I asked for.
-- Ask before switching to plan mode.
