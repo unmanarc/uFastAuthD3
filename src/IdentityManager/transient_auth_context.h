@@ -12,11 +12,13 @@
 
 #include <optional>
 
+using namespace Mantids30;
+
 struct TransientAuthenticationContext
 {
-    bool validateAndMerge_LPTokenIfExist(const std::string &cookieLPTokenStr, Mantids30::API::APIReturn &response, const std::shared_ptr<Mantids30::DataFormat::JWT> &jwtValidator)
+    bool validateAndMerge_LPTokenIfExist(const std::string &cookieLPTokenStr, API::APIReturn &response, const std::shared_ptr<DataFormat::JWT> &jwtValidator)
     {
-        Mantids30::DataFormat::JWT::Token lpToken;
+        DataFormat::JWT::Token lpToken;
         //std::string cookieAccessTokenStr = request.clientRequest->getCookie("AccessToken");
 
         if (!cookieLPTokenStr.empty())
@@ -24,21 +26,21 @@ struct TransientAuthenticationContext
             if (!jwtValidator->verify(cookieLPTokenStr, &lpToken))
             {
                 // Failed to load the intermediary...
-                response.setError(Mantids30::Network::Protocol::HTTP::Status::Code::S_403_FORBIDDEN, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::UNAUTHENTICATED)),
+                response.setError(Network::Protocol::HTTP::Status::Code::S_403_FORBIDDEN, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::UNAUTHENTICATED)),
                                   authResultToString(AuthenticationResult::UNAUTHENTICATED));
                 return false;
             }
             if (lpToken.getClaim("app") != IAM_LOGINPORTAL_APPNAME || lpToken.getClaim("type") != "access")
             {
                 // This Token is not for this cookie...
-                response.setError(Mantids30::Network::Protocol::HTTP::Status::Code::S_403_FORBIDDEN, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::UNAUTHENTICATED)),
+                response.setError(Network::Protocol::HTTP::Status::Code::S_403_FORBIDDEN, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::UNAUTHENTICATED)),
                                   authResultToString(AuthenticationResult::UNAUTHENTICATED));
                 return false;
             }
             if (lpToken.getSubject() != accountUUID)
             {
                 // This Token is not for this cookie... (other username... logout first please!)
-                response.setError(Mantids30::Network::Protocol::HTTP::Status::Code::S_401_UNAUTHORIZED, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::BAD_ACCOUNT)),
+                response.setError(Network::Protocol::HTTP::Status::Code::S_401_UNAUTHORIZED, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::BAD_ACCOUNT)),
                                   authResultToString(AuthenticationResult::BAD_ACCOUNT));
                 return false;
             }
@@ -58,7 +60,7 @@ struct TransientAuthenticationContext
         return true;
     }
 
-    bool validateAndMerge_TransientAuthTokenIfExist(const std::string &transientAuthTokenStr, const Json::Value *inputJSON, const std::shared_ptr<Mantids30::DataFormat::JWT>& jwtValidator)
+    bool validateAndMerge_TransientAuthTokenIfExist(const std::string &transientAuthTokenStr, const Json::Value *inputJSON, const std::shared_ptr<DataFormat::JWT>& jwtValidator)
     {
         // Validate the token
         if (!transientAuthTokenStr.empty() && transientAuthTokenStr != "null")
@@ -80,13 +82,13 @@ struct TransientAuthenticationContext
         return true;
     }
 
-    std::string issueSignedTransientTokenFromValues(const uint32_t &loginAuthenticationTimeout, std::optional<uint32_t> nextSlotId, const std::shared_ptr<Mantids30::DataFormat::JWT>& jwtSigner)
+    std::string issueSignedTransientTokenFromValues(const uint32_t &loginAuthenticationTimeout, std::optional<uint32_t> nextSlotId, const std::shared_ptr<DataFormat::JWT>& jwtSigner)
     {
-        Mantids30::DataFormat::JWT::Token newTransientAuthToken;
+        DataFormat::JWT::Token newTransientAuthToken;
 
         if (doesTransientTokenNotExist)
         {
-            newTransientAuthToken.setJwtId(Mantids30::Helpers::Random::createRandomString(16));
+            newTransientAuthToken.setJwtId(Helpers::Random::createRandomString(16));
             newTransientAuthToken.setExpirationTime(time(nullptr) + loginAuthenticationTimeout);
         }
         else
@@ -104,7 +106,7 @@ struct TransientAuthenticationContext
         newTransientAuthToken.setClaim("schemeId", schemeId);
         newTransientAuthToken.setClaim("keepAuthenticated", keepAuthenticated);
         newTransientAuthToken.setClaim("type", "transient");
-        newTransientAuthToken.setClaim("authenticatedSlots", Mantids30::Helpers::setToJSON(authenticatedSlots));
+        newTransientAuthToken.setClaim("authenticatedSlots", Helpers::JSON::setToJSON(authenticatedSlots));
         newTransientAuthToken.setClaim("authenticatedSchemes", jAuthenticatedSchemes);
         newTransientAuthToken.setClaim("authenticatedAppsCallbackURLs", jAuthenticatedAppsCallbackURLs);
 
@@ -116,7 +118,7 @@ struct TransientAuthenticationContext
         return jwtSigner->signFromToken(newTransientAuthToken, false);
     }
 
-    std::string issueSignedTransientTokenFromCurrentToken(const std::shared_ptr<Mantids30::DataFormat::JWT>& jwtSigner)
+    std::string issueSignedTransientTokenFromCurrentToken(const std::shared_ptr<DataFormat::JWT>& jwtSigner)
     {
         newTokenExpirationTime = transientAuthToken.getExpirationTime();
         return jwtSigner->signFromToken(transientAuthToken, false);
@@ -158,7 +160,7 @@ struct TransientAuthenticationContext
         {
             r.insert(currentSlotId.value());
         }
-        return Mantids30::Helpers::setToJSON(r);
+        return Helpers::JSON::setToJSON(r);
     }
 
     [[nodiscard]] Json::Value getAllAuthenticatedSchemes() const
@@ -198,5 +200,5 @@ struct TransientAuthenticationContext
     Json::Value jAuthenticatedSchemes = Json::arrayValue;
     Json::Value jAuthenticatedAppsCallbackURLs = Json::arrayValue;
 
-    Mantids30::DataFormat::JWT::Token transientAuthToken;
+    DataFormat::JWT::Token transientAuthToken;
 };
