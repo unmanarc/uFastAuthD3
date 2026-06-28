@@ -13,7 +13,6 @@
     function createAccountClearParameters() {
 
         // Reset all password fields to empty
-        document.getElementById("accountUUID").value = "";
         document.getElementById("newpass0").value = "";
         document.getElementById("newpass1").value = "";
         document.getElementById("newpassGEN").innerText = "";
@@ -28,8 +27,134 @@
         document.getElementById("isConfirmed").checked = false;
         document.getElementById("isAdmin").checked = false;
         document.getElementById("isBlocked").checked = false;
+
+        // Clear the dynamic detail fields container
+        document.getElementById("detailFieldsContainer").innerHTML = "";
     }
 
+    // Map fieldType values to HTML input types
+    function getInputType(fieldType) {
+        switch (fieldType) {
+            case 'PASSWORD': return 'password';
+            case 'EMAIL': return 'email';
+            case 'NUMBER': return 'number';
+            case 'CHECKBOX': return 'checkbox';
+            default: return 'text';
+        }
+    }
+
+    // Load detail fields with isLoginIdentifier=true when the modal opens
+    function loadDetailFieldsForNewAccount() {
+        $.ajax({
+            url: '/api/v1/listDetailFields',
+            type: 'GET',
+            contentType: 'application/json',
+            success: function (response, textStatus, xhr) {
+                var container = document.getElementById("detailFieldsContainer");
+                container.innerHTML = "";
+
+                // Filter fields where isLoginIdentifier is true
+                var loginFields = [];
+                for (var i = 0; i < response.length; i++) {
+                    if (response[i].isLoginIdentifier === true) {
+                        loginFields.push(response[i]);
+                    }
+                }
+
+                if (loginFields.length === 0) {
+                    container.innerHTML = "<p class='text-muted'>No login identifier fields configured.</p>";
+                    return;
+                }
+
+                // Add section header
+                var headerRow = document.createElement("tr");
+                headerRow.innerHTML = '<td colspan="2"><h6>Login Identifier Fields</h6><hr></td>';
+                container.appendChild(headerRow);
+
+                // Render each login identifier field
+                for (var i = 0; i < loginFields.length; i++) {
+                    var field = loginFields[i];
+                    var fieldName = field.fieldName;
+                    var fieldDescription = field.description || fieldName;
+                    var fieldType = field.fieldType || 'TEXTLINE';
+                    var isOptional = field.isOptionalField !== false;
+
+                    var row = document.createElement("tr");
+                    var labelCell = document.createElement("td");
+                    labelCell.setAttribute("align", "right");
+
+                    var inputCell = document.createElement("td");
+
+                    // Build label
+                    var label = document.createElement("label");
+                    label.setAttribute("for", "detailField_" + fieldName);
+                    label.innerText = fieldDescription + ":";
+                    if (!isOptional) {
+                        label.innerHTML += " <span class='text-danger" >*</span > ";
+                    }
+                    labelCell.appendChild(label);
+
+                    // Build input based on fieldType
+                    if (fieldType === 'TEXTAREA') {
+                        var textarea = document.createElement("textarea");
+                        textarea.id = "detailField_" + fieldName;
+                        textarea.name = "detailField_" + fieldName;
+                        textarea.className = "form-control";
+                        textarea.placeholder = fieldDescription;
+                        textarea.rows = 3;
+                        if (!isOptional) textarea.required = true;
+                        inputCell.appendChild(textarea);
+                    } else if (fieldType === 'CHECKBOX') {
+                        var checkbox = document.createElement("input");
+                        checkbox.type = "checkbox";
+                        checkbox.id = "detailField_" + fieldName;
+                        checkbox.name = "detailField_" + fieldName;
+                        inputCell.appendChild(checkbox);
+                    } else {
+                        var input = document.createElement("input");
+                        input.type = getInputType(fieldType);
+                        input.id = "detailField_" + fieldName;
+                        input.name = "detailField_" + fieldName;
+                        input.className = "form-control";
+                        input.placeholder = fieldDescription;
+                        if (!isOptional) input.required = true;
+                        inputCell.appendChild(input);
+                    }
+
+                    row.appendChild(labelCell);
+                    row.appendChild(inputCell);
+                    container.appendChild(row);
+                }
+            },
+            error: commonFunctionError
+        });
+    }
+
+    // Collect values from dynamic detail fields
+    function collectDetailFieldValues() {
+        var fieldValues = [];
+        var container = document.getElementById("detailFieldsContainer");
+        var inputs = container.querySelectorAll("[id^='detailField_']");
+
+        for (var i = 0; i < inputs.length; i++) {
+            var el = inputs[i];
+            var fieldName = el.id.replace("detailField_", "");
+            var value = "";
+
+            if (el.type === 'checkbox') {
+                value = el.checked ? "true" : "false";
+            } else {
+                value = el.value || "";
+            }
+
+            fieldValues.push({
+                name: fieldName,
+                value: value
+            });
+        }
+
+        return fieldValues;
+    }
 
     function ajaxCreateAccount() {
         var pwdCheck = checkPasswordReq($("#newpass0").val(), 12);
@@ -45,27 +170,32 @@
             return;
         }
 
+        // Collect detail field values
+        var fieldValues = collectDetailFieldValues();
+
+        // Build the request payload
+        var payload = {
+            slotId: 1,
+            secretTempPass: $("#newpass0").val(),
+            flags: {
+                "enabled": $("#isEnabled:checked").length > 0,
+                "confirmed": $("#isConfirmed:checked").length > 0,
+                "admin": $("#isAdmin:checked").length > 0,
+                "blocked": $("#isBlocked:checked").length > 0
+            },
+            fieldValues: fieldValues
+        };
+
         $.ajax({
             url: '/api/v1/createAccount',
             type: 'POST',
             contentType: 'application/json',
-            data: JSON.stringify({
-                slotId: 1,
-                secretTempPass: $("#newpass0").val(),
-                flags: {
-                    "enabled": $("#isEnabled:checked").length > 0,
-                    "confirmed": $("#isConfirmed:checked").length > 0,
-                    "admin": $("#isAdmin:checked").length > 0,
-                    "blocked": $("#isBlocked:checked").length > 0
-                }
-            }),
+            data: JSON.stringify(payload),
             success: function (response, textStatus, xhr) {
                 $('#modalCreateAccount').modal('hide');
                 // Refresh the DataTable after successful user creation
                 var table = new DataTable('#accountsTable');
                 table.ajax.reload();
-
-                //accountUUID: $("#accountUUID").val(),
 
                 showToastSuccess("Account created successfully.");
 
@@ -87,6 +217,13 @@
             </div>
             <div class="modal-body">
 
+                <!-- Load detail fields when modal opens -->
+                <div id="detailFieldsLoader" style="display:none;">
+                    <div class="text-center">
+                        <span class="spinner-border spinner-border-sm" role="status"></span>
+                        <span>Loading fields...</span>
+                    </div>
+                </div>
 
                 <table width=100% style=" border-spacing: 10px;   border-collapse: separate;">
                     <tr>
@@ -96,11 +233,9 @@
                         </td>
                     </tr>
 
-                    <tr>
-                        <td align="right">Account Name: </td>
-                        <td><input type="username" name="username" id="accountUUID" class="form-control"
-                                placeholder="Account Name" onkeypress="javascript:checkAccountName()"></td>
-                    </tr>
+                    <!-- Dynamic detail fields will be inserted here -->
+                    <tbody id="detailFieldsContainer">
+                    </tbody>
 
                     <tr>
                         <td colspan="2" align="">
@@ -186,3 +321,11 @@
         </div>
     </div>
 </div>
+
+<!-- Load detail fields when modal opens -->
+<script>
+    document.getElementById('modalCreateAccount').addEventListener('show.bs.modal', function () {
+        createAccountClearParameters();
+        loadDetailFieldsForNewAccount();
+    });
+</script>

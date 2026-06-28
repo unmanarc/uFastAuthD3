@@ -2,9 +2,10 @@
 #include "IdentityManager/ds_authentication.h"
 #include "globals.h"
 
-#include <json/value.h>
+#include <boost/algorithm/string/join.hpp>
 #include <cinttypes>
 #include <ctime>
+#include <json/value.h>
 
 using namespace Mantids30;
 using namespace Mantids30::Program;
@@ -96,7 +97,7 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::createChallengeToken(void 
 
     // Log the authentication result
     LOG_APP->log2(__func__, accountUUID, clientDetails.ipAddress, authResult != AuthenticationResult::AUTHENTICATED ? Logs::LogLevel::SECURITY_ALERT : Logs::LogLevel::INFO,
-                  "Account Authorization Result: %" PRIu16 " - %s, for application '%s', and slotId = '%" PRIu32 "'", (uint16_t) authResult, authResultToString(authResult),
+                  "Account Authorization Result: %" PRIu16 " - %s, for application '%s', and slotId = '%" PRIu32 "'", static_cast<uint16_t>(authResult), authResultToString(authResult),
                   request.jwtToken->getClaim("app").asString().c_str(), slotId);
 
     if (!IS_CREDENTIAL_AUTHENTICATED(authResult))
@@ -165,24 +166,50 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::updateAccountDetailFieldsV
         return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Field values must be an array"};
     }
 
-    std::list<AccountDetailFieldValue> fieldValues;
+    std::map<std::string, std::string> fieldValues;
 
     // Process each field value in the array
     for (const auto &i : fieldValuesArray)
     {
-        AccountDetailFieldValue fieldValue;
-        fieldValue.fromJSON(i);
-        fieldValues.push_back(fieldValue);
+        std::string fieldName = Helpers::JSON::ASSTRING(i, "name", "");
+        std::string fieldValue = Helpers::JSON::ASSTRING(i, "value", "");
+        if (!fieldName.empty())
+        {
+            fieldValues[fieldName] = fieldValue;
+        }
     }
 
     // Update account detail fields values
-    if (!Globals::getIdentityManager()->accounts->updateAccountDetailFieldValues(clientDetails, accountUUID, accountUUID, fieldValues, false))
-    {
-        return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to update account detail fields values"};
-    }
-    // Return 200.
+    UpdateAccountDetailFieldValuesResult result = Globals::getIdentityManager()->accounts->updateAccountDetailFieldValues(clientDetails, accountUUID, accountUUID, fieldValues, false);
 
-    return response;
+    switch (result.status)
+    {
+    case UpdateAccountDetailFieldValuesResult::Status::SUCCESS:
+        return response;
+
+    case UpdateAccountDetailFieldValuesResult::Status::INVALID_FIELD:
+        return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_field",
+                "One or more field names do not exist: " + boost::algorithm::join(result.duplicateFields, ", ")};
+
+    case UpdateAccountDetailFieldValuesResult::Status::PERMISSION_DENIED:
+        return {HTTP::Status::Code::S_403_FORBIDDEN, "permission_denied", "User lacks permission to edit one or more fields"};
+
+    case UpdateAccountDetailFieldValuesResult::Status::REGEX_VALIDATION_FAILED:
+        return {HTTP::Status::Code::S_400_BAD_REQUEST, "regex_validation_failed",
+                "One or more values failed regex validation: " + boost::algorithm::join(result.regexInvalidFields, ", ")};
+
+    case UpdateAccountDetailFieldValuesResult::Status::DUPLICATE_LOGIN_IDENTIFIER:
+        return {HTTP::Status::Code::S_409_CONFLICT, "duplicate_login_identifier",
+                "Login identifier conflict for fields: " + boost::algorithm::join(result.duplicateFields, ", ")};
+
+    case UpdateAccountDetailFieldValuesResult::Status::DUPLICATE_UNIQUE_FIELD:
+        return {HTTP::Status::Code::S_409_CONFLICT, "duplicate_unique_field",
+                "Unique field conflict for fields: " + boost::algorithm::join(result.uniqueInvalidFields, ", ")};
+
+    case UpdateAccountDetailFieldValuesResult::Status::DB_ERROR:
+    default:
+        return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "db_error", "Database error while updating account detail fields values"};
+    }
 }
 
 UserPortal_Endpoints::APIReturn UserPortal_Endpoints::getAccountDetailFieldsValues(void *context, const RequestContext &request, ClientDetails &clientDetails)
@@ -337,7 +364,7 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::removeCredential(void *con
 
     // Log the authentication result
     LOG_APP->log2(__func__, accountUUID, clientDetails.ipAddress, authResult != AuthenticationResult::AUTHENTICATED ? Logs::LogLevel::SECURITY_ALERT : Logs::LogLevel::INFO,
-                  "Account Authorization Result: %" PRIu16 " - %s, for application '%s', and slotId = '%" PRIu32 "'", (uint16_t) authResult, authResultToString(authResult),
+                  "Account Authorization Result: %" PRIu16 " - %s, for application '%s', and slotId = '%" PRIu32 "'", static_cast<uint16_t>(authResult), authResultToString(authResult),
                   request.jwtToken->getClaim("app").asString().c_str(), slotId);
 
     if (!IS_CREDENTIAL_AUTHENTICATED(authResult))

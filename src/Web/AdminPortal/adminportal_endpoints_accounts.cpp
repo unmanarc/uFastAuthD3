@@ -4,9 +4,10 @@
 #include <Mantids30/Program_Logs/applog.h>
 #include <json/value.h>
 
-#include <Mantids30/Helpers/json.h>
 #include "defs.h"
 #include "globals.h"
+#include <Mantids30/Helpers/json.h>
+#include <boost/algorithm/string/join.hpp>
 
 using namespace Mantids30::Program;
 using namespace Mantids30;
@@ -31,13 +32,14 @@ void AdminPortal_Endpoints_Accounts::addEndpoints_Accounts(const std::shared_ptr
     endpoints->addEndpoint(HTTP::Method::POST, "addAccountToApplication", SecurityRequirements::JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"}, nullptr, &addAccountToApplication);
     endpoints->addEndpoint(HTTP::Method::DELETE, "removeAccountFromApplication", SecurityRequirements::JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"}, nullptr, &removeAccountFromApplication);
     // Fields
+    endpoints->addEndpoint(HTTP::Method::GET, "listDetailFields", SecurityRequirements::JWT_COOKIE_AUTH, {"CONFIG_READ"}, nullptr, &listDetailFields);
     endpoints->addEndpoint(HTTP::Method::GET, "searchFields", SecurityRequirements::JWT_COOKIE_AUTH, {"CONFIG_READ"}, nullptr, &searchFields);
     endpoints->addEndpoint(HTTP::Method::POST, "createAccountDetailField", SecurityRequirements::JWT_COOKIE_AUTH, {"CONFIG_WRITE"}, nullptr, &createAccountDetailField);
     endpoints->addEndpoint(HTTP::Method::PUT, "updateAccountDetailField", SecurityRequirements::JWT_COOKIE_AUTH, {"CONFIG_WRITE"}, nullptr, &updateAccountDetailField);
     endpoints->addEndpoint(HTTP::Method::DELETE, "removeAccountDetailField", SecurityRequirements::JWT_COOKIE_AUTH, {"CONFIG_WRITE"}, nullptr, &removeAccountDetailField);
     endpoints->addEndpoint(HTTP::Method::GET, "getAccountDetailField", SecurityRequirements::JWT_COOKIE_AUTH, {"CONFIG_READ"}, nullptr, &getAccountDetailField);
 
-    endpoints->addEndpoint(HTTP::Method::POST, "extendAccountInactivity",SecurityRequirements::JWT_COOKIE_AUTH,{"ACCOUNT_MODIFY"}, nullptr, &extendInactivity );
+    endpoints->addEndpoint(HTTP::Method::POST, "extendAccountInactivity", SecurityRequirements::JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"}, nullptr, &extendInactivity);
 }
 
 AdminPortal_Endpoints_Accounts::APIReturn AdminPortal_Endpoints_Accounts::extendInactivity(void *context, const RequestContext &request, ClientDetails &authClientDetails)
@@ -51,7 +53,7 @@ AdminPortal_Endpoints_Accounts::APIReturn AdminPortal_Endpoints_Accounts::extend
         return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Account Name is Empty"};
     }
 
-    if (!Globals::getIdentityManager()->accounts->extendInactivity(accountUUID,validUntil))
+    if (!Globals::getIdentityManager()->accounts->extendInactivity(accountUUID, validUntil))
     {
         return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed extend inactivity"};
     }
@@ -69,17 +71,20 @@ API::APIReturn AdminPortal_Endpoints_Accounts::createAccount(void *context, cons
     accountFlags.fromJSON(request.inputJSON);
 
     // Add the new account to the system with specified expiration and flags
-    std::optional<std::string> _accountUUID = Globals::getIdentityManager()->accounts->createAccount(Helpers::JSON::ASUINT64(*request.inputJSON, "expirationDate", 0), accountFlags, authClientDetails, request.jwtToken->getSubject());
+    int64_t expirationDate = Helpers::JSON::ASINT64(*request.inputJSON, "expirationDate", 0);
+    std::optional<std::string> _accountUUID = Globals::getIdentityManager()->accounts->createAccount(expirationDate, accountFlags, authClientDetails, request.jwtToken->getSubject());
     if (!_accountUUID.has_value())
     {
         return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to add the new account."};
     }
 
-    const std::string& accountUUID = _accountUUID.value();
+    const std::string &accountUUID = _accountUUID.value();
 
     // Extract credential information from request
     Json::Value tempCredential = (*request.inputJSON)["tempCredential"];
     std::string secretTempPass = Helpers::JSON::ASSTRING(*request.inputJSON, "secretTempPass", "");
+
+    //   std::map<std::string,std::string> detailsMap = Helpers::JSON::toMap((*request.inputJSON)["detailsValues"]);
 
     Credential newCredentialData;
     uint32_t slotId = Helpers::JSON::ASUINT(*request.inputJSON, "slotId", 1);
@@ -113,6 +118,31 @@ API::APIReturn AdminPortal_Endpoints_Accounts::createAccount(void *context, cons
     if (!Globals::getIdentityManager()->accounts->changeAccountFlags(authClientDetails, request.jwtToken->getSubject(), accountUUID, flags))
     {
         return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to change the credential on the new user."};
+    }
+
+    // Update account detail field values if provided
+    if ((*request.inputJSON).isMember("fieldValues") && (*request.inputJSON)["fieldValues"].isArray())
+    {
+        std::map<std::string, std::string> fieldValues;
+        for (const auto &fv : (*request.inputJSON)["fieldValues"])
+        {
+            std::string fieldName = Helpers::JSON::ASSTRING(fv, "name", "");
+            std::string fieldValue = Helpers::JSON::ASSTRING(fv, "value", "");
+            if (!fieldName.empty())
+            {
+                fieldValues[fieldName] = fieldValue;
+            }
+        }
+
+        if (!fieldValues.empty())
+        {
+            UpdateAccountDetailFieldValuesResult result = Globals::getIdentityManager()->accounts->updateAccountDetailFieldValues(authClientDetails, request.jwtToken->getSubject(), accountUUID,
+                                                                                                                                  fieldValues, true);
+            if (result.status != UpdateAccountDetailFieldValuesResult::Status::SUCCESS)
+            {
+                return {HTTP::Status::Code::S_400_BAD_REQUEST, "field_values_error", "Failed to set account detail field values"};
+            }
+        }
     }
 
     if (!Globals::getIdentityManager()->applications->addAccountToApplication(authClientDetails, request.jwtToken->getSubject(), IAM_USRPORTAL_APPNAME, accountUUID))
@@ -325,6 +355,23 @@ API::APIReturn AdminPortal_Endpoints_Accounts::removeAccountFromApplication(void
     return response;
 }
 
+API::APIReturn AdminPortal_Endpoints_Accounts::listDetailFields(void *context, const RequestContext &request, ClientDetails &authClientDetails)
+{
+    API::APIReturn response;
+    Json::Value fieldsArray(Json::arrayValue);
+
+    std::map<std::string, AccountDetailField> fields = Globals::getIdentityManager()->accounts->listAccountDetailFields();
+    for (const auto &fieldPair : fields)
+    {
+        Json::Value item = fieldPair.second.toJSON();
+        item["fieldName"] = fieldPair.first;
+        fieldsArray.append(item);
+    }
+
+    *response.responseJSON() = fieldsArray;
+    return response;
+}
+
 API::APIReturn AdminPortal_Endpoints_Accounts::searchFields(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
     return Globals::getIdentityManager()->accounts->searchFields(*request.inputJSON);
@@ -359,12 +406,20 @@ AdminPortal_Endpoints_Accounts::APIReturn AdminPortal_Endpoints_Accounts::update
     {
         return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Field Name is Empty"};
     }
-    if (!Globals::getIdentityManager()->accounts->updateAccountDetailField(authClientDetails, request.jwtToken->getSubject(), fieldName, fieldDetails))
-    {
-        return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "field_already_exists", "Field already exists"};
-    }
 
-    return {};
+    auto result = Globals::getIdentityManager()->accounts->updateAccountDetailField(authClientDetails, request.jwtToken->getSubject(), fieldName, fieldDetails);
+    switch (result)
+    {
+    case IdentityManager::Accounts::UpdateAccountDetailFieldResult::SUCCESS:
+        return {};
+    case IdentityManager::Accounts::UpdateAccountDetailFieldResult::FIELD_NOT_FOUND:
+        return {HTTP::Status::Code::S_404_NOT_FOUND, "field_not_found", "Field not found"};
+    case IdentityManager::Accounts::UpdateAccountDetailFieldResult::LAST_LOGIN_IDENTIFIER:
+        return {HTTP::Status::Code::S_400_BAD_REQUEST, "last_login_identifier", "Cannot disable the last login identifier field"};
+    case IdentityManager::Accounts::UpdateAccountDetailFieldResult::DB_ERROR:
+    default:
+        return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "db_error", "Failed to update account detail field"};
+    }
 }
 
 API::APIReturn AdminPortal_Endpoints_Accounts::removeAccountDetailField(void *context, const RequestContext &request, ClientDetails &authClientDetails)
@@ -374,12 +429,20 @@ API::APIReturn AdminPortal_Endpoints_Accounts::removeAccountDetailField(void *co
     {
         return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Field Name is Empty"};
     }
-    if (!Globals::getIdentityManager()->accounts->removeAccountDetailField(authClientDetails, request.jwtToken->getSubject(), fieldName))
-    {
-        return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "field_not_found", "Field not found"};
-    }
 
-    return {};
+    auto result = Globals::getIdentityManager()->accounts->removeAccountDetailField(authClientDetails, request.jwtToken->getSubject(), fieldName);
+    switch (result)
+    {
+    case IdentityManager::Accounts::RemoveAccountDetailFieldResult::SUCCESS:
+        return {};
+    case IdentityManager::Accounts::RemoveAccountDetailFieldResult::FIELD_NOT_FOUND:
+        return {HTTP::Status::Code::S_404_NOT_FOUND, "field_not_found", "Field not found"};
+    case IdentityManager::Accounts::RemoveAccountDetailFieldResult::LAST_LOGIN_IDENTIFIER:
+        return {HTTP::Status::Code::S_400_BAD_REQUEST, "last_login_identifier", "Cannot remove the last login identifier field"};
+    case IdentityManager::Accounts::RemoveAccountDetailFieldResult::DB_ERROR:
+    default:
+        return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "db_error", "Failed to remove account detail field"};
+    }
 }
 
 API::APIReturn AdminPortal_Endpoints_Accounts::getAccountDetailField(void *context, const RequestContext &request, ClientDetails &authClientDetails)
@@ -438,24 +501,47 @@ API::APIReturn AdminPortal_Endpoints_Accounts::updateAccountDetailFieldsValues(v
         return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Field values must be an array"};
     }
 
-    std::list<AccountDetailFieldValue> fieldValues;
+    std::map<std::string, std::string> fieldValues;
 
     // Process each field value in the array
     for (const auto &i : fieldValuesArray)
     {
-        AccountDetailFieldValue fieldValue;
-        fieldValue.fromJSON(i);
-        fieldValues.push_back(fieldValue);
+        std::string fieldName = Helpers::JSON::ASSTRING(i, "name", "");
+        std::string fieldValue = Helpers::JSON::ASSTRING(i, "value", "");
+        if (!fieldName.empty())
+        {
+            fieldValues[fieldName] = fieldValue;
+        }
     }
 
     // Update account detail fields values
-    if (!Globals::getIdentityManager()->accounts->updateAccountDetailFieldValues(authClientDetails, request.jwtToken->getSubject(), accountUUID, fieldValues, true))
-    {
-        return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to update account detail fields values"};
-    }
-    // Return 200.
+    UpdateAccountDetailFieldValuesResult result = Globals::getIdentityManager()->accounts->updateAccountDetailFieldValues(authClientDetails, request.jwtToken->getSubject(), accountUUID, fieldValues,
+                                                                                                                          true);
 
-    return response;
+    switch (result.status)
+    {
+    case UpdateAccountDetailFieldValuesResult::Status::SUCCESS:
+        return response;
+
+    case UpdateAccountDetailFieldValuesResult::Status::INVALID_FIELD:
+        return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_field", "One or more field names do not exist: " + boost::algorithm::join(result.duplicateFields, ", ")};
+
+    case UpdateAccountDetailFieldValuesResult::Status::PERMISSION_DENIED:
+        return {HTTP::Status::Code::S_403_FORBIDDEN, "permission_denied", "User lacks permission to edit one or more fields"};
+
+    case UpdateAccountDetailFieldValuesResult::Status::REGEX_VALIDATION_FAILED:
+        return {HTTP::Status::Code::S_400_BAD_REQUEST, "regex_validation_failed", "One or more values failed regex validation: " + boost::algorithm::join(result.regexInvalidFields, ", ")};
+
+    case UpdateAccountDetailFieldValuesResult::Status::DUPLICATE_LOGIN_IDENTIFIER:
+        return {HTTP::Status::Code::S_409_CONFLICT, "duplicate_login_identifier", "Login identifier conflict for fields: " + boost::algorithm::join(result.duplicateFields, ", ")};
+
+    case UpdateAccountDetailFieldValuesResult::Status::DUPLICATE_UNIQUE_FIELD:
+        return {HTTP::Status::Code::S_409_CONFLICT, "duplicate_unique_field", "Unique field conflict for fields: " + boost::algorithm::join(result.uniqueInvalidFields, ", ")};
+
+    case UpdateAccountDetailFieldValuesResult::Status::DB_ERROR:
+    default:
+        return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "db_error", "Database error while updating account detail fields values"};
+    }
 }
 
 API::APIReturn AdminPortal_Endpoints_Accounts::removeAccount(void *context, const RequestContext &request, ClientDetails &authClientDetails)

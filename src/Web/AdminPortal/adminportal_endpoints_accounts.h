@@ -17,7 +17,6 @@ protected:
 
     static APIReturn extendInactivity(void *context, const RequestContext &request, ClientDetails &authClientDetails);
 
-
     // Accounts:
     static APIReturn createAccount(void *context, const RequestContext &request, ClientDetails &authClientDetails);
     static APIReturn doesAccountExist(void *context, const RequestContext &request, ClientDetails &authClientDetails);
@@ -25,6 +24,7 @@ protected:
     static APIReturn removeAccount(void *context, const RequestContext &request, ClientDetails &authClientDetails);
 
     // Fields:
+    static APIReturn listDetailFields(void *context, const RequestContext &request, ClientDetails &authClientDetails);
     static APIReturn searchFields(void *context, const RequestContext &request, ClientDetails &authClientDetails);
     static APIReturn createAccountDetailField(void *context, const RequestContext &request, ClientDetails &authClientDetails);
     static APIReturn updateAccountDetailField(void *context, const RequestContext &request, ClientDetails &authClientDetails);
