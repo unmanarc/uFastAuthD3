@@ -32,15 +32,16 @@ public:
 
     static void setIdentityManager(IdentityManager *value);
 
-    static bool getResetAdminPasswd();
-    static void setResetAdminPasswd(bool newResetAdminPasswd);
+    static bool getDoCreateNewAdminAccount();
+    static void setToCreateNewAdminAccount(const bool & newResetAdminPasswd);
 
     static LoginDirectoryManager *getLoginDirManager();
     static void setLoginDirManager(LoginDirectoryManager *newLoginDirManager);
 
     static Mantids30::Network::Servers::Web::APIServerCore *getWebLoginServer();
     static void setWebLoginServer(Mantids30::Network::Servers::Web::APIServerCore *newWebLoginServer);
-    /*
+
+/*
     static Mantids30::Network::Protocol::FastRPC::FastRPC1 *getFastRPC();
     static void setFastRPC(Mantids30::Network::Protocol::FastRPC::FastRPC1 *newFastRPC);
 */
@@ -49,7 +50,7 @@ public:
     static boost::property_tree::ptree pConfig;
 
 private:
-    static bool resetAdminPasswd;
+    static bool doCreateNewAdminAccount;
     static LoginDirectoryManager *loginDirManager;
     static IdentityManager *identityManager;
     static Mantids30::Network::Servers::Web::APIServerCore *webLoginServer;

@@ -16,7 +16,7 @@ using namespace Mantids30::Memory;
 using namespace Mantids30::Database;
 using namespace Mantids30;
 
-uint32_t IdentityManager_DB::AuthController_DB::getAccountActiveSessionsCount(const std::string &accountName)
+uint32_t IdentityManager_DB::AuthController_DB::getAccountActiveSessionsCount(const std::string &accountUUID)
 {
     Threads::Sync::Lock_RD lock(_parent->m_mutex);
 
@@ -24,17 +24,17 @@ uint32_t IdentityManager_DB::AuthController_DB::getAccountActiveSessionsCount(co
     Abstract::UINT32 count;
 
     if (_parent->m_sqlConnector->qSelectSingleRow("SELECT COUNT(*) FROM logs.applicationAccess_accountSessions "
-                                                  "WHERE `f_accountName`=:accountName "
+                                                  "WHERE `f_accountUUID`=:accountUUID "
                                                   "  AND `logoutDateTime` IS NULL "
                                                   "  AND `refreshTokenExpiration` > CURRENT_TIMESTAMP; ",
-                                                  {{":accountName", MAKE_VAR(STRING, accountName)}, {":now", MAKE_VAR(DATETIME, now)}}, {&count}))
+                                                  {{":accountUUID", MAKE_VAR(STRING, accountUUID)}, {":now", MAKE_VAR(DATETIME, now)}}, {&count}))
     {
         return count.getValue();
     }
     return 0;
 }
 
-Json::Value IdentityManager_DB::AuthController_DB::searchAccountSessions(const std::string &accountName, const json &dataTablesFilters)
+Json::Value IdentityManager_DB::AuthController_DB::searchAccountSessions(const std::string &accountUUID, const json &dataTablesFilters)
 {
     Json::Value ret;
     Threads::Sync::Lock_RD lock(_parent->m_mutex);
@@ -46,10 +46,10 @@ Json::Value IdentityManager_DB::AuthController_DB::searchAccountSessions(const s
 
     std::string orderByStatement = Helpers::DataTables::getOrderByStatement(dataTablesFilters);
     std::string searchValue = JSON_ASSTRING(dataTablesFilters["search"], "value", "");
-    std::string whereFilters = "`f_accountName` = :ACCOUNTNAME";
+    std::string whereFilters = "`f_accountUUID` = :ACCOUNTNAME";
 
     std::string sqlQueryStr = R"(
-           SELECT `f_accountName`, `f_schemeId`, `f_appName`,
+           SELECT `f_accountUUID`, `f_schemeId`, `f_appName`,
                   `loginDateTime`, `loginIP`, `loginTLSCN`, `loginUserAgent`,
                   `refresherTokenId`, `accessTokenId`,
                   `accessTokenExpiration`, `refreshTokenExpiration`,
@@ -59,7 +59,7 @@ Json::Value IdentityManager_DB::AuthController_DB::searchAccountSessions(const s
 
     // Build params map
     std::map<std::string, std::shared_ptr<Abstract::Var>> params;
-    params[":ACCOUNTNAME"] = MAKE_VAR(STRING, accountName);
+    params[":ACCOUNTNAME"] = MAKE_VAR(STRING, accountUUID);
 
     if (!searchValue.empty())
     {
@@ -69,20 +69,20 @@ Json::Value IdentityManager_DB::AuthController_DB::searchAccountSessions(const s
     }
 
     {
-        Abstract::STRING f_accountName, f_schemeId, f_appName, loginDateTime, loginIP, loginTLSCN, loginUserAgent;
+        Abstract::STRING f_accountUUID, f_schemeId, f_appName, loginDateTime, loginIP, loginTLSCN, loginUserAgent;
         Abstract::STRING refresherTokenId, accessTokenId;
         Abstract::DATETIME accessTokenExpiration, refreshTokenExpiration, logoutDateTime;
         Abstract::UINT32 logoutReason;
 
         std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelectWithFilters(sqlQueryStr, whereFilters, params,
-                                                                               {&f_accountName, &f_schemeId, &f_appName, &loginDateTime, &loginIP, &loginTLSCN, &loginUserAgent, &refresherTokenId,
+                                                                               {&f_accountUUID, &f_schemeId, &f_appName, &loginDateTime, &loginIP, &loginTLSCN, &loginUserAgent, &refresherTokenId,
                                                                                 &accessTokenId, &accessTokenExpiration, &refreshTokenExpiration, &logoutDateTime, &logoutReason},
                                                                                orderByStatement, limit, offset);
 
         while (i && i->isSuccessful() && i->step())
         {
             Json::Value row;
-            row["f_accountName"] = f_accountName.toJSON();
+            row["f_accountUUID"] = f_accountUUID.toJSON();
             row["f_schemeId"] = f_schemeId.toJSON();
             row["f_appName"] = f_appName.toJSON();
             row["loginDateTime"] = loginDateTime.toJSON();

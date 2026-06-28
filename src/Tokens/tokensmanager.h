@@ -14,7 +14,7 @@ class TokensManager
 public:
     TokensManager() = default;
     using APIReturn = Mantids30::API::APIReturn;
-    using RequestParameters = Mantids30::API::RESTful::RequestParameters;
+    using RequestContext = Mantids30::API::RESTful::RequestContext;
     using HTTPv1_Base = Mantids30::Network::Protocol::HTTP::HTTPv1_Base;
     using ClientDetails = Mantids30::Sessions::ClientDetails;
 
@@ -39,7 +39,7 @@ public:
 
     //static void configureLogoutToken(const Mantids30::DataFormat::JWT::Token &refreshToken, Mantids30::DataFormat::JWT::Token &logoutToken);
 
-    static void issueLPTokenCookie(APIReturn &response, const RequestParameters &request, const std::shared_ptr<TransientAuthenticationContext> &authContext);
+    static void issueLPTokenCookie(APIReturn &response, const RequestContext &request, const std::shared_ptr<TransientAuthenticationContext> &authContext);
 };
 
 #endif // TOKENSMANAGER_H

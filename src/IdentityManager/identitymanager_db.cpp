@@ -1,7 +1,7 @@
 #include "identitymanager_db.h"
-#include "Mantids30/Memory/a_int32.h"
-#include "Mantids30/Memory/a_string.h"
-#include "Mantids30/Memory/a_uint32.h"
+#include <Mantids30/Memory/a_int32.h>
+#include <Mantids30/Memory/a_string.h>
+#include <Mantids30/Memory/a_uint32.h>
 #include "ds_security_events.h"
 #include "globals.h"
 
@@ -16,30 +16,30 @@ IdentityManager_DB::IdentityManager_DB(Mantids30::Database::SQLConnector *_SQLDi
     applicationActivities = new ApplicationActivities_DB(this);
     authController = new AuthController_DB(this);
 
+    //    _SQLDirConnection->setThrowCPPErrorOnQueryFailure(true);
     m_sqlConnector = _SQLDirConnection;
-    //    m_sqlConnector->setThrowCPPErrorOnQueryFailure(true);
 }
 
 bool IdentityManager_DB::initializeDatabase()
 {
     const std::vector<std::string_view> sqlStatements = {
         R"(CREATE TABLE IF NOT EXISTS `iam`.`accounts` (
-                                             `accountName`              VARCHAR(256)    NOT NULL,
+                                             `accountUUID`           CHAR(36)        NOT NULL,
                                              `creation`              DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                                             `creator`               VARCHAR(256)    DEFAULT NULL,
+                                             `creator`               CHAR(36)        DEFAULT NULL,
                                              `expiration`            DATETIME        NOT NULL,
                                              `isAdmin`               BOOLEAN         NOT NULL,
                                              `isEnabled`             BOOLEAN         NOT NULL,
                                              `isBlocked`             BOOLEAN         NOT NULL,
                                              `isAccountConfirmed`    BOOLEAN         NOT NULL,
-                                             PRIMARY KEY(`accountName`)
+                                             PRIMARY KEY(`accountUUID`)
                                                                         );
                                     )",
         R"(CREATE TABLE IF NOT EXISTS `iam`.`inactivityExtensions` (
-                                               `accountName` VARCHAR(256) NOT NULL,
-                                               `validUntil` DATETIME NOT NULL,
-                                               PRIMARY KEY(`accountName`),
-                                               FOREIGN KEY(`accountName`) REFERENCES accounts(`accountName`) ON DELETE CASCADE
+                                               `accountUUID` CHAR(36) NOT NULL,
+                                               `validUntil`  DATETIME NOT NULL,
+                                               PRIMARY KEY(`accountUUID`),
+                                               FOREIGN KEY(`accountUUID`) REFERENCES accounts(`accountUUID`) ON DELETE CASCADE
                                            );)",
         R"(CREATE TABLE IF NOT EXISTS `iam`.`accountDetailFields` (
                                              `fieldName`                     VARCHAR(256)   NOT NULL,
@@ -47,45 +47,46 @@ bool IdentityManager_DB::initializeDatabase()
                                              `fieldType`                     VARCHAR(256)   NOT NULL DEFAULT 'TEXTLINE',
                                              `isUnique`                      BOOLEAN        NOT NULL DEFAULT FALSE,
                                              `isOptionalField`               BOOLEAN        NOT NULL DEFAULT TRUE,
+                                             `isLoginIdentifier`             BOOLEAN        NOT NULL DEFAULT FALSE,
                                              `jsonExtendedAttribs`           TEXT           DEFAULT NULL,
                                              `orderPriority`                 INTEGER        NOT NULL,
                                               PRIMARY KEY(`fieldName`)
                                                                         );
                                        )",
         R"(CREATE TABLE IF NOT EXISTS `iam`.`accountDetailValues` (
-                                              `f_accountName`           VARCHAR(256)  NOT NULL,
+                                              `f_accountUUID`           CHAR(36)  NOT NULL,
                                               `f_fieldName`             VARCHAR(256)  NOT NULL,
                                               `value`                   TEXT DEFAULT NULL,
                                               `lastUpdate`              DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                                              FOREIGN KEY(`f_accountName`)   REFERENCES accounts(`accountName`) ON DELETE CASCADE
-                                              PRIMARY KEY(`f_accountName`,`f_fieldName`)
+                                              FOREIGN KEY(`f_accountUUID`)   REFERENCES accounts(`accountUUID`) ON DELETE CASCADE
+                                              PRIMARY KEY(`f_accountUUID`,`f_fieldName`)
                                                                         );
                                        )",
         R"(CREATE TABLE IF NOT EXISTS `iam`.`applications` (
-                                              `appName`                                      VARCHAR(256)  NOT NULL,
-                                              `f_appCreator`                                 VARCHAR(256)  NOT NULL,
-                                              `appDescription`                               VARCHAR(4096) NOT NULL,
-                                              `apiKey`                                       VARCHAR(512)  NOT NULL,
-                                              `appAttributesJSON`                            TEXT NOT NULL DEFAULT '{"canAdminModifyApplicationSecurityContext":false,"canUserAutoRegister":false,"useEmbeddedAuthentication":false,"appSyncEnabled":true,"appSyncCanRetrieveAppAccountsList":true,"allowKeepMeSignedIn":false}',
-                                              `appIcon`                                      BLOB DEFAULT NULL,
-                                              `appLogo`                                      BLOB DEFAULT NULL,
-                                               FOREIGN KEY(`f_appCreator`) REFERENCES accounts(`accountName`) ON DELETE CASCADE
+                                              `appName`                                VARCHAR(256)  NOT NULL,
+                                              `f_appCreatorAccountUUID`                CHAR(36)  NOT NULL,
+                                              `appDescription`                         VARCHAR(4096) NOT NULL,
+                                              `apiKey`                                 VARCHAR(512)  NOT NULL,
+                                              `appAttributesJSON`                      TEXT NOT NULL DEFAULT '{"canAdminModifyApplicationSecurityContext":false,"canUserAutoRegister":false,"useEmbeddedAuthentication":false,"appSyncEnabled":true,"appSyncCanRetrieveAppAccountsList":true,"allowKeepMeSignedIn":false}',
+                                              `appIcon`                                BLOB DEFAULT NULL,
+                                              `appLogo`                                BLOB DEFAULT NULL,
+                                               FOREIGN KEY(`f_appCreatorAccountUUID`) REFERENCES accounts(`accountUUID`) ON DELETE CASCADE
                                                PRIMARY KEY(`appName`)
                                                UNIQUE(`apiKey`)
                                                                          );
                                      )",
         R"(CREATE TABLE IF NOT EXISTS `iam`.`applicationsWebLoginAllowedRedirectURIs` (
-                                             `f_appName`             VARCHAR(256)  NOT NULL,
-                                             `loginRedirectURI`        VARCHAR(4096) NOT NULL,
-                                              FOREIGN KEY(`f_appName`)   REFERENCES applications(`appName`) ON DELETE CASCADE
+                                             `f_appName`                VARCHAR(256)  NOT NULL,
+                                             `loginRedirectURI`         VARCHAR(4096) NOT NULL,
+                                              FOREIGN KEY(`f_appName`)  REFERENCES applications(`appName`) ON DELETE CASCADE
                                               PRIMARY KEY(`f_appName`,`loginRedirectURI`)
                                                                         );
                                     )",
 
         R"(CREATE TABLE IF NOT EXISTS `iam`.`applicationsWebLoginDefaultRedirectURI` (
-                                             `f_appName`             VARCHAR(256)  NOT NULL,
+                                             `f_appName`               VARCHAR(256)  NOT NULL,
                                              `f_loginRedirectURI`      VARCHAR(4096) NOT NULL,
-                                             `lastUpdated`           DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                                             `lastUpdated`             DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
                                              PRIMARY KEY(`f_appName`),
                                              FOREIGN KEY(`f_appName`)   REFERENCES applications(`appName`) ON DELETE CASCADE,
                                              FOREIGN KEY(`f_appName`,`f_loginRedirectURI`) REFERENCES applicationsWebLoginAllowedRedirectURIs(`f_appName`,`loginRedirectURI`) ON DELETE CASCADE
@@ -134,19 +135,19 @@ bool IdentityManager_DB::initializeDatabase()
                                     )",
         R"(CREATE TABLE IF NOT EXISTS `iam`.`applicationScopes` (
                                              `f_appName`               VARCHAR(256) NOT NULL,
-                                             `scopeId`            VARCHAR(256) NOT NULL,
-                                             `description`     VARCHAR(4096),
+                                             `scopeId`                 VARCHAR(256) NOT NULL,
+                                             `description`             VARCHAR(4096),
                                              PRIMARY KEY(`f_appName`,`scopeId`),
                                              FOREIGN KEY(`f_appName`)   REFERENCES applications(`appName`) ON DELETE CASCADE
                                                                         );
                                     )",
         R"(CREATE TABLE IF NOT EXISTS `iam`.`applicationAccounts` (
-                                             `f_accountName`       VARCHAR(256)    NOT NULL,
+                                             `f_accountUUID`       CHAR(36)    NOT NULL,
                                              `f_appName`           VARCHAR(256)    NOT NULL,
                                              `isAppAdmin`          BOOLEAN NOT NULL DEFAULT FALSE,
                                              `enrollmentDate`      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                                             PRIMARY KEY(`f_accountName`,`f_appName`),
-                                             FOREIGN KEY(`f_accountName`) REFERENCES accounts(`accountName`) ON DELETE CASCADE,
+                                             PRIMARY KEY(`f_accountUUID`,`f_appName`),
+                                             FOREIGN KEY(`f_accountUUID`) REFERENCES accounts(`accountUUID`) ON DELETE CASCADE,
                                              FOREIGN KEY(`f_appName`)  REFERENCES applications(`appName`) ON DELETE CASCADE
                                                                         );
                                     )",
@@ -191,42 +192,42 @@ bool IdentityManager_DB::initializeDatabase()
                      );
                                     )",
         R"(CREATE TABLE IF NOT EXISTS `iam`.`accountManagers` (
-                                             `f_accountNameManager`     VARCHAR(256)    NOT NULL,
-                                             `f_accountName_managed`    VARCHAR(256)    NOT NULL,
-                                             PRIMARY KEY(`f_accountNameManager`,`f_accountName_managed`),
-                                             FOREIGN KEY(`f_accountNameManager`)   REFERENCES accounts(`accountName`) ON DELETE CASCADE,
-                                             FOREIGN KEY(`f_accountName_managed`)  REFERENCES accounts(`accountName`) ON DELETE CASCADE
+                                             `f_accountUUIDManager`    CHAR(36)    NOT NULL,
+                                             `f_accountUUIDManaged`    CHAR(36)    NOT NULL,
+                                             PRIMARY KEY(`f_accountUUIDManager`,`f_accountUUIDManaged`),
+                                             FOREIGN KEY(`f_accountUUIDManager`)   REFERENCES accounts(`accountUUID`) ON DELETE CASCADE,
+                                             FOREIGN KEY(`f_accountUUIDManaged`)   REFERENCES accounts(`accountUUID`) ON DELETE CASCADE
                                                                         );
                                     )",
         R"(CREATE TABLE IF NOT EXISTS `iam`.`accountsActivationToken` (
-                                             `f_accountName`            VARCHAR(256) NOT NULL,
+                                             `f_accountUUID`         CHAR(36) NOT NULL,
                                              `confirmationToken`     VARCHAR(256) NOT NULL,
-                                             PRIMARY KEY(`f_accountName`),
-                                             FOREIGN KEY(`f_accountName`) REFERENCES accounts(`accountName`) ON DELETE CASCADE
+                                             PRIMARY KEY(`f_accountUUID`),
+                                             FOREIGN KEY(`f_accountUUID`) REFERENCES accounts(`accountUUID`) ON DELETE CASCADE
                                                                         );
                                     )",
         R"(CREATE TABLE IF NOT EXISTS `iam`.`accountsBlockToken` (
-                                             `f_accountName`            VARCHAR(256) NOT NULL,
+                                             `f_accountUUID`         CHAR(36) NOT NULL,
                                              `blockToken`            VARCHAR(256) NOT NULL,
                                              `lastAccess`            DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                                             PRIMARY KEY(`f_accountName`),
-                                             FOREIGN KEY(`f_accountName`) REFERENCES accounts(`accountName`) ON DELETE CASCADE
+                                             PRIMARY KEY(`f_accountUUID`),
+                                             FOREIGN KEY(`f_accountUUID`) REFERENCES accounts(`accountUUID`) ON DELETE CASCADE
                                                                         );
                                     )",
         R"(CREATE TABLE IF NOT EXISTS `iam`.`accountCredentials` (
                                              `f_AuthSlotId`                 INTEGER         NOT NULL,
-                                             `f_accountName`                VARCHAR(256) NOT NULL,
+                                             `f_accountUUID`                CHAR(36)        NOT NULL,
                                              `hash`                         VARCHAR(256)    NOT NULL,
                                              `expiration`                   DATETIME        DEFAULT NULL,
                                              `salt`                         VARCHAR(256)            ,
-                                             `mustChange`             BOOLEAN         NOT NULL DEFAULT 0,
-                                             `isLocked`             BOOLEAN         NOT NULL DEFAULT 0,
+                                             `mustChange`                   BOOLEAN         NOT NULL DEFAULT 0,
+                                             `isLocked`                     BOOLEAN         NOT NULL DEFAULT 0,
                                              `badAttempts`                  INTEGER         NOT NULL DEFAULT 0,
                                              `lastChange`                   DATETIME        DEFAULT CURRENT_TIMESTAMP NOT NULL,
 
-                                             PRIMARY KEY(`f_AuthSlotId`,`f_accountName`),
+                                             PRIMARY KEY(`f_AuthSlotId`,`f_accountUUID`),
                                              FOREIGN KEY(`f_AuthSlotId`)      REFERENCES authenticationSlots(`slotId`) ON DELETE CASCADE,
-                                             FOREIGN KEY(`f_accountName`)        REFERENCES accounts(`accountName`) ON DELETE CASCADE
+                                             FOREIGN KEY(`f_accountUUID`)        REFERENCES accounts(`accountUUID`) ON DELETE CASCADE
                                                                         );
                                     )",
         R"(CREATE TABLE IF NOT EXISTS `iam`.`applicationRoles` (
@@ -240,24 +241,25 @@ bool IdentityManager_DB::initializeDatabase()
         R"(CREATE TABLE IF NOT EXISTS `iam`.`defaultAppRoleWhenRegistering` (
                                              `f_appName`                 VARCHAR(256) NOT NULL,
                                              `f_roleName` VARCHAR(256) NOT NULL,
-            PRIMARY KEY(`f_appName`,`f_roleName`),
-            FOREIGN KEY(`f_appName`) REFERENCES applications(`appName`) ON DELETE CASCADE,
-            FOREIGN KEY(`f_roleName`, `f_appName`) REFERENCES applicationRoles(`roleName`, `f_appName`) ON DELETE CASCADE
-            );)",
+                                             PRIMARY KEY(`f_appName`,`f_roleName`),
+                                             FOREIGN KEY(`f_appName`) REFERENCES applications(`appName`) ON DELETE CASCADE,
+                                             FOREIGN KEY(`f_roleName`, `f_appName`) REFERENCES applicationRoles(`roleName`, `f_appName`) ON DELETE CASCADE
+                                                                        );
+                                    )",
         R"(CREATE TABLE IF NOT EXISTS `iam`.`applicationRolesAccounts` (
                                              `f_appName`                VARCHAR(256) NOT NULL,
                                              `f_roleName`               VARCHAR(256) NOT NULL,
-                                             `f_accountName`            VARCHAR(256) NOT NULL,
+                                             `f_accountUUID`            CHAR(36) NOT NULL,
                                              FOREIGN KEY(`f_roleName`,`f_appName`)      REFERENCES applicationRoles(`roleName`,`f_appName`) ON DELETE CASCADE,
-                                             FOREIGN KEY(`f_accountName`)     REFERENCES accounts(`accountName`) ON DELETE CASCADE,
-                                             UNIQUE (`f_roleName`, `f_appName`, `f_accountName`)
+                                             FOREIGN KEY(`f_accountUUID`)               REFERENCES accounts(`accountUUID`) ON DELETE CASCADE,
+                                             UNIQUE (`f_roleName`, `f_appName`, `f_accountUUID`)
                                                                         );
                                     )",
         R"(CREATE TABLE IF NOT EXISTS `iam`.`applicationRolesScopes` (
                                              `f_scopeId`            VARCHAR(256) NOT NULL,
                                              `f_appName`            VARCHAR(256) NOT NULL,
                                              `f_roleName`           VARCHAR(256) NOT NULL,
-                                             FOREIGN KEY(`f_appName`,`f_scopeId`) REFERENCES applicationScopes(`f_appName`,`scopeId`) ON DELETE CASCADE,
+                                             FOREIGN KEY(`f_appName`,`f_scopeId`)       REFERENCES applicationScopes(`f_appName`,`scopeId`) ON DELETE CASCADE,
                                              FOREIGN KEY(`f_roleName`,`f_appName`)      REFERENCES applicationRoles(`roleName`,`f_appName`) ON DELETE CASCADE,
                                              UNIQUE (`f_appName`, `f_scopeId`, `f_roleName`) );
                                     )",
@@ -265,39 +267,39 @@ bool IdentityManager_DB::initializeDatabase()
         R"(CREATE TABLE IF NOT EXISTS `iam`.`applicationScopeAccounts` (
                                               `f_appName`                VARCHAR(256) NOT NULL,
                                               `f_scopeId`                VARCHAR(256) NOT NULL,
-                                              `f_accountName`            VARCHAR(256) NOT NULL,
-                                              FOREIGN KEY(`f_appName`,`f_scopeId`) REFERENCES applicationScopes(`f_appName`,`scopeId`) ON DELETE CASCADE,
-                                              FOREIGN KEY(`f_accountName`, `f_appName`) REFERENCES applicationAccounts(`f_accountName`, `f_appName`) ON DELETE CASCADE,
-                                              UNIQUE (`f_appName`, `f_scopeId`, `f_accountName`)
+                                              `f_accountUUID`            CHAR(36) NOT NULL,
+                                              FOREIGN KEY(`f_appName`,`f_scopeId`)       REFERENCES applicationScopes(`f_appName`,`scopeId`) ON DELETE CASCADE,
+                                              FOREIGN KEY(`f_accountUUID`, `f_appName`)  REFERENCES applicationAccounts(`f_accountUUID`, `f_appName`) ON DELETE CASCADE,
+                                              UNIQUE (`f_appName`, `f_scopeId`, `f_accountUUID`)
                                                                         );
                                     )",
         R"(CREATE TABLE IF NOT EXISTS `logs`.`applicationAccess_accountLastLogin` (
-                                              `f_accountName`            VARCHAR(256)  NOT NULL,
+                                              `f_accountUUID`            CHAR(36)  NOT NULL,
                                               `f_appName`                VARCHAR(256)  NOT NULL,
                                               `lastLogin`                DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                                              PRIMARY KEY(`f_accountName`, `f_appName`)
+                                              PRIMARY KEY(`f_accountUUID`, `f_appName`)
                                                                          );
                                         )",
-        R"(CREATE INDEX IF NOT EXISTS `logs`.idx_applicationAccess_accountLastLogin_accountName ON applicationAccess_accountLastLogin (f_accountName);)",
+        R"(CREATE INDEX IF NOT EXISTS `logs`.idx_applicationAccess_accountLastLogin_accountUUID ON applicationAccess_accountLastLogin (f_accountUUID);)",
 
         R"(CREATE TABLE IF NOT EXISTS `logs`.`applicationAccess_accountSessions` (
                                               `id`                   INTEGER         PRIMARY KEY AUTOINCREMENT,
-                                              `f_accountName`        VARCHAR(256)    NOT NULL,
+                                              `f_accountUUID`        CHAR(36)        NOT NULL,
                                               `f_schemeId`           INTEGER         NOT NULL,
                                               `f_appName`            VARCHAR(256)    NOT NULL,
                                               `loginDateTime`        DATETIME        NOT NULL,
-                                              `loginIP`              VARCHAR(64)     NOT NULL,
-                                              `loginTLSCN`           VARCHAR(1024)   NOT NULL,
-                                              `loginUserAgent`       VARCHAR(4096)   NOT NULL,
+                                              `loginIP`              VARCHAR(45)     NOT NULL,
+                                              `loginTLSCN`           VARCHAR(64)     NOT NULL,
+                                              `loginUserAgent`       TEXT            NOT NULL,
                                               `loginExtraData`       VARCHAR(4096)   NOT NULL,
                                               `logoutDateTime`       DATETIME        DEFAULT NULL,
                                               `logoutReason`         INTEGER         DEFAULT NULL,
                                               `refresherTokenId`     VARCHAR(256)    DEFAULT NULL,
                                               `accessTokenId`        VARCHAR(256)    DEFAULT NULL,
                                               `accessTokenExpiration` DATETIME       DEFAULT NULL,
-                                              `refreshTokenExpiration` DATETIME     DEFAULT NULL);
+                                              `refreshTokenExpiration` DATETIME      DEFAULT NULL);
                                       )",
-        R"(CREATE INDEX IF NOT EXISTS `logs`.idx_applicationAccess_accountSessions_accountName ON applicationAccess_accountSessions (f_accountName);)",
+        R"(CREATE INDEX IF NOT EXISTS `logs`.idx_applicationAccess_accountSessions_accountUUID ON applicationAccess_accountSessions (f_accountUUID);)",
         R"(CREATE INDEX IF NOT EXISTS `logs`.idx_applicationAccess_accountSessions_schemeID ON applicationAccess_accountSessions (f_schemeId);)",
         R"(CREATE INDEX IF NOT EXISTS `logs`.idx_applicationAccess_accountSessions_dateTime ON applicationAccess_accountSessions (loginDateTime);)",
         R"(CREATE INDEX IF NOT EXISTS `logs`.idx_applicationAccess_accountSessions_loginIP ON applicationAccess_accountSessions (loginIP);)",
@@ -308,34 +310,34 @@ bool IdentityManager_DB::initializeDatabase()
         R"(CREATE INDEX IF NOT EXISTS `logs`.idx_applicationAccess_accountSessions_refresherTokenId ON applicationAccess_accountSessions (refresherTokenId);)",
 
         R"(CREATE TABLE IF NOT EXISTS `logs`.`authEvents_accountCredentialValidation` (
-                                              `f_accountName`        VARCHAR(256)    NOT NULL,
+                                              `f_accountUUID`        CHAR(36)        NOT NULL,
                                               `f_slotId`             INTEGER         NOT NULL,
                                               `logDateTime`          DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                                              `logIP`                VARCHAR(64)     NOT NULL,
-                                              `logTLSCN`             VARCHAR(1024)   NOT NULL,
-                                              `logUserAgent`         VARCHAR(4096)   NOT NULL,
+                                              `logIP`                VARCHAR(45)     NOT NULL,
+                                              `logTLSCN`             VARCHAR(64)     NOT NULL,
+                                              `logUserAgent`         TEXT            NOT NULL,
                                               `logExtraData`         VARCHAR(4096)   NOT NULL,
-                                              `logStatus`            INTEGER    NOT NULL);
+                                              `logStatus`            INTEGER         NOT NULL);
                                       )",
-        R"(CREATE INDEX IF NOT EXISTS `logs`.idx_authEvents_accountCredentialValidation_accountName ON authEvents_accountCredentialValidation (f_accountName);)",
+        R"(CREATE INDEX IF NOT EXISTS `logs`.idx_authEvents_accountCredentialValidation_accountUUID ON authEvents_accountCredentialValidation (f_accountUUID);)",
         R"(CREATE INDEX IF NOT EXISTS `logs`.idx_authEvents_accountCredentialValidation_slotId ON authEvents_accountCredentialValidation (f_slotId);)",
         R"(CREATE INDEX IF NOT EXISTS `logs`.idx_authEvents_accountCredentialValidation_dateTime ON authEvents_accountCredentialValidation (logDateTime);)",
         R"(CREATE INDEX IF NOT EXISTS `logs`.idx_authEvents_accountCredentialValidation_IP ON authEvents_accountCredentialValidation (logIP);)",
 
         R"(CREATE TABLE IF NOT EXISTS `logs`.`securityEvents_accounts` (
                                              `id`                   INTEGER         PRIMARY KEY AUTOINCREMENT,
-                                             `f_accountName`        VARCHAR(256)    NOT NULL,
-                                             `f_performedBy`        VARCHAR(256)    NOT NULL,
+                                             `f_accountUUID`        CHAR(36)    NOT NULL,
+                                             `f_performedBy`        CHAR(36)    NOT NULL,
                                              `eventDateTime`        DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                                             `eventAction`              INTEGER         NOT NULL,
+                                             `eventAction`          INTEGER         NOT NULL,
                                              `eventDescription`     TEXT            NOT NULL,
-                                             `clientIP`              VARCHAR(64)     NOT NULL,
-                                             `clientTLSCN`           VARCHAR(1024)   NOT NULL,
-                                             `clientUserAgent`       VARCHAR(4096)   NOT NULL,
-                                             `clientExtraData`       TEXT            NOT NULL
-                                                                        );
+                                             `clientIP`             VARCHAR(45)     NOT NULL,
+                                             `clientTLSCN`          VARCHAR(64)     NOT NULL,
+                                             `clientUserAgent`      TEXT            NOT NULL,
+                                             `clientExtraData`      TEXT            NOT NULL
+                                                                    );
                                     )",
-        R"(CREATE INDEX IF NOT EXISTS `logs`.idx_securityEvents_accounts_accountName ON securityEvents_accounts (f_accountName);)",
+        R"(CREATE INDEX IF NOT EXISTS `logs`.idx_securityEvents_accounts_accountUUID ON securityEvents_accounts (f_accountUUID);)",
         R"(CREATE INDEX IF NOT EXISTS `logs`.idx_securityEvents_accounts_dateTime ON securityEvents_accounts (eventDateTime);)",
         R"(CREATE INDEX IF NOT EXISTS `logs`.idx_securityEvents_accounts_eventAction ON securityEvents_accounts (eventAction);)",
         R"(CREATE INDEX IF NOT EXISTS `logs`.idx_securityEvents_accounts_clientIP ON securityEvents_accounts (clientIP);)",
@@ -343,19 +345,19 @@ bool IdentityManager_DB::initializeDatabase()
 
         R"(CREATE TABLE IF NOT EXISTS `logs`.`securityEvents_accountCredentials` (
                                              `id`                   INTEGER         PRIMARY KEY AUTOINCREMENT,
-                                             `f_accountName`        VARCHAR(256)    NOT NULL,
-                                             `f_performedBy`        VARCHAR(256)    NOT NULL,
+                                             `f_accountUUID`        CHAR(36)    NOT NULL,
+                                             `f_performedBy`        CHAR(36)    NOT NULL,
                                              `f_slotId`             INTEGER         NOT NULL,
                                              `eventDateTime`        DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                                             `eventAction`              INTEGER         NOT NULL,
+                                             `eventAction`          INTEGER         NOT NULL,
                                              `eventDescription`     TEXT            NOT NULL,
-                                             `clientIP`              VARCHAR(64)     NOT NULL,
-                                             `clientTLSCN`           VARCHAR(1024)   NOT NULL,
-                                             `clientUserAgent`       VARCHAR(4096)   NOT NULL,
-                                             `clientExtraData`       TEXT            DEFAULT NULL
-                                                                        );
+                                             `clientIP`             VARCHAR(45)     NOT NULL,
+                                             `clientTLSCN`          VARCHAR(64)     NOT NULL,
+                                             `clientUserAgent`      TEXT            NOT NULL,
+                                             `clientExtraData`      TEXT            DEFAULT NULL
+                                                                    );
                                     )",
-        R"(CREATE INDEX IF NOT EXISTS `logs`.idx_securityEvents_accountCredentials_accountName ON securityEvents_accountCredentials (f_accountName);)",
+        R"(CREATE INDEX IF NOT EXISTS `logs`.idx_securityEvents_accountCredentials_accountUUID ON securityEvents_accountCredentials (f_accountUUID);)",
         R"(CREATE INDEX IF NOT EXISTS `logs`.idx_securityEvents_accountCredentials_slotId ON securityEvents_accountCredentials (f_slotId);)",
         R"(CREATE INDEX IF NOT EXISTS `logs`.idx_securityEvents_accountCredentials_eventDateTime ON securityEvents_accountCredentials (eventDateTime);)",
         R"(CREATE INDEX IF NOT EXISTS `logs`.idx_securityEvents_accountCredentials_eventAction ON securityEvents_accountCredentials (eventAction);)",
@@ -365,15 +367,15 @@ bool IdentityManager_DB::initializeDatabase()
         R"(CREATE TABLE IF NOT EXISTS `logs`.`securityEvents_authenticationSlots` (
                                              `id`                   INTEGER         PRIMARY KEY AUTOINCREMENT,
                                              `f_slotId`             INTEGER         NOT NULL,
-                                             `f_performedBy`        VARCHAR(256)    NOT NULL,
+                                             `f_performedBy`        CHAR(36)    NOT NULL,
                                              `eventDateTime`        DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                                             `eventAction`              INTEGER         NOT NULL,
+                                             `eventAction`          INTEGER         NOT NULL,
                                              `eventDescription`     TEXT            NOT NULL,
-                                             `clientIP`              VARCHAR(64)     NOT NULL,
-                                             `clientTLSCN`           VARCHAR(1024)   NOT NULL,
-                                             `clientUserAgent`       VARCHAR(4096)   NOT NULL,
-                                             `clientExtraData`       TEXT            DEFAULT NULL
-                                                                        );
+                                             `clientIP`             VARCHAR(45)     NOT NULL,
+                                             `clientTLSCN`          VARCHAR(64)     NOT NULL,
+                                             `clientUserAgent`      TEXT            NOT NULL,
+                                             `clientExtraData`      TEXT            DEFAULT NULL
+                                                                    );
                                     )",
         R"(CREATE INDEX IF NOT EXISTS `logs`.idx_securityEvents_authenticationSlots_slotId ON securityEvents_authenticationSlots (f_slotId);)",
         R"(CREATE INDEX IF NOT EXISTS `logs`.idx_securityEvents_authenticationSlots_eventDateTime ON securityEvents_authenticationSlots (eventDateTime);)",
@@ -384,14 +386,14 @@ bool IdentityManager_DB::initializeDatabase()
         R"(CREATE TABLE IF NOT EXISTS `logs`.`securityEvents_authenticationSchemes` (
                                              `id`                   INTEGER         PRIMARY KEY AUTOINCREMENT,
                                              `f_schemeId`           INTEGER         NOT NULL,
-                                             `f_performedBy`        VARCHAR(256)    NOT NULL,
+                                             `f_performedBy`        CHAR(36)    NOT NULL,
                                              `eventDateTime`        DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                                             `eventAction`              INTEGER         NOT NULL,
+                                             `eventAction`          INTEGER         NOT NULL,
                                              `eventDescription`     TEXT            NOT NULL,
-                                             `clientIP`              VARCHAR(64)     NOT NULL,
-                                             `clientTLSCN`           VARCHAR(1024)   NOT NULL,
-                                             `clientUserAgent`       VARCHAR(4096)   NOT NULL,
-                                             `clientExtraData`       TEXT            DEFAULT NULL
+                                             `clientIP`             VARCHAR(45)     NOT NULL,
+                                             `clientTLSCN`          VARCHAR(64)     NOT NULL,
+                                             `clientUserAgent`      TEXT            NOT NULL,
+                                             `clientExtraData`      TEXT            DEFAULT NULL
                                                                         );
                                     )",
         R"(CREATE INDEX IF NOT EXISTS `logs`.idx_securityEvents_authenticationSchemes_schemeId ON securityEvents_authenticationSchemes (f_schemeId);)",
@@ -403,14 +405,14 @@ bool IdentityManager_DB::initializeDatabase()
         R"(CREATE TABLE IF NOT EXISTS `logs`.`securityEvents_accountFields` (
                                              `id`                   INTEGER         PRIMARY KEY AUTOINCREMENT,
                                              `f_fieldName`          VARCHAR(256)    NOT NULL,
-                                             `f_performedBy`        VARCHAR(256)    NOT NULL,
+                                             `f_performedBy`        CHAR(36)    NOT NULL,
                                              `eventDateTime`        DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                                             `eventAction`              INTEGER         NOT NULL,
+                                             `eventAction`          INTEGER         NOT NULL,
                                              `eventDescription`     TEXT            NOT NULL,
-                                             `clientIP`              VARCHAR(64)     NOT NULL,
-                                             `clientTLSCN`           VARCHAR(1024)   NOT NULL,
-                                             `clientUserAgent`       VARCHAR(4096)   NOT NULL,
-                                             `clientExtraData`       TEXT            DEFAULT NULL
+                                             `clientIP`             VARCHAR(45)     NOT NULL,
+                                             `clientTLSCN`          VARCHAR(64)     NOT NULL,
+                                             `clientUserAgent`      TEXT            NOT NULL,
+                                             `clientExtraData`      TEXT            DEFAULT NULL
                                                                         );
                                     )",
         R"(CREATE INDEX IF NOT EXISTS `logs`.idx_securityEvents_accountFields_fieldName ON securityEvents_accountFields (f_fieldName);)",
@@ -422,14 +424,14 @@ bool IdentityManager_DB::initializeDatabase()
         R"(CREATE TABLE IF NOT EXISTS `logs`.`securityEvents_applications` (
                                              `id`                   INTEGER         PRIMARY KEY AUTOINCREMENT,
                                              `f_appName`            VARCHAR(256)    NOT NULL,
-                                             `f_performedBy`        VARCHAR(256)    NOT NULL,
+                                             `f_performedBy`        CHAR(36)    NOT NULL,
                                              `eventDateTime`        DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
                                              `eventAction`          INTEGER         NOT NULL,
                                              `eventDescription`     TEXT            NOT NULL,
-                                             `clientIP`              VARCHAR(64)     NOT NULL,
-                                             `clientTLSCN`           VARCHAR(1024)   NOT NULL,
-                                             `clientUserAgent`       VARCHAR(4096)   NOT NULL,
-                                             `clientExtraData`       TEXT            DEFAULT NULL
+                                             `clientIP`             VARCHAR(45)     NOT NULL,
+                                             `clientTLSCN`          VARCHAR(64)     NOT NULL,
+                                             `clientUserAgent`      TEXT            NOT NULL,
+                                             `clientExtraData`      TEXT            DEFAULT NULL
                                                                         );
                                     )",
         R"(CREATE INDEX IF NOT EXISTS `logs`.idx_securityEvents_applications_appName ON securityEvents_applications (f_appName);)",
@@ -442,21 +444,21 @@ bool IdentityManager_DB::initializeDatabase()
                                              `id`                   INTEGER         PRIMARY KEY AUTOINCREMENT,
                                              `f_appName`            VARCHAR(256)    NOT NULL,
                                              `f_roleName`           VARCHAR(256)    NOT NULL,
-                                             `f_accountName`        VARCHAR(256)    NOT NULL,
-                                             `f_performedBy`        VARCHAR(256)    NOT NULL,
+                                             `f_accountUUID`        CHAR(36)    NOT NULL,
+                                             `f_performedBy`        CHAR(36)    NOT NULL,
                                              `eventDateTime`        DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
                                              `eventAction`          INTEGER         NOT NULL,
                                              `eventDescription`     TEXT            NOT NULL,
-                                             `clientIP`              VARCHAR(64)     NOT NULL,
-                                             `clientTLSCN`           VARCHAR(1024)   NOT NULL,
-                                             `clientUserAgent`       VARCHAR(4096)   NOT NULL,
-                                             `clientExtraData`       TEXT            DEFAULT NULL
+                                             `clientIP`             VARCHAR(45)     NOT NULL,
+                                             `clientTLSCN`          VARCHAR(64)     NOT NULL,
+                                             `clientUserAgent`      TEXT            NOT NULL,
+                                             `clientExtraData`      TEXT            DEFAULT NULL
                                                                         );
                                     )",
         R"(CREATE INDEX IF NOT EXISTS `logs`.idx_securityEvents_applicationRole_appName ON securityEvents_applicationRole (f_appName);)",
         R"(CREATE INDEX IF NOT EXISTS `logs`.idx_securityEvents_applicationRole_roleName ON securityEvents_applicationRole (f_roleName);)",
         R"(CREATE INDEX IF NOT EXISTS `logs`.idx_securityEvents_applicationRole_eventDateTime ON securityEvents_applicationRole (eventDateTime);)",
-        R"(CREATE INDEX IF NOT EXISTS `logs`.idx_securityEvents_applicationRole_accountName ON securityEvents_applicationRole (f_accountName);)",
+        R"(CREATE INDEX IF NOT EXISTS `logs`.idx_securityEvents_applicationRole_accountUUID ON securityEvents_applicationRole (f_accountUUID);)",
         R"(CREATE INDEX IF NOT EXISTS `logs`.idx_securityEvents_applicationRole_eventAction ON securityEvents_applicationRole (eventAction);)",
         R"(CREATE INDEX IF NOT EXISTS `logs`.idx_securityEvents_applicationRole_clientIP ON securityEvents_applicationRole (clientIP);)",
         R"(CREATE INDEX IF NOT EXISTS `logs`.idx_securityEvents_applicationRole_performedBy ON securityEvents_applicationRole (f_performedBy);)",
@@ -466,14 +468,14 @@ bool IdentityManager_DB::initializeDatabase()
                                              `f_appName`            VARCHAR(256)    NOT NULL,
                                              `f_activityName`       VARCHAR(256)    NOT NULL,
                                              `f_schemeId`           INTEGER         DEFAULT NULL,
-                                             `f_performedBy`        VARCHAR(256)    NOT NULL,
+                                             `f_performedBy`        CHAR(36)    NOT NULL,
                                              `eventDateTime`        DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
                                              `eventAction`          INTEGER         NOT NULL,
                                              `eventDescription`     TEXT            NOT NULL,
-                                             `clientIP`              VARCHAR(64)     NOT NULL,
-                                             `clientTLSCN`           VARCHAR(1024)   NOT NULL,
-                                             `clientUserAgent`       VARCHAR(4096)   NOT NULL,
-                                             `clientExtraData`       TEXT            DEFAULT NULL
+                                             `clientIP`             VARCHAR(45)     NOT NULL,
+                                             `clientTLSCN`          VARCHAR(64)     NOT NULL,
+                                             `clientUserAgent`      TEXT            NOT NULL,
+                                             `clientExtraData`      TEXT            DEFAULT NULL
                                                                         );
                                     )",
         R"(CREATE INDEX IF NOT EXISTS `logs`.idx_securityEvents_applicationActivities_appName ON securityEvents_applicationActivities (f_appName);)",
@@ -488,20 +490,20 @@ bool IdentityManager_DB::initializeDatabase()
                                              `id`                   INTEGER         PRIMARY KEY AUTOINCREMENT,
                                              `f_appName`            VARCHAR(256)    NOT NULL,
                                              `f_scopeId`            VARCHAR(256)    NOT NULL,
-                                             `f_accountName`        VARCHAR(256)    NOT NULL,
-                                             `f_performedBy`        VARCHAR(256)    NOT NULL,
+                                             `f_accountUUID`        CHAR(36)    NOT NULL,
+                                             `f_performedBy`        CHAR(36)    NOT NULL,
                                              `eventDateTime`        DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
                                              `eventAction`          INTEGER         NOT NULL,
                                              `eventDescription`     TEXT            NOT NULL,
-                                             `clientIP`              VARCHAR(64)     NOT NULL,
-                                             `clientTLSCN`           VARCHAR(1024)   NOT NULL,
-                                             `clientUserAgent`       VARCHAR(4096)   NOT NULL,
-                                             `clientExtraData`       TEXT            DEFAULT NULL
+                                             `clientIP`             VARCHAR(45)     NOT NULL,
+                                             `clientTLSCN`          VARCHAR(64)     NOT NULL,
+                                             `clientUserAgent`      TEXT            NOT NULL,
+                                             `clientExtraData`      TEXT            DEFAULT NULL
                                                                         );
                                     )",
         R"(CREATE INDEX IF NOT EXISTS `logs`.idx_securityEvents_applicationScopes_appName ON securityEvents_applicationScopes (f_appName);)",
         R"(CREATE INDEX IF NOT EXISTS `logs`.idx_securityEvents_applicationScopes_scopeId ON securityEvents_applicationScopes (f_scopeId);)",
-        R"(CREATE INDEX IF NOT EXISTS `logs`.idx_securityEvents_applicationScopes_accountName ON securityEvents_applicationScopes (f_accountName);)",
+        R"(CREATE INDEX IF NOT EXISTS `logs`.idx_securityEvents_applicationScopes_accountUUID ON securityEvents_applicationScopes (f_accountUUID);)",
         R"(CREATE INDEX IF NOT EXISTS `logs`.idx_securityEvents_applicationScopes_eventDateTime ON securityEvents_applicationScopes (eventDateTime);)",
         R"(CREATE INDEX IF NOT EXISTS `logs`.idx_securityEvents_applicationScopes_eventAction ON securityEvents_applicationScopes (eventAction);)",
         R"(CREATE INDEX IF NOT EXISTS `logs`.idx_securityEvents_applicationScopes_clientIP ON securityEvents_applicationScopes (clientIP);)",
@@ -533,19 +535,19 @@ void IdentityManager_DB::clearSQLErrorList()
     m_sqlErrorList.clear();
 }
 
-void IdentityManager_DB::logSecurityEventOnAccounts(const std::string &accountName, SecurityEventAction eventAction, const std::string &description, const std::string &performedBy,
+void IdentityManager_DB::logSecurityEventOnAccounts(const std::string &accountUUID, SecurityEventAction eventAction, const std::string &description, const std::string &performedBy,
                                                     const ClientDetails &clientDetails)
 {
-    LOG_APP->log2(__func__, performedBy, clientDetails.ipAddress, SecurityEventActionToLogLevel(eventAction), "account='%s', action='%s', desc='%s'", accountName.c_str(),
+    LOG_APP->log2(__func__, performedBy, clientDetails.ipAddress, SecurityEventActionToLogLevel(eventAction), "account='%s', action='%s', desc='%s'", accountUUID.c_str(),
                   SecurityEventActionToString(eventAction), description.c_str());
 
     m_sqlConnector->qExecuteEx(
         R"(INSERT INTO logs.securityEvents_accounts
-               (`f_accountName`, `f_performedBy`, `eventAction`, `eventDescription`,
+               (`f_accountUUID`, `f_performedBy`, `eventAction`, `eventDescription`,
                 `clientIP`, `clientTLSCN`, `clientUserAgent`, `clientExtraData`)
-              VALUES (:f_accountName, :f_performedBy, :eventAction, :eventDescription,
+              VALUES (:f_accountUUID, :f_performedBy, :eventAction, :eventDescription,
                       :clientIP, :clientTLSCN, :clientUserAgent, :clientExtraData);)",
-        {{":f_accountName", MAKE_VAR(STRING, accountName)},
+        {{":f_accountUUID", MAKE_VAR(STRING, accountUUID)},
          {":f_performedBy", MAKE_VAR(STRING, performedBy)},
          {":eventAction", MAKE_VAR(INT32, static_cast<int>(eventAction))},
          {":eventDescription", MAKE_VAR(STRING, description)},
@@ -555,19 +557,19 @@ void IdentityManager_DB::logSecurityEventOnAccounts(const std::string &accountNa
          {":clientExtraData", MAKE_VAR(STRING, clientDetails.extraData)}});
 }
 
-void IdentityManager_DB::logSecurityEventOnAccountCredentials(const std::string &accountName, uint32_t slotId, SecurityEventAction eventAction, const std::string &eventDescription,
+void IdentityManager_DB::logSecurityEventOnAccountCredentials(const std::string &accountUUID, uint32_t slotId, SecurityEventAction eventAction, const std::string &eventDescription,
                                                               const std::string &performedBy, const ClientDetails &clientDetails)
 {
-    LOG_APP->log2(__func__, performedBy, clientDetails.ipAddress, SecurityEventActionToLogLevel(eventAction), "account='%s', slot=%u, action='%s', desc='%s'", accountName.c_str(), slotId,
+    LOG_APP->log2(__func__, performedBy, clientDetails.ipAddress, SecurityEventActionToLogLevel(eventAction), "account='%s', slot=%u, action='%s', desc='%s'", accountUUID.c_str(), slotId,
                   SecurityEventActionToString(eventAction), eventDescription.c_str());
 
     m_sqlConnector->qExecuteEx(
         R"(INSERT INTO logs.securityEvents_accountCredentials
-               (`f_accountName`, `f_slotId`, `f_performedBy`, `eventAction`, `eventDescription`,
+               (`f_accountUUID`, `f_slotId`, `f_performedBy`, `eventAction`, `eventDescription`,
                 `clientIP`, `clientTLSCN`, `clientUserAgent`, `clientExtraData`)
-              VALUES (:f_accountName, :f_slotId, :f_performedBy, :eventAction, :eventDescription,
+              VALUES (:f_accountUUID, :f_slotId, :f_performedBy, :eventAction, :eventDescription,
                       :clientIP, :clientTLSCN, :clientUserAgent, :clientExtraData);)",
-        {{":f_accountName", MAKE_VAR(STRING, accountName)},
+        {{":f_accountUUID", MAKE_VAR(STRING, accountUUID)},
          {":f_slotId", MAKE_VAR(UINT32, slotId)},
          {":f_performedBy", MAKE_VAR(STRING, performedBy)},
          {":eventAction", MAKE_VAR(INT32, static_cast<int>(eventAction))},
@@ -666,21 +668,21 @@ void IdentityManager_DB::logSecurityEventOnApplications(const std::string &appli
          {":clientExtraData", MAKE_VAR(STRING, clientDetails.extraData)}});
 }
 
-void IdentityManager_DB::logSecurityEventOnApplicationRoles(const std::string &applicationName, const std::string &roleName, const std::string &accountName, SecurityEventAction eventAction,
+void IdentityManager_DB::logSecurityEventOnApplicationRoles(const std::string &applicationName, const std::string &roleName, const std::string &accountUUID, SecurityEventAction eventAction,
                                                             const std::string &eventDescription, const std::string &performedBy, const ClientDetails &clientDetails)
 {
     LOG_APP->log2(__func__, performedBy, clientDetails.ipAddress, SecurityEventActionToLogLevel(eventAction), "app='%s', role='%s', account='%s', action='%s', desc='%s'", applicationName.c_str(),
-                  roleName.c_str(), accountName.c_str(), SecurityEventActionToString(eventAction), eventDescription.c_str());
+                  roleName.c_str(), accountUUID.c_str(), SecurityEventActionToString(eventAction), eventDescription.c_str());
 
     m_sqlConnector->qExecuteEx(
         R"(INSERT INTO logs.securityEvents_applicationRole
-               (`f_appName`, `f_roleName`, `f_accountName`, `f_performedBy`, `eventAction`, `eventDescription`,
+               (`f_appName`, `f_roleName`, `f_accountUUID`, `f_performedBy`, `eventAction`, `eventDescription`,
                 `clientIP`, `clientTLSCN`, `clientUserAgent`, `clientExtraData`)
-              VALUES (:f_appName, :f_roleName, :f_accountName, :f_performedBy, :eventAction, :eventDescription,
+              VALUES (:f_appName, :f_roleName, :f_accountUUID, :f_performedBy, :eventAction, :eventDescription,
                       :clientIP, :clientTLSCN, :clientUserAgent, :clientExtraData);)",
         {{":f_appName", MAKE_VAR(STRING, applicationName)},
          {":f_roleName", MAKE_VAR(STRING, roleName)},
-         {":f_accountName", MAKE_VAR(STRING, accountName)},
+         {":f_accountUUID", MAKE_VAR(STRING, accountUUID)},
          {":f_performedBy", MAKE_VAR(STRING, performedBy)},
          {":eventAction", MAKE_VAR(INT32, static_cast<int>(eventAction))},
          {":eventDescription", MAKE_VAR(STRING, eventDescription)},
@@ -690,21 +692,21 @@ void IdentityManager_DB::logSecurityEventOnApplicationRoles(const std::string &a
          {":clientExtraData", MAKE_VAR(STRING, clientDetails.extraData)}});
 }
 
-void IdentityManager_DB::logSecurityEventApplicationScopes(const std::string &applicationName, const std::string &scopeName, const std::string &accountName, SecurityEventAction eventAction,
+void IdentityManager_DB::logSecurityEventApplicationScopes(const std::string &applicationName, const std::string &scopeName, const std::string &accountUUID, SecurityEventAction eventAction,
                                                            const std::string &eventDescription, const std::string &performedBy, const ClientDetails &clientDetails)
 {
     LOG_APP->log2(__func__, performedBy, clientDetails.ipAddress, SecurityEventActionToLogLevel(eventAction), "app='%s', scope='%s', account='%s', action='%s', desc='%s'", applicationName.c_str(),
-                  scopeName.c_str(), accountName.c_str(), SecurityEventActionToString(eventAction), eventDescription.c_str());
+                  scopeName.c_str(), accountUUID.c_str(), SecurityEventActionToString(eventAction), eventDescription.c_str());
 
     m_sqlConnector->qExecuteEx(
         R"(INSERT INTO logs.securityEvents_applicationScopes
-               (`f_appName`, `f_scopeId`, `f_accountName`, `f_performedBy`, `eventAction`, `eventDescription`,
+               (`f_appName`, `f_scopeId`, `f_accountUUID`, `f_performedBy`, `eventAction`, `eventDescription`,
                 `clientIP`, `clientTLSCN`, `clientUserAgent`, `clientExtraData`)
-              VALUES (:f_appName, :f_scopeId, :f_accountName, :f_performedBy, :eventAction, :eventDescription,
+              VALUES (:f_appName, :f_scopeId, :f_accountUUID, :f_performedBy, :eventAction, :eventDescription,
                       :clientIP, :clientTLSCN, :clientUserAgent, :clientExtraData);)",
         {{":f_appName", MAKE_VAR(STRING, applicationName)},
          {":f_scopeId", MAKE_VAR(STRING, scopeName)},
-         {":f_accountName", MAKE_VAR(STRING, accountName)},
+         {":f_accountUUID", MAKE_VAR(STRING, accountUUID)},
          {":f_performedBy", MAKE_VAR(STRING, performedBy)},
          {":eventAction", MAKE_VAR(INT32, static_cast<int>(eventAction))},
          {":eventDescription", MAKE_VAR(STRING, eventDescription)},

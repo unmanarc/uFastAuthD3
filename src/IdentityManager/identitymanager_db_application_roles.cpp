@@ -8,7 +8,7 @@ using namespace Mantids30::Memory;
 using namespace Mantids30::Database;
 using namespace Mantids30;
 
-bool IdentityManager_DB::ApplicationRoles_DB::addRole(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &roleName,
+bool IdentityManager_DB::ApplicationRoles_DB::createRole(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &roleName,
                                                       const std::string &roleDescription)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
@@ -45,22 +45,22 @@ bool IdentityManager_DB::ApplicationRoles_DB::doesRoleExist(const std::string &a
 }
 
 bool IdentityManager_DB::ApplicationRoles_DB::addAccountToRole(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &roleName,
-                                                               const std::string &accountName)
+                                                               const std::string &accountUUID)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
-    bool success = _parent->m_sqlConnector->qExecuteEx("INSERT INTO iam.applicationRolesAccounts (`f_roleName`,`f_accountName`,`f_appName`) VALUES(:roleName,:accountName,:appName);",
-                                                       {{":roleName", MAKE_VAR(STRING, roleName)}, {":appName", MAKE_VAR(STRING, appName)}, {":accountName", MAKE_VAR(STRING, accountName)}});
+    bool success = _parent->m_sqlConnector->qExecuteEx("INSERT INTO iam.applicationRolesAccounts (`f_roleName`,`f_accountUUID`,`f_appName`) VALUES(:roleName,:accountUUID,:appName);",
+                                                       {{":roleName", MAKE_VAR(STRING, roleName)}, {":appName", MAKE_VAR(STRING, appName)}, {":accountUUID", MAKE_VAR(STRING, accountUUID)}});
 
     if (success)
     {
-        _parent->logSecurityEventOnApplicationRoles(appName, roleName, accountName, SecurityEventAction::ASSIGN_ACCOUNT, "Account added to role", performedBy, clientDetails);
+        _parent->logSecurityEventOnApplicationRoles(appName, roleName, accountUUID, SecurityEventAction::ASSIGN_ACCOUNT, "Account added to role", performedBy, clientDetails);
     }
 
     return success;
 }
 
 bool IdentityManager_DB::ApplicationRoles_DB::removeAccountFromRole(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &roleName,
-                                                                    const std::string &accountName, bool lock)
+                                                                    const std::string &accountUUID, bool lock)
 {
     bool ret = false;
 
@@ -69,12 +69,12 @@ bool IdentityManager_DB::ApplicationRoles_DB::removeAccountFromRole(const Client
         _parent->m_mutex.lock();
     }
 
-    ret = _parent->m_sqlConnector->qExecuteEx("DELETE FROM iam.applicationRolesAccounts WHERE `f_roleName`=:roleName AND `f_appName`=:appName AND `f_accountName`=:accountName;",
-                                              {{":roleName", MAKE_VAR(STRING, roleName)}, {":appName", MAKE_VAR(STRING, appName)}, {":accountName", MAKE_VAR(STRING, accountName)}});
+    ret = _parent->m_sqlConnector->qExecuteEx("DELETE FROM iam.applicationRolesAccounts WHERE `f_roleName`=:roleName AND `f_appName`=:appName AND `f_accountUUID`=:accountUUID;",
+                                              {{":roleName", MAKE_VAR(STRING, roleName)}, {":appName", MAKE_VAR(STRING, appName)}, {":accountUUID", MAKE_VAR(STRING, accountUUID)}});
 
     if (ret)
     {
-        _parent->logSecurityEventOnApplicationRoles(appName, roleName, accountName, SecurityEventAction::REVOKE_ACCOUNT, "Account removed from role", performedBy, clientDetails);
+        _parent->logSecurityEventOnApplicationRoles(appName, roleName, accountUUID, SecurityEventAction::REVOKE_ACCOUNT, "Account removed from role", performedBy, clientDetails);
     }
 
     if (lock)
@@ -157,12 +157,12 @@ std::set<std::string> IdentityManager_DB::ApplicationRoles_DB::getApplicationRol
         _parent->m_mutex.lockShared();
     }
 
-    Abstract::STRING accountName;
-    std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelect("SELECT `f_accountName` FROM iam.applicationRolesAccounts WHERE `f_roleName`=:roleName AND `f_appName`=:appName;",
-                                                                {{":appName", MAKE_VAR(STRING, appName)}, {":roleName", MAKE_VAR(STRING, roleName)}}, {&accountName});
+    Abstract::STRING accountUUID;
+    std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelect("SELECT `f_accountUUID` FROM iam.applicationRolesAccounts WHERE `f_roleName`=:roleName AND `f_appName`=:appName;",
+                                                                {{":appName", MAKE_VAR(STRING, appName)}, {":roleName", MAKE_VAR(STRING, roleName)}}, {&accountUUID});
     while (i && i->isSuccessful() && i->step())
     {
-        ret.insert(accountName.getValue());
+        ret.insert(accountUUID.getValue());
     }
 
     if (lock)

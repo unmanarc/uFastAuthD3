@@ -9,16 +9,16 @@
 #include <string>
 #include <unordered_map>
 
-#include "Mantids30/Helpers/json.h"
+#include <Mantids30/Helpers/json.h>
 #include "ds_authentication.h"
 #include "transient_auth_context.h"
 
 struct TokenCacheKey
 {
-    bool operator==(const TokenCacheKey &x) const { return (x.accountName == accountName && x.token == token); }
-    [[nodiscard]] size_t hash() const { return std::hash<std::string>{}(accountName) ^ std::hash<std::string>{}(token); }
+    bool operator==(const TokenCacheKey &x) const { return (x.accountUUID == accountUUID && x.token == token); }
+    [[nodiscard]] size_t hash() const { return std::hash<std::string>{}(accountUUID) ^ std::hash<std::string>{}(token); }
 
-    std::string accountName;
+    std::string accountUUID;
     std::string token;
 };
 
@@ -72,18 +72,18 @@ public:
 
     /**
      * @brief Returns the account confirmation token for a given account name.
-     * @param accountName The name of the account to get the confirmation token for.
+     * @param accountUUID The name of the account to get the confirmation token for.
      * @return The confirmation token for the account.
      */
-    virtual std::string getAccountConfirmationToken(const std::string &accountName) = 0;
+    virtual std::string getAccountConfirmationToken(const std::string &accountUUID) = 0;
 
     /**
      * @brief Returns the public data associated with an account's credential for a given account name and auth slot id.
-     * @param accountName The name of the account to get the credential public data for.
+     * @param accountUUID The name of the account to get the credential public data for.
      * @param slotId The password index to use for retrieving the account credential.
      * @return The public data associated with the account's credential.
      */
-    virtual Credential getAccountCredentialPublicData(const std::string &accountName, uint32_t slotId) = 0;
+    virtual Credential getAccountCredentialPublicData(const std::string &accountUUID, uint32_t slotId) = 0;
 
     /**
      * @brief Authenticates a user's credential based on provided details and optional authentication context.
@@ -93,7 +93,7 @@ public:
      * If authentication fails, the function increments the bad attempt counters for the account and authentication slot.
      *
      * @param clientDetails Contains session-related details for the client attempting authentication (e.g., IP address, session ID).
-     * @param accountName The account name identifier to authenticate.
+     * @param accountUUID The account name identifier to authenticate.
      * @param password The incoming password or credential to validate against stored data.
      * @param slotId The identifier for the specific authentication slot being used.
      * @param authMode Specifies the mode of authentication (e.g., plain text, hashed). Default is `Mode::PLAIN`.
@@ -125,17 +125,17 @@ public:
      * @note On failure, the function ensures to increment bad attempt counters for the account and slot ID to
      *       enforce policies such as account locking or throttling after repeated failed attempts.
      */
-    virtual AuthenticationResult authenticateCredential(const Mantids30::Sessions::ClientDetails &clientDetails, const std::string &accountName, const std::string &password, const uint32_t &slotId,
+    virtual AuthenticationResult authenticateCredential(const Mantids30::Sessions::ClientDetails &clientDetails, const std::string &accountUUID, const std::string &password, const uint32_t &slotId,
                                                         const Mode &authMode = Mode::PLAIN, const std::string &challengeSalt = "", std::shared_ptr<TransientAuthenticationContext> authContext = nullptr)
         = 0;
 
     /**
      * @brief Validates an account scope for a given account name and application scope.
-     * @param accountName The name of the account to validate the scope for.
+     * @param accountUUID The name of the account to validate the scope for.
      * @param applicationScope The application scope to validate.
      * @return true if the account scope is valid, false otherwise.
      */
-    [[nodiscard]] virtual bool validateAccountApplicationScope(const std::string &accountName, const ApplicationScope &applicationScope) = 0;
+    [[nodiscard]] virtual bool validateAccountApplicationScope(const std::string &accountUUID, const ApplicationScope &applicationScope) = 0;
 
     // Cleanup function to remove expired google authenticator tokens
     void cleanupExpiredTokens();
@@ -148,14 +148,14 @@ public:
 protected:
     /**
      * @brief Validates a stored credential against an input password and challenge salt.
-     * @param accountName any unique descriptor for the account (eg. UUID, UID, user)
+     * @param accountUUID any unique descriptor for the account (eg. UUID, UID, user)
      * @param storedCredential The stored credential to validate.
      * @param passwordInput The input password to use for validation.
      * @param challengeSalt The challenge salt to use for validation.
      * @param authMode The mode to use for authentication.
      * @return A reason indicating whether the stored credential was valid or not.
      */
-    [[nodiscard]] AuthenticationResult validateStoredCredential(const std::string &accountName, const Credential &storedCredential, const std::string &passwordInput, const std::string &challengeSalt,
+    [[nodiscard]] AuthenticationResult validateStoredCredential(const std::string &accountUUID, const Credential &storedCredential, const std::string &passwordInput, const std::string &challengeSalt,
                                                                 Mode authMode);
 
 private:
@@ -174,13 +174,13 @@ private:
     * This function validates the Google Authenticator token by comparing it with the expected token
     * generated using the account name and seed. If the token matches, the function returns true; otherwise, it returns false.
     *
-    * @param accountName The account name associated with the token.
+    * @param accountUUID The account name associated with the token.
     * @param seed        The secret seed used for generating the token.
     * @param tokenInput  The Google Authenticator token to be validated.
     *
     * @return True if the token is valid, false otherwise.
     */
-    [[nodiscard]] AuthenticationResult validateGAuth(const std::string &accountName, const std::string &seed, const std::string &tokenInput);
+    [[nodiscard]] AuthenticationResult validateGAuth(const std::string &accountUUID, const std::string &seed, const std::string &tokenInput);
 
     // Add a cache to store used tokens with timestamps
     std::unordered_map<TokenCacheKey, time_t> usedTokensCache;

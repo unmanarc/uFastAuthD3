@@ -15,7 +15,7 @@ using namespace Mantids30::Memory;
 using namespace Mantids30::Database;
 using namespace Mantids30;
 
-std::optional<uint32_t> IdentityManager_DB::AuthController_DB::addNewAuthenticationSlot(const ClientDetails &clientDetails, const std::string &performedBy, const AuthenticationSlotDetails &details)
+std::optional<uint32_t> IdentityManager_DB::AuthController_DB::createAuthenticationSlot(const ClientDetails &clientDetails, const std::string &performedBy, const AuthenticationSlotDetails &details)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
 

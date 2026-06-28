@@ -32,7 +32,7 @@ void CredentialValidator::cleanupExpiredTokens(void *asv)
     _asv->cleanupExpiredTokens();
 }
 
-AuthenticationResult CredentialValidator::validateStoredCredential(const std::string &accountName, const Credential &storedCredential, const std::string &passwordInput,
+AuthenticationResult CredentialValidator::validateStoredCredential(const std::string &accountUUID, const Credential &storedCredential, const std::string &passwordInput,
                                                                    const std::string &challengeSalt, Mode authMode)
 {
     AuthenticationResult r = AuthenticationResult::NOT_IMPLEMENTED;
@@ -74,7 +74,7 @@ AuthenticationResult CredentialValidator::validateStoredCredential(const std::st
     }
     break;
     case HashFunction::GAUTHTIME:
-        r = validateGAuth(accountName, storedCredential.hash, passwordInput); // GAuth Time Based Token comparisson (seed,token)
+        r = validateGAuth(accountUUID, storedCredential.hash, passwordInput); // GAuth Time Based Token comparisson (seed,token)
         goto skipAuthMode;
     }
 
@@ -108,11 +108,11 @@ AuthenticationResult CredentialValidator::validateChallenge(const std::string &p
     return challengeInput == Mantids30::Helpers::Crypto::calcSHA256(passwordFromDB + challengeSalt) ? AuthenticationResult::AUTHENTICATED : AuthenticationResult::AUTHENTICATION_FAILED;
 }
 
-AuthenticationResult CredentialValidator::validateGAuth(const std::string &accountName, const std::string &seed, const std::string &tokenInput)
+AuthenticationResult CredentialValidator::validateGAuth(const std::string &accountUUID, const std::string &seed, const std::string &tokenInput)
 {
     // Use the mutex to synchronize access to the cache and expirationQueue
     std::unique_lock<std::mutex> lock(cacheMutex);
-    TokenCacheKey accountTokenKey = {accountName, tokenInput};
+    TokenCacheKey accountTokenKey = {accountUUID, tokenInput};
 
     // Check if the token is already in the cache and within the time limit
 

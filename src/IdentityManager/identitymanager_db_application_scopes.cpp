@@ -9,7 +9,7 @@ using namespace Mantids30;
 using namespace Mantids30::Memory;
 using namespace Mantids30::Database;
 
-bool IdentityManager_DB::AuthController_DB::addApplicationScope(const ClientDetails &clientDetails, const std::string &performedBy, const ApplicationScope &applicationScope)
+bool IdentityManager_DB::AuthController_DB::createApplicationScope(const ClientDetails &clientDetails, const std::string &performedBy, const ApplicationScope &applicationScope)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
     bool success = _parent->m_sqlConnector->qExecuteEx("INSERT INTO iam.applicationScopes (`f_appName`,`scopeId`,`description`) VALUES(:appName,:scopeId,:description);",
@@ -98,17 +98,17 @@ bool IdentityManager_DB::AuthController_DB::removeApplicationScopeFromRole(const
 }
 
 bool IdentityManager_DB::AuthController_DB::addApplicationScopeToAccount(const ClientDetails &clientDetails, const std::string &performedBy, const ApplicationScope &applicationScope,
-                                                                         const std::string &accountName)
+                                                                         const std::string &accountUUID)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
-    bool success = _parent->m_sqlConnector->qExecuteEx("INSERT INTO iam.applicationScopeAccounts (`f_appName`,`f_scopeId`,`f_accountName`) VALUES(:appName,:scopeId,:accountName);",
+    bool success = _parent->m_sqlConnector->qExecuteEx("INSERT INTO iam.applicationScopeAccounts (`f_appName`,`f_scopeId`,`f_accountUUID`) VALUES(:appName,:scopeId,:accountUUID);",
                                                        {{":appName", MAKE_VAR(STRING, applicationScope.appName)},
                                                         {":scopeId", MAKE_VAR(STRING, applicationScope.id)},
-                                                        {":accountName", MAKE_VAR(STRING, accountName)}});
+                                                        {":accountUUID", MAKE_VAR(STRING, accountUUID)}});
 
     if (success)
     {
-        _parent->logSecurityEventApplicationScopes(applicationScope.appName, applicationScope.id, accountName, SecurityEventAction::ASSIGN_ACCOUNT, "Application scope added to account", performedBy,
+        _parent->logSecurityEventApplicationScopes(applicationScope.appName, applicationScope.id, accountUUID, SecurityEventAction::ASSIGN_ACCOUNT, "Application scope added to account", performedBy,
                                                    clientDetails);
     }
 
@@ -116,21 +116,21 @@ bool IdentityManager_DB::AuthController_DB::addApplicationScopeToAccount(const C
 }
 
 bool IdentityManager_DB::AuthController_DB::removeApplicationScopeFromAccount(const ClientDetails &clientDetails, const std::string &performedBy, const ApplicationScope &applicationScope,
-                                                                              const std::string &accountName, bool lock)
+                                                                              const std::string &accountUUID, bool lock)
 {
     bool ret = false;
     if (lock)
     {
         _parent->m_mutex.lock();
     }
-    ret = _parent->m_sqlConnector->qExecuteEx("DELETE FROM iam.applicationScopeAccounts WHERE `f_scopeId`=:scopeId AND `f_appName`=:appName AND `f_accountName`=:accountName;",
+    ret = _parent->m_sqlConnector->qExecuteEx("DELETE FROM iam.applicationScopeAccounts WHERE `f_scopeId`=:scopeId AND `f_appName`=:appName AND `f_accountUUID`=:accountUUID;",
                                               {{":appName", MAKE_VAR(STRING, applicationScope.appName)},
                                                {":scopeId", MAKE_VAR(STRING, applicationScope.id)},
-                                               {":accountName", MAKE_VAR(STRING, accountName)}});
+                                               {":accountUUID", MAKE_VAR(STRING, accountUUID)}});
 
     if (ret)
     {
-        _parent->logSecurityEventApplicationScopes(applicationScope.appName, applicationScope.id, accountName, SecurityEventAction::REVOKE_ACCOUNT, "Application scope removed from account",
+        _parent->logSecurityEventApplicationScopes(applicationScope.appName, applicationScope.id, accountUUID, SecurityEventAction::REVOKE_ACCOUNT, "Application scope removed from account",
                                                    performedBy, clientDetails);
     }
 
@@ -159,7 +159,6 @@ bool IdentityManager_DB::AuthController_DB::updateApplicationScopeDescription(co
 
 std::string IdentityManager_DB::AuthController_DB::getApplicationScopeDescription(const ApplicationScope &applicationScope)
 {
-    std::string ret;
     Threads::Sync::Lock_RD lock(_parent->m_mutex);
 
     Abstract::STRING description;
@@ -201,12 +200,12 @@ std::set<std::string> IdentityManager_DB::AuthController_DB::listAccountsOnAppli
         _parent->m_mutex.lockShared();
     }
 
-    Abstract::STRING accountName;
-    std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelect("SELECT `f_accountName` FROM iam.applicationScopeAccounts WHERE `f_scopeId`=:scopeId AND `f_appName`=:appName;",
-                                                                {{":appName", MAKE_VAR(STRING, applicationScope.appName)}, {":scopeId", MAKE_VAR(STRING, applicationScope.id)}}, {&accountName});
+    Abstract::STRING accountUUID;
+    std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelect("SELECT `f_accountUUID` FROM iam.applicationScopeAccounts WHERE `f_scopeId`=:scopeId AND `f_appName`=:appName;",
+                                                                {{":appName", MAKE_VAR(STRING, applicationScope.appName)}, {":scopeId", MAKE_VAR(STRING, applicationScope.id)}}, {&accountUUID});
     while (i && i->isSuccessful() && i->step())
     {
-        ret.insert(accountName.getValue());
+        ret.insert(accountUUID.getValue());
     }
 
     if (lock)
@@ -279,14 +278,14 @@ Json::Value IdentityManager_DB::AuthController_DB::searchApplicationScopes(const
     return ret;
 }
 
-bool IdentityManager_DB::AuthController_DB::validateAccountDirectApplicationScope(const std::string &accountName, const ApplicationScope &applicationScope)
+bool IdentityManager_DB::AuthController_DB::validateAccountDirectApplicationScope(const std::string &accountUUID, const ApplicationScope &applicationScope)
 {
     Threads::Sync::Lock_RD lock(_parent->m_mutex);
 
-    return _parent->m_sqlConnector->qSelectSingleRow("SELECT `f_accountName` FROM iam.applicationScopeAccounts WHERE "
-                                                     "`f_scopeId`=:scopeId AND `f_accountName`=:accountName AND `f_appName`=:appName;",
+    return _parent->m_sqlConnector->qSelectSingleRow("SELECT `f_accountUUID` FROM iam.applicationScopeAccounts WHERE "
+                                                     "`f_scopeId`=:scopeId AND `f_accountUUID`=:accountUUID AND `f_appName`=:appName;",
                                                      {{":scopeId", MAKE_VAR(STRING, applicationScope.id)},
                                                       {":appName", MAKE_VAR(STRING, applicationScope.appName)},
-                                                      {":accountName", MAKE_VAR(STRING, accountName)}},
+                                                      {":accountUUID", MAKE_VAR(STRING, accountUUID)}},
                                                      {});
 }

@@ -33,7 +33,7 @@ using namespace Mantids30;
 class Main : public Program::Application
 {
 public:
-    void _initvars(int, char *[], Program::Arguments::GlobalArguments *globalArguments)
+    void _initvars(int, char *[], Program::Arguments::GlobalArguments *globalArguments) override
     {
         // init variables (pre-config):
         globalArguments->setInifiniteWaitAtEnd(true);
@@ -44,10 +44,10 @@ public:
         globalArguments->setVersion(atoi(PROJECT_VER_MAJOR), atoi(PROJECT_VER_MINOR), atoi(PROJECT_VER_PATCH), "a");
 
         globalArguments->addCommandLineOption("Service Options", 'c', "config-dir", "Configuration directory", "/etc/ufastauthd3", Memory::Abstract::Var::Type::STRING);
-        globalArguments->addCommandLineOption("Recovery Options", 'r', "resetadmpw", "Reset Administrator Password", "false", Memory::Abstract::Var::Type::BOOL);
+        globalArguments->addCommandLineOption("Recovery Options", 'r', "createnewadmin", "Create new admin account", "false", Memory::Abstract::Var::Type::BOOL);
     }
 
-    bool _config(int, char *argv[], Program::Arguments::GlobalArguments *globalArguments)
+    bool _config(int, char *argv[], Program::Arguments::GlobalArguments *globalArguments) override
     {
         // process config:
         std::shared_ptr<Mantids30::Program::Logs::AppLog> initLog = Program::Config::Logs::createInitLog();
@@ -55,7 +55,7 @@ public:
 
         Network::Sockets::Socket_TLS::prepareTLS();
 
-        Globals::setResetAdminPasswd(globalArguments->getCommandLineOptionBooleanValue("resetadmpw"));
+        Globals::setToCreateNewAdminAccount(globalArguments->getCommandLineOptionBooleanValue("createnewadmin"));
         std::string configDir = globalArguments->getCommandLineOptionValue("config-dir")->toString();
 
         std::string configFile = configDir + "/ufastauthd3.conf";
@@ -119,7 +119,7 @@ public:
         return true;
     }
 
-    int _start(int, char *[], Program::Arguments::GlobalArguments *globalArguments)
+    int _start(int, char *[], Program::Arguments::GlobalArguments *globalArguments) override
     {
         std::string configDir = globalArguments->getCommandLineOptionValue("config-dir")->toString();
 
@@ -182,7 +182,7 @@ public:
         return 0;
     }
 
-    void _shutdown() {}
+    void _shutdown() override {}
 };
 
 int main(int argc, char *argv[])

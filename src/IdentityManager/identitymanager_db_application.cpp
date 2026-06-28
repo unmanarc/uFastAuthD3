@@ -18,7 +18,7 @@ using namespace Mantids30::Database;
 using namespace Mantids30::Helpers;
 using namespace Mantids30;
 
-bool IdentityManager_DB::Applications_DB::addApplication(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &applicationDescription,
+bool IdentityManager_DB::Applications_DB::createApplication(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &applicationDescription,
                                                          const std::string &appURL, const std::string &apiKey, const std::string &creatorAccountName, const ApplicationAttributes &appAttributes,
                                                          bool initializeDefaultValues)
 {
@@ -27,10 +27,10 @@ bool IdentityManager_DB::Applications_DB::addApplication(const ClientDetails &cl
         Threads::Sync::Lock_RW lock(_parent->m_mutex);
 
         // Insert into iam.applications.
-        bool appInsertSuccess = _parent->m_sqlConnector->qExecuteEx("INSERT INTO iam.applications (`appName`, `f_appCreator`, `appDescription`, `apiKey`, `appAttributesJSON`) VALUES (:appName, "
-                                                                    ":appCreator, :description, :apiKey, :appAttributesJSON);",
+        bool appInsertSuccess = _parent->m_sqlConnector->qExecuteEx("INSERT INTO iam.applications (`appName`, `f_appCreatorAccountUUID`, `appDescription`, `apiKey`, `appAttributesJSON`) VALUES (:appName, "
+                                                                    ":appCreatorAccountUUID, :description, :apiKey, :appAttributesJSON);",
                                                                     {{":appName", MAKE_VAR(STRING, appName)},
-                                                                     {":appCreator", MAKE_VAR(STRING, creatorAccountName)},
+                                                                     {":appCreatorAccountUUID", MAKE_VAR(STRING, creatorAccountName)},
                                                                      {":description", MAKE_VAR(STRING, applicationDescription)},
                                                                      {":apiKey", MAKE_VAR(STRING, Encoders::encodeToBase64Obf(apiKey))},
                                                                      {":appAttributesJSON", MAKE_VAR(STRING, appAttributes.toJSON().toStyledString())}});
@@ -123,7 +123,7 @@ std::optional<IdentityManager::Applications::ApplicationAttributes> IdentityMana
     {
         IdentityManager::Applications::ApplicationAttributes attrs;
         Json::Value root;
-        Mantids30::Helpers::JSONReader2 reader;
+        Mantids30::Helpers::JSON::JSONReader2 reader;
         reader.parse(appAttributesJSON.getValue(), root);
         attrs.fromJSON(root);
         return attrs;
@@ -211,14 +211,14 @@ std::set<std::string> IdentityManager_DB::Applications_DB::listApplications()
     return ret;
 }
 
-bool IdentityManager_DB::Applications_DB::isApplicationAdmin(const std::string &appName, const std::string &accountName)
+bool IdentityManager_DB::Applications_DB::isApplicationAdmin(const std::string &appName, const std::string &accountUUID)
 {
     Threads::Sync::Lock_RD lock(_parent->m_mutex);
 
     Abstract::BOOL isAppAdmin;
     if (!_parent->m_sqlConnector->qSelectSingleRow("SELECT `isAppAdmin` FROM iam.applicationAccounts WHERE "
-                                                   "`f_accountName`=:accountName AND `f_appName`=:appName;",
-                                                   {{":appName", MAKE_VAR(STRING, appName)}, {":accountName", MAKE_VAR(STRING, accountName)}}, {&isAppAdmin}))
+                                                   "`f_accountUUID`=:accountUUID AND `f_appName`=:appName;",
+                                                   {{":appName", MAKE_VAR(STRING, appName)}, {":accountUUID", MAKE_VAR(STRING, accountUUID)}}, {&isAppAdmin}))
     {
         return false;
     }
@@ -226,24 +226,24 @@ bool IdentityManager_DB::Applications_DB::isApplicationAdmin(const std::string &
     return !isAppAdmin.isNull() && isAppAdmin.getValue();
 }
 
-bool IdentityManager_DB::Applications_DB::validateApplicationAccount(const std::string &appName, const std::string &accountName)
+bool IdentityManager_DB::Applications_DB::validateApplicationAccount(const std::string &appName, const std::string &accountUUID)
 {
     Threads::Sync::Lock_RD lock(_parent->m_mutex);
 
-    return _parent->m_sqlConnector->qSelectSingleRow("SELECT `f_appName` FROM iam.applicationAccounts WHERE `f_accountName`=:accountName AND `f_appName`=:appName;",
-                                                     {{":appName", MAKE_VAR(STRING, appName)}, {":accountName", MAKE_VAR(STRING, accountName)}}, {});
+    return _parent->m_sqlConnector->qSelectSingleRow("SELECT `f_appName` FROM iam.applicationAccounts WHERE `f_accountUUID`=:accountUUID AND `f_appName`=:appName;",
+                                                     {{":appName", MAKE_VAR(STRING, appName)}, {":accountUUID", MAKE_VAR(STRING, accountUUID)}}, {});
 }
 std::set<std::string> IdentityManager_DB::Applications_DB::listApplicationAdmins(const std::string &appName)
 {
     std::set<std::string> ret;
     Threads::Sync::Lock_RD lock(_parent->m_mutex);
 
-    Abstract::STRING accountName;
-    std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelect("SELECT `f_accountName` FROM iam.applicationAccounts WHERE `f_appName`=:appName AND `isAppAdmin`='1';",
-                                                                {{":appName", MAKE_VAR(STRING, appName)}}, {&accountName});
+    Abstract::STRING accountUUID;
+    std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelect("SELECT `f_accountUUID` FROM iam.applicationAccounts WHERE `f_appName`=:appName AND `isAppAdmin`='1';",
+                                                                {{":appName", MAKE_VAR(STRING, appName)}}, {&accountUUID});
     while (i && i->isSuccessful() && i->step())
     {
-        ret.insert(accountName.getValue());
+        ret.insert(accountUUID.getValue());
     }
 
     return ret;
@@ -254,25 +254,25 @@ std::set<std::string> IdentityManager_DB::Applications_DB::listApplicationAccoun
     std::set<std::string> ret;
     Threads::Sync::Lock_RD lock(_parent->m_mutex);
 
-    Abstract::STRING accountName;
-    std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelect("SELECT `f_accountName` FROM iam.applicationAccounts WHERE `f_appName`=:appName;", {{":appName", MAKE_VAR(STRING, appName)}},
-                                                                {&accountName});
+    Abstract::STRING accountUUID;
+    std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelect("SELECT `f_accountUUID` FROM iam.applicationAccounts WHERE `f_appName`=:appName;", {{":appName", MAKE_VAR(STRING, appName)}},
+                                                                {&accountUUID});
     while (i && i->isSuccessful() && i->step())
     {
-        ret.insert(accountName.getValue());
+        ret.insert(accountUUID.getValue());
     }
 
     return ret;
 }
 
-std::set<std::string> IdentityManager_DB::Applications_DB::listAccountApplications(const std::string &accountName)
+std::set<std::string> IdentityManager_DB::Applications_DB::listAccountApplications(const std::string &accountUUID)
 {
     std::set<std::string> ret;
     Threads::Sync::Lock_RD lock(_parent->m_mutex);
 
     Abstract::STRING applicationName;
-    std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelect("SELECT `f_appName` FROM iam.applicationAccounts WHERE `f_accountName`=:accountName;",
-                                                                {{":accountName", MAKE_VAR(STRING, accountName)}}, {&applicationName});
+    std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelect("SELECT `f_appName` FROM iam.applicationAccounts WHERE `f_accountUUID`=:accountUUID;",
+                                                                {{":accountUUID", MAKE_VAR(STRING, accountUUID)}}, {&applicationName});
     while (i && i->isSuccessful() && i->step())
     {
         ret.insert(applicationName.getValue());
@@ -281,41 +281,41 @@ std::set<std::string> IdentityManager_DB::Applications_DB::listAccountApplicatio
     return ret;
 }
 
-bool IdentityManager_DB::Applications_DB::addAccountToApplication(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &accountName)
+bool IdentityManager_DB::Applications_DB::addAccountToApplication(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &accountUUID)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
-    bool result = _parent->m_sqlConnector->qExecuteEx("INSERT INTO iam.applicationAccounts (`f_accountName`,`f_appName`) VALUES(:accountName,:appName);",
-                                                      {{":appName", MAKE_VAR(STRING, appName)}, {":accountName", MAKE_VAR(STRING, accountName)}});
+    bool result = _parent->m_sqlConnector->qExecuteEx("INSERT INTO iam.applicationAccounts (`f_accountUUID`,`f_appName`) VALUES(:accountUUID,:appName);",
+                                                      {{":appName", MAKE_VAR(STRING, appName)}, {":accountUUID", MAKE_VAR(STRING, accountUUID)}});
     if (result)
     {
-        _parent->logSecurityEventOnApplications(appName, SecurityEventAction::ASSIGN_ACCOUNT, "Assigned account '" + accountName + "'", performedBy, clientDetails);
+        _parent->logSecurityEventOnApplications(appName, SecurityEventAction::ASSIGN_ACCOUNT, "Assigned account '" + accountUUID + "'", performedBy, clientDetails);
     }
     return result;
 }
 
-bool IdentityManager_DB::Applications_DB::removeAccountFromApplication(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &accountName)
+bool IdentityManager_DB::Applications_DB::removeAccountFromApplication(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &accountUUID)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
 
-    bool ret = _parent->m_sqlConnector->qExecuteEx("DELETE FROM iam.applicationAccounts WHERE `f_appName`=:appName AND `f_accountName`=:accountName;",
-                                                   {{":appName", MAKE_VAR(STRING, appName)}, {":accountName", MAKE_VAR(STRING, accountName)}});
+    bool ret = _parent->m_sqlConnector->qExecuteEx("DELETE FROM iam.applicationAccounts WHERE `f_appName`=:appName AND `f_accountUUID`=:accountUUID;",
+                                                   {{":appName", MAKE_VAR(STRING, appName)}, {":accountUUID", MAKE_VAR(STRING, accountUUID)}});
     if (ret)
     {
-        _parent->logSecurityEventOnApplications(appName, SecurityEventAction::REVOKE_ACCOUNT, "Revoked account '" + accountName + "'", performedBy, clientDetails);
+        _parent->logSecurityEventOnApplications(appName, SecurityEventAction::REVOKE_ACCOUNT, "Revoked account '" + accountUUID + "'", performedBy, clientDetails);
     }
     return ret;
 }
 
-bool IdentityManager_DB::Applications_DB::changeApplicationAdmin(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &accountName,
+bool IdentityManager_DB::Applications_DB::changeApplicationAdmin(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &accountUUID,
                                                                  bool isAppAdmin)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
 
-    bool result = _parent->m_sqlConnector->qExecuteEx("UPDATE iam.applicationAccounts SET `isAppAdmin`=:isAppAdmin WHERE `f_accountName`=:accountName AND `f_appName`=:appName;",
-                                                      {{":appName", MAKE_VAR(STRING, appName)}, {":accountName", MAKE_VAR(STRING, accountName)}, {":isAppAdmin", MAKE_VAR(BOOL, isAppAdmin)}});
+    bool result = _parent->m_sqlConnector->qExecuteEx("UPDATE iam.applicationAccounts SET `isAppAdmin`=:isAppAdmin WHERE `f_accountUUID`=:accountUUID AND `f_appName`=:appName;",
+                                                      {{":appName", MAKE_VAR(STRING, appName)}, {":accountUUID", MAKE_VAR(STRING, accountUUID)}, {":isAppAdmin", MAKE_VAR(BOOL, isAppAdmin)}});
     if (result)
     {
-        _parent->logSecurityEventOnApplications(appName, SecurityEventAction::UPDATE, "Set account '" + accountName + "' as admin=" + std::to_string(isAppAdmin), performedBy, clientDetails);
+        _parent->logSecurityEventOnApplications(appName, SecurityEventAction::UPDATE, "Set account '" + accountUUID + "' as admin=" + std::to_string(isAppAdmin), performedBy, clientDetails);
     }
     return result;
 }
@@ -340,19 +340,19 @@ Json::Value IdentityManager_DB::Applications_DB::searchApplications(const json &
 
     // Build the SQL query with WHERE clause for DataTables search
     std::string sqlQueryStr = R"(
-        SELECT `appName`,`f_appCreator`,`appDescription` FROM iam.applications
+        SELECT `appName`,`f_appCreatorAccountUUID`,`appDescription` FROM iam.applications
         )";
 
     // Add WHERE clause for search term if provided
     if (!searchValue.empty())
     {
         searchValue = "%" + searchValue + "%";
-        whereFilters += "appName LIKE :SEARCHWORDS OR appDescription LIKE :SEARCHWORDS OR f_appCreator LIKE :SEARCHWORDS";
+        whereFilters += "appName LIKE :SEARCHWORDS OR appDescription LIKE :SEARCHWORDS OR f_appCreatorAccountUUID LIKE :SEARCHWORDS";
     }
 
     {
-        Abstract::STRING appName, appCreator, appDescription;
-        std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelectWithFilters(sqlQueryStr, whereFilters, {{":SEARCHWORDS", MAKE_VAR(STRING, searchValue)}}, {&appName, &appCreator, &appDescription},
+        Abstract::STRING appName, appCreatorAccountUUID, appDescription;
+        std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelectWithFilters(sqlQueryStr, whereFilters, {{":SEARCHWORDS", MAKE_VAR(STRING, searchValue)}}, {&appName, &appCreatorAccountUUID, &appDescription},
                                                                                orderByStatement, // Order by
                                                                                limit,            // LIMIT
                                                                                offset            // OFFSET
@@ -364,8 +364,8 @@ Json::Value IdentityManager_DB::Applications_DB::searchApplications(const json &
 
             // appName
             row["appName"] = appName.toJSON();
-            // appCreator
-            row["appCreator"] = appCreator.toJSON();
+            // appCreatorAccountUUID
+            row["appCreatorAccountUUID"] = appCreatorAccountUUID.toJSON();
             // appDescription
             row["appDescription"] = appDescription.toJSON();
 
@@ -382,7 +382,7 @@ Json::Value IdentityManager_DB::Applications_DB::searchApplications(const json &
     return ret;
 }
 
-std::vector<AccountApplicationInfo> IdentityManager_DB::Applications_DB::listAccountApplicationsFullInfo(const std::string &accountName)
+std::vector<AccountApplicationInfo> IdentityManager_DB::Applications_DB::listAccountApplicationsFullInfo(const std::string &accountUUID)
 {
     std::vector<AccountApplicationInfo> ret;
     Threads::Sync::Lock_RD lock(_parent->m_mutex);
@@ -396,8 +396,8 @@ std::vector<AccountApplicationInfo> IdentityManager_DB::Applications_DB::listAcc
         std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelect("SELECT a.`f_appName`, ap.`appDescription`, a.`isAppAdmin`, a.`enrollmentDate` "
                                                                     "FROM iam.applicationAccounts a "
                                                                     "JOIN iam.applications ap ON a.`f_appName` = ap.`appName` "
-                                                                    "WHERE a.`f_accountName` = :accountName;",
-                                                                    {{":accountName", MAKE_VAR(STRING, accountName)}}, {&appName, &appDescription, &isAppAdmin, &enrollmentDate});
+                                                                    "WHERE a.`f_accountUUID` = :accountUUID;",
+                                                                    {{":accountUUID", MAKE_VAR(STRING, accountUUID)}}, {&appName, &appDescription, &isAppAdmin, &enrollmentDate});
 
         while (i && i->isSuccessful() && i->step())
         {
@@ -417,8 +417,8 @@ std::vector<AccountApplicationInfo> IdentityManager_DB::Applications_DB::listAcc
         {
             Abstract::STRING roleName;
             std::shared_ptr<Query> j = _parent->m_sqlConnector->qSelect("SELECT `f_roleName` FROM iam.applicationRolesAccounts "
-                                                                        "WHERE `f_accountName` = :accountName AND `f_appName` = :appName;",
-                                                                        {{":accountName", MAKE_VAR(STRING, accountName)}, {":appName", MAKE_VAR(STRING, info.appName)}}, {&roleName});
+                                                                        "WHERE `f_accountUUID` = :accountUUID AND `f_appName` = :appName;",
+                                                                        {{":accountUUID", MAKE_VAR(STRING, accountUUID)}, {":appName", MAKE_VAR(STRING, info.appName)}}, {&roleName});
 
             while (j && j->isSuccessful() && j->step())
             {
@@ -446,8 +446,8 @@ std::vector<AccountApplicationInfo> IdentityManager_DB::Applications_DB::listAcc
             // Query 4: Obtener scopes directos del account en esta app
             // desde iam.applicationScopeAccounts unido con iam.applicationScopes
             Abstract::STRING scopeId;
-            std::shared_ptr<Query> l = _parent->m_sqlConnector->qSelect("SELECT `f_scopeId` FROM iam.applicationScopeAccounts  WHERE `f_accountName` = :accountName AND `f_appName` = :appName;",
-                                                                        {{":accountName", MAKE_VAR(STRING, accountName)}, {":appName", MAKE_VAR(STRING, info.appName)}}, {&scopeId});
+            std::shared_ptr<Query> l = _parent->m_sqlConnector->qSelect("SELECT `f_scopeId` FROM iam.applicationScopeAccounts  WHERE `f_accountUUID` = :accountUUID AND `f_appName` = :appName;",
+                                                                        {{":accountUUID", MAKE_VAR(STRING, accountUUID)}, {":appName", MAKE_VAR(STRING, info.appName)}}, {&scopeId});
 
             while (l && l->isSuccessful() && l->step())
             {
@@ -658,7 +658,7 @@ ApplicationTokenProperties IdentityManager_DB::Applications_DB::getWebLoginJWTCo
         tokenInfo.includeBasicAccountInfo = includeBasicAccountInfo.getValue();
         tokenInfo.maintainRevocationAndLogoutInfo = maintainRevocationAndLogoutInfo.getValue();
         tokenInfo.allowRefreshTokenRenovation = allowRefreshTokenRenovation.getValue();
-        Mantids30::Helpers::JSONReader2 reader;
+        Mantids30::Helpers::JSON::JSONReader2 reader;
         reader.parse(tokensConfigJSON.getValue(), tokenInfo.tokensConfiguration);
     }
     return tokenInfo;

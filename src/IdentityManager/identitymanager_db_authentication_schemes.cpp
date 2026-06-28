@@ -45,7 +45,7 @@ std::optional<uint32_t> IdentityManager_DB::AuthController_DB::getDefaultAuthSch
     return schemeId.getValue();
 }
 
-std::optional<uint32_t> IdentityManager_DB::AuthController_DB::addAuthenticationScheme(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &description)
+std::optional<uint32_t> IdentityManager_DB::AuthController_DB::createAuthenticationScheme(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &description)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
 

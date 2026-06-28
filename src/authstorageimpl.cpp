@@ -1,6 +1,7 @@
 #include "authstorageimpl.h"
-#include "Mantids30/API_EndpointsAndSessions/session.h"
-#include "Mantids30/Program_Logs/loglevels.h"
+#include <Mantids30/API_EndpointsAndSessions/session.h>
+#include <Mantids30/Program_Logs/loglevels.h>
+#include <Mantids30/Helpers/json.h>
 #include "globals.h"
 
 #include <optional>
@@ -16,9 +17,6 @@
 
 #include "defs.h"
 
-#ifdef WIN32
-#include <windows.h>
-#endif
 
 #include <fstream>
 
@@ -31,7 +29,6 @@ using namespace Mantids30;
 bool AuthStorageImpl::createAuth()
 {
     std::string sDriverName = Globals::pConfig.get<std::string>("Auth.Driver", "");
-    std::string sDefaultUser = Globals::pConfig.get<std::string>("Auth.DefaultUser", "admin");
 
     IdentityManager_DB *identityManager = nullptr;
 
@@ -50,7 +47,7 @@ bool AuthStorageImpl::createAuth()
 
         std::function<bool(const std::string &)> createFileIfNotExists = [](const std::string &path) -> bool
         {
-            struct stat buffer;
+            struct stat buffer{};
             if (stat(path.c_str(), &buffer) == 0)
             {
                 return true;
@@ -130,7 +127,7 @@ bool AuthStorageImpl::createAuth()
         return false;
     }
 
-    std::string sInitPW;
+//    std::optional<std::string> accountUUID;
 
     if (!identityManager->initializeDatabase())
     {
@@ -139,7 +136,7 @@ bool AuthStorageImpl::createAuth()
     }
 
     bool r = true;
-    bool appExisted, userExisted, defaultPasswordSchemesExisted;
+    bool appExisted, defaultPasswordSchemesExisted;
 
     std::optional<uint32_t> schemeId = identityManager->authController->initializateDefaultPasswordSchemes(&defaultPasswordSchemesExisted);
 
@@ -170,24 +167,9 @@ bool AuthStorageImpl::createAuth()
 
     if (r)
     {
-        r = r && identityManager->initializeAdminAccountWithPassword(sDefaultUser, &sInitPW, *schemeId, &userExisted);
-
-        if (userExisted)
+        if (!identityManager->initializeAdminAccountWithPasswordIfNotExist(*schemeId, Globals::getDoCreateNewAdminAccount()))
         {
-            // User exist, do nothing.
-            LOG_APP->log0(__func__, Logs::LogLevel::DEBUG, "Default user '%s' already exist.", sDefaultUser.c_str());
-        }
-        else
-        {
-            if (r)
-            {
-                LOG_APP->log0(__func__, Logs::LogLevel::INFO, "Default user '%s' successfully created.", sDefaultUser.c_str());
-            }
-            else
-            {
-                LOG_APP->log0(__func__, Logs::LogLevel::CRITICAL, "Default user '%s' can't be created.", sDefaultUser.c_str());
-                return false;
-            }
+            return false;
         }
     }
 
@@ -218,7 +200,7 @@ bool AuthStorageImpl::createAuth()
         // Attempt to initialize the application
         // Note: identityManager->initializeApplicationWithScheme returns a boolean success status
         // We chain it with 'r' to ensure we stop on the first failure
-        r = identityManager->initializeApplicationWithScheme(app.name, app.description, app.url, *schemeId, sDefaultUser, &appExisted);
+        r = identityManager->initializeApplicationWithScheme(app.name, app.description, app.url, *schemeId, &appExisted);
 
         // Log based on the result of this specific call
         if (appExisted)
@@ -248,61 +230,41 @@ bool AuthStorageImpl::createAuth()
         LOG_APP->log0(__func__, Logs::LogLevel::INFO, "APP '%s' LOGIN ACTIVITY successfully created.", IAM_LOGINPORTAL_APPNAME);
     }
 
-    // Check account flags:
-    AccountFlags accountFlags = identityManager->accounts->getAccountFlags(sDefaultUser);
-
-    // Check for admin accounts:
-    if (identityManager->accounts->doesAccountExist(sDefaultUser) && !accountFlags.admin)
-    {
-        // This account should be marked as admin.
-        LOG_APP->log0(__func__, Logs::LogLevel::ERR, "Account '%s' detected without admin privileges. Manual intervention required to grant admin status.", sDefaultUser.c_str());
-    }
-    else if (identityManager->accounts->doesAccountExist(sDefaultUser) && identityManager->accounts->isAccountExpired(sDefaultUser))
-    {
-        // This account should not expire.
-        LOG_APP->log0(__func__, Logs::LogLevel::ERR, "Account '%s' is currently expired. Reactivation required immediately to ensure proper system management.", sDefaultUser.c_str());
-    }
-    else if (identityManager->accounts->doesAccountExist(sDefaultUser) && !accountFlags.enabled)
-    {
-        // This account should not be disabled.
-        LOG_APP->log0(__func__, Logs::LogLevel::ERR, "Account '%s' is disabled. Enable the account to maintain essential administrative functions.", sDefaultUser.c_str());
-    }
-    else if (identityManager->accounts->doesAccountExist(sDefaultUser) && !accountFlags.confirmed)
-    {
-        // This account should not be disabled.
-        LOG_APP->log0(__func__, Logs::LogLevel::ERR, "Account '%s' exists but is unconfirmed. Confirmation is necessary for full functionality.", sDefaultUser.c_str());
-    }
-
     // If password marked for reset, reset:
-    if (Globals::getResetAdminPasswd())
+/*    if (!.empty())
     {
         LOG_APP->log0(__func__, Logs::LogLevel::WARN, "Password marked to be reseted...");
         std::string sInitPW;
         IdentityManager::ClientDetails clientDetails;
-        std::string performedBy = "";
+        std::string performedBy = "00000000-0000-4000-8000-000000000000";
 
-        if (!schemeId.has_value() || !identityManager->authController->setAccountPasswordOnScheme(clientDetails, performedBy, sDefaultUser, &sInitPW, *schemeId))
+        std::optional<std::string> accountUUIDToChangePWD = Globals::getIdentityManager()->accounts->getAccountUUIDByAccountName(Globals::getDoCreateNewAdminAccount());
+
+        if (accountUUIDToChangePWD.has_value())
         {
-            LOG_APP->log0(__func__, Logs::LogLevel::ERR, "Password not resetted (Maybe the account '%s' does not have admin privileges?)...", sDefaultUser.c_str());
-            return false;
+            if (!schemeId.has_value() || !identityManager->authController->setAccountPasswordOnScheme(clientDetails, performedBy, accountUUIDToChangePWD.value(), &sInitPW, *schemeId))
+            {
+                LOG_APP->log0(__func__, Logs::LogLevel::ERR, "Password not resetted (Maybe the account '%s' does not have admin privileges?)...", accountUUIDToChangePWD.value().c_str());
+                return false;
+            }
         }
     }
-
-    if (!sInitPW.empty())
+*/
+/*    if (!sInitPW.empty())
     {
         // Create the password file if there is a new password...
-        if (!createPassFile(sInitPW))
+        if (!(sInitPW))
         {
             return false;
         }
-    }
+    }*/
 
-    if (!configureAdminPortalApplication(identityManager, sDefaultUser))
+    if (!configureAdminPortalApplication(identityManager))
     {
         return false;
     }
 
-    if (!configureUserPortalApplication(identityManager, sDefaultUser))
+    if (!configureUserPortalApplication(identityManager))
     {
         return false;
     }
@@ -310,34 +272,6 @@ bool AuthStorageImpl::createAuth()
     return true;
 }
 
-bool AuthStorageImpl::createPassFile(const std::string &sInitPW)
-{
-#ifndef WIN32
-    std::string initPassOutFile = "/tmp/syspwd-" + Mantids30::Helpers::Random::createRandomString(8);
-#else
-    char tempPath[MAX_PATH + 1];
-    GetTempPathA(MAX_PATH, tempPath);
-    std::string initPassOutFile = tempPath + "\\syspwd-" + Mantids30::Helpers::Random::createRandomString(8) + ".txt";
-#endif
-    std::ofstream ofstr(initPassOutFile);
-    if (ofstr.fail())
-    {
-        LOG_APP->log0(__func__, Logs::LogLevel::CRITICAL, "Failed to save the password account.");
-        return false;
-    }
-#ifndef WIN32
-    if (chmod(initPassOutFile.c_str(), 0600) != 0)
-    {
-        LOG_APP->log0(__func__, Logs::LogLevel::WARN, "Failed to chmod the password file (be careful with this file and content).");
-    }
-#else
-    LOG_APP->log0(__func__, Logs::LogLevel::WARN, "Initial password was saved without special owner read-only privileges (be careful).");
-#endif
-    ofstr << sInitPW;
-    ofstr.close();
-    LOG_APP->log0(__func__, Logs::LogLevel::INFO, "File '%s' created with the super-user password. Login and change it immediately", initPassOutFile.c_str());
-    return true;
-}
 
 /*
 bool AuthStorageImpl::resetAdminPwd(IdentityManager_DB *identityManager, std::string *sInitPW)
@@ -354,14 +288,9 @@ bool AuthStorageImpl::resetAdminPwd(IdentityManager_DB *identityManager, std::st
     return identityManager->authController->changeCredential("admin", credentialData);
 }*/
 
-static std::function<Json::Value(const char *)> parse = [](const char *json)
-{
-    Json::Value r;
-    Json::Reader().parse(json, r);
-    return r;
-};
 
-bool AuthStorageImpl::configureAdminPortalApplication(IdentityManager_DB *identityManager, const std::string &adminUser)
+
+bool AuthStorageImpl::configureAdminPortalApplication(IdentityManager_DB *identityManager)
 {
     if (!identityManager->applications->doesApplicationExist(IAM_ADMPORTAL_APPNAME))
     {
@@ -369,7 +298,7 @@ bool AuthStorageImpl::configureAdminPortalApplication(IdentityManager_DB *identi
         return false;
     }
 
-    AppSync_Endpoints::updateAppScopes(IAM_ADMPORTAL_APPNAME, "127.0.0.1", parse(R"(
+    AppSync_Endpoints::updateAppScopes(IAM_ADMPORTAL_APPNAME, "127.0.0.1", parseJSON(R"(
         [
             {
                 "id": "SELF_PWDCHANGE",
@@ -457,36 +386,36 @@ bool AuthStorageImpl::configureAdminPortalApplication(IdentityManager_DB *identi
             }
         ]
     )"));
-
+/*
     Sessions::ClientDetails clientDetails;
-    std::string performedBy = "%SYS:INIT";
+    std::string performedBy = "00000000-0000-4000-8000-000000000000";
 
-    if (!identityManager->applications->validateApplicationAccount(IAM_ADMPORTAL_APPNAME, adminUser))
+    if (!identityManager->applications->validateApplicationAccount(IAM_ADMPORTAL_APPNAME, adminUserUUID))
     {
-        LOG_APP->log0(__func__, Logs::LogLevel::WARN, "Setting up '%s' user as application '%s' user.", adminUser.c_str(), IAM_ADMPORTAL_APPNAME);
+        LOG_APP->log0(__func__, Logs::LogLevel::WARN, "Setting up '%s' user as application '%s' user.", adminUserUUID.c_str(), IAM_ADMPORTAL_APPNAME);
 
-        if (!identityManager->applications->addAccountToApplication(clientDetails, performedBy, IAM_ADMPORTAL_APPNAME, adminUser))
+        if (!identityManager->applications->addAccountToApplication(clientDetails, performedBy, IAM_ADMPORTAL_APPNAME, adminUserUUID))
         {
-            LOG_APP->log0(__func__, Logs::LogLevel::CRITICAL, "Failed to set the '%s' account as application '%s' user.", adminUser.c_str(), IAM_ADMPORTAL_APPNAME);
+            LOG_APP->log0(__func__, Logs::LogLevel::CRITICAL, "Failed to set the '%s' account as application '%s' user.", adminUserUUID.c_str(), IAM_ADMPORTAL_APPNAME);
             return false;
         }
     }
 
-    if (!identityManager->applications->isApplicationAdmin(IAM_ADMPORTAL_APPNAME, adminUser))
+    if (!identityManager->applications->isApplicationAdmin(IAM_ADMPORTAL_APPNAME, adminUserUUID))
     {
-        LOG_APP->log0(__func__, Logs::LogLevel::WARN, "Setting up '%s' user as application '%s' admin.", adminUser.c_str(), IAM_ADMPORTAL_APPNAME);
+        LOG_APP->log0(__func__, Logs::LogLevel::WARN, "Setting up '%s' user as application '%s' admin.", adminUserUUID.c_str(), IAM_ADMPORTAL_APPNAME);
 
-        if (!identityManager->applications->changeApplicationAdmin(clientDetails, performedBy, IAM_ADMPORTAL_APPNAME, adminUser, true))
+        if (!identityManager->applications->changeApplicationAdmin(clientDetails, performedBy, IAM_ADMPORTAL_APPNAME, adminUserUUID, true))
         {
-            LOG_APP->log0(__func__, Logs::LogLevel::CRITICAL, "Failed to set the '%s' account as application '%s' admin.", adminUser.c_str(), IAM_ADMPORTAL_APPNAME);
+            LOG_APP->log0(__func__, Logs::LogLevel::CRITICAL, "Failed to set the '%s' account as application '%s' admin.", adminUserUUID.c_str(), IAM_ADMPORTAL_APPNAME);
             return false;
         }
-    }
+    }*/
 
     return true;
 }
 
-bool AuthStorageImpl::configureUserPortalApplication(IdentityManager_DB *identityManager, const std::string &adminUser)
+bool AuthStorageImpl::configureUserPortalApplication(IdentityManager_DB *identityManager)
 {
     if (!identityManager->applications->doesApplicationExist(IAM_USRPORTAL_APPNAME))
     {
@@ -494,7 +423,7 @@ bool AuthStorageImpl::configureUserPortalApplication(IdentityManager_DB *identit
         return false;
     }
 
-    AppSync_Endpoints::updateAppScopes(IAM_USRPORTAL_APPNAME, "127.0.0.1", parse(R"(
+    AppSync_Endpoints::updateAppScopes(IAM_USRPORTAL_APPNAME, "127.0.0.1", parseJSON(R"(
     [
       {
         "id": "LOGIN",
@@ -535,7 +464,7 @@ bool AuthStorageImpl::configureUserPortalApplication(IdentityManager_DB *identit
     ]
     )"));
 
-    AppSync_Endpoints::updateAppRoles(IAM_USRPORTAL_APPNAME, "127.0.0.1", parse(R"(
+    AppSync_Endpoints::updateAppRoles(IAM_USRPORTAL_APPNAME, "127.0.0.1", parseJSON(R"(
     [
       {
         "id": "GENERIC_USER",
@@ -555,31 +484,32 @@ bool AuthStorageImpl::configureUserPortalApplication(IdentityManager_DB *identit
     ]
     )"));
 
+    /*
     Sessions::ClientDetails clientDetails;
-    std::string performedBy = "%SYS:INIT";
+    std::string performedBy = "00000000-0000-4000-8000-000000000000";
 
-    if (!identityManager->applications->validateApplicationAccount(IAM_USRPORTAL_APPNAME, adminUser))
+    if (!identityManager->applications->validateApplicationAccount(IAM_USRPORTAL_APPNAME, adminUserUUID))
     {
-        LOG_APP->log0(__func__, Logs::LogLevel::WARN, "Setting up '%s' user as application '%s' user.", adminUser.c_str(), IAM_USRPORTAL_APPNAME);
+        LOG_APP->log0(__func__, Logs::LogLevel::WARN, "Setting up '%s' user as application '%s' user.", adminUserUUID.c_str(), IAM_USRPORTAL_APPNAME);
 
-        if (!identityManager->applications->addAccountToApplication(clientDetails, performedBy, IAM_USRPORTAL_APPNAME, adminUser))
+        if (!identityManager->applications->addAccountToApplication(clientDetails, performedBy, IAM_USRPORTAL_APPNAME, adminUserUUID))
         {
-            LOG_APP->log0(__func__, Logs::LogLevel::CRITICAL, "Failed to set the '%s' account as application '%s' user.", adminUser.c_str(), IAM_USRPORTAL_APPNAME);
+            LOG_APP->log0(__func__, Logs::LogLevel::CRITICAL, "Failed to set the '%s' account as application '%s' user.", adminUserUUID.c_str(), IAM_USRPORTAL_APPNAME);
             return false;
         }
     }
 
     std::set<std::string> accounts = identityManager->applicationRoles->getApplicationRoleAccounts(IAM_USRPORTAL_APPNAME, "GENERIC_USER");
-    if (accounts.find(adminUser) == accounts.end())
+    if (accounts.find(adminUserUUID) == accounts.end())
     {
-        LOG_APP->log0(__func__, Logs::LogLevel::WARN, "Setting up '%s' user with role 'GENERIC_USER' in application '%s'.", adminUser.c_str(), IAM_USRPORTAL_APPNAME);
+        LOG_APP->log0(__func__, Logs::LogLevel::WARN, "Setting up '%s' user with role 'GENERIC_USER' in application '%s'.", adminUserUUID.c_str(), IAM_USRPORTAL_APPNAME);
 
-        if (!identityManager->applicationRoles->addAccountToRole(clientDetails, performedBy, IAM_USRPORTAL_APPNAME, "GENERIC_USER", adminUser))
+        if (!identityManager->applicationRoles->addAccountToRole(clientDetails, performedBy, IAM_USRPORTAL_APPNAME, "GENERIC_USER", adminUserUUID))
         {
-            LOG_APP->log0(__func__, Logs::LogLevel::CRITICAL, "Failed to set up '%s' user with role 'GENERIC_USER' in application '%s'.", adminUser.c_str(), IAM_USRPORTAL_APPNAME);
+            LOG_APP->log0(__func__, Logs::LogLevel::CRITICAL, "Failed to set up '%s' user with role 'GENERIC_USER' in application '%s'.", adminUserUUID.c_str(), IAM_USRPORTAL_APPNAME);
             return false;
         }
-    }
+    }*/
 
     return true;
 }

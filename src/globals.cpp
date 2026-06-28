@@ -5,7 +5,7 @@ IdentityManager *Globals::identityManager = nullptr;
 std::shared_ptr<Mantids30::Program::Logs::AppLog> Globals::appLog = nullptr;
 std::shared_ptr<Mantids30::Program::Logs::RPCLog> Globals::rpcLog = nullptr;
 boost::property_tree::ptree Globals::pConfig;
-bool Globals::resetAdminPasswd = false;
+bool Globals::doCreateNewAdminAccount = false;
 Mantids30::Network::Servers::Web::APIServerCore *Globals::webLoginServer = nullptr;
 
 void Globals::setIdentityManager(IdentityManager *value)
@@ -13,14 +13,14 @@ void Globals::setIdentityManager(IdentityManager *value)
     identityManager = value;
 }
 
-bool Globals::getResetAdminPasswd()
+bool Globals::getDoCreateNewAdminAccount()
 {
-    return resetAdminPasswd;
+    return doCreateNewAdminAccount;
 }
 
-void Globals::setResetAdminPasswd(bool newResetAdminPasswd)
+void Globals::setToCreateNewAdminAccount(const bool &newResetAdminPasswd)
 {
-    resetAdminPasswd = newResetAdminPasswd;
+    doCreateNewAdminAccount = newResetAdminPasswd;
 }
 
 LoginDirectoryManager *Globals::getLoginDirManager()

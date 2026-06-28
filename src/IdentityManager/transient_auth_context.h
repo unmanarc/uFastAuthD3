@@ -6,8 +6,8 @@
 #include <Mantids30/Helpers/random.h>
 #include <Mantids30/Protocol_HTTP/api_return.h>
 #include <Mantids30/Protocol_HTTP/rsp_status.h>
-
 #include "IdentityManager/ds_authentication.h"
+
 #include "defs.h"
 
 #include <optional>
@@ -35,7 +35,7 @@ struct TransientAuthenticationContext
                                   authResultToString(AuthenticationResult::UNAUTHENTICATED));
                 return false;
             }
-            if (lpToken.getSubject() != accountName)
+            if (lpToken.getSubject() != accountUUID)
             {
                 // This Token is not for this cookie... (other username... logout first please!)
                 response.setError(Mantids30::Network::Protocol::HTTP::Status::Code::S_401_UNAUTHORIZED, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::BAD_ACCOUNT)),
@@ -44,7 +44,7 @@ struct TransientAuthenticationContext
             }
 
             // We have an LPToken!
-            std::set<uint32_t> authenticatedSlotsOnLPToken = Mantids30::Helpers::jsonToUInt32Set(lpToken.getClaim("slotIds"));
+            std::set<uint32_t> authenticatedSlotsOnLPToken = Helpers::JSON::jsonToUInt32Set(lpToken.getClaim("slotIds"));
             // Merge auth slots.
             for (const uint32_t &i : authenticatedSlotsOnLPToken)
             {
@@ -99,7 +99,7 @@ struct TransientAuthenticationContext
         newTransientAuthToken.setIssuedAt(time(nullptr));
         newTransientAuthToken.setNotBefore(time(nullptr) - 30);
         newTransientAuthToken.setClaim("app", appName);
-        newTransientAuthToken.setClaim("preAuthUser", accountName);
+        newTransientAuthToken.setClaim("accountName", accountName);
         newTransientAuthToken.setClaim("slotSchemeHash", slotSchemeHash);
         newTransientAuthToken.setClaim("schemeId", schemeId);
         newTransientAuthToken.setClaim("keepAuthenticated", keepAuthenticated);
@@ -126,25 +126,29 @@ struct TransientAuthenticationContext
     {
         Json::Value claims = transientAuthToken.getAllClaimsAsJSON();
 
-        accountName = JSON_ASSTRING(claims, "preAuthUser", "");
+        accountName = JSON_ASSTRING(claims, "accountName", "");
         appName = JSON_ASSTRING(claims, "app", "");
         slotSchemeHash = JSON_ASSTRING(claims, "slotSchemeHash", "");
         schemeId = JSON_ASUINT(claims, "schemeId", UINT32_MAX);
         keepAuthenticated = JSON_ASBOOL(claims, "keepAuthenticated", false);
         currentSlotId = JSON_ASUINT(claims, "currentSlotId", 0);
-        authenticatedSlots = Mantids30::Helpers::jsonToUInt32Set(claims, "authenticatedSlots");
+        authenticatedSlots = Helpers::JSON::jsonToUInt32Set(claims, "authenticatedSlots");
         jAuthenticatedSchemes = transientAuthToken.getClaim("authenticatedSchemes");
         jAuthenticatedAppsCallbackURLs = transientAuthToken.getClaim("authenticatedAppsCallbackURLs");
+
+        loadUUIDFromAccountName();
     }
 
     void fillVars_FromInitialJSONPOST(const json &inputJSON)
     {
-        accountName = JSON_ASSTRING(inputJSON, "preAuthUser", "");
+        accountName = JSON_ASSTRING(inputJSON, "accountName", "");
         keepAuthenticated = JSON_ASBOOL(inputJSON, "keepAuthenticated", false);
         appName = JSON_ASSTRING(inputJSON, "app", "");
         schemeId = JSON_ASUINT(inputJSON, "schemeId", UINT32_MAX);
         currentSlotId = JSON_ASUINT(inputJSON, "currentSlotId", 0);
         doesTransientTokenNotExist = true;
+
+        loadUUIDFromAccountName();
     }
 
     [[nodiscard]] Json::Value getAllAuthenticatedSlotsIds() const
@@ -174,6 +178,9 @@ struct TransientAuthenticationContext
         return r_jAuthenticatedAppsCallbackURLs;
     }
 
+    void loadUUIDFromAccountName();
+
+
     time_t newTokenExpirationTime = 0;
 
     bool doesTransientTokenNotExist = false;
@@ -182,6 +189,7 @@ struct TransientAuthenticationContext
     std::string appName;
     std::string appCallbackURL;
     std::string accountName;
+    std::string accountUUID;
     uint32_t schemeId = UINT32_MAX;
     std::optional<uint32_t> currentSlotId = std::nullopt;
     std::string slotSchemeHash;

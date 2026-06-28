@@ -5,14 +5,6 @@
 #include <optional>
 #include <string>
 
-struct ApplicationDetails
-{
-    ApplicationDetails() = default;
-    std::string applicationName;
-    std::string appCreator;
-    std::string description;
-};
-
 struct AppError
 {
     uint16_t http_code = 999;
@@ -28,7 +20,7 @@ struct AccountApplicationInfo
         app["name"] = appName;
         app["description"] = appDescription;
         app["isAppAdmin"] = isAppAdmin;
-        app["enrollmentDate"] = Json::Int64(enrollmentDate);
+        app["enrollmentDate"] = static_cast<Json::Int64>(enrollmentDate);
         app["defaultReturnURL"] = defaultReturnURL;
 
         // Roles as array

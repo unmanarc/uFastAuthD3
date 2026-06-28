@@ -17,7 +17,7 @@ bool CredentialData::parseJSON(const std::string &sAuth)
         return true;
     }
 
-    Mantids30::Helpers::JSONReader2 reader;
+    Mantids30::Helpers::JSON::JSONReader2 reader;
 
     if (!reader.parse(sAuth, x))
     {

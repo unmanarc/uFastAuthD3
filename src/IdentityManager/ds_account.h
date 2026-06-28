@@ -63,6 +63,7 @@ struct AccountDetailField
     std::string fieldType = "TEXTLINE";
     bool isOptionalField = true;
     bool isUnique = false;
+    bool isLoginIdentifier = false;
     json extendedAttributes;
 
     [[nodiscard]] std::string getRegexpValidatorText() const { return JSON_ASSTRING(extendedAttributes["behavior"], "regexpValidator", ""); }
@@ -76,6 +77,7 @@ struct AccountDetailField
         r["fieldType"] = fieldType;
         r["isOptionalField"] = isOptionalField;
         r["isUnique"] = isUnique;
+        r["isLoginIdentifier"] = isLoginIdentifier;
         r["extendedAttributes"] = extendedAttributes;
         return r;
     }
@@ -86,6 +88,7 @@ struct AccountDetailField
         fieldType = JSON_ASSTRING(r, "fieldType", "TEXTLINE");
         isOptionalField = JSON_ASBOOL(r, "isOptionalField", true);
         isUnique = JSON_ASBOOL(r, "isUnique", false);
+        isLoginIdentifier = JSON_ASBOOL(r, "isLoginIdentifier", false);
         extendedAttributes = r["extendedAttributes"];
     }
 };
@@ -128,7 +131,7 @@ struct AccountDetails
     AccountDetails() = default;
 
     std::map<std::string, AccountDetailFieldValue> fields;
-    std::string accountName, creator;
+    std::string accountUUID, creator;
     AccountFlags accountFlags;
     time_t expirationDate = 0, creationDate = 0;
     bool expired = true;
@@ -143,7 +146,7 @@ struct AccountDetails
             r["fields"][i.first] = i.second.toJSON();
         }
 
-        r["accountName"] = accountName;
+        r["accountUUID"] = accountUUID;
         r["creator"] = creator;
         r["accountFlags"] = accountFlags.toJSON();
         r["expirationDate"] = expirationDate;
@@ -162,7 +165,7 @@ struct AccountDetails
             fields[it.key().asString()] = field;
         }
 
-        accountName = JSON_ASSTRING(r, "accountName", "");
+        accountUUID = JSON_ASSTRING(r, "accountUUID", "");
         creator = JSON_ASSTRING(r, "creator", "");
         accountFlags.fromJSON(r["accountFlags"]);
         expirationDate = JSON_ASUINT64(r, "expirationDate", 0);

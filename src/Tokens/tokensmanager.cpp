@@ -90,11 +90,11 @@ void TokensManager::configureApplicationRefreshToken(Mantids30::DataFormat::JWT:
     refreshToken.setClaim("type", "refresher");
 }
 
-void TokensManager::issueLPTokenCookie(APIReturn &response, const RequestParameters &request, const std::shared_ptr<TransientAuthenticationContext> &authContext)
+void TokensManager::issueLPTokenCookie(APIReturn &response, const RequestContext &request, const std::shared_ptr<TransientAuthenticationContext> &authContext)
 {
     IdentityManager *identityManager = Globals::getIdentityManager();
     Mantids30::DataFormat::JWT::Token lpToken;
-    time_t accountExpirationTime = identityManager->accounts->getAccountExpirationTime(authContext->accountName);
+    time_t accountExpirationTime = identityManager->accounts->getAccountExpirationTime(authContext->accountUUID);
     authContext->appCallbackURL = identityManager->applications->getApplicationCallbackURI(authContext->appName);
     time_t expectedRefresherTokenTimeoutTime = safe_add(time(nullptr), Globals::pConfig.get<time_t>("LoginPortal.IAMTokenTimeout", 2592000));
 
@@ -103,7 +103,7 @@ void TokensManager::issueLPTokenCookie(APIReturn &response, const RequestParamet
         expectedRefresherTokenTimeoutTime = authContext->newTokenExpirationTime;
     }
 
-    lpToken.setSubject(authContext->accountName);
+    lpToken.setSubject(authContext->accountUUID);
     lpToken.setIssuedAt(time(nullptr));
     lpToken.setExpirationTime(accountExpirationTime == 0 ? expectedRefresherTokenTimeoutTime :       // Token does not expire.
                                   std::min(accountExpirationTime, expectedRefresherTokenTimeoutTime) // Token expires, take the min time between two...
@@ -129,7 +129,7 @@ void TokensManager::issueLPTokenCookie(APIReturn &response, const RequestParamet
 
     Json::Value authenticationPublicData;
     authenticationPublicData["exp"] = std::to_string(lpToken.getExpirationTime());
-    authenticationPublicData["subject"] = authContext->accountName;
+    authenticationPublicData["subject"] = authContext->accountUUID;
     authenticationPublicData["slotIds"] = Mantids30::Helpers::setToJSON(authContext->authenticatedSlots);
     authenticationPublicData["authenticatedSchemes"] = authContext->getAllAuthenticatedSchemes();
     authenticationPublicData["authenticatedAppsCallbackURLs"] = authContext->getAllAuthenticatedAppsCallbackURLs();

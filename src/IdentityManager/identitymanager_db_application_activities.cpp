@@ -17,7 +17,7 @@ using namespace Mantids30::Database;
 using namespace Mantids30::Helpers;
 using namespace Mantids30;
 
-bool IdentityManager_DB::ApplicationActivities_DB::addApplicationActivity(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName,
+bool IdentityManager_DB::ApplicationActivities_DB::createApplicationActivity(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName,
                                                                           const std::string &activityName, const std::string &activityDescription)
 {
     std::optional<uint32_t> defaultAuthScheme = _parent->authController->getDefaultAuthScheme();
@@ -384,7 +384,7 @@ bool IdentityManager_DB::ApplicationActivities_DB::removeAuthenticationSchemeFro
 bool IdentityManager_DB::ApplicationActivities_DB::createLoginActivity()
 {
     ClientDetails clientDetails;
-    std::string performedBy = "$SYS:INIT"; // nobody (initialization)
+    std::string performedByUUID = "00000000-0000-4000-8000-000000000000"; // nobody (initialization)
 
     std::optional<uint32_t> defaultSchemeId = _parent->authController->getDefaultAuthScheme();
 
@@ -393,14 +393,14 @@ bool IdentityManager_DB::ApplicationActivities_DB::createLoginActivity()
         return false;
     }
 
-    _parent->applicationActivities->setApplicationActivities(clientDetails, performedBy, IAM_LOGINPORTAL_APPNAME, {{"LOGIN", {.description = "Main Login", .parentActivity = ""}}});
-    _parent->applicationActivities->addAuthenticationSchemeToApplicationActivity(clientDetails, performedBy, IAM_LOGINPORTAL_APPNAME, "LOGIN", *defaultSchemeId);
-    if (!_parent->applicationActivities->setApplicationActivityDefaultScheme(clientDetails, performedBy, IAM_LOGINPORTAL_APPNAME, "LOGIN", *defaultSchemeId))
+    _parent->applicationActivities->setApplicationActivities(clientDetails, performedByUUID, IAM_LOGINPORTAL_APPNAME, {{"LOGIN", {.description = "Main Login", .parentActivity = ""}}});
+    _parent->applicationActivities->addAuthenticationSchemeToApplicationActivity(clientDetails, performedByUUID, IAM_LOGINPORTAL_APPNAME, "LOGIN", *defaultSchemeId);
+    if (!_parent->applicationActivities->setApplicationActivityDefaultScheme(clientDetails, performedByUUID, IAM_LOGINPORTAL_APPNAME, "LOGIN", *defaultSchemeId))
     {
         return false;
     }
 
-    _parent->logSecurityEventOnApplications(IAM_LOGINPORTAL_APPNAME, SecurityEventAction::CREATE, "Created LOGIN activity", performedBy, clientDetails);
+    _parent->logSecurityEventOnApplications(IAM_LOGINPORTAL_APPNAME, SecurityEventAction::CREATE, "Created LOGIN activity", performedByUUID, clientDetails);
 
     return true;
 }

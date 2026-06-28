@@ -7,13 +7,13 @@
 #include <optional>
 #include <set>
 
+#include "credentialvalidator.h"
 #include "ds_account.h"
 #include "ds_application.h"
 #include "ds_security_events.h"
-#include "credentialvalidator.h"
 #include <Mantids30/Helpers/json.h>
-#include <string>
 #include <ctime>
+#include <string>
 
 #include <Mantids30/DataFormat_JWT/jwt.h>
 #include <Mantids30/Threads/mutex_shared.h>
@@ -36,22 +36,21 @@ public:
         Other = 100
     };
 
-
-    struct LastAccountAccessResult {
-        struct LastAccountAccessInfo {
+    struct LastAccountAccessResult
+    {
+        struct LastAccountAccessInfo
+        {
             time_t time;
             std::string app;
         };
-        std::optional<time_t> inactivityExtensionUntil; // Si tiene extensión activa y hasta cuándo
-        std::optional<LastAccountAccessInfo> lastAccess;         // Último login (time + app juntos, o nullopt)
+        std::optional<time_t> inactivityExtensionUntil;  // Si tiene extensión activa y hasta cuándo
+        std::optional<LastAccountAccessInfo> lastAccess; // Último login (time + app juntos, o nullopt)
     };
-
-
 
     IdentityManager() = default;
     virtual ~IdentityManager();
 
-    bool isAccountActiveAndValidForApp(const std::string &accountName, const std::string &appName, AuthenticationResult &reason, bool checkValidAppAccount);
+    [[nodiscard]] bool isAccountActiveAndValidForApp(const std::string &accountUUID, const std::string &appName, AuthenticationResult &reason, bool checkValidAppAccount) const;
 
     class Accounts
     {
@@ -59,57 +58,63 @@ public:
         Accounts(IdentityManager *m_parent);
         virtual ~Accounts() = default;
 
-        virtual bool extendInactivity(const std::string &accountName, const time_t &validUntil) = 0;
+        virtual bool extendInactivity(const std::string &accountUUID, const time_t &validUntil) = 0;
 
-        bool createAdminAccount(const std::string &accountName);
+        std::optional<std::string> createAdminAccount();
 
         /////////////////////////////////////////////////////////////////////////////////
         // account:
-        virtual bool addAccount(const std::string &accountName,
-                                time_t expirationDate = 0, // Note: use 1 to create an expired account.
-                                const AccountFlags &accountFlags = {true, true, false, false}, const ClientDetails &clientDetails = {}, const std::string &sCreatorAccountName = "")
+        virtual std::optional<std::string> createAccount(time_t expirationDate = 0, // Note: use 1 to create an expired account.
+                                                         const AccountFlags &accountFlags = {true, true, false, false}, const ClientDetails &clientDetails = {},
+                                                         const std::string &sCreatorAccountName = "")
             = 0;
 
         // Listing:
-        virtual bool doesAccountExist(const std::string &accountName) = 0;
+        virtual bool doesAccountExist(const std::string &accountUUID) = 0;
         virtual std::set<std::string> listAccounts() = 0;
 
+        // List all admin account UUIDs:
+        virtual std::set<std::string> listAdminAccounts() = 0;
+
         // Account confirmation:
-        virtual bool confirmAccount(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountName, const std::string &confirmationToken) = 0;
+        virtual bool confirmAccount(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountUUID, const std::string &confirmationToken) = 0;
 
         // The IAM has any admin account?
-        virtual bool hasAdminAccount();
+        virtual bool hasValidAdminAccount();
+
+        // Lookup accountUUID by a login-identifier field value (e.g. email, username):
+        virtual std::optional<std::string> getAccountUUIDByAccountName(const std::string &accountName) = 0;
 
         // Account Removing/Disabling/...
-        virtual bool removeAccount(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountName) = 0;
-        virtual bool disableAccount(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountName, bool disabled = true) = 0;
+        virtual bool removeAccount(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountUUID) = 0;
+        virtual bool disableAccount(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountUUID, bool disabled = true) = 0;
 
         // Account Details:
-        virtual std::optional<AccountDetails> getAccountDetails(const std::string &accountName, const AccountDetailsToShow &detailsToShow) = 0;
+        virtual std::optional<AccountDetails> getAccountDetails(const std::string &accountUUID, const AccountDetailsToShow &detailsToShow) = 0;
         virtual Json::Value searchAccounts(const json &dataTablesFilters) = 0;
 
         // Account Expiration:
-        virtual bool changeAccountExpiration(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountName, time_t expiration = 0) = 0;
-        virtual time_t getAccountExpirationTime(const std::string &accountName) = 0;
-        virtual time_t getAccountCreationTime(const std::string &accountName) = 0;
-        bool isAccountExpired(const std::string &accountName);
+        virtual bool changeAccountExpiration(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountUUID, time_t expiration = 0) = 0;
+        virtual time_t getAccountExpirationTime(const std::string &accountUUID) = 0;
+        virtual time_t getAccountCreationTime(const std::string &accountUUID) = 0;
+        bool isAccountExpired(const std::string &accountUUID);
 
         // Account Flag Scopes:
-        virtual AccountFlags getAccountFlags(const std::string &accountName) = 0;
-        virtual bool changeAccountFlags(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountName, const AccountFlags &accountFlags) = 0;
+        virtual AccountFlags getAccountFlags(const std::string &accountUUID) = 0;
+        virtual bool changeAccountFlags(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountUUID, const AccountFlags &accountFlags) = 0;
 
         // Account role set:
-        virtual bool updateAccountApplicationRoles(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &accountName,
+        virtual bool updateAccountApplicationRoles(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &accountUUID,
                                                    const std::set<std::string> &roleSet)
             = 0;
-        virtual std::set<ApplicationRole> getAccountApplicationRoles(const std::string &appName, const std::string &accountName, bool lock = true) = 0;
+        virtual std::set<ApplicationRole> getAccountApplicationRoles(const std::string &appName, const std::string &accountUUID, bool lock = true) = 0;
 
         // Account block using token:
-        virtual std::string getAccountBlockToken(const std::string &accountName) = 0;
-        virtual bool blockAccountUsingToken(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountName, const std::string &blockToken) = 0;
+        virtual std::string getAccountBlockToken(const std::string &accountUUID) = 0;
+        virtual bool blockAccountUsingToken(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountUUID, const std::string &blockToken) = 0;
 
         // Account Details Fields
-        virtual bool addAccountDetailField(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &fieldName, const AccountDetailField &details) = 0;
+        virtual bool createAccountDetailField(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &fieldName, const AccountDetailField &details) = 0;
         virtual bool updateAccountDetailField(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &fieldName, const AccountDetailField &details) = 0;
         virtual bool removeAccountDetailField(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &fieldName) = 0;
         virtual std::map<std::string, AccountDetailField> listAccountDetailFields() = 0;
@@ -118,13 +123,13 @@ public:
         virtual Json::Value searchFields(const json &dataTablesFilters) = 0;
 
         // Account Details
-        virtual bool changeAccountDetails(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountName, const std::map<std::string, std::string> &fieldsValues,
+        virtual bool changeAccountDetails(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountUUID, const std::map<std::string, std::string> &fieldsValues,
                                           bool resetAllValues = false)
             = 0;
-        virtual bool removeAccountDetail(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountName, const std::string &fieldName) = 0;
+        virtual bool removeAccountDetail(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountUUID, const std::string &fieldName) = 0;
 
-        virtual std::map<std::string, AccountDetailFieldValue> getAccountDetailFieldValues(const std::string &accountName, const AccountDetailsToShow &detailsToShow = AccountDetailsToShow::ALL) = 0;
-        virtual bool updateAccountDetailFieldValues(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountName,
+        virtual std::map<std::string, AccountDetailFieldValue> getAccountDetailFieldValues(const std::string &accountUUID, const AccountDetailsToShow &detailsToShow = AccountDetailsToShow::ALL) = 0;
+        virtual bool updateAccountDetailFieldValues(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountUUID,
                                                     const std::list<AccountDetailFieldValue> &fieldValues, bool isAdmin)
             = 0;
 
@@ -137,11 +142,11 @@ public:
         virtual ~ApplicationRoles() = default;
         /////////////////////////////////////////////////////////////////////////////////
         // role:
-        virtual bool addRole(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &roleName, const std::string &roleDescription) = 0;
+        virtual bool createRole(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &roleName, const std::string &roleDescription) = 0;
         virtual bool removeRole(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &roleName) = 0;
         virtual bool doesRoleExist(const std::string &appName, const std::string &roleName) = 0;
-        virtual bool addAccountToRole(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &roleName, const std::string &accountName) = 0;
-        virtual bool removeAccountFromRole(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &roleName, const std::string &accountName,
+        virtual bool addAccountToRole(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &roleName, const std::string &accountUUID) = 0;
+        virtual bool removeAccountFromRole(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &roleName, const std::string &accountUUID,
                                            bool lock = true)
             = 0;
         virtual bool updateRoleDescription(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &roleName,
@@ -188,7 +193,7 @@ public:
         virtual bool createLoginActivity() = 0;
 
         /////////////////////////////////////////////////////////////////////////////////
-        virtual bool addApplicationActivity(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &activityName,
+        virtual bool createApplicationActivity(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &activityName,
                                             const std::string &activityDescription)
             = 0;
         virtual bool removeApplicationActivity(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &activityName) = 0;
@@ -246,12 +251,12 @@ public:
         IdentityManager *m_parent;
         Mantids30::Threads::GarbageCollector m_authLogGC;
         static json authSlotsToJSON(const std::vector<AuthenticationSchemeUsedSlot> &authSlots);
-        void updateCredentialAuthStatus(const AuthenticationResult &authResult, const std::string &accountName, const Credential &storedCredentialData, const uint32_t &slotId,
+        void updateCredentialAuthStatus(const AuthenticationResult &authResult, const std::string &accountUUID, const Credential &storedCredentialData, const uint32_t &slotId,
                                         const ClientDetails &clientDetails);
 
     protected:
         AuthenticationPolicy m_authenticationPolicy;
-        virtual Credential retrieveAccountCredential(const std::string &accountName, const uint32_t &slotId, bool *accountFound, bool *authSlotFound) = 0;
+        virtual Credential retrieveAccountCredential(const std::string &accountUUID, const uint32_t &slotId, bool *accountFound, bool *authSlotFound) = 0;
 
     public:
         AuthController(IdentityManager *parent);
@@ -268,26 +273,26 @@ public:
         AuthenticationPolicy getGlobalAuthenticationPolicy();
         void setAuthenticationPolicy(const AuthenticationPolicy &newAuthenticationPolicy);
 
-        virtual std::set<ApplicationScope> getAccountDirectApplicationScopes(const std::string &accountName, bool lock = true) = 0;
+        virtual std::set<ApplicationScope> getAccountDirectApplicationScopes(const std::string &accountUUID, bool lock = true) = 0;
 
-        bool validateAccountApplicationScope(const std::string &accountName, const ApplicationScope &applicationScope) override;
+        bool validateAccountApplicationScope(const std::string &accountUUID, const ApplicationScope &applicationScope) override;
 
-        std::set<ApplicationScope> getAccountUsableApplicationScopes(const std::string &appName, const std::string &accountName);
+        std::set<ApplicationScope> getAccountUsableApplicationScopes(const std::string &appName, const std::string &accountUUID);
 
         virtual bool validateApplicationScopeOnRole(const std::string &roleName, const ApplicationScope &applicationScope, bool lock = true) = 0;
         virtual std::set<ApplicationScope> getRoleApplicationScopes(const std::string &appName, const std::string &roleName, bool lock = true) = 0;
 
         /////////////////////////////////////////////////////////////////////////////////
         // scopes:
-        virtual bool addApplicationScope(const ClientDetails &clientDetails, const std::string &performedBy, const ApplicationScope &applicationScope) = 0;
+        virtual bool createApplicationScope(const ClientDetails &clientDetails, const std::string &performedBy, const ApplicationScope &applicationScope) = 0;
         virtual bool removeApplicationScope(const ClientDetails &clientDetails, const std::string &performedBy, const ApplicationScope &applicationScope) = 0;
         virtual bool doesApplicationScopeExist(const ApplicationScope &applicationScope) = 0;
         virtual bool addApplicationScopeToRole(const ClientDetails &clientDetails, const std::string &performedBy, const ApplicationScope &applicationScope, const std::string &roleName) = 0;
         virtual bool removeApplicationScopeFromRole(const ClientDetails &clientDetails, const std::string &performedBy, const ApplicationScope &applicationScope, const std::string &roleName,
                                                     bool lock = true)
             = 0;
-        virtual bool addApplicationScopeToAccount(const ClientDetails &clientDetails, const std::string &performedBy, const ApplicationScope &applicationScope, const std::string &accountName) = 0;
-        virtual bool removeApplicationScopeFromAccount(const ClientDetails &clientDetails, const std::string &performedBy, const ApplicationScope &applicationScope, const std::string &accountName,
+        virtual bool addApplicationScopeToAccount(const ClientDetails &clientDetails, const std::string &performedBy, const ApplicationScope &applicationScope, const std::string &accountUUID) = 0;
+        virtual bool removeApplicationScopeFromAccount(const ClientDetails &clientDetails, const std::string &performedBy, const ApplicationScope &applicationScope, const std::string &accountUUID,
                                                        bool lock = true)
             = 0;
         virtual bool updateApplicationScopeDescription(const ClientDetails &clientDetails, const std::string &performedBy, const ApplicationScope &applicationScope) = 0;
@@ -296,44 +301,44 @@ public:
         virtual std::set<std::string> getApplicationRolesForScope(const ApplicationScope &applicationScope, bool lock = true) = 0;
         virtual std::set<std::string> listAccountsOnApplicationScope(const ApplicationScope &applicationScope, bool lock = true) = 0;
         virtual Json::Value searchApplicationScopes(const json &dataTablesFilters) = 0;
-        virtual bool validateAccountDirectApplicationScope(const std::string &accountName, const ApplicationScope &applicationScope) = 0;
+        virtual bool validateAccountDirectApplicationScope(const std::string &accountUUID, const ApplicationScope &applicationScope) = 0;
 
         // Account bad attempts for pass slot id...
-        virtual void resetBadAttemptsOnAccountCredential(const std::string &accountName, const uint32_t &slotId) = 0;
-        virtual void incrementBadAttemptsOnAccountCredential(const std::string &accountName, const uint32_t &slotId) = 0;
+        virtual void resetBadAttemptsOnAccountCredential(const std::string &accountUUID, const uint32_t &slotId) = 0;
+        virtual void incrementBadAttemptsOnAccountCredential(const std::string &accountUUID, const uint32_t &slotId) = 0;
 
         // Account Credentials:
-        virtual bool changeAccountCredential(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountName, Credential passwordData, uint32_t slotId) = 0;
+        virtual bool changeAccountCredential(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountUUID, Credential passwordData, uint32_t slotId) = 0;
         // TODO: the slotId of the master password should be configured in a configuration file.
-        bool recoverAccountMasterCredential(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountName, std::string *password);
+        bool recoverAccountMasterCredential(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountUUID, std::string *password);
 
-        virtual bool activateAccountCredential(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountName, uint32_t slotId, const std::string &hash,
+        virtual bool activateAccountCredential(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountUUID, uint32_t slotId, const std::string &hash,
                                                const std::string &ssalt)
             = 0;
-        virtual bool setAccountCredentialMustChange(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountName, uint32_t slotId, bool mustChange) = 0;
-        virtual bool setAccountCredentialLockedStatus(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountName, uint32_t slotId, bool isLocked) = 0;
+        virtual bool setAccountCredentialMustChange(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountUUID, uint32_t slotId, bool mustChange) = 0;
+        virtual bool setAccountCredentialLockedStatus(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountUUID, uint32_t slotId, bool isLocked) = 0;
 
-        bool setAccountPasswordOnScheme(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountName, std::string *sInitPW, const uint32_t &schemeId);
+        bool setAccountPasswordOnScheme(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountUUID, std::string *sInitPW, const uint32_t &schemeId);
 
         // Account last login:
-        virtual void insertApplicationAccountAccessAuthLog(const std::string &accountName, const std::string &appName, const uint32_t &schemeId, const ClientDetails &clientDetails,
+        virtual void insertApplicationAccountAccessAuthLog(const std::string &accountUUID, const std::string &appName, const uint32_t &schemeId, const ClientDetails &clientDetails,
                                                            const std::string &refresherTokenId, const std::string &accessTokenId, const time_t &accessTokenExpiration,
                                                            const time_t &refreshTokenExpiration)
             = 0;
-        virtual void insertAccountAuthCredentialSlotLog(const std::string &accountName, uint32_t slotId, const ClientDetails &clientDetails, int logStatus) = 0;
+        virtual void insertAccountAuthCredentialSlotLog(const std::string &accountUUID, uint32_t slotId, const ClientDetails &clientDetails, int logStatus) = 0;
 
-        virtual LastAccountAccessResult getAccountLastAccess(const std::string &accountName) = 0;
+        virtual LastAccountAccessResult getAccountLastAccess(const std::string &accountUUID) = 0;
 
-        virtual uint32_t getAccountActiveSessionsCount(const std::string &accountName) = 0;
-        virtual std::pair<uint32_t, uint32_t> getAccountActiveCredentialsCount(const std::string &accountName) = 0;
-        virtual Json::Value searchAccountSessions(const std::string &accountName, const json &dataTablesFilters) = 0;
-        virtual Json::Value searchAccountCredentialsActivity(const std::string &accountName, const json &dataTablesFilters) = 0;
+        virtual uint32_t getAccountActiveSessionsCount(const std::string &accountUUID) = 0;
+        virtual std::pair<uint32_t, uint32_t> getAccountActiveCredentialsCount(const std::string &accountUUID) = 0;
+        virtual Json::Value searchAccountSessions(const std::string &accountUUID, const json &dataTablesFilters) = 0;
+        virtual Json::Value searchAccountCredentialsActivity(const std::string &accountUUID, const json &dataTablesFilters) = 0;
 
         // Application Auth Log - Logout and Token tracking:
-        virtual bool updateApplicationAuthLogAccessTokenId(const std::string &accountName, const std::string &appName, const std::string &refresherTokenId, const std::string &accessTokenId,
+        virtual bool updateApplicationAuthLogAccessTokenId(const std::string &accountUUID, const std::string &appName, const std::string &refresherTokenId, const std::string &accessTokenId,
                                                            const time_t &accessTokenExpiration)
             = 0;
-        virtual bool logoutApplicationAuthLog(const std::string &accountName, const std::string &appName, const std::string &refresherTokenId, LogoutReason reason) = 0;
+        virtual bool logoutApplicationAuthLog(const std::string &accountUUID, const std::string &appName, const std::string &refresherTokenId, LogoutReason reason) = 0;
 
         /////////////////////////////////////////////////////////////////////////////////
         // authentication:
@@ -345,7 +350,7 @@ public:
          * If authentication fails, the function increments the bad attempt counters for the account and authentication slot.
          *
          * @param clientDetails Contains session-related details for the client attempting authentication (e.g., IP address, session ID).
-         * @param accountName The user or account identifier to authenticate.
+         * @param accountUUID The user or account identifier to authenticate.
          * @param password The incoming password or credential to validate against stored data.
          * @param slotId The identifier for the specific authentication slot being used.
          * @param authMode Specifies the mode of authentication (e.g., plain text, hashed). Default is `MODE_PLAIN`.
@@ -373,33 +378,33 @@ public:
          *
          * @note On failure, the function ensures to increment bad attempt counters for the account and the password slot.
          */
-        AuthenticationResult authenticateCredential(const ClientDetails &clientDetails, const std::string &accountName, const std::string &sPassword, const uint32_t &slotId = 0,
-                                                            const Mode &authMode = Mode::PLAIN, const std::string &challengeSalt = "",
-                                                            std::shared_ptr<TransientAuthenticationContext> authContext = nullptr) override;
+        AuthenticationResult authenticateCredential(const ClientDetails &clientDetails, const std::string &accountUUID, const std::string &sPassword, const uint32_t &slotId = 0,
+                                                    const Mode &authMode = Mode::PLAIN, const std::string &challengeSalt = "",
+                                                    std::shared_ptr<TransientAuthenticationContext> authContext = nullptr) override;
 
-        bool isAccountInactive(const LastAccountAccessResult &lastLogin, bool isAdmin ) const;
+        bool isAccountInactive(const LastAccountAccessResult &lastLogin, bool isAdmin) const;
 
         /**
      * @brief getAccountCredentialPublicData Get information for Salted Password Calculation and expiration info (Not Authenticated)
-     * @param accountName Account Name
+     * @param accountUUID Account Name
      * @param found value set to true/false if the account was found or not.
      * @param slotId AuthController Slot SlotId.
      * @return Password Information (Eg. hashing function, salt, expiration, etc)
      */
-        Credential getAccountCredentialPublicData(const std::string &accountName, uint32_t slotId) override;
+        Credential getAccountCredentialPublicData(const std::string &accountUUID, uint32_t slotId) override;
 
         /**
      * @brief getAccountAllCredentialsPublicData Get a map with slotId->public credential data for an account.
-     * @param accountName account ID or user string.
+     * @param accountUUID account ID or user string.
      * @return map with every defined and not defined password.
      */
-        std::map<uint32_t, Credential> getAccountAllCredentialsPublicData(const std::string &accountName);
+        std::map<uint32_t, Credential> getAccountAllCredentialsPublicData(const std::string &accountUUID);
 
-        virtual bool doesCredentialSlotExistOnAccount(const std::string &accountName, uint32_t slotId) = 0;
+        virtual bool doesCredentialSlotExistOnAccount(const std::string &accountUUID, uint32_t slotId) = 0;
 
         /**
      * @brief changeAccountAuthenticatedCredential Change the password doing current password authentication
-     * @param accountName
+     * @param accountUUID
      * @param currentPassword
      * @param authMode
      * @param challengeSalt
@@ -407,19 +412,19 @@ public:
      * @param slotId AuthController Slot SlotId.
      * @return true if changed, false if not (bad password, etc)
      */
-        virtual bool changeAccountAuthenticatedCredential(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountName, uint32_t slotId,
+        virtual bool changeAccountAuthenticatedCredential(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountUUID, uint32_t slotId,
                                                           const std::string &sCurrentPassword, const Credential &newPasswordData, Mode authMode = Mode::PLAIN, const std::string &challengeSalt = "");
 
-        virtual bool removeAccountCredential(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountName, uint32_t slotId) = 0;
+        virtual bool removeAccountCredential(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountUUID, uint32_t slotId) = 0;
 
         /////////////////////////////////////////////////////////////////////////////////
         // AuthController Slot SlotIds:
-        virtual std::optional<uint32_t> addNewAuthenticationSlot(const ClientDetails &clientDetails, const std::string &performedBy, const AuthenticationSlotDetails &details) = 0;
+        virtual std::optional<uint32_t> createAuthenticationSlot(const ClientDetails &clientDetails, const std::string &performedBy, const AuthenticationSlotDetails &details) = 0;
         virtual bool removeAuthenticationSlot(const ClientDetails &clientDetails, const std::string &performedBy, const uint32_t &slotId) = 0;
         virtual bool updateAuthenticationSlotDetails(const ClientDetails &clientDetails, const std::string &performedBy, const uint32_t &slotId, const AuthenticationSlotDetails &details) = 0;
         virtual std::map<uint32_t, AuthenticationSlotDetails> listAllAuthenticationSlots() = 0;
 
-        virtual std::optional<uint32_t> addAuthenticationScheme(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &description) = 0;
+        virtual std::optional<uint32_t> createAuthenticationScheme(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &description) = 0;
         virtual bool updateAuthenticationScheme(const ClientDetails &clientDetails, const std::string &performedBy, const uint32_t &schemeId, const std::string &description) = 0;
         virtual bool removeAuthenticationScheme(const ClientDetails &clientDetails, const std::string &performedBy, const uint32_t &schemeId) = 0;
         virtual std::map<uint32_t, std::string> listAuthenticationSchemes() = 0;
@@ -428,8 +433,8 @@ public:
         virtual bool updateAuthenticationSlotUsedByScheme(const ClientDetails &clientDetails, const std::string &performedBy, const uint32_t &schemeId,
                                                           const std::list<AuthenticationSchemeUsedSlot> &slotsUsedByScheme)
             = 0;
-        virtual std::set<uint32_t> listUsedAuthenticationSlotsOnAccount(const std::string &accountName) = 0;
-        virtual std::map<uint32_t, std::pair<bool, Credential>> listAllAuthCredentialSlotsPublicDataForAccount(const std::string &accountName) = 0;
+        virtual std::set<uint32_t> listUsedAuthenticationSlotsOnAccount(const std::string &accountUUID) = 0;
+        virtual std::map<uint32_t, std::pair<bool, Credential>> listAllAuthCredentialSlotsPublicDataForAccount(const std::string &accountUUID) = 0;
 
         virtual bool updateDefaultAuthScheme(const ClientDetails &clientDetails, const std::string &performedBy, const uint32_t &schemeId) = 0;
         virtual std::optional<uint32_t> getDefaultAuthScheme() = 0;
@@ -444,10 +449,10 @@ public:
          *
          * @param app The name of the application.
          * @param activity The name of the activity within the application.
-         * @param accountName account ID or user string.
+         * @param accountUUID account ID or user string.
          * @return json A JSON object containing the applicable authentication schemes, their details, and the default scheme.
          */
-        json getApplicableAuthenticationSchemesForAccount(const std::string &app, const std::string &activity, const std::string &accountName, const std::set<uint32_t> &alreadyAuthenticatedSlots);
+        json getApplicableAuthenticationSchemesForAccount(const std::string &app, const std::string &activity, const std::string &accountUUID, const std::set<uint32_t> &alreadyAuthenticatedSlots);
     };
     class Applications
     {
@@ -493,7 +498,7 @@ public:
 
         /////////////////////////////////////////////////////////////////////////////////
         // applications:
-        virtual bool addApplication(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &applicationDescription,
+        virtual bool createApplication(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &applicationDescription,
                                     const std::string &appURL, const std::string &apiKey, const std::string &creatorAccountName, const ApplicationAttributes &appAttributes,
                                     bool initializeDefaultValues)
             = 0;
@@ -510,17 +515,17 @@ public:
         virtual std::string getApplicationNameByAPIKey(const std::string &apiKey) = 0;
 
         virtual std::set<std::string> listApplications() = 0;
-        virtual bool isApplicationAdmin(const std::string &appName, const std::string &accountName) = 0;
-        virtual bool validateApplicationAccount(const std::string &appName, const std::string &accountName) = 0;
+        virtual bool isApplicationAdmin(const std::string &appName, const std::string &accountUUID) = 0;
+        virtual bool validateApplicationAccount(const std::string &appName, const std::string &accountUUID) = 0;
         virtual std::set<std::string> listApplicationAdmins(const std::string &appName) = 0;
         virtual std::set<std::string> listApplicationAccounts(const std::string &appName) = 0;
-        virtual std::set<std::string> listAccountApplications(const std::string &accountName) = 0;
-        virtual bool addAccountToApplication(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &accountName) = 0;
-        virtual bool removeAccountFromApplication(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &accountName) = 0;
-        virtual bool changeApplicationAdmin(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &accountName, bool isAppAdmin) = 0;
+        virtual std::set<std::string> listAccountApplications(const std::string &accountUUID) = 0;
+        virtual bool addAccountToApplication(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &accountUUID) = 0;
+        virtual bool removeAccountFromApplication(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &accountUUID) = 0;
+        virtual bool changeApplicationAdmin(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &accountUUID, bool isAppAdmin) = 0;
         virtual Json::Value searchApplications(const json &dataTablesFilters) = 0;
 
-        virtual std::vector<AccountApplicationInfo> listAccountApplicationsFullInfo(const std::string &accountName) = 0;
+        virtual std::vector<AccountApplicationInfo> listAccountApplicationsFullInfo(const std::string &accountUUID) = 0;
 
         // Weblogin return urls:
         virtual bool addWebLoginAllowedRedirectURIToApplication(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &loginRedirectURI) = 0;
@@ -569,9 +574,9 @@ public:
     virtual bool checkConnection() { return true; }
     virtual bool initializeDatabase() = 0;
 
-    bool initializeAdminAccountWithPassword(const std::string &accountName, std::string *adminPW, const uint32_t &schemeId, bool *alreadyExist);
-    bool initializeApplicationWithScheme(const std::string &appName, const std::string &appDescription, const std::string &appURL, const uint32_t &schemeId, const std::string &owner,
-                                         bool *alreadyExist);
+    [[nodiscard]] bool initializeAdminAccountWithPasswordIfNotExist(const uint32_t &schemeId, bool forceIfExist) const;
+    bool initializeApplicationWithScheme(const std::string &appName, const std::string &appDescription, const std::string &appURL, const uint32_t &schemeId,
+                                         bool *alreadyExist) const;
 
 protected:
     Mantids30::Threads::Sync::Mutex_Shared m_mutex;
