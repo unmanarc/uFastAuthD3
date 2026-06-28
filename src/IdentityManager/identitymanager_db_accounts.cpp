@@ -1,6 +1,6 @@
 #include "IdentityManager/identitymanager.h"
-#include <Mantids30/Helpers/json.h>
 #include "identitymanager_db.h"
+#include <Mantids30/Helpers/json.h>
 
 #include <Mantids30/DB/transaction.h>
 #include <Mantids30/Helpers/datatables.h>
@@ -721,16 +721,43 @@ bool IdentityManager_DB::Accounts_DB::createAccountDetailField(const ClientDetai
     return false;
 }
 
-bool IdentityManager_DB::Accounts_DB::updateAccountDetailField(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &fieldName, const AccountDetailField &details)
+IdentityManager::Accounts::UpdateAccountDetailFieldResult IdentityManager_DB::Accounts_DB::updateAccountDetailField(const ClientDetails &clientDetails, const std::string &performedBy,
+                                                                                                                    const std::string &fieldName, const AccountDetailField &details)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
 
     // Invalid condition.
     if (details.isLoginIdentifier && !details.isUnique)
     {
-        return false;
+        return UpdateAccountDetailFieldResult::FIELD_NOT_FOUND;
     }
 
+    // Step 1: Check if the field exists and if it's currently a login identifier.
+    Abstract::BOOL currentIsLoginIdentifier;
+    bool fieldExists = _parent->m_sqlConnector->qSelectSingleRow("SELECT `isLoginIdentifier` FROM iam.accountDetailFields WHERE `fieldName` = :fieldName;",
+                                                                 {{":fieldName", MAKE_VAR(STRING, fieldName)}}, {&currentIsLoginIdentifier});
+
+    if (!fieldExists)
+    {
+        return UpdateAccountDetailFieldResult::FIELD_NOT_FOUND;
+    }
+
+    // Step 2: If this field is currently a login identifier and the update tries to disable it,
+    // check if it's the last one.
+    if (currentIsLoginIdentifier.getValue() && !details.isLoginIdentifier)
+    {
+        Abstract::INT32 loginIdentifierCount;
+        if (_parent->m_sqlConnector->qSelectSingleRow("SELECT COUNT(*) FROM iam.accountDetailFields WHERE `isLoginIdentifier` = 1;", {}, {&loginIdentifierCount}))
+        {
+            if (loginIdentifierCount.getValue() <= 1)
+            {
+                // This is the last login identifier, cannot disable it.
+                return UpdateAccountDetailFieldResult::LAST_LOGIN_IDENTIFIER;
+            }
+        }
+    }
+
+    // Step 3: Update the field.
     if (!_parent->m_sqlConnector->qExecuteEx("UPDATE iam.accountDetailFields SET `fieldDescription`=:fieldDescription, `fieldType`=:fieldType, `isOptionalField`=:isOptionalField, "
                                              "`isUnique`=:isUnique, `isLoginIdentifier`=:isLoginIdentifier, `jsonExtendedAttribs`=:jsonExtendedAttribs WHERE `fieldName`=:fieldName;",
                                              {{":fieldName", MAKE_VAR(STRING, fieldName)},
@@ -741,26 +768,52 @@ bool IdentityManager_DB::Accounts_DB::updateAccountDetailField(const ClientDetai
                                               {":isLoginIdentifier", MAKE_VAR(BOOL, details.isLoginIdentifier)},
                                               {":jsonExtendedAttribs", MAKE_VAR(STRING, details.extendedAttributes.toStyledString())}}))
     {
-        return false;
+        return UpdateAccountDetailFieldResult::DB_ERROR;
     }
 
     _parent->logSecurityEventOnAccountDetailFields(fieldName, SecurityEventAction::UPDATE, "Account detail field updated", performedBy, clientDetails);
 
-    return true;
+    return UpdateAccountDetailFieldResult::SUCCESS;
 }
 
-bool IdentityManager_DB::Accounts_DB::removeAccountDetailField(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &fieldName)
+IdentityManager::Accounts::RemoveAccountDetailFieldResult IdentityManager_DB::Accounts_DB::removeAccountDetailField(const ClientDetails &clientDetails, const std::string &performedBy,
+                                                                                                                    const std::string &fieldName)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
 
+    // Step 1: Check if the field exists and if it's a login identifier.
+    Abstract::BOOL isLoginIdentifier;
+    bool fieldExists = _parent->m_sqlConnector->qSelectSingleRow("SELECT `isLoginIdentifier` FROM iam.accountDetailFields WHERE `fieldName` = :fieldName;",
+                                                                 {{":fieldName", MAKE_VAR(STRING, fieldName)}}, {&isLoginIdentifier});
+
+    if (!fieldExists)
+    {
+        return RemoveAccountDetailFieldResult::FIELD_NOT_FOUND;
+    }
+
+    // Step 2: If this field is a login identifier, check if it's the last one.
+    if (isLoginIdentifier.getValue())
+    {
+        Abstract::INT32 loginIdentifierCount;
+        if (_parent->m_sqlConnector->qSelectSingleRow("SELECT COUNT(*) FROM iam.accountDetailFields WHERE `isLoginIdentifier` = 1;", {}, {&loginIdentifierCount}))
+        {
+            if (loginIdentifierCount.getValue() <= 1)
+            {
+                // This is the last login identifier, cannot remove it.
+                return RemoveAccountDetailFieldResult::LAST_LOGIN_IDENTIFIER;
+            }
+        }
+    }
+
+    // Step 3: Delete the field.
     if (!_parent->m_sqlConnector->qExecuteEx("DELETE FROM iam.accountDetailFields WHERE `fieldName` = :fieldName;", {{":fieldName", MAKE_VAR(STRING, fieldName)}}))
     {
-        return false;
+        return RemoveAccountDetailFieldResult::DB_ERROR;
     }
 
     _parent->logSecurityEventOnAccountDetailFields(fieldName, SecurityEventAction::DELETE, "Account detail field removed", performedBy, clientDetails);
 
-    return true;
+    return RemoveAccountDetailFieldResult::SUCCESS;
 }
 
 std::map<std::string, AccountDetailField> IdentityManager_DB::Accounts_DB::listAccountDetailFields()
@@ -901,53 +954,111 @@ bool IdentityManager_DB::Accounts_DB::removeAccountDetail(const ClientDetails &c
     return result;
 }
 
-bool IdentityManager_DB::Accounts_DB::updateAccountDetailFieldValues(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountUUID,
-                                                                     const std::list<AccountDetailFieldValue> &inputFieldValues, bool isAdmin)
+UpdateAccountDetailFieldValuesResult IdentityManager_DB::Accounts_DB::updateAccountDetailFieldValues(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountUUID,
+                                                                                                     const std::map<std::string, std::string> &inputFieldValues, bool isAdmin)
 {
+    UpdateAccountDetailFieldValuesResult result;
     std::map<std::string, AccountDetailField> dbFieldsScheme = listAccountDetailFields();
 
     // TODO: log the field update operation.
-    for (const AccountDetailFieldValue &inputFieldValue : inputFieldValues)
+    for (const auto &[fieldName, fieldValue] : inputFieldValues)
     {
-        // Validate Regexp.
-        if (dbFieldsScheme.find(inputFieldValue.name) != dbFieldsScheme.end())
+        // Validate field exists.
+        if (dbFieldsScheme.find(fieldName) == dbFieldsScheme.end())
         {
-            if (!dbFieldsScheme[inputFieldValue.name].canUserEdit() && !isAdmin)
-            {
-                // User can not edit this field.
-                return false;
-            }
+            result.status = UpdateAccountDetailFieldValuesResult::Status::INVALID_FIELD;
+            return result;
+        }
 
-            if (inputFieldValue.value.has_value())
+        if (!dbFieldsScheme[fieldName].canUserEdit() && !isAdmin)
+        {
+            result.status = UpdateAccountDetailFieldValuesResult::Status::PERMISSION_DENIED;
+            return result;
+        }
+
+        std::string regexpValidator = dbFieldsScheme[fieldName].getRegexpValidatorText();
+        if (!regexpValidator.empty())
+        {
+            try
             {
-                std::string regexpValidator = dbFieldsScheme[inputFieldValue.name].getRegexpValidatorText();
-                if (!regexpValidator.empty())
+                boost::regex regExp(regexpValidator);
+                if (!boost::regex_search(fieldValue, regExp))
                 {
-                    std::string value = inputFieldValue.value.value();
-                    try
-                    {
-                        boost::regex regExp(regexpValidator);
-                        if (!boost::regex_search(value, regExp))
-                        {
-                            // Rexep does not match.
-                            return false;
-                        }
-                    }
-                    catch (const boost::regex_error &)
-                    {
-                        // if not defined, continue.
-                    }
+                    result.regexInvalidFields.insert(fieldName);
                 }
             }
-        }
-        else
-        {
-            // Invalid field.
-            return false;
+            catch (const boost::regex_error &)
+            {
+                // if not defined, continue.
+            }
         }
     }
 
+    if (!result.regexInvalidFields.empty())
+    {
+        result.status = UpdateAccountDetailFieldValuesResult::Status::REGEX_VALIDATION_FAILED;
+        return result;
+    }
+
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
+
+    // Validate that login-identifier values do not collide with values from other accounts.
+    for (const auto &[fieldName, fieldValue] : inputFieldValues)
+    {
+        if (dbFieldsScheme.find(fieldName) != dbFieldsScheme.end() && dbFieldsScheme[fieldName].isLoginIdentifier)
+        {
+            Abstract::INT32 conflictCount;
+            if (_parent->m_sqlConnector->qSelectSingleRow(
+                    R"(SELECT COUNT(*) FROM iam.accountDetailValues vadv
+                       INNER JOIN iam.accountDetailFields vadf ON vadf.fieldName = vadv.f_fieldName
+                       WHERE vadf.isLoginIdentifier = 1
+                         AND vadv.value = :value
+                         AND vadv.f_accountUUID != :accountUUID)",
+                    {{":value", MAKE_VAR(STRING, fieldValue)}, {":accountUUID", MAKE_VAR(STRING, accountUUID)}}, {&conflictCount}))
+            {
+                if (conflictCount.getValue() > 0)
+                {
+                    result.duplicateFields.insert(fieldName);
+                }
+            }
+        }
+    }
+
+    if (!result.duplicateFields.empty())
+    {
+        result.status = UpdateAccountDetailFieldValuesResult::Status::DUPLICATE_LOGIN_IDENTIFIER;
+        return result;
+    }
+
+    // Validate that unique values do not collide with values from other accounts.
+    for (const auto &[fieldName, fieldValue] : inputFieldValues)
+    {
+        if (dbFieldsScheme.find(fieldName) != dbFieldsScheme.end() && dbFieldsScheme[fieldName].isUnique)
+        {
+            Abstract::INT32 conflictCount;
+            if (_parent->m_sqlConnector->qSelectSingleRow(
+                    R"(SELECT COUNT(*) FROM iam.accountDetailValues vadv
+                       INNER JOIN iam.accountDetailFields vadf ON vadf.fieldName = vadv.f_fieldName
+                       WHERE vadf.isUnique = 1
+                         AND vadv.fieldName = :fieldName
+                         AND vadv.value = :value
+                         AND vadv.f_accountUUID != :accountUUID)",
+                    {{":fieldName", MAKE_VAR(STRING, fieldName)}, {":value", MAKE_VAR(STRING, fieldValue)}, {":accountUUID", MAKE_VAR(STRING, accountUUID)}},
+                    {&conflictCount}))
+            {
+                if (conflictCount.getValue() > 0)
+                {
+                    result.uniqueInvalidFields.insert(fieldName);
+                }
+            }
+        }
+    }
+
+    if (!result.uniqueInvalidFields.empty())
+    {
+        result.status = UpdateAccountDetailFieldValuesResult::Status::DUPLICATE_UNIQUE_FIELD;
+        return result;
+    }
 
     _parent->m_sqlConnector->beginTransaction();
 
@@ -958,7 +1069,6 @@ bool IdentityManager_DB::Accounts_DB::updateAccountDetailFieldValues(const Clien
     }
     else
     {
-        // Collect all editable field names for this account
         std::set<std::string> editableFields;
         for (const auto &field : dbFieldsScheme)
         {
@@ -968,7 +1078,6 @@ bool IdentityManager_DB::Accounts_DB::updateAccountDetailFieldValues(const Clien
             }
         }
 
-        // Delete every editable field from that user account.
         for (const std::string &fieldName : editableFields)
         {
             std::string sql = "DELETE FROM iam.accountDetailValues WHERE `f_accountUUID` = :account AND `f_fieldName` = :field;";
@@ -983,25 +1092,25 @@ bool IdentityManager_DB::Accounts_DB::updateAccountDetailFieldValues(const Clien
     }
 
     // Insert all the fields to the database.
-    for (const AccountDetailFieldValue &fieldValue : inputFieldValues)
+    for (const auto &[fieldName, fieldValue] : inputFieldValues)
     {
-        if (fieldValue.value.has_value() && dbFieldsScheme.find(fieldValue.name) != dbFieldsScheme.end())
+        if (dbFieldsScheme.find(fieldName) != dbFieldsScheme.end())
         {
             if (!_parent->m_sqlConnector->qExecuteEx("INSERT INTO iam.accountDetailValues (`f_accountUUID`, `f_fieldName`, `value`) VALUES(:accountUUID, :fieldName, :value);",
                                                      {{":accountUUID", MAKE_VAR(STRING, accountUUID)},
-                                                      {":fieldName", MAKE_VAR(STRING, fieldValue.name)},
-                                                      {":value", MAKE_VAR(STRING, fieldValue.value.value())}}))
+                                                      {":fieldName", MAKE_VAR(STRING, fieldName)},
+                                                      {":value", MAKE_VAR(STRING, fieldValue)}}))
             {
                 _parent->m_sqlConnector->rollbackTransaction();
-                return false;
+                result.status = UpdateAccountDetailFieldValuesResult::Status::DB_ERROR;
+                return result;
             }
         }
     }
 
     _parent->logSecurityEventOnAccounts(accountUUID, SecurityEventAction::UPDATE, "Account detail field values updated", performedBy, clientDetails);
-
     _parent->m_sqlConnector->commitTransaction();
-    return true;
+    return result;
 }
 
 std::map<std::string, AccountDetailFieldValue> IdentityManager_DB::Accounts_DB::getAccountDetailFieldValues(const std::string &accountUUID, const AccountDetailsToShow &detailsToShow)

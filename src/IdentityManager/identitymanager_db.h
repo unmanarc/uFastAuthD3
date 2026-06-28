@@ -83,8 +83,8 @@ public:
 
         // Account Details Fields
         bool createAccountDetailField(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &fieldName, const AccountDetailField &details) override;
-        bool updateAccountDetailField(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &fieldName, const AccountDetailField &details) override;
-        bool removeAccountDetailField(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &fieldName) override;
+        UpdateAccountDetailFieldResult updateAccountDetailField(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &fieldName, const AccountDetailField &details) override;
+        RemoveAccountDetailFieldResult removeAccountDetailField(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &fieldName) override;
         std::map<std::string, AccountDetailField> listAccountDetailFields() override;
         std::optional<AccountDetailField> getAccountDetailField(const std::string &fieldName) override;
         Json::Value searchFields(const Json::Value &dataTablesFilters) override;
@@ -95,8 +95,8 @@ public:
         bool removeAccountDetail(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountUUID, const std::string &fieldName) override;
 
         std::map<std::string, AccountDetailFieldValue> getAccountDetailFieldValues(const std::string &accountUUID, const AccountDetailsToShow &detailsToShow = AccountDetailsToShow::ALL) override;
-        bool updateAccountDetailFieldValues(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountUUID,
-                                            const std::list<AccountDetailFieldValue> &inputFieldValues, bool isAdmin) override;
+        UpdateAccountDetailFieldValuesResult updateAccountDetailFieldValues(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountUUID,
+                                             const std::map<std::string, std::string> &inputFieldValues, bool isAdmin) override;
 
     private:
         bool isThereAnotherAdmin(const std::string &accountUUID);

@@ -4,6 +4,7 @@
 #include <Mantids30/Helpers/json.h>
 #include <ctime>
 #include <optional>
+#include <set>
 #include <string>
 
 enum class AccountDetailsToShow : uint8_t
@@ -93,6 +94,26 @@ struct AccountDetailField
         extendedAttributes = r["extendedAttributes"];
     }
 };
+
+struct UpdateAccountDetailFieldValuesResult
+{
+    enum class Status : uint8_t
+    {
+        SUCCESS = 0,                        // All fields updated successfully.
+        DUPLICATE_LOGIN_IDENTIFIER = 1,     // One or more login-identifier values conflict with another account.
+        DUPLICATE_UNIQUE_FIELD = 2,         // One or more login-identifier values conflict with another account.
+        INVALID_FIELD = 3,                  // One or more field names do not exist.
+        PERMISSION_DENIED = 4,              // User lacks permission to edit one or more fields.
+        REGEX_VALIDATION_FAILED = 5,        // One or more values failed regex validation.
+        DB_ERROR = 6                        // Database error occurred.
+    };
+
+    Status status = Status::SUCCESS;
+    std::set<std::string> duplicateFields;      // Field names whose login-identifier values already exist in another account.
+    std::set<std::string> uniqueInvalidFields;  // Field names whose unique values conflict.
+    std::set<std::string> regexInvalidFields;   // Field names that failed regex validation.
+};
+
 struct AccountFlags
 {
     AccountFlags(bool enabled, bool confirmed, bool admin, bool blocked)
@@ -170,10 +191,6 @@ struct AccountDetails
         creator = Mantids30::Helpers::JSON::ASSTRING(r, "creator", "");
         accountFlags.fromJSON(r["accountFlags"]);
         expirationDate = Mantids30::Helpers::JSON::ASINT64(r, "expirationDate", 0);
-        if (expirationDate<0)
-        {
-            expirationDate=0;
-        }
         expired = std::time(nullptr) > expirationDate;
     }
 };

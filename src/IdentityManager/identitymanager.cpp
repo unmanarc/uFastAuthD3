@@ -146,10 +146,9 @@ bool IdentityManager::initializeAdminAccountWithPasswordIfNotExist(const uint32_
             adminUsername+=std::to_string(i);
         }
 
-        AccountDetailFieldValue fieldValue;
-        fieldValue.name = "USERNAME";
-        fieldValue.value = adminUsername;
-        accounts->updateAccountDetailFieldValues(clientDetails,performedByUUID, accountUUID, { fieldValue }, true);
+        std::map<std::string, std::string> fieldValues;
+        fieldValues["USERNAME"] = adminUsername;
+        accounts->updateAccountDetailFieldValues(clientDetails,performedByUUID, accountUUID, fieldValues, true);
     }
 
     LOG_APP->log0(__func__, LogLevel::INFO, "New admin account '%s' successfully created.", accountUUID.c_str());

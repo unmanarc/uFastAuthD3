@@ -113,10 +113,32 @@ public:
         virtual std::string getAccountBlockToken(const std::string &accountUUID) = 0;
         virtual bool blockAccountUsingToken(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountUUID, const std::string &blockToken) = 0;
 
+        /**
+         * @brief Result codes for removing an account detail field.
+         */
+        enum class RemoveAccountDetailFieldResult : uint8_t
+        {
+            SUCCESS = 0,                    // Field removed successfully.
+            FIELD_NOT_FOUND = 1,            // Field does not exist.
+            LAST_LOGIN_IDENTIFIER = 2,      // Cannot remove: this is the last login identifier field.
+            DB_ERROR = 3                    // Database error occurred.
+        };
+
+        /**
+         * @brief Result codes for updating an account detail field.
+         */
+        enum class UpdateAccountDetailFieldResult : uint8_t
+        {
+            SUCCESS = 0,                    // Field updated successfully.
+            FIELD_NOT_FOUND = 1,            // Field does not exist.
+            LAST_LOGIN_IDENTIFIER = 2,      // Cannot update: this is the last login identifier field and you are trying to disable it.
+            DB_ERROR = 3                    // Database error occurred.
+        };
+
         // Account Details Fields
         virtual bool createAccountDetailField(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &fieldName, const AccountDetailField &details) = 0;
-        virtual bool updateAccountDetailField(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &fieldName, const AccountDetailField &details) = 0;
-        virtual bool removeAccountDetailField(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &fieldName) = 0;
+        virtual UpdateAccountDetailFieldResult updateAccountDetailField(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &fieldName, const AccountDetailField &details) = 0;
+        virtual RemoveAccountDetailFieldResult removeAccountDetailField(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &fieldName) = 0;
         virtual std::map<std::string, AccountDetailField> listAccountDetailFields() = 0;
         virtual std::optional<AccountDetailField> getAccountDetailField(const std::string &fieldName) = 0;
 
@@ -129,8 +151,8 @@ public:
         virtual bool removeAccountDetail(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountUUID, const std::string &fieldName) = 0;
 
         virtual std::map<std::string, AccountDetailFieldValue> getAccountDetailFieldValues(const std::string &accountUUID, const AccountDetailsToShow &detailsToShow = AccountDetailsToShow::ALL) = 0;
-        virtual bool updateAccountDetailFieldValues(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountUUID,
-                                                    const std::list<AccountDetailFieldValue> &fieldValues, bool isAdmin)
+        virtual UpdateAccountDetailFieldValuesResult updateAccountDetailFieldValues(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountUUID,
+                                                     const std::map<std::string, std::string> &fieldValues, bool isAdmin)
             = 0;
 
     private:
