@@ -176,10 +176,10 @@ public:
             }
             void fromJSON(const json &r)
             {
-                description = JSON_ASSTRING(r, "description", "");
-                parentActivity = JSON_ASSTRING(r, "parentActivity", "");
-                defaultSchemeDescription = JSON_ASSTRING(r, "defaultSchemeDescription", "");
-                defaultSchemeID = JSON_ASUINT(r, "defaultSchemeID", -1);
+                description = Helpers::JSON::ASSTRING(r, "description", "");
+                parentActivity = Helpers::JSON::ASSTRING(r, "parentActivity", "");
+                defaultSchemeDescription = Helpers::JSON::ASSTRING(r, "defaultSchemeDescription", "");
+                defaultSchemeID = Helpers::JSON::ASUINT(r, "defaultSchemeID", -1);
             }
 
             std::string description;
@@ -474,12 +474,12 @@ public:
 
             void fromJSON(const Json::Value &root)
             {
-                canAdminModifyApplicationSecurityContext = JSON_ASBOOL(root, "canAdminModifyApplicationSecurityContext", false);
-                canUserAutoRegister = JSON_ASBOOL(root, "canUserAutoRegister", false);
-                appSyncEnabled = JSON_ASBOOL(root, "appSyncEnabled", false);
-                useEmbeddedAuthentication = JSON_ASBOOL(root, "useEmbeddedAuthentication", false);
-                appSyncCanRetrieveAppAccountsList = JSON_ASBOOL(root, "appSyncCanRetrieveAppAccountsList", false);
-                allowKeepMeSignedIn = JSON_ASBOOL(root, "allowKeepMeSignedIn", false);
+                canAdminModifyApplicationSecurityContext = Helpers::JSON::ASBOOL(root, "canAdminModifyApplicationSecurityContext", false);
+                canUserAutoRegister = Helpers::JSON::ASBOOL(root, "canUserAutoRegister", false);
+                appSyncEnabled = Helpers::JSON::ASBOOL(root, "appSyncEnabled", false);
+                useEmbeddedAuthentication = Helpers::JSON::ASBOOL(root, "useEmbeddedAuthentication", false);
+                appSyncCanRetrieveAppAccountsList = Helpers::JSON::ASBOOL(root, "appSyncCanRetrieveAppAccountsList", false);
+                allowKeepMeSignedIn = Helpers::JSON::ASBOOL(root, "allowKeepMeSignedIn", false);
             }
 
             [[nodiscard]] std::string toString() const

@@ -76,7 +76,7 @@ struct ApplicationTokenProperties
     }
     std::optional<AppError> fromJSON(const Json::Value &root)
     {
-        appName = JSON_ASSTRING(root, "appName", "");
+        appName = Mantids30::Helpers::JSON::ASSTRING(root, "appName", "");
         if (appName.empty())
         {
             AppError error;
@@ -86,12 +86,12 @@ struct ApplicationTokenProperties
             return error;
         }
 
-        sessionInactivityTimeout = JSON_ASUINT(root, "sessionInactivityTimeout", 0);
-        signAlgorithm = JSON_ASSTRING(root, "tokenType", "");
-        allowRefreshTokenRenovation = JSON_ASBOOL(root, "allowRefreshTokenRenovation", false);
-        includeApplicationScopes = JSON_ASBOOL(root, "includeApplicationScopes", false);
-        includeBasicAccountInfo = JSON_ASBOOL(root, "includeBasicAccountInfo", false);
-        maintainRevocationAndLogoutInfo = JSON_ASBOOL(root, "maintainRevocationAndLogoutInfo", false);
+        sessionInactivityTimeout = Mantids30::Helpers::JSON::ASUINT(root, "sessionInactivityTimeout", 0);
+        signAlgorithm = Mantids30::Helpers::JSON::ASSTRING(root, "tokenType", "");
+        allowRefreshTokenRenovation = Mantids30::Helpers::JSON::ASBOOL(root, "allowRefreshTokenRenovation", false);
+        includeApplicationScopes = Mantids30::Helpers::JSON::ASBOOL(root, "includeApplicationScopes", false);
+        includeBasicAccountInfo = Mantids30::Helpers::JSON::ASBOOL(root, "includeBasicAccountInfo", false);
+        maintainRevocationAndLogoutInfo = Mantids30::Helpers::JSON::ASBOOL(root, "maintainRevocationAndLogoutInfo", false);
         tokensConfiguration = root["tokensConfiguration"];
 
         return std::nullopt;
