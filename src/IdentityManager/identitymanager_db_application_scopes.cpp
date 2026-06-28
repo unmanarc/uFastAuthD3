@@ -223,16 +223,16 @@ Json::Value IdentityManager_DB::AuthController_DB::searchApplicationScopes(const
     // DataTables:
     ret["draw"] = dataTablesFilters["draw"];
 
-    std::string appName = JSON_ASSTRING(dataTablesFilters, "appName", "");
+    std::string appName = Helpers::JSON::ASSTRING(dataTablesFilters, "appName", "");
 
-    uint64_t offset = JSON_ASUINT64(dataTablesFilters, "start", 0);
-    uint64_t limit = JSON_ASUINT64(dataTablesFilters, "length", 0);
+    uint64_t offset = Helpers::JSON::ASUINT64(dataTablesFilters, "start", 0);
+    uint64_t limit = Helpers::JSON::ASUINT64(dataTablesFilters, "length", 0);
 
     // Manejo de ordenamiento (order)
     std::string orderByStatement = Helpers::DataTables::getOrderByStatement(dataTablesFilters);
 
     // Extract the search value from dataTablesFilters
-    std::string searchValue = JSON_ASSTRING(dataTablesFilters["search"], "value", "");
+    std::string searchValue = Helpers::JSON::ASSTRING(dataTablesFilters["search"], "value", "");
     std::string whereFilters;
 
     // Build the SQL query with WHERE clause for DataTables search

@@ -111,10 +111,10 @@ Json::Value IdentityManager_DB::AuthController_DB::searchAccountCredentialsActiv
     Threads::Sync::Lock_RD lock(_parent->m_mutex);
 
     ret["draw"] = dataTablesFilters["draw"];
-    uint64_t offset = JSON_ASUINT64(dataTablesFilters, "start", 0);
-    uint64_t limit = JSON_ASUINT64(dataTablesFilters, "length", 0);
+    uint64_t offset = Helpers::JSON::ASUINT64(dataTablesFilters, "start", 0);
+    uint64_t limit = Helpers::JSON::ASUINT64(dataTablesFilters, "length", 0);
     std::string orderByStatement = Helpers::DataTables::getOrderByStatement(dataTablesFilters);
-    std::string searchValue = JSON_ASSTRING(dataTablesFilters["search"], "value", "");
+    std::string searchValue = Helpers::JSON::ASSTRING(dataTablesFilters["search"], "value", "");
 
     std::string whereFilters = "`f_accountUUID` = :ACCOUNTNAME";
 

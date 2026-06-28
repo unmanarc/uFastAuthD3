@@ -324,14 +324,14 @@ Json::Value IdentityManager_DB::Accounts_DB::searchFields(const json &dataTables
     // DataTables:
     ret["draw"] = dataTablesFilters["draw"];
 
-    uint64_t offset = JSON_ASUINT64(dataTablesFilters, "start", 0);
-    uint64_t limit = JSON_ASUINT64(dataTablesFilters, "length", 0);
+    uint64_t offset = Helpers::JSON::ASUINT64(dataTablesFilters, "start", 0);
+    uint64_t limit = Helpers::JSON::ASUINT64(dataTablesFilters, "length", 0);
 
     // Manejo de ordenamiento (order);
     std::string orderByStatement = Helpers::DataTables::getOrderByStatement(dataTablesFilters);
 
     // Extract the search value from dataTablesFilters
-    std::string searchValue = JSON_ASSTRING(dataTablesFilters["search"], "value", "");
+    std::string searchValue = Helpers::JSON::ASSTRING(dataTablesFilters["search"], "value", "");
     std::string whereFilters;
 
     // Build the SQL query with WHERE clause for DataTables search
@@ -401,14 +401,14 @@ Json::Value IdentityManager_DB::Accounts_DB::searchAccounts(const json &dataTabl
     // DataTables:
     ret["draw"] = dataTablesFilters["draw"];
 
-    uint64_t offset = JSON_ASUINT64(dataTablesFilters, "start", 0);
-    uint64_t limit = JSON_ASUINT64(dataTablesFilters, "length", 0);
+    uint64_t offset = Helpers::JSON::ASUINT64(dataTablesFilters, "start", 0);
+    uint64_t limit = Helpers::JSON::ASUINT64(dataTablesFilters, "length", 0);
 
     // Manejo de ordenamiento (order)
     std::string orderByStatement = Helpers::DataTables::getOrderByStatement(dataTablesFilters);
 
     // Extract the search value from dataTablesFilters
-    std::string searchValue = JSON_ASSTRING(dataTablesFilters["search"], "value", "");
+    std::string searchValue = Helpers::JSON::ASSTRING(dataTablesFilters["search"], "value", "");
     std::string whereFilters;
 
     // Build the SQL query with WHERE clause for DataTables search
@@ -1033,16 +1033,16 @@ std::map<std::string, AccountDetailFieldValue> IdentityManager_DB::Accounts_DB::
             switch (detailsToShow)
             {
             case AccountDetailsToShow::SEARCH:
-                visible = JSON_ASBOOL(extendedAttributes["visibility"], "includeInSearch", false);
+                visible = Helpers::JSON::ASBOOL(extendedAttributes["visibility"], "includeInSearch", false);
                 break;
             case AccountDetailsToShow::COLUMNVIEW:
-                visible = JSON_ASBOOL(extendedAttributes["visibility"], "includeInColumnView", false);
+                visible = Helpers::JSON::ASBOOL(extendedAttributes["visibility"], "includeInColumnView", false);
                 break;
             case AccountDetailsToShow::TOKEN:
-                visible = JSON_ASBOOL(extendedAttributes["visibility"], "includeInToken", false);
+                visible = Helpers::JSON::ASBOOL(extendedAttributes["visibility"], "includeInToken", false);
                 break;
             case AccountDetailsToShow::APISYNC:
-                visible = JSON_ASBOOL(extendedAttributes["visibility"], "includeInAPISync", false);
+                visible = Helpers::JSON::ASBOOL(extendedAttributes["visibility"], "includeInAPISync", false);
                 break;
             case AccountDetailsToShow::ALL:
             default:
@@ -1051,7 +1051,7 @@ std::map<std::string, AccountDetailFieldValue> IdentityManager_DB::Accounts_DB::
                 break;
             }
 
-            visible &= JSON_ASBOOL(extendedAttributes["security"], "canUserView", false);
+            visible &= Helpers::JSON::ASBOOL(extendedAttributes["security"], "canUserView", false);
 
             if (visible)
             {
@@ -1059,7 +1059,7 @@ std::map<std::string, AccountDetailFieldValue> IdentityManager_DB::Accounts_DB::
                 field.name = fieldName.getValue();
                 field.description = fieldDescription.getValue();
                 field.fieldType = fieldType.getValue();
-                field.fieldRegexpValidator = JSON_ASSTRING(extendedAttributes["behavior"], "regexpValidator", ""); // TODO: remover esta linea
+                field.fieldRegexpValidator = Helpers::JSON::ASSTRING(extendedAttributes["behavior"], "regexpValidator", ""); // TODO: remover esta linea
                 field.extendedAttribs = extendedAttributes;
 
                 if (value.isNull())
