@@ -91,7 +91,7 @@ public:
 
         // Account Details:
         virtual std::optional<AccountDetails> getAccountDetails(const std::string &accountUUID, const AccountDetailsToShow &detailsToShow) = 0;
-        virtual Json::Value searchAccounts(const json &dataTablesFilters) = 0;
+        virtual Json::Value searchAccounts(const Json::Value &dataTablesFilters) = 0;
 
         // Account Expiration:
         virtual bool changeAccountExpiration(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountUUID, time_t expiration = 0) = 0;
@@ -120,7 +120,7 @@ public:
         virtual std::map<std::string, AccountDetailField> listAccountDetailFields() = 0;
         virtual std::optional<AccountDetailField> getAccountDetailField(const std::string &fieldName) = 0;
 
-        virtual Json::Value searchFields(const json &dataTablesFilters) = 0;
+        virtual Json::Value searchFields(const Json::Value &dataTablesFilters) = 0;
 
         // Account Details
         virtual bool changeAccountDetails(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountUUID, const std::map<std::string, std::string> &fieldsValues,
@@ -157,7 +157,7 @@ public:
         virtual std::string getApplicationRoleDescription(const std::string &appName, const std::string &roleName) = 0;
         virtual std::set<ApplicationRole> getApplicationRolesList(const std::string &appName) = 0;
         virtual std::set<std::string> getApplicationRoleAccounts(const std::string &appName, const std::string &roleName, bool lock = true) = 0;
-        virtual Json::Value searchApplicationRoles(const json &dataTablesFilters) = 0;
+        virtual Json::Value searchApplicationRoles(const Json::Value &dataTablesFilters) = 0;
     };
 
     class ApplicationActivities
@@ -165,16 +165,16 @@ public:
     public:
         struct ActivityData
         {
-            [[nodiscard]] json toJSON() const
+            [[nodiscard]] Json::Value toJSON() const
             {
-                json r;
+                Json::Value r;
                 r["description"] = description;
                 r["parentActivity"] = parentActivity;
                 r["defaultSchemeDescription"] = defaultSchemeDescription;
                 r["defaultSchemeID"] = defaultSchemeID;
                 return r;
             }
-            void fromJSON(const json &r)
+            void fromJSON(const Json::Value &r)
             {
                 description = Helpers::JSON::ASSTRING(r, "description", "");
                 parentActivity = Helpers::JSON::ASSTRING(r, "parentActivity", "");
@@ -250,7 +250,7 @@ public:
     private:
         IdentityManager *m_parent;
         Mantids30::Threads::GarbageCollector m_authLogGC;
-        static json authSlotsToJSON(const std::vector<AuthenticationSchemeUsedSlot> &authSlots);
+        static Json::Value authSlotsToJSON(const std::vector<AuthenticationSchemeUsedSlot> &authSlots);
         void updateCredentialAuthStatus(const AuthenticationResult &authResult, const std::string &accountUUID, const Credential &storedCredentialData, const uint32_t &slotId,
                                         const ClientDetails &clientDetails);
 
@@ -300,7 +300,7 @@ public:
         virtual std::set<ApplicationScope> listApplicationScopes(const std::string &applicationName = "") = 0;
         virtual std::set<std::string> getApplicationRolesForScope(const ApplicationScope &applicationScope, bool lock = true) = 0;
         virtual std::set<std::string> listAccountsOnApplicationScope(const ApplicationScope &applicationScope, bool lock = true) = 0;
-        virtual Json::Value searchApplicationScopes(const json &dataTablesFilters) = 0;
+        virtual Json::Value searchApplicationScopes(const Json::Value &dataTablesFilters) = 0;
         virtual bool validateAccountDirectApplicationScope(const std::string &accountUUID, const ApplicationScope &applicationScope) = 0;
 
         // Account bad attempts for pass slot id...
@@ -331,8 +331,8 @@ public:
 
         virtual uint32_t getAccountActiveSessionsCount(const std::string &accountUUID) = 0;
         virtual std::pair<uint32_t, uint32_t> getAccountActiveCredentialsCount(const std::string &accountUUID) = 0;
-        virtual Json::Value searchAccountSessions(const std::string &accountUUID, const json &dataTablesFilters) = 0;
-        virtual Json::Value searchAccountCredentialsActivity(const std::string &accountUUID, const json &dataTablesFilters) = 0;
+        virtual Json::Value searchAccountSessions(const std::string &accountUUID, const Json::Value &dataTablesFilters) = 0;
+        virtual Json::Value searchAccountCredentialsActivity(const std::string &accountUUID, const Json::Value &dataTablesFilters) = 0;
 
         // Application Auth Log - Logout and Token tracking:
         virtual bool updateApplicationAuthLogAccessTokenId(const std::string &accountUUID, const std::string &appName, const std::string &refresherTokenId, const std::string &accessTokenId,
@@ -450,9 +450,9 @@ public:
          * @param app The name of the application.
          * @param activity The name of the activity within the application.
          * @param accountUUID account ID or user string.
-         * @return json A JSON object containing the applicable authentication schemes, their details, and the default scheme.
+         * @return Json::Value A JSON object containing the applicable authentication schemes, their details, and the default scheme.
          */
-        json getApplicableAuthenticationSchemesForAccount(const std::string &app, const std::string &activity, const std::string &accountUUID, const std::set<uint32_t> &alreadyAuthenticatedSlots);
+        Json::Value getApplicableAuthenticationSchemesForAccount(const std::string &app, const std::string &activity, const std::string &accountUUID, const std::set<uint32_t> &alreadyAuthenticatedSlots);
     };
     class Applications
     {
@@ -523,7 +523,7 @@ public:
         virtual bool addAccountToApplication(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &accountUUID) = 0;
         virtual bool removeAccountFromApplication(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &accountUUID) = 0;
         virtual bool changeApplicationAdmin(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &accountUUID, bool isAppAdmin) = 0;
-        virtual Json::Value searchApplications(const json &dataTablesFilters) = 0;
+        virtual Json::Value searchApplications(const Json::Value &dataTablesFilters) = 0;
 
         virtual std::vector<AccountApplicationInfo> listAccountApplicationsFullInfo(const std::string &accountUUID) = 0;
 

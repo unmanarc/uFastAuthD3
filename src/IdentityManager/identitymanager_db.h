@@ -61,7 +61,7 @@ public:
         time_t getAccountCreationTime(const std::string &accountUUID) override;
 
         // Account Listing/Search
-        Json::Value searchAccounts(const json &dataTablesFilters) override;
+        Json::Value searchAccounts(const Json::Value &dataTablesFilters) override;
         std::set<std::string> listAccounts() override;
         std::set<std::string> listAdminAccounts() override;
         std::optional<std::string> getAccountUUIDByAccountName(const std::string &accountName) override;
@@ -87,7 +87,7 @@ public:
         bool removeAccountDetailField(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &fieldName) override;
         std::map<std::string, AccountDetailField> listAccountDetailFields() override;
         std::optional<AccountDetailField> getAccountDetailField(const std::string &fieldName) override;
-        Json::Value searchFields(const json &dataTablesFilters) override;
+        Json::Value searchFields(const Json::Value &dataTablesFilters) override;
 
         // Account Detail Value Operations
         bool changeAccountDetails(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountUUID, const std::map<std::string, std::string> &fieldsValues,
@@ -133,7 +133,7 @@ public:
         std::string getApplicationRoleDescription(const std::string &appName, const std::string &roleName) override;
         std::set<ApplicationRole> getApplicationRolesList(const std::string &appName) override;
         std::set<std::string> getApplicationRoleAccounts(const std::string &appName, const std::string &roleName, bool lock = true) override;
-        Json::Value searchApplicationRoles(const json &dataTablesFilters) override;
+        Json::Value searchApplicationRoles(const Json::Value &dataTablesFilters) override;
 
     private:
         IdentityManager_DB *_parent;
@@ -198,7 +198,7 @@ public:
 
         // Session Handling
         void markExpiredAuthLogSessions() override;
-        Json::Value searchAccountSessions(const std::string &accountUUID, const json &dataTablesFilters) override;
+        Json::Value searchAccountSessions(const std::string &accountUUID, const Json::Value &dataTablesFilters) override;
         void insertApplicationAccountAccessAuthLog(const std::string &accountUUID, const std::string &appName, const uint32_t &schemeId, const ClientDetails &clientDetails,
                                                    const std::string &refresherTokenId, const std::string &accessTokenId, const time_t &accessTokenExpiration,
                                                    const time_t &refreshTokenExpiration) override;
@@ -224,7 +224,7 @@ public:
         std::set<ApplicationScope> listApplicationScopes(const std::string &applicationName = "") override;
         std::set<std::string> getApplicationRolesForScope(const ApplicationScope &applicationScope, bool lock = true) override;
         std::set<std::string> listAccountsOnApplicationScope(const ApplicationScope &applicationScope, bool lock = true) override;
-        Json::Value searchApplicationScopes(const json &dataTablesFilters) override;
+        Json::Value searchApplicationScopes(const Json::Value &dataTablesFilters) override;
         bool validateAccountDirectApplicationScope(const std::string &accountUUID, const ApplicationScope &applicationScope) override;
 
         // Sessions:
@@ -254,7 +254,7 @@ public:
         std::set<uint32_t> listUsedAuthenticationSlotsOnAccount(const std::string &accountUUID) override;
         std::map<uint32_t, std::pair<bool, Credential>> listAllAuthCredentialSlotsPublicDataForAccount(const std::string &accountUUID) override;
         bool doesCredentialSlotExistOnAccount(const std::string &accountUUID, uint32_t slotId) override;
-        Json::Value searchAccountCredentialsActivity(const std::string &accountUUID, const json &dataTablesFilters) override;
+        Json::Value searchAccountCredentialsActivity(const std::string &accountUUID, const Json::Value &dataTablesFilters) override;
 
         void resetBadAttemptsOnAccountCredential(const std::string &accountUUID, const uint32_t &slotId) override;
         void incrementBadAttemptsOnAccountCredential(const std::string &accountUUID, const uint32_t &slotId) override;
@@ -323,7 +323,7 @@ public:
         bool changeApplicationAdmin(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &accountUUID, bool isAppAdmin) override;
 
         // Search
-        Json::Value searchApplications(const json &dataTablesFilters) override;
+        Json::Value searchApplications(const Json::Value &dataTablesFilters) override;
 
         // Full Account Application Info
         std::vector<AccountApplicationInfo> listAccountApplicationsFullInfo(const std::string &accountUUID) override;

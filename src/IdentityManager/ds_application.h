@@ -110,9 +110,9 @@ struct ApplicationScopeDetails
 {
     ApplicationScopeDetails() = default;
 
-    [[nodiscard]] json toJSON() const
+    [[nodiscard]] Json::Value toJSON() const
     {
-        json r;
+        Json::Value r;
         r["id"] = id;
         r["description"] = description;
         return r;

@@ -10,7 +10,7 @@ CredentialData::CredentialData(const std::string &password, const uint32_t &slot
 
 bool CredentialData::parse(const std::string &sAuth)
 {
-    json x;
+    Json::Value x;
 
     if (sAuth.empty())
     {
@@ -31,7 +31,7 @@ bool CredentialData::parse(const std::string &sAuth)
     return setJSON(x);
 }
 
-bool CredentialData::setJSON(const json &jsonObject)
+bool CredentialData::setJSON(const Json::Value &jsonObject)
 {
     if (jsonObject["pass"].isNull() || jsonObject["slotId"].isNull())
     {
@@ -44,9 +44,9 @@ bool CredentialData::setJSON(const json &jsonObject)
     return true;
 }
 
-json CredentialData::toJSON() const
+Json::Value CredentialData::toJSON() const
 {
-    json x;
+    Json::Value x;
     x["pass"] = this->m_password;
     x["slotId"] = this->m_slotId;
     return x;

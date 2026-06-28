@@ -35,9 +35,9 @@ struct ApplicationRole
 {
     bool operator<(const ApplicationRole &x) const { return ((x.appName < appName) || (x.appName == appName && x.id < id)); }
 
-    [[nodiscard]] json toJSON() const
+    [[nodiscard]] Json::Value toJSON() const
     {
-        json r;
+        Json::Value r;
         r["id"] = id;
         r["description"] = description;
         return r;
@@ -52,9 +52,9 @@ struct ApplicationScope
 {
     bool operator<(const ApplicationScope &x) const { return (x.appName < appName || (x.appName == appName && x.id < id)); }
 
-    [[nodiscard]] json toJSON() const
+    [[nodiscard]] Json::Value toJSON() const
     {
-        json r;
+        Json::Value r;
         r["id"] = id;
         r["description"] = description;
         return r;

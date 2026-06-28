@@ -36,13 +36,13 @@ public:
      * @param jsonObject The JSON object containing the authentication data.
      * @return true if the deserialization was successful, false otherwise.
      */
-    bool setJSON(const json &jsonObject);
+    bool setJSON(const Json::Value &jsonObject);
 
     /**
      * @brief Serializes authentication data to a JSON object.
      * @return A JSON object containing the authentication data.
      */
-    [[nodiscard]] json toJSON() const;
+    [[nodiscard]] Json::Value toJSON() const;
 
 public:
     std::string m_password;

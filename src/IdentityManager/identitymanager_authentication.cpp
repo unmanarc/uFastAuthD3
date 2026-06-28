@@ -9,9 +9,9 @@
 
 using namespace Mantids30;
 
-json IdentityManager::AuthController::authSlotsToJSON(const std::vector<AuthenticationSchemeUsedSlot> &authSlots)
+Json::Value IdentityManager::AuthController::authSlotsToJSON(const std::vector<AuthenticationSchemeUsedSlot> &authSlots)
 {
-    json r;
+    Json::Value r;
     int i = 0;
     for (const AuthenticationSchemeUsedSlot &slot : authSlots)
     {
@@ -418,13 +418,13 @@ Credential IdentityManager::AuthController::createNewCredential(const uint32_t &
     return r;
 }
 
-json IdentityManager::AuthController::getApplicableAuthenticationSchemesForAccount(const std::string &app, const std::string &activity, const std::string &accountUUID,
+Json::Value IdentityManager::AuthController::getApplicableAuthenticationSchemesForAccount(const std::string &app, const std::string &activity, const std::string &accountUUID,
                                                                                    const std::set<uint32_t> &alreadyAuthenticatedSlots)
 {
     Threads::Sync::Lock_RD lock(m_parent->m_mutex);
 
     // Initialize the result JSON
-    json r;
+    Json::Value r;
     r["defaultScheme"] = Json::nullValue;
     r["availableSchemes"] = Json::objectValue;
 
@@ -443,7 +443,7 @@ json IdentityManager::AuthController::getApplicableAuthenticationSchemesForAccou
             r["defaultScheme"] = std::to_string(*defaultSchemeId);
 
             // Create the scheme as a properly structured object
-            json currentScheme;
+            Json::Value currentScheme;
             currentScheme["description"] = allSchemes[*defaultSchemeId];
 
             // Find the first available slot for this scheme

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "json/value.h"
 #include <Mantids30/Helpers/json.h>
 #include <ctime>
 #include <optional>
@@ -64,7 +65,7 @@ struct AccountDetailField
     bool isOptionalField = true;
     bool isUnique = false;
     bool isLoginIdentifier = false;
-    json extendedAttributes;
+    Json::Value extendedAttributes;
 
     [[nodiscard]] std::string getRegexpValidatorText() const { return Mantids30::Helpers::JSON::ASSTRING(extendedAttributes["behavior"], "regexpValidator", ""); }
 
@@ -140,7 +141,7 @@ struct AccountDetails
     {
         Json::Value r;
 
-        r["fields"] = json::null;
+        r["fields"] = Json::nullValue;
         for (const auto &i : fields)
         {
             r["fields"][i.first] = i.second.toJSON();
@@ -168,7 +169,11 @@ struct AccountDetails
         accountUUID = Mantids30::Helpers::JSON::ASSTRING(r, "accountUUID", "");
         creator = Mantids30::Helpers::JSON::ASSTRING(r, "creator", "");
         accountFlags.fromJSON(r["accountFlags"]);
-        expirationDate = Mantids30::Helpers::JSON::ASUINT64(r, "expirationDate", 0);
+        expirationDate = Mantids30::Helpers::JSON::ASINT64(r, "expirationDate", 0);
+        if (expirationDate<0)
+        {
+            expirationDate=0;
+        }
         expired = std::time(nullptr) > expirationDate;
     }
 };

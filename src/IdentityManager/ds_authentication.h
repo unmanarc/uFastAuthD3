@@ -93,7 +93,7 @@ struct AuthenticationPolicy
 
 struct AuthenticationSlotDetails
 {
-    void fromJSON(const json &j)
+    void fromJSON(const Json::Value &j)
     {
         passwordFunction = toHashFunction(Mantids30::Helpers::JSON::ASUINT(j, "passwordFunction", 500));
         description = Mantids30::Helpers::JSON::ASSTRING(j, "description", "");
@@ -103,9 +103,9 @@ struct AuthenticationSlotDetails
         canSkipWhenExpired = Mantids30::Helpers::JSON::ASBOOL(j, "canSkipWhenExpired", false);
     }
 
-    [[nodiscard]] json toJSON() const
+    [[nodiscard]] Json::Value toJSON() const
     {
-        json jRet;
+        Json::Value jRet;
         jRet["description"] = description;
         jRet["defaultExpirationSeconds"] = defaultExpirationSeconds;
         jRet["strengthJSONValidator"] = strengthJSONValidator;
@@ -148,14 +148,14 @@ struct AuthenticationSlotDetails
 
 struct Credential
 {
-    static Credential createFromJSON(const json &j)
+    static Credential createFromJSON(const Json::Value &j)
     {
         Credential c;
         c.fromJSON(j);
         return c;
     }
 
-    void fromJSON(const json &j)
+    void fromJSON(const Json::Value &j)
     {
         slotDetails.fromJSON(j["slotDetails"]);
         mustChange = Mantids30::Helpers::JSON::ASBOOL(j, "mustChange", true);
@@ -166,9 +166,9 @@ struct Credential
         Mantids30::Helpers::Encoders::fromHex(Mantids30::Helpers::JSON::ASSTRING(j, "ssalt", "FFFFFFFF"), ssalt, 4);
     }
 
-    [[nodiscard]] json toJSON(const AuthenticationPolicy &authPolicy) const
+    [[nodiscard]] Json::Value toJSON(const AuthenticationPolicy &authPolicy) const
     {
-        json jRet;
+        Json::Value jRet;
         jRet["hash"] = hash;
         jRet["isLocked"] = isLocked;
         jRet["mustChange"] = mustChange;
@@ -324,11 +324,11 @@ struct AuthenticationSchemeUsedSlot
 
     /**
      * @brief Converts the object to a JSON representation.
-     * @return json The JSON object representing this structure.
+     * @return Json::Value The JSON object representing this structure.
      */
-    [[nodiscard]] json toJSON() const
+    [[nodiscard]] Json::Value toJSON() const
     {
-        json r;
+        Json::Value r;
         r["slotId"] = slotId;
         r["orderPriority"] = orderPriority;
         r["optional"] = optional;
@@ -341,7 +341,7 @@ struct AuthenticationSchemeUsedSlot
      * @param j The JSON object to populate the data from.
      * @return AuthenticationSchemeUsedSlot The populated object.
      */
-    void fromJSON(const json &j)
+    void fromJSON(const Json::Value &j)
     {
         slotId = Mantids30::Helpers::JSON::ASUINT(j, "slotId", 0);
         orderPriority = Mantids30::Helpers::JSON::ASUINT(j, "orderPriority", 0);
