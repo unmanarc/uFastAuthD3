@@ -91,7 +91,7 @@ API::APIReturn AdminPortal_Endpoints_ApplicationRoles::getRoleInfo(void *context
 {
     API::APIReturn response;
 
-    json payloadOut;
+    Json::Value payloadOut;
     std::string appName = Helpers::JSON::ASSTRING(*request.inputJSON, "appName", "");
     std::string roleName = Helpers::JSON::ASSTRING(*request.inputJSON, "roleName", "");
 

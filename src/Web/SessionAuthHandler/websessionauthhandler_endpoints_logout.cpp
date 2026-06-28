@@ -112,7 +112,7 @@ WebSessionAuthHandler_Endpoints::APIReturn WebSessionAuthHandler_Endpoints::getL
         return {HTTP::Status::Code::S_401_UNAUTHORIZED, "invalid_app", "Internal Error While reading the APP Attributes."};
     }
 
-    json payloadOut;
+    Json::Value payloadOut;
 
     //  Configuration parameters:
     boost::property_tree::ptree config = Globals::pConfig;

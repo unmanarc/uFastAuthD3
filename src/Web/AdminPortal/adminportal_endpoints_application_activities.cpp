@@ -201,7 +201,7 @@ API::APIReturn AdminPortal_Endpoints_ApplicationActivities::getActivityInfo(void
     (*response.responseJSON())["allActivities"] = Json::arrayValue;
     for (const auto &activity : activities)
     {
-        json jActivity;
+        Json::Value jActivity;
         jActivity["name"] = activity.first;
         (*response.responseJSON())["allActivities"].append(jActivity);
     }
@@ -217,7 +217,7 @@ API::APIReturn AdminPortal_Endpoints_ApplicationActivities::getActivityInfo(void
 
     for (const auto &scheme : allSchemes)
     {
-        json jScheme;
+        Json::Value jScheme;
         jScheme["id"] = scheme.first;
         jScheme["name"] = scheme.second;
 

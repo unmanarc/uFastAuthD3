@@ -157,7 +157,7 @@ API::APIReturn AdminPortal_Endpoints_Applications::getApplicationInfo(void *cont
 {
     API::APIReturn response;
 
-    json payloadOut;
+    Json::Value payloadOut;
     std::string appName = Helpers::JSON::ASSTRING(*request.inputJSON, "appName", "");
 
     if (appName.empty())
@@ -395,9 +395,9 @@ AdminPortal_Endpoints_Applications::APIReturn AdminPortal_Endpoints_Applications
     return response;
 }
 
-json AdminPortal_Endpoints_Applications::getLoginFlowDetails(const std::string &appName)
+Json::Value AdminPortal_Endpoints_Applications::getLoginFlowDetails(const std::string &appName)
 {
-    json payloadOut;
+    Json::Value payloadOut;
 
     std::set<std::string> webLoginOrigins = Globals::getIdentityManager()->applications->listWebLoginOriginUrlsFromApplication(appName);
     std::set<std::string> acceptedRedirectURIs = Globals::getIdentityManager()->applications->listWebLoginAllowedRedirectURIsFromApplication(appName);
@@ -419,9 +419,9 @@ json AdminPortal_Endpoints_Applications::getLoginFlowDetails(const std::string &
     return payloadOut;
 }
 
-json AdminPortal_Endpoints_Applications::getApplicationAccountDetails(const std::string &appName)
+Json::Value AdminPortal_Endpoints_Applications::getApplicationAccountDetails(const std::string &appName)
 {
-    json payloadOut;
+    Json::Value payloadOut;
     std::set<std::string> acctList = Globals::getIdentityManager()->applications->listApplicationAccounts(appName);
     std::set<std::string> appAdmins = Globals::getIdentityManager()->applications->listApplicationAdmins(appName);
     uint32_t i = 0;

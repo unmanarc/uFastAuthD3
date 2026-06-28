@@ -24,7 +24,7 @@ void AdminPortal_Endpoints_AccountCredentials::addEndpoints_AccountCredentials(c
 API::APIReturn AdminPortal_Endpoints_AccountCredentials::getAccountCredentialSlots(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
-    json jResponse;
+    Json::Value jResponse;
 
     // Extract and validate input
     std::string accountUUID = Helpers::JSON::ASSTRING(*request.inputJSON, "accountUUID", "");
@@ -45,7 +45,7 @@ API::APIReturn AdminPortal_Endpoints_AccountCredentials::getAccountCredentialSlo
 
     for (const auto &slot : allSlots)
     {
-        json rSlot;
+        Json::Value rSlot;
         rSlot["slotId"] = slot.first;
         rSlot["slotInfo"] = slot.second.toJSON();
         rSlot["slotData"] = Json::nullValue;

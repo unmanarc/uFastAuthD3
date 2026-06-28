@@ -36,6 +36,6 @@ public:
     static void addEndpoints(const std::shared_ptr<Endpoints> &endpoints);
 
     // Helpers:
-    static json scopeListToJSON(const std::set<ApplicationScope> &scopes);
+    static Json::Value scopeListToJSON(const std::set<ApplicationScope> &scopes);
     static std::set<ApplicationScope> iScopesLeftListForRole(const std::string &appName, const std::string &roleName);
 };

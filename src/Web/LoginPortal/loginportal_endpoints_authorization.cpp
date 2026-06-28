@@ -24,7 +24,7 @@ using namespace Mantids30::DataFormat;
 // Validate user and get authorization flow:
 API::APIReturn LoginPortal_Endpoints::preAuthorize(void *context, const API::RESTful::RequestContext &request, ClientDetails &authClientDetails)
 {
-    json r;
+    Json::Value r;
     API::APIReturn response;
     // Environment:
     IdentityManager *identityManager = Globals::getIdentityManager();
@@ -150,7 +150,7 @@ void LoginPortal_Endpoints::issueTransientAuthTokenResponse(const RequestContext
         // We can give the credential public data for the next credential:
         Credential credentialPublicData = identityManager->authController->getAccountCredentialPublicData(authContext->accountUUID, nextSlotId.value());
 
-        json nextSlot;
+        Json::Value nextSlot;
         nextSlot["slotId"] = nextSlotId.value();
         nextSlot["details"] = credentialPublicData.slotDetails.toJSON();
 

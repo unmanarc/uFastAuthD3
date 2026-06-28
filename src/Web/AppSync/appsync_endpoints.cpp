@@ -37,7 +37,7 @@ void AppSync_Endpoints::addAPIEndpoints(const std::shared_ptr<Endpoints> &endpoi
     //    endpoints->addEndpoint(HTTP::Method::POST, "getApplicationJWTSigningKey", SecurityRequirements::NONE, {}, nullptr, &getApplicationJWTSigningKey);
 }
 
-void AppSync_Endpoints::updateAppScopes(const std::string &appName, const std::string &ipAddress, const json &proposedScopes)
+void AppSync_Endpoints::updateAppScopes(const std::string &appName, const std::string &ipAddress, const Json::Value &proposedScopes)
 {
     ClientDetails clientDetails;
     clientDetails.ipAddress = ipAddress;
@@ -48,7 +48,7 @@ void AppSync_Endpoints::updateAppScopes(const std::string &appName, const std::s
     if (proposedScopes.isArray())
     {
         std::set<std::string> proposedScopeIds;
-        for (const json &scope : proposedScopes)
+        for (const Json::Value &scope : proposedScopes)
         {
             std::string id = Helpers::JSON::ASSTRING(scope, "id", "");
             if (!id.empty())
@@ -91,7 +91,7 @@ void AppSync_Endpoints::updateAppScopes(const std::string &appName, const std::s
     }
 }
 
-void AppSync_Endpoints::updateAppRoles(const std::string &appName, const std::string &ipAddress, const json &proposedRoles)
+void AppSync_Endpoints::updateAppRoles(const std::string &appName, const std::string &ipAddress, const Json::Value &proposedRoles)
 {
     ClientDetails clientDetails;
     clientDetails.ipAddress = ipAddress;
@@ -105,7 +105,7 @@ void AppSync_Endpoints::updateAppRoles(const std::string &appName, const std::st
     if (proposedRoles.isArray())
     {
         std::set<std::string> proposedRoleIds;
-        for (const json &role : proposedRoles)
+        for (const Json::Value &role : proposedRoles)
         {
             std::string id = Helpers::JSON::ASSTRING(role, "id", "");
             if (id.empty())
@@ -162,7 +162,7 @@ void AppSync_Endpoints::updateAppRoles(const std::string &appName, const std::st
 
             // Collect proposed scope IDs
             std::set<std::string> proposedScopeIds;
-            for (const json &scope : roleScopes)
+            for (const Json::Value &scope : roleScopes)
             {
                 std::string scopeId = scope.asString();
                 if (!scopeId.empty())
@@ -197,7 +197,7 @@ void AppSync_Endpoints::updateAppRoles(const std::string &appName, const std::st
     }
 }
 
-void AppSync_Endpoints::updateAppActivities(const std::string &appName, const std::string &ipAddress, const json &proposedActivities)
+void AppSync_Endpoints::updateAppActivities(const std::string &appName, const std::string &ipAddress, const Json::Value &proposedActivities)
 {
     ClientDetails clientDetails;
     clientDetails.ipAddress = ipAddress;
@@ -209,7 +209,7 @@ void AppSync_Endpoints::updateAppActivities(const std::string &appName, const st
     {
         std::set<std::string> proposedActivityNames;
 
-        for (const json &act : proposedActivities)
+        for (const Json::Value &act : proposedActivities)
         {
             std::string name = Helpers::JSON::ASSTRING(act, "id", "");
             if (name.empty())

@@ -214,7 +214,7 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::searchAccountSessions(void
     return Globals::getIdentityManager()->authController->searchAccountSessions(accountUUID, *request.inputJSON);
 }
 
-json getLastLoginJSON(const RequestContext &request)
+Json::Value getLastLoginJSON(const RequestContext &request)
 {
     Json::Value result;
 

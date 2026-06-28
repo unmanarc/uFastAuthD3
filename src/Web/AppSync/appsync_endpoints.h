@@ -31,9 +31,9 @@ public:
     static APIReturn updateAccessControlContext(void *context, const RequestContext &request, ClientDetails &authClientDetails);
 
     /////////////////////////////////
-    static void updateAppScopes(const std::string &appName, const std::string &ipAddress, const json &proposedScopes);
-    static void updateAppRoles(const std::string &appName, const std::string &ipAddress, const json &proposedRoles);
-    static void updateAppActivities(const std::string &appName, const std::string &ipAddress, const json &proposedActivities);
+    static void updateAppScopes(const std::string &appName, const std::string &ipAddress, const Json::Value &proposedScopes);
+    static void updateAppRoles(const std::string &appName, const std::string &ipAddress, const Json::Value &proposedRoles);
+    static void updateAppActivities(const std::string &appName, const std::string &ipAddress, const Json::Value &proposedActivities);
 
 private:
     static AppSync_Endpoints::APIReturn validateAndFetchApplicationAttributes(const RequestContext &request, ClientDetails &authClientDetails, std::string &appName,

@@ -14,9 +14,9 @@ void AdminPortal_Endpoints::addEndpoints(const std::shared_ptr<Endpoints> &endpo
     addEndpoints_Activities(endpoints);
 }
 
-json AdminPortal_Endpoints::scopeListToJSON(const std::set<ApplicationScope> &scopes)
+Json::Value AdminPortal_Endpoints::scopeListToJSON(const std::set<ApplicationScope> &scopes)
 {
-    json x;
+    Json::Value x;
     int i = 0;
     for (const ApplicationScope &scope : scopes)
     {

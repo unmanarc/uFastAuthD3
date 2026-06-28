@@ -78,7 +78,7 @@ API::APIReturn AdminPortal_Endpoints_Accounts::createAccount(void *context, cons
     const std::string& accountUUID = _accountUUID.value();
 
     // Extract credential information from request
-    json tempCredential = (*request.inputJSON)["tempCredential"];
+    Json::Value tempCredential = (*request.inputJSON)["tempCredential"];
     std::string secretTempPass = Helpers::JSON::ASSTRING(*request.inputJSON, "secretTempPass", "");
 
     Credential newCredentialData;

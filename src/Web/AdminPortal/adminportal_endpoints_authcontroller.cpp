@@ -77,7 +77,7 @@ API::APIReturn AdminPortal_Endpoints_AuthController::listAuthenticationSchemes(v
 {
     API::APIReturn response;
     std::map<uint32_t, std::string> slots = Globals::getIdentityManager()->authController->listAuthenticationSchemes();
-    json r;
+    Json::Value r;
 
     std::optional<uint32_t> defaultScheme = Globals::getIdentityManager()->authController->getDefaultAuthScheme();
 
@@ -94,7 +94,7 @@ API::APIReturn AdminPortal_Endpoints_AuthController::listAuthenticationSchemes(v
 
     for (const auto &slot : slots)
     {
-        json rSlot;
+        Json::Value rSlot;
         rSlot["description"] = slot.second;
         rSlot["id"] = slot.first;
         r["schemes"].append(rSlot);
@@ -136,7 +136,7 @@ API::APIReturn AdminPortal_Endpoints_AuthController::listAuthenticationSlotsUsed
 
     uint32_t schemeId = Helpers::JSON::ASUINT(*request.inputJSON, "schemeId", 0);
     std::vector<AuthenticationSchemeUsedSlot> slots = Globals::getIdentityManager()->authController->listAuthenticationSlotsUsedByScheme(schemeId);
-    json r;
+    Json::Value r;
     r["leftSlots"] = Json::arrayValue;
     r["usedSlots"] = Json::arrayValue;
 
@@ -145,7 +145,7 @@ API::APIReturn AdminPortal_Endpoints_AuthController::listAuthenticationSlotsUsed
     {
         usedSlots.insert(slot.slotId);
 
-        json rSlot;
+        Json::Value rSlot;
         rSlot = slot.toJSON();
         r["usedSlots"].append(rSlot);
     }
@@ -156,7 +156,7 @@ API::APIReturn AdminPortal_Endpoints_AuthController::listAuthenticationSlotsUsed
         if (usedSlots.find(slot.first) == usedSlots.end())
         {
             // Not used, add..
-            json rSlot;
+            Json::Value rSlot;
             rSlot["slotId"] = slot.first;
             rSlot["details"] = slot.second.toJSON();
             r["leftSlots"].append(rSlot);
@@ -175,7 +175,7 @@ API::APIReturn AdminPortal_Endpoints_AuthController::updateAuthenticationSlotsUs
 
     std::list<AuthenticationSchemeUsedSlot> slotsUsedByScheme;
 
-    for (const json &jSlot : (*request.inputJSON)["authSchemeSlots"])
+    for (const Json::Value &jSlot : (*request.inputJSON)["authSchemeSlots"])
     {
         AuthenticationSchemeUsedSlot slot(0, 0, false);
         slot.fromJSON(jSlot);
@@ -194,10 +194,10 @@ API::APIReturn AdminPortal_Endpoints_AuthController::listAuthenticationSlots(voi
     API::APIReturn response;
 
     std::map<uint32_t, AuthenticationSlotDetails> slots = Globals::getIdentityManager()->authController->listAllAuthenticationSlots();
-    json r;
+    Json::Value r;
     for (const auto &slot : slots)
     {
-        json rSlot;
+        Json::Value rSlot;
         rSlot = slot.second.toJSON();
         rSlot["id"] = slot.first;
         r.append(rSlot);
