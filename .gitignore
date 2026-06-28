@@ -90,3 +90,5 @@ ltmain.sh
 
 # Documentation
 TODO.md
+^package\.json$
+^package-lock\.json$
