@@ -68,7 +68,7 @@
     serverSide: true,
     columns: [
       {
-        data: "accountName",
+        data: "accountUUID",
         title: "Account Name",
         render: function (data, type, row) {
           return '<i class="fa-regular fa-circle-user"></i> &nbsp;&nbsp;' + data;
@@ -194,7 +194,7 @@
         orderable: false,
         searchable: false,
         render: function (data, type, row) {
-          let b64AccountName = window.btoa(row.accountName);
+          let b64AccountName = window.btoa(row.accountUUID);
           let buttons = '<div style="text-align: right;">';
 
           // Dismiss Inactivity button (only show if inactive)
@@ -217,19 +217,19 @@
   });
 
   function dismissInactivity(b64AccountName) {
-    var accountName = window.atob(b64AccountName);
-    showYesNoDialog("Do you really want to dismiss inactivity for account '" + accountName + "'?", function (result) {
+    var accountUUID = window.atob(b64AccountName);
+    showYesNoDialog("Do you really want to dismiss inactivity for account '" + accountUUID + "'?", function (result) {
       if (result) {
         $.ajax({
           url: '/api/v1/extendAccountInactivity',
           type: 'POST',
           contentType: 'application/json',
           data: JSON.stringify({
-            accountName: accountName,
+            accountUUID: accountUUID,
             validUntil: Math.floor(Date.now() / 1000) + (14 * 24 * 60 * 60)
           }),
           success: function (response) {
-            showToastSuccess("Inactivity dismissed for account " + accountName + ".");
+            showToastSuccess("Inactivity dismissed for account " + accountUUID + ".");
             var table = $('#accountsTable').DataTable();
             table.ajax.reload();
           },

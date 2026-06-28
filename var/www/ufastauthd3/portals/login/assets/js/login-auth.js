@@ -129,7 +129,7 @@ function authorizeCredential(username, schemeId, password) {
             'Authorization': 'Bearer ' + transientToken
         },
         data: JSON.stringify({
-            preAuthUser: username,
+            accountName: username,
             keepAuthenticated: sessionKeepAuthenticated,
             app: appName,
             schemeId: parseInt($("#currentSchemeId").val()),

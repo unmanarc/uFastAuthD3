@@ -49,7 +49,7 @@
             type: 'GET',
             contentType: 'application/json',
             data: JSON.stringify({
-                accountName: currentAccount
+                accountUUID: currentAccount
             }),
             success: function (response, textStatus, xhr) {
                 if (response["applicationsLeft"] != null) {
@@ -233,7 +233,7 @@
             data: JSON.stringify({
                 appName: document.getElementById(`userapp-key-${appId}`).value,
                 scopeId: document.getElementById(`ulist-scopeIdByInternalId-${appId}-${scopeId}`).value,
-                accountName: currentAccount
+                accountUUID: currentAccount
             }),
             success: function (response) {
                 populateAccountApplications();
@@ -259,7 +259,7 @@
             data: JSON.stringify({
                 appName: $(`#userapp-key-${appId}`).val(),
                 roleId: appItems.value,
-                accountName: currentAccount
+                accountUUID: currentAccount
             }),
             success: function (response) {
                 populateAccountApplications();
@@ -277,7 +277,7 @@
             data: JSON.stringify({
                 appName: document.getElementById(`userapp-key-${appId}`).value,
                 roleId: document.getElementById(`ulist-roleIdByInternalId-${appId}-${roleId}`).value,
-                accountName: currentAccount
+                accountUUID: currentAccount
             }),
             success: function (response) {
                 populateAccountApplications();
@@ -303,7 +303,7 @@
             data: JSON.stringify({
                 appName: $(`#userapp-key-${appId}`).val(),
                 scopeId: appItems.value,
-                accountName: currentAccount
+                accountUUID: currentAccount
             }),
             success: function (response) {
                 populateAccountApplications();
@@ -321,7 +321,7 @@
                     type: 'DELETE',
                     contentType: 'application/json',
                     data: JSON.stringify({
-                        accountName: currentAccount,
+                        accountUUID: currentAccount,
                         appName: appName
                     }),
                     success: function (response) {
@@ -347,7 +347,7 @@
             type: 'POST',
             contentType: 'application/json',
             data: JSON.stringify({
-                accountName: currentAccount,
+                accountUUID: currentAccount,
                 appName: appItems.value
             }),
             success: function (response) {

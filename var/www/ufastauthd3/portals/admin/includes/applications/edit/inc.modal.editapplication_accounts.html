@@ -28,20 +28,20 @@
 
                 $("#tbody-accounts").append(
                     `<tr> 
-                        <th scope="row" id=ulist-accountName-${accountId}></th>
+                        <th scope="row" id=ulist-accountUUID-${accountId}></th>
                         <td>
                             <div class="form-check form-switch">
                                 <input class="form-check-input" type="checkbox" id="ulist-isAppAdmin-${accountId}" ${account["isAppAdmin"] ? 'checked' : ''} onclick="javascript:changeApplicationAdmin(${accountId})">
                             </div>
                         </td>
                         <td style="text-align: right;">
-                            <input type=hidden id="ulist-accountNameById-${accountId}">
+                            <input type=hidden id="ulist-accountUUIDById-${accountId}">
                             <button type="button" class="btn btn-secondary btn-sm" onclick="javascript:removeAccountFromApplication(${accountId})"><i class="fas fa-trash"></i></button>
                         </td>
                     </tr>`
                 );
-                document.getElementById(`ulist-accountNameById-${accountId}`).value = account["name"];
-                $(`#ulist-accountName-${accountId}`).text(account["name"]);
+                document.getElementById(`ulist-accountUUIDById-${accountId}`).value = account["name"];
+                $(`#ulist-accountUUID-${accountId}`).text(account["name"]);
                 accountId++;
             }
         }
@@ -51,7 +51,7 @@
 
         showYesNoDialog("<b>SECURITY ALERT:</b> Modifying administrator privileges can significantly impact system security and access controls. Confirm to proceed with this security-sensitive change.", function (result) {
 
-            let accountName = document.getElementById(`ulist-accountNameById-${accountId}`).value;
+            let accountUUID = document.getElementById(`ulist-accountUUIDById-${accountId}`).value;
             let isChecked = document.getElementById(`ulist-isAppAdmin-${accountId}`).checked;
             var appName = currentApplication;
             $.ajax({
@@ -59,7 +59,7 @@
                 type: 'PATCH',
                 contentType: 'application/json',
                 data: JSON.stringify({
-                    accountName: accountName,
+                    accountUUID: accountUUID,
                     appName: appName,
                     isAppAdmin: isChecked
                 }),
@@ -76,7 +76,7 @@
 
     function removeAccountFromApplication(accountId) {
 
-        let accountName = document.getElementById(`ulist-accountNameById-${accountId}`).value;
+        let accountUUID = document.getElementById(`ulist-accountUUIDById-${accountId}`).value;
         var appName = currentApplication;
         showYesNoDialog("Do you really want to remove this account from the application?", function (result) {
             if (result) {
@@ -85,7 +85,7 @@
                     type: 'DELETE',
                     contentType: 'application/json',
                     data: JSON.stringify({
-                        accountName: accountName,
+                        accountUUID: accountUUID,
                         appName: appName
                     }),
                     success: function (response) {

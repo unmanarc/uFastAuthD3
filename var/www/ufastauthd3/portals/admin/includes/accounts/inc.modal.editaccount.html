@@ -72,7 +72,7 @@
             url: '/api/v1/doesAccountExist',
             type: 'GET',
             contentType: 'application/json',
-            data: JSON.stringify({ accountName: currentAccount }),
+            data: JSON.stringify({ accountUUID: currentAccount }),
             success: function (response) 
             {
                 $(`#editAccountName`).text(currentAccount);

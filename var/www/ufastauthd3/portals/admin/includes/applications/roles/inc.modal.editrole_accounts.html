@@ -50,7 +50,7 @@
         data: JSON.stringify({
           userName: document.getElementById(`ulist-account-${accountInternalId}`).value,
           roleName: currentRole,
-          accountName: currentAccount
+          accountUUID: currentAccount
         }),
         success: function (response) {
           populateRole();

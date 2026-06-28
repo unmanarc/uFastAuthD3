@@ -1,4 +1,18 @@
 <script>
+    function updateIsUniqueState() {
+        const isLoginIdentifier = document.getElementById("isLoginIdentifier");
+        const isUnique = document.getElementById("isUnique");
+
+        if (isLoginIdentifier.checked) {
+            isUnique.checked = true;
+            isUnique.disabled = true;
+            isUnique.readOnly = true;
+        } else {
+            isUnique.disabled = false;
+            isUnique.readOnly = false;
+        }
+    }
+
     function createAccountFieldClearParameters() {
         // Reset text inputs
         document.getElementById("fieldName").value = "";
@@ -26,6 +40,10 @@
         document.getElementById("isUnique").checked = false;
         document.getElementById("isUnique").disabled = false;
         document.getElementById("isUnique").readOnly = false;
+
+        document.getElementById("isLoginIdentifier").checked = false;
+        document.getElementById("isLoginIdentifier").disabled = false;
+        document.getElementById("isLoginIdentifier").readOnly = false;
 
         document.getElementById("canUserEdit").checked = false;
         document.getElementById("canUserEdit").disabled = false;
@@ -89,8 +107,10 @@
                 document.getElementById("canUserEdit").checked = response.extendedAttributes.security.canUserEdit ?? false;
                 document.getElementById("canUserView").checked = response.extendedAttributes.security.canUserView ?? false;
                 document.getElementById("isUnique").checked = response.isUnique ?? false;
-                document.getElementById("isUnique").disabled = true;
-                document.getElementById("isUnique").readOnly = true;
+                document.getElementById("isLoginIdentifier").checked = response.isLoginIdentifier ?? false;
+
+                // Apply isUnique state based on isLoginIdentifier
+                updateIsUniqueState();
 
                 // Change modal title to "Edit Accounts Field"
                 document.getElementById("modalCreateAccountFieldLabel").innerText = "Edit Accounts Field";
@@ -124,7 +144,7 @@
         // Determine the URL based on whether it's an update or create operation
         const url = isUpdate
             ? '/api/v1/updateAccountDetailField'
-            : '/api/v1/addAccountDetailField';
+            : '/api/v1/createAccountDetailField';
 
         // Determine the HTTP method
         const method = isUpdate ? 'PUT' : 'POST';
@@ -138,6 +158,7 @@
                 description: $("#fieldDescription").val(),
                 fieldType: $("#fieldType").val(),
                 isUnique: $("#isUnique:checked").length > 0,
+                isLoginIdentifier: $("#isLoginIdentifier:checked").length > 0,
                 isOptionalField: $("#isOptionalField:checked").length > 0,
                 extendedAttributes: {
                     visibility: {
@@ -256,6 +277,10 @@
                     <tr>
                         <td align="right">Is Unique:</td>
                         <td><input type="checkbox" id="isUnique"></td>
+                    </tr>
+                    <tr>
+                        <td align="right">Can Login with this Field:</td>
+                        <td><input type="checkbox" id="isLoginIdentifier" onchange="updateIsUniqueState()"></td>
                     </tr>
                     <tr>
                         <td align="right">User can edit this field:</td>

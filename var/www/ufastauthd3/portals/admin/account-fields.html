@@ -24,6 +24,7 @@
         <th scope="col">Field Description</th>
         <th scope="col">Field Type</th>
         <th scope="col">Is Unique</th>
+        <th scope="col">Is Login Identifier</th>
         <th scope="col" style="text-align: right;">Actions</th>
       </tr>
     </thead>
@@ -47,7 +48,7 @@
       }),
       success: function (response, textStatus, xhr) {
         // Refresh the DataTable after successful field creation
-        $('#fieldsTable').DataTable().ajax.reload();
+        $("#fieldsTable").DataTable().ajax.reload();
         showToastSuccess("Field created successfully.");
       },
       error: function (xhr, status, error) {
@@ -88,6 +89,13 @@
       {
         data: "isUnique",
         title: "Is Unique",
+        render: function (data, type, row) {
+          return data ? 'Yes' : 'No';
+        }
+      },
+      {
+        data: "isLoginIdentifier",
+        title: "Is Login Identifier",
         render: function (data, type, row) {
           return data ? 'Yes' : 'No';
         }

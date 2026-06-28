@@ -137,7 +137,7 @@
             type: 'PUT',
             contentType: 'application/json',
             data: JSON.stringify({
-                accountName: currentAccount,
+                accountUUID: currentAccount,
                 fieldValues: fieldValues,
             }),
             success: function (response, textStatus, xhr) {
@@ -147,7 +147,7 @@
                     type: 'PATCH',
                     contentType: 'application/json',
                     data: JSON.stringify({
-                        accountName: currentAccount,
+                        accountUUID: currentAccount,
                         flags: {
                             enabled: document.getElementById('isEnabledEdit').checked,
                             confirmed: document.getElementById('isConfirmedEdit').checked,
@@ -182,7 +182,7 @@
             type: 'GET',
             contentType: 'application/json',
             data: JSON.stringify({
-                accountName: currentAccount
+                accountUUID: currentAccount
             }),
             success: function (response, textStatus, xhr) {
                 const flags = response;
@@ -201,7 +201,7 @@
             type: 'GET',
             contentType: 'application/json',
             data: JSON.stringify({
-                accountName: currentAccount
+                accountUUID: currentAccount
             }),
             success: function (response, textStatus, xhr) {
                 const table = $('#detailsTable');

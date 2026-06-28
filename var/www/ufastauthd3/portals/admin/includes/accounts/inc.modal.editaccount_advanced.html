@@ -30,7 +30,7 @@
                     type: 'DELETE',
                     contentType: 'application/json',
                     data: JSON.stringify({
-                        accountName: currentAccount
+                        accountUUID: currentAccount
                     }),
                     success: function (response) {
                         showToastSuccess("Account " + currentAccount + " successfully removed.");
