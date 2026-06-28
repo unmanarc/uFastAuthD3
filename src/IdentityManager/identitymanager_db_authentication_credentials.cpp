@@ -105,7 +105,7 @@ Credential IdentityManager_DB::AuthController_DB::retrieveAccountCredential(cons
     return ret;
 }
 
-Json::Value IdentityManager_DB::AuthController_DB::searchAccountCredentialsActivity(const std::string &accountUUID, const json &dataTablesFilters)
+Json::Value IdentityManager_DB::AuthController_DB::searchAccountCredentialsActivity(const std::string &accountUUID, const Json::Value &dataTablesFilters)
 {
     Json::Value ret;
     Threads::Sync::Lock_RD lock(_parent->m_mutex);
@@ -115,9 +115,7 @@ Json::Value IdentityManager_DB::AuthController_DB::searchAccountCredentialsActiv
     uint64_t limit = Helpers::JSON::ASUINT64(dataTablesFilters, "length", 0);
     std::string orderByStatement = Helpers::DataTables::getOrderByStatement(dataTablesFilters);
     std::string searchValue = Helpers::JSON::ASSTRING(dataTablesFilters["search"], "value", "");
-
     std::string whereFilters = "`f_accountUUID` = :ACCOUNTNAME";
-
     std::string sqlQueryStr = R"(
         SELECT `f_accountUUID`, `f_slotId`, `logDateTime`, `logIP`, `logTLSCN`,
                `logUserAgent`, `logExtraData`, `logStatus`

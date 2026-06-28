@@ -316,7 +316,7 @@ time_t IdentityManager_DB::Accounts_DB::getAccountCreationTime(const std::string
     return std::numeric_limits<time_t>::max();
 }
 
-Json::Value IdentityManager_DB::Accounts_DB::searchFields(const json &dataTablesFilters)
+Json::Value IdentityManager_DB::Accounts_DB::searchFields(const Json::Value &dataTablesFilters)
 {
     Json::Value ret;
     Threads::Sync::Lock_RD lock(_parent->m_mutex);
@@ -393,7 +393,7 @@ Json::Value IdentityManager_DB::Accounts_DB::searchFields(const json &dataTables
     return ret;
 }
 
-Json::Value IdentityManager_DB::Accounts_DB::searchAccounts(const json &dataTablesFilters)
+Json::Value IdentityManager_DB::Accounts_DB::searchAccounts(const Json::Value &dataTablesFilters)
 {
     Json::Value ret;
     Threads::Sync::Lock_RD lock(_parent->m_mutex);

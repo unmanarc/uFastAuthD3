@@ -172,7 +172,7 @@ std::set<std::string> IdentityManager_DB::ApplicationRoles_DB::getApplicationRol
     return ret;
 }
 
-Json::Value IdentityManager_DB::ApplicationRoles_DB::searchApplicationRoles(const json &dataTablesFilters)
+Json::Value IdentityManager_DB::ApplicationRoles_DB::searchApplicationRoles(const Json::Value &dataTablesFilters)
 {
     Json::Value ret;
     Threads::Sync::Lock_RD lock(_parent->m_mutex);

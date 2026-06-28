@@ -320,7 +320,7 @@ bool IdentityManager_DB::Applications_DB::changeApplicationAdmin(const ClientDet
     return result;
 }
 
-Json::Value IdentityManager_DB::Applications_DB::searchApplications(const json &dataTablesFilters)
+Json::Value IdentityManager_DB::Applications_DB::searchApplications(const Json::Value &dataTablesFilters)
 {
     Json::Value ret;
     Threads::Sync::Lock_RD lock(_parent->m_mutex);

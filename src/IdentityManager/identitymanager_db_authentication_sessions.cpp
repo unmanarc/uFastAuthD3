@@ -34,7 +34,7 @@ uint32_t IdentityManager_DB::AuthController_DB::getAccountActiveSessionsCount(co
     return 0;
 }
 
-Json::Value IdentityManager_DB::AuthController_DB::searchAccountSessions(const std::string &accountUUID, const json &dataTablesFilters)
+Json::Value IdentityManager_DB::AuthController_DB::searchAccountSessions(const std::string &accountUUID, const Json::Value &dataTablesFilters)
 {
     Json::Value ret;
     Threads::Sync::Lock_RD lock(_parent->m_mutex);
