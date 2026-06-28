@@ -29,7 +29,7 @@ public:
      * @param serializedData The string containing the serialized authentication data.
      * @return true if the deserialization was successful, false otherwise.
      */
-    bool parseJSON(const std::string &sAuth);
+    bool parse(const std::string &sAuth);
 
     /**
      * @brief Deserializes authentication data from a JSON object.

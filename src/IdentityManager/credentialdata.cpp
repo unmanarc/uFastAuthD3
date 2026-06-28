@@ -8,7 +8,7 @@ CredentialData::CredentialData(const std::string &password, const uint32_t &slot
     this->m_slotId = slotId;
 }
 
-bool CredentialData::parseJSON(const std::string &sAuth)
+bool CredentialData::parse(const std::string &sAuth)
 {
     json x;
 
@@ -38,8 +38,8 @@ bool CredentialData::setJSON(const json &jsonObject)
         return false;
     }
 
-    this->m_password = JSON_ASSTRING(jsonObject, "pass", "");
-    this->m_slotId = JSON_ASUINT(jsonObject, "slotId", 0);
+    this->m_password = Helpers::JSON::ASSTRING(jsonObject, "pass", "");
+    this->m_slotId = Helpers::JSON::ASUINT(jsonObject, "slotId", 0);
 
     return true;
 }
