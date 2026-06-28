@@ -46,7 +46,7 @@ struct TransientAuthenticationContext
             }
 
             // We have an LPToken!
-            std::set<uint32_t> authenticatedSlotsOnLPToken = Helpers::JSON::jsonToUInt32Set(lpToken.getClaim("slotIds"));
+            std::set<uint32_t> authenticatedSlotsOnLPToken = Helpers::JSON::toUInt32Set(lpToken.getClaim("slotIds"));
             // Merge auth slots.
             for (const uint32_t &i : authenticatedSlotsOnLPToken)
             {
@@ -106,7 +106,7 @@ struct TransientAuthenticationContext
         newTransientAuthToken.setClaim("schemeId", schemeId);
         newTransientAuthToken.setClaim("keepAuthenticated", keepAuthenticated);
         newTransientAuthToken.setClaim("type", "transient");
-        newTransientAuthToken.setClaim("authenticatedSlots", Helpers::JSON::setToJSON(authenticatedSlots));
+        newTransientAuthToken.setClaim("authenticatedSlots", Helpers::JSON::fromSet(authenticatedSlots));
         newTransientAuthToken.setClaim("authenticatedSchemes", jAuthenticatedSchemes);
         newTransientAuthToken.setClaim("authenticatedAppsCallbackURLs", jAuthenticatedAppsCallbackURLs);
 
@@ -128,13 +128,13 @@ struct TransientAuthenticationContext
     {
         Json::Value claims = transientAuthToken.getAllClaimsAsJSON();
 
-        accountName = JSON_ASSTRING(claims, "accountName", "");
-        appName = JSON_ASSTRING(claims, "app", "");
-        slotSchemeHash = JSON_ASSTRING(claims, "slotSchemeHash", "");
-        schemeId = JSON_ASUINT(claims, "schemeId", UINT32_MAX);
-        keepAuthenticated = JSON_ASBOOL(claims, "keepAuthenticated", false);
-        currentSlotId = JSON_ASUINT(claims, "currentSlotId", 0);
-        authenticatedSlots = Helpers::JSON::jsonToUInt32Set(claims, "authenticatedSlots");
+        accountName = Helpers::JSON::ASSTRING(claims, "accountName", "");
+        appName = Helpers::JSON::ASSTRING(claims, "app", "");
+        slotSchemeHash = Helpers::JSON::ASSTRING(claims, "slotSchemeHash", "");
+        schemeId = Helpers::JSON::ASUINT(claims, "schemeId", UINT32_MAX);
+        keepAuthenticated = Helpers::JSON::ASBOOL(claims, "keepAuthenticated", false);
+        currentSlotId = Helpers::JSON::ASUINT(claims, "currentSlotId", 0);
+        authenticatedSlots = Helpers::JSON::toUInt32Set(claims, "authenticatedSlots");
         jAuthenticatedSchemes = transientAuthToken.getClaim("authenticatedSchemes");
         jAuthenticatedAppsCallbackURLs = transientAuthToken.getClaim("authenticatedAppsCallbackURLs");
 
@@ -143,11 +143,11 @@ struct TransientAuthenticationContext
 
     void fillVars_FromInitialJSONPOST(const json &inputJSON)
     {
-        accountName = JSON_ASSTRING(inputJSON, "accountName", "");
-        keepAuthenticated = JSON_ASBOOL(inputJSON, "keepAuthenticated", false);
-        appName = JSON_ASSTRING(inputJSON, "app", "");
-        schemeId = JSON_ASUINT(inputJSON, "schemeId", UINT32_MAX);
-        currentSlotId = JSON_ASUINT(inputJSON, "currentSlotId", 0);
+        accountName = Helpers::JSON::ASSTRING(inputJSON, "accountName", "");
+        keepAuthenticated = Helpers::JSON::ASBOOL(inputJSON, "keepAuthenticated", false);
+        appName = Helpers::JSON::ASSTRING(inputJSON, "app", "");
+        schemeId = Helpers::JSON::ASUINT(inputJSON, "schemeId", UINT32_MAX);
+        currentSlotId = Helpers::JSON::ASUINT(inputJSON, "currentSlotId", 0);
         doesTransientTokenNotExist = true;
 
         loadUUIDFromAccountName();
@@ -160,7 +160,7 @@ struct TransientAuthenticationContext
         {
             r.insert(currentSlotId.value());
         }
-        return Helpers::JSON::setToJSON(r);
+        return Helpers::JSON::fromSet(r);
     }
 
     [[nodiscard]] Json::Value getAllAuthenticatedSchemes() const
