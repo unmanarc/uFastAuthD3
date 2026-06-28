@@ -50,14 +50,14 @@ void AppSync_Endpoints::updateAppScopes(const std::string &appName, const std::s
         std::set<std::string> proposedScopeIds;
         for (const json &scope : proposedScopes)
         {
-            std::string id = JSON_ASSTRING(scope, "id", "");
+            std::string id = Helpers::JSON::ASSTRING(scope, "id", "");
             if (!id.empty())
             {
                 proposedScopeIds.insert(id);
                 ApplicationScope newScope;
                 newScope.appName = appName;
                 newScope.id = id;
-                newScope.description = JSON_ASSTRING(scope, "description", "");
+                newScope.description = Helpers::JSON::ASSTRING(scope, "description", "");
 
                 // Check if scope exists
                 std::set<ApplicationScope>::iterator existingScope = currentScopes.find(newScope);
@@ -107,13 +107,13 @@ void AppSync_Endpoints::updateAppRoles(const std::string &appName, const std::st
         std::set<std::string> proposedRoleIds;
         for (const json &role : proposedRoles)
         {
-            std::string id = JSON_ASSTRING(role, "id", "");
+            std::string id = Helpers::JSON::ASSTRING(role, "id", "");
             if (id.empty())
                 continue; // skip invalid entries
             proposedRoleIds.insert(id);
             proposedRoleData[id] = role; // Store for scope processing
 
-            std::string description = JSON_ASSTRING(role, "description", "");
+            std::string description = Helpers::JSON::ASSTRING(role, "description", "");
             ApplicationRole newRole;
             newRole.appName = appName;
             newRole.id = id;
@@ -211,7 +211,7 @@ void AppSync_Endpoints::updateAppActivities(const std::string &appName, const st
 
         for (const json &act : proposedActivities)
         {
-            std::string name = JSON_ASSTRING(act, "id", "");
+            std::string name = Helpers::JSON::ASSTRING(act, "id", "");
             if (name.empty())
                 continue; // skip invalid entries
 
@@ -289,7 +289,7 @@ AppSync_Endpoints::APIReturn AppSync_Endpoints::validateAndFetchApplicationAttri
         return APIReturn(HTTP::Status::Code::S_400_BAD_REQUEST, "sync_not_enabled", "Application sync is not enabled.");
     }
 
-    std::string apiKey = JSON_ASSTRING(*request.inputJSON, "APIKEY", "");
+    std::string apiKey = Helpers::JSON::ASSTRING(*request.inputJSON, "APIKEY", "");
     if (apiKey.empty())
     {
         LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LogLevel::WARN, "Missing API key in request for application '%s'.", appName.c_str());

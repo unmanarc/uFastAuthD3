@@ -60,11 +60,11 @@ API::APIReturn LoginPortal_Endpoints::registerAccount(void *context, const Reque
         }
     }
 
-    std::string accountToCreate = JSON_ASSTRING((*request.inputJSON)["accountDetails"], "accountUUID", "");
+    std::string accountToCreate = Helpers::JSON::ASSTRING((*request.inputJSON)["accountDetails"], "accountUUID", "");
 
     if (create)
     {
-        success = identityManager->accounts->addAccount(accountToCreate, JSON_ASUINT64(*request.inputJSON, "expiration", 0), accountFlags, request.jwtToken->getSubject());
+        success = identityManager->accounts->addAccount(accountToCreate, Helpers::JSON::ASUINT64(*request.inputJSON, "expiration", 0), accountFlags, request.jwtToken->getSubject());
     }
 
     if (!success)
@@ -76,7 +76,7 @@ API::APIReturn LoginPortal_Endpoints::registerAccount(void *context, const Reque
                   !success ? "Failed to create account '%s'" : "Account '%s' created.", accountToCreate.c_str());
 
     // Set the credential:
-    std::string newPass = JSON_ASSTRING(*request.inputJSON, "newPass", "");
+    std::string newPass = Helpers::JSON::ASSTRING(*request.inputJSON, "newPass", "");
 
     // TODO: mejorar el nivel de log...
 
@@ -110,8 +110,8 @@ API::APIReturn LoginPortal_Endpoints::registerAccount(void *context, const Reque
 // TODO: llenar los details del user.
 
 /*AccountCreationDetails getAccountDetails;
-        getAccountDetails.description = JSON_ASSTRING((*request.inputJSON)["getAccountDetails"], "description", "");
-        getAccountDetails.email = JSON_ASSTRING((*request.inputJSON)["getAccountDetails"], "email", "");
-        getAccountDetails.extraData = JSON_ASSTRING((*request.inputJSON)["getAccountDetails"], "extraData", "");
-        getAccountDetails.givenName = JSON_ASSTRING((*request.inputJSON)["getAccountDetails"], "givenName", "");
-        getAccountDetails.lastName = JSON_ASSTRING((*request.inputJSON)["getAccountDetails"], "lastName", "");*/
+        getAccountDetails.description = Helpers::JSON::ASSTRING((*request.inputJSON)["getAccountDetails"], "description", "");
+        getAccountDetails.email = Helpers::JSON::ASSTRING((*request.inputJSON)["getAccountDetails"], "email", "");
+        getAccountDetails.extraData = Helpers::JSON::ASSTRING((*request.inputJSON)["getAccountDetails"], "extraData", "");
+        getAccountDetails.givenName = Helpers::JSON::ASSTRING((*request.inputJSON)["getAccountDetails"], "givenName", "");
+        getAccountDetails.lastName = Helpers::JSON::ASSTRING((*request.inputJSON)["getAccountDetails"], "lastName", "");*/

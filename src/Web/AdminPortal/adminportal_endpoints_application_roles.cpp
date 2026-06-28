@@ -30,9 +30,9 @@ API::APIReturn AdminPortal_Endpoints_ApplicationRoles::updateRoleDescription(voi
 {
     API::APIReturn response;
 
-    std::string appName = JSON_ASSTRING(*request.inputJSON, "appName", "");
-    std::string roleName = JSON_ASSTRING(*request.inputJSON, "roleName", "");
-    std::string roleDescription = JSON_ASSTRING(*request.inputJSON, "roleDescription", "");
+    std::string appName = Helpers::JSON::ASSTRING(*request.inputJSON, "appName", "");
+    std::string roleName = Helpers::JSON::ASSTRING(*request.inputJSON, "roleName", "");
+    std::string roleDescription = Helpers::JSON::ASSTRING(*request.inputJSON, "roleDescription", "");
 
     if (roleName.empty())
     {
@@ -60,9 +60,9 @@ API::APIReturn AdminPortal_Endpoints_ApplicationRoles::createRole(void *context,
 {
     API::APIReturn response;
 
-    std::string appName = JSON_ASSTRING(*request.inputJSON, "appName", "");
-    std::string roleName = JSON_ASSTRING(*request.inputJSON, "roleName", "");
-    std::string roleDescription = JSON_ASSTRING(*request.inputJSON, "roleDescription", "");
+    std::string appName = Helpers::JSON::ASSTRING(*request.inputJSON, "appName", "");
+    std::string roleName = Helpers::JSON::ASSTRING(*request.inputJSON, "roleName", "");
+    std::string roleDescription = Helpers::JSON::ASSTRING(*request.inputJSON, "roleDescription", "");
 
     if (roleName.empty())
     {
@@ -92,8 +92,8 @@ API::APIReturn AdminPortal_Endpoints_ApplicationRoles::getRoleInfo(void *context
     API::APIReturn response;
 
     json payloadOut;
-    std::string appName = JSON_ASSTRING(*request.inputJSON, "appName", "");
-    std::string roleName = JSON_ASSTRING(*request.inputJSON, "roleName", "");
+    std::string appName = Helpers::JSON::ASSTRING(*request.inputJSON, "appName", "");
+    std::string roleName = Helpers::JSON::ASSTRING(*request.inputJSON, "roleName", "");
 
     if (roleName.empty())
     {
@@ -142,8 +142,8 @@ API::APIReturn AdminPortal_Endpoints_ApplicationRoles::getRoleInfo(void *context
 API::APIReturn AdminPortal_Endpoints_ApplicationRoles::removeRole(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
-    const std::string roleName = JSON_ASSTRING(*request.inputJSON, "roleName", "");
-    const std::string appName = JSON_ASSTRING(*request.inputJSON, "appName", "");
+    const std::string roleName = Helpers::JSON::ASSTRING(*request.inputJSON, "roleName", "");
+    const std::string appName = Helpers::JSON::ASSTRING(*request.inputJSON, "appName", "");
 
     if (appName.empty())
     {
@@ -166,9 +166,9 @@ API::APIReturn AdminPortal_Endpoints_ApplicationRoles::addApplicationRoleToAccou
 {
     API::APIReturn response;
 
-    std::string appName = JSON_ASSTRING(*request.inputJSON, "appName", "");
-    std::string roleName = JSON_ASSTRING(*request.inputJSON, "roleId", "");
-    std::string accountUUID = JSON_ASSTRING(*request.inputJSON, "accountUUID", "");
+    std::string appName = Helpers::JSON::ASSTRING(*request.inputJSON, "appName", "");
+    std::string roleName = Helpers::JSON::ASSTRING(*request.inputJSON, "roleId", "");
+    std::string accountUUID = Helpers::JSON::ASSTRING(*request.inputJSON, "accountUUID", "");
 
     if (appName.empty())
     {
@@ -196,9 +196,9 @@ API::APIReturn AdminPortal_Endpoints_ApplicationRoles::removeApplicationRoleFrom
 {
     API::APIReturn response;
 
-    std::string appName = JSON_ASSTRING(*request.inputJSON, "appName", "");
-    std::string roleName = JSON_ASSTRING(*request.inputJSON, "roleId", "");
-    std::string accountUUID = JSON_ASSTRING(*request.inputJSON, "accountUUID", "");
+    std::string appName = Helpers::JSON::ASSTRING(*request.inputJSON, "appName", "");
+    std::string roleName = Helpers::JSON::ASSTRING(*request.inputJSON, "roleId", "");
+    std::string accountUUID = Helpers::JSON::ASSTRING(*request.inputJSON, "accountUUID", "");
 
     if (appName.empty())
     {

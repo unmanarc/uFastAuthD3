@@ -40,13 +40,13 @@ bool JWTDynamicTokenValidatorFunction(const std::string &accessTokenStr, const s
         return false;
     }
 
-    if (JSON_ASSTRING_D(accessToken->getClaim("app"), "") != appNameStr)
+    if (Helpers::JSON::ASSTRING_D(accessToken->getClaim("app"), "") != appNameStr)
     {
         LOG_APP->log1(__func__, "", Logs::LogLevel::SECURITY_ALERT, "JWT Token missing app name %s.", appNameStr.c_str());
         return false;
     }
 
-    if (JSON_ASSTRING_D(accessToken->getClaim("type"), "") != "access")
+    if (Helpers::JSON::ASSTRING_D(accessToken->getClaim("type"), "") != "access")
     {
         LOG_APP->log1(__func__, "", Logs::LogLevel::SECURITY_ALERT, "JWT Token missing app name %s.", appNameStr.c_str());
         return false;

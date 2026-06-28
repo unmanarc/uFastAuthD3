@@ -16,26 +16,26 @@ void WebSessionAuthHandler_Endpoints::setupAccessTokenCookies(APIReturn &respons
     CookieProperties props;
     props.sessionCookie = true; // The access Token it's always a session cookie.
     props.expirationTime = accessToken.getExpirationTime(); // expire with the JWT token expiration.
-    props.path = JSON_ASSTRING(tokenProps.tokensConfiguration["accessToken"], "path", "/");
+    props.path = Helpers::JSON::ASSTRING(tokenProps.tokensConfiguration["accessToken"], "path", "/");
     setupCookie(response, "AccessToken", signApplicationToken(accessToken, tokenProps), props);
 }
 
 void WebSessionAuthHandler_Endpoints::setupRefreshTokenCookies(APIReturn &response, JWT::Token refreshToken, const ApplicationTokenProperties &tokenProps)
 {
-    bool keepAuthenticated = JSON_ASBOOL_D(refreshToken.getClaim("keepAuthenticated"), false);
+    bool keepAuthenticated = Helpers::JSON::ASBOOL_D(refreshToken.getClaim("keepAuthenticated"), false);
 
     CookieProperties props;
 
     // Si recibi mantenerme autenticado, entonces el refresh token no es de sesión.
     props.sessionCookie = !keepAuthenticated;
     props.expirationTime = refreshToken.getExpirationTime(); // expire with the JWT token expiration.
-    props.path = JSON_ASSTRING(tokenProps.tokensConfiguration["refreshToken"], "path", "/auth");
+    props.path = Helpers::JSON::ASSTRING(tokenProps.tokensConfiguration["refreshToken"], "path", "/auth");
     setupCookie(response, "RefreshToken", signApplicationToken(refreshToken, tokenProps), props);
 
     CookieProperties propsForCORSPublicData;
     propsForCORSPublicData.sessionCookie = !keepAuthenticated;
     propsForCORSPublicData.expirationTime = refreshToken.getExpirationTime(); // expire with the JWT token expiration.
-    propsForCORSPublicData.path = JSON_ASSTRING(tokenProps.tokensConfiguration["refreshToken"], "path", "/auth");
+    propsForCORSPublicData.path = Helpers::JSON::ASSTRING(tokenProps.tokensConfiguration["refreshToken"], "path", "/auth");
     propsForCORSPublicData.sameSitePolicy = Mantids30::Network::Protocol::HTTP::Headers::Cookie::SameSitePolicy::NONE;
 
     setupCookie(response, "RefreshTokenId", refreshToken.getJwtId(), propsForCORSPublicData);

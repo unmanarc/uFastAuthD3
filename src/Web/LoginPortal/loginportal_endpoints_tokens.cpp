@@ -26,11 +26,11 @@ API::APIReturn LoginPortal_Endpoints::token(void *context, const RequestContext 
     std::string authenticatedUser = request.jwtToken->getSubject();
 
     bool isEmbeddedAuthentication = false;
-    bool keepAuthenticated  = JSON_ASBOOL_D(request.jwtToken->getClaim("keepAuthenticated"), false);
-    std::string activity    = JSON_ASSTRING(*request.inputJSON, "activity", "");       // APP ACTIVITY NAME.
-    std::string redirectURI = JSON_ASSTRING(*request.inputJSON, "redirectURI", ""); // APP REDIRECT URI.
-    uint32_t schemeId       = JSON_ASUINT(*request.inputJSON, "schemeId", 0);             // APP SCHEME ID.
-    bool mock               = JSON_ASBOOL(*request.inputJSON, "mock", false);                     // MOCK
+    bool keepAuthenticated  = Helpers::JSON::ASBOOL_D(request.jwtToken->getClaim("keepAuthenticated"), false);
+    std::string activity    = Helpers::JSON::ASSTRING(*request.inputJSON, "activity", "");       // APP ACTIVITY NAME.
+    std::string redirectURI = Helpers::JSON::ASSTRING(*request.inputJSON, "redirectURI", ""); // APP REDIRECT URI.
+    uint32_t schemeId       = Helpers::JSON::ASUINT(*request.inputJSON, "schemeId", 0);             // APP SCHEME ID.
+    bool mock               = Helpers::JSON::ASBOOL(*request.inputJSON, "mock", false);                     // MOCK
 
 
     // Determine appName: prioritize x-api-key header, fallback to inputJSON "app" field
@@ -62,7 +62,7 @@ API::APIReturn LoginPortal_Endpoints::token(void *context, const RequestContext 
     }
     else
     {
-        appName = JSON_ASSTRING(*request.inputJSON, "app", "");
+        appName = Helpers::JSON::ASSTRING(*request.inputJSON, "app", "");
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////

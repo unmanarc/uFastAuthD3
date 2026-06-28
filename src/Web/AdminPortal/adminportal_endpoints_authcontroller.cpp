@@ -30,7 +30,7 @@ void AdminPortal_Endpoints_AuthController::addEndpoints_AuthController(const std
 AdminPortal_Endpoints_AuthController::APIReturn AdminPortal_Endpoints_AuthController::updateDefaultAuthScheme(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
     // Extract the new default authentication scheme ID from the request body
-    uint32_t newDefaultSchemeId = JSON_ASUINT(*request.inputJSON, "defaultSchemeId", std::numeric_limits<uint32_t>::max());
+    uint32_t newDefaultSchemeId = Helpers::JSON::ASUINT(*request.inputJSON, "defaultSchemeId", std::numeric_limits<uint32_t>::max());
 
     if (newDefaultSchemeId == std::numeric_limits<uint32_t>::max())
     {
@@ -64,7 +64,7 @@ API::APIReturn AdminPortal_Endpoints_AuthController::createAuthenticationScheme(
 {
     API::APIReturn response;
     std::optional<uint32_t> r = Globals::getIdentityManager()->authController->createAuthenticationScheme(authClientDetails, request.jwtToken->getSubject(),
-                                                                                                       JSON_ASSTRING(*request.inputJSON, "description", ""));
+                                                                                                       Helpers::JSON::ASSTRING(*request.inputJSON, "description", ""));
     if (!r.has_value())
     {
         return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to add the new authentication scheme"};
@@ -106,7 +106,7 @@ API::APIReturn AdminPortal_Endpoints_AuthController::listAuthenticationSchemes(v
 API::APIReturn AdminPortal_Endpoints_AuthController::deleteAuthenticationScheme(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
-    uint32_t schemeId = JSON_ASUINT(*request.inputJSON, "schemeId", 0);
+    uint32_t schemeId = Helpers::JSON::ASUINT(*request.inputJSON, "schemeId", 0);
 
     if (!Globals::getIdentityManager()->authController->removeAuthenticationScheme(authClientDetails, request.jwtToken->getSubject(), schemeId))
     {
@@ -119,8 +119,8 @@ API::APIReturn AdminPortal_Endpoints_AuthController::updateAuthenticationScheme(
 {
     API::APIReturn response;
 
-    uint32_t schemeId = JSON_ASUINT(*request.inputJSON, "schemeId", 0);
-    std::string description = JSON_ASSTRING(*request.inputJSON, "description", "");
+    uint32_t schemeId = Helpers::JSON::ASUINT(*request.inputJSON, "schemeId", 0);
+    std::string description = Helpers::JSON::ASSTRING(*request.inputJSON, "description", "");
 
     if (!Globals::getIdentityManager()->authController->updateAuthenticationScheme(authClientDetails, request.jwtToken->getSubject(), schemeId, description))
     {
@@ -134,7 +134,7 @@ API::APIReturn AdminPortal_Endpoints_AuthController::listAuthenticationSlotsUsed
 {
     API::APIReturn response;
 
-    uint32_t schemeId = JSON_ASUINT(*request.inputJSON, "schemeId", 0);
+    uint32_t schemeId = Helpers::JSON::ASUINT(*request.inputJSON, "schemeId", 0);
     std::vector<AuthenticationSchemeUsedSlot> slots = Globals::getIdentityManager()->authController->listAuthenticationSlotsUsedByScheme(schemeId);
     json r;
     r["leftSlots"] = Json::arrayValue;
@@ -171,7 +171,7 @@ API::APIReturn AdminPortal_Endpoints_AuthController::updateAuthenticationSlotsUs
 {
     API::APIReturn response;
 
-    uint32_t schemeId = JSON_ASUINT(*request.inputJSON, "schemeId", 0);
+    uint32_t schemeId = Helpers::JSON::ASUINT(*request.inputJSON, "schemeId", 0);
 
     std::list<AuthenticationSchemeUsedSlot> slotsUsedByScheme;
 
@@ -225,7 +225,7 @@ API::APIReturn AdminPortal_Endpoints_AuthController::deleteAuthenticationSlot(vo
 {
     API::APIReturn response;
 
-    uint32_t slotId = JSON_ASUINT(*request.inputJSON, "slotId", 0);
+    uint32_t slotId = Helpers::JSON::ASUINT(*request.inputJSON, "slotId", 0);
 
     if (!Globals::getIdentityManager()->authController->removeAuthenticationSlot(authClientDetails, request.jwtToken->getSubject(), slotId))
     {
@@ -240,7 +240,7 @@ API::APIReturn AdminPortal_Endpoints_AuthController::updateAuthenticationSlot(vo
 
     AuthenticationSlotDetails slotDetails;
     slotDetails.fromJSON(*request.inputJSON);
-    uint32_t slotId = JSON_ASUINT(*request.inputJSON, "slotId", 0);
+    uint32_t slotId = Helpers::JSON::ASUINT(*request.inputJSON, "slotId", 0);
 
     if (!Globals::getIdentityManager()->authController->updateAuthenticationSlotDetails(authClientDetails, request.jwtToken->getSubject(), slotId, slotDetails))
     {

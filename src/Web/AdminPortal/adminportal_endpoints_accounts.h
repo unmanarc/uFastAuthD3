@@ -68,6 +68,4 @@ protected:
     static APIReturn getAccountDirectApplicationScopes(void *context, const RequestContext &request, ClientDetails &authClientDetails);
     static APIReturn getAccountUsableApplicationScopes(void *context, const RequestContext &request, ClientDetails &authClientDetails);
 */
-private:
-    static std::map<std::string, std::string> jsonToMap(const json &jValue);
 };

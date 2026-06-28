@@ -58,13 +58,13 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::changeCredential(void *con
         }
     }
 
-    if (JSON_ASSTRING(challengeToken.getClaim("details"), "operation", "") != "changeCredential")
+    if (Helpers::JSON::ASSTRING(challengeToken.getClaim("details"), "operation", "") != "changeCredential")
     {
         return {HTTP::Status::Code::S_401_UNAUTHORIZED, "change_credential_failed", "Invalid Operation for Challenge Token"};
     }
 
     std::string accountUUID = challengeToken.getSubject();
-    uint32_t slotId = JSON_ASUINT_D(challengeToken.getClaim("slotId"), 0);
+    uint32_t slotId = Helpers::JSON::ASUINT_D(challengeToken.getClaim("slotId"), 0);
 
     Credential cred;
     cred.fromJSON((*request.inputJSON)["credential"]);
@@ -90,8 +90,8 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::createChallengeToken(void 
         return {HTTP::Status::Code::S_400_BAD_REQUEST, "missing_fields", "slotId + verification + details are required"};
     }
 
-    uint32_t slotId = JSON_ASUINT((*request.inputJSON), "slotId", 0);
-    std::string verification = JSON_ASSTRING((*request.inputJSON), "verification", "");
+    uint32_t slotId = Helpers::JSON::ASUINT((*request.inputJSON), "slotId", 0);
+    std::string verification = Helpers::JSON::ASSTRING((*request.inputJSON), "verification", "");
     AuthenticationResult authResult = Globals::getIdentityManager()->authController->authenticateCredential(clientDetails, accountUUID, verification, slotId);
 
     // Log the authentication result
@@ -273,9 +273,9 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::activateCredential(void *c
         return {HTTP::Status::Code::S_400_BAD_REQUEST, "missing_fields", "slotId, hash, and ssalt are required"};
     }
 
-    uint32_t slotId = JSON_ASUINT((*request.inputJSON), "slotId", 0);
-    std::string hash = JSON_ASSTRING((*request.inputJSON), "hash", "");
-    std::string ssalt = JSON_ASSTRING((*request.inputJSON), "ssalt", "");
+    uint32_t slotId = Helpers::JSON::ASUINT((*request.inputJSON), "slotId", 0);
+    std::string hash = Helpers::JSON::ASSTRING((*request.inputJSON), "hash", "");
+    std::string ssalt = Helpers::JSON::ASSTRING((*request.inputJSON), "ssalt", "");
 
     // Check if credential already exists using the new function
     if (Globals::getIdentityManager()->authController->doesCredentialSlotExistOnAccount(accountUUID, slotId))
@@ -302,8 +302,8 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::activateOTP(void *context,
         return {HTTP::Status::Code::S_400_BAD_REQUEST, "missing_fields", "slotId and seed are required"};
     }
 
-    uint32_t slotId = JSON_ASUINT((*request.inputJSON), "slotId", 0);
-    std::string seed = JSON_ASSTRING((*request.inputJSON), "seed", "");
+    uint32_t slotId = Helpers::JSON::ASUINT((*request.inputJSON), "slotId", 0);
+    std::string seed = Helpers::JSON::ASSTRING((*request.inputJSON), "seed", "");
 
     if (Globals::getIdentityManager()->authController->doesCredentialSlotExistOnAccount(accountUUID, slotId))
     {
@@ -330,8 +330,8 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::removeCredential(void *con
         return {HTTP::Status::Code::S_400_BAD_REQUEST, "missing_fields", "slotId and verification is required"};
     }
 
-    uint32_t slotId = JSON_ASUINT((*request.inputJSON), "slotId", 0);
-    std::string verification = JSON_ASSTRING((*request.inputJSON), "verification", "");
+    uint32_t slotId = Helpers::JSON::ASUINT((*request.inputJSON), "slotId", 0);
+    std::string verification = Helpers::JSON::ASSTRING((*request.inputJSON), "verification", "");
 
     AuthenticationResult authResult = Globals::getIdentityManager()->authController->authenticateCredential(clientDetails, accountUUID, verification, slotId);
 

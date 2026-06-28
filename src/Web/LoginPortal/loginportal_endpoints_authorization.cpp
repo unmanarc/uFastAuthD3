@@ -34,8 +34,8 @@ API::APIReturn LoginPortal_Endpoints::preAuthorize(void *context, const API::RES
     uint32_t loginAuthenticationTimeout = Globals::pConfig.get<uint32_t>("LoginPortal.AuthenticationTimeout", 300);
 
     // Input parameters:
-    authContext->accountName = JSON_ASSTRING(*request.inputJSON, "accountName", ""); // ACCOUNT ID.
-    std::string activityName = JSON_ASSTRING(*request.inputJSON, "activity", "");    // APP ACTIVITY NAME.
+    authContext->accountName = Helpers::JSON::ASSTRING(*request.inputJSON, "accountName", ""); // ACCOUNT ID.
+    std::string activityName = Helpers::JSON::ASSTRING(*request.inputJSON, "activity", "");    // APP ACTIVITY NAME.
     authContext->loadUUIDFromAccountName();
 
     // Account UUID
@@ -69,7 +69,7 @@ API::APIReturn LoginPortal_Endpoints::preAuthorize(void *context, const API::RES
     }
     else
     {
-        appName = JSON_ASSTRING(*request.inputJSON, "app", "");
+        appName = Helpers::JSON::ASSTRING(*request.inputJSON, "app", "");
     }
 
     if (!identityManager->applications->doesApplicationExist(appName))
@@ -188,10 +188,10 @@ API::APIReturn LoginPortal_Endpoints::authorize(void *context, const RequestCont
     std::map<uint32_t, AuthenticationSlotDetails> authSlots = identityManager->authController->listAllAuthenticationSlots();
 
     // TODO implement other authentication modes (Eg. CRAM)
-    AuthenticationResult authRetCode = identityManager->authController->authenticateCredential(clientDetails, authContext->accountUUID, JSON_ASSTRING(*request.inputJSON, "password", ""),
+    AuthenticationResult authRetCode = identityManager->authController->authenticateCredential(clientDetails, authContext->accountUUID, Helpers::JSON::ASSTRING(*request.inputJSON, "password", ""),
                                                                                                authContext->currentSlotId.value(),
-                                                                                               getAuthModeFromString(JSON_ASSTRING(*request.inputJSON, "authMode", "MODE_PLAIN")),
-                                                                                               JSON_ASSTRING(*request.inputJSON, "challengeSalt", ""), authContext);
+                                                                                               getAuthModeFromString(Helpers::JSON::ASSTRING(*request.inputJSON, "authMode", "MODE_PLAIN")),
+                                                                                               Helpers::JSON::ASSTRING(*request.inputJSON, "challengeSalt", ""), authContext);
 
     LOG_APP->log2(__func__, authContext->accountUUID, clientDetails.ipAddress, !IS_CREDENTIAL_AUTHENTICATED(authRetCode) ? Logs::LogLevel::SECURITY_ALERT : Logs::LogLevel::INFO,
                   "Account Authorization Result: %" PRIu32 " - %s, scheme '%" PRIu32 "' and slotId = %'" PRIu32 "'", authRetCode, authResultToString(authRetCode), authContext->schemeId,

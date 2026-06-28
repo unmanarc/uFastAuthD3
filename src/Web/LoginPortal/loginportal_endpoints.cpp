@@ -78,7 +78,7 @@ LoginPortal_Endpoints::APIReturn LoginPortal_Endpoints::getApplicationLoginPubli
 
     r["app"]["name"] = appName;
     r["app"]["description"] = Globals::getIdentityManager()->applications->getApplicationDescription(appName);
-    r["app"]["session"]["useSessionCookiesByDefault"] = JSON_ASBOOL(tokenProps.tokensConfiguration["accessToken"], "useSessionCookiesByDefault", true);
+    r["app"]["session"]["useSessionCookiesByDefault"] = Helpers::JSON::ASBOOL(tokenProps.tokensConfiguration["accessToken"], "useSessionCookiesByDefault", true);
 
     return r;
 }

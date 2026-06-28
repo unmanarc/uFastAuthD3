@@ -27,9 +27,9 @@ API::APIReturn AdminPortal_Endpoints_ApplicationsScopes::addApplicationScopeToAc
     API::APIReturn response;
 
     // Extract and validate input values
-    std::string appName = JSON_ASSTRING(*request.inputJSON, "appName", "");
-    std::string scopeId = JSON_ASSTRING(*request.inputJSON, "scopeId", "");
-    std::string accountUUID = JSON_ASSTRING(*request.inputJSON, "accountUUID", "");
+    std::string appName = Helpers::JSON::ASSTRING(*request.inputJSON, "appName", "");
+    std::string scopeId = Helpers::JSON::ASSTRING(*request.inputJSON, "scopeId", "");
+    std::string accountUUID = Helpers::JSON::ASSTRING(*request.inputJSON, "accountUUID", "");
 
     if (appName.empty() || scopeId.empty() || accountUUID.empty())
     {
@@ -49,9 +49,9 @@ API::APIReturn AdminPortal_Endpoints_ApplicationsScopes::removeApplicationScopeF
     API::APIReturn response;
 
     // Extract and validate input values
-    std::string appName = JSON_ASSTRING(*request.inputJSON, "appName", "");
-    std::string scopeId = JSON_ASSTRING(*request.inputJSON, "scopeId", "");
-    std::string accountUUID = JSON_ASSTRING(*request.inputJSON, "accountUUID", "");
+    std::string appName = Helpers::JSON::ASSTRING(*request.inputJSON, "appName", "");
+    std::string scopeId = Helpers::JSON::ASSTRING(*request.inputJSON, "scopeId", "");
+    std::string accountUUID = Helpers::JSON::ASSTRING(*request.inputJSON, "accountUUID", "");
 
     if (appName.empty() || scopeId.empty() || accountUUID.empty())
     {
@@ -69,9 +69,9 @@ API::APIReturn AdminPortal_Endpoints_ApplicationsScopes::createApplicationScope(
 {
     API::APIReturn response;
 
-    std::string appName = JSON_ASSTRING(*request.inputJSON, "appName", "");
-    std::string scopeId = JSON_ASSTRING(*request.inputJSON, "scopeId", "");
-    std::string scopeDescription = JSON_ASSTRING(*request.inputJSON, "scopeDescription", "");
+    std::string appName = Helpers::JSON::ASSTRING(*request.inputJSON, "appName", "");
+    std::string scopeId = Helpers::JSON::ASSTRING(*request.inputJSON, "scopeId", "");
+    std::string scopeDescription = Helpers::JSON::ASSTRING(*request.inputJSON, "scopeDescription", "");
 
     // Validate input parameters
     if (appName.empty())
@@ -109,8 +109,8 @@ API::APIReturn AdminPortal_Endpoints_ApplicationsScopes::removeApplicationScope(
 {
     API::APIReturn response;
 
-    std::string appName = JSON_ASSTRING(*request.inputJSON, "appName", "");
-    std::string scopeId = JSON_ASSTRING(*request.inputJSON, "scopeId", "");
+    std::string appName = Helpers::JSON::ASSTRING(*request.inputJSON, "appName", "");
+    std::string scopeId = Helpers::JSON::ASSTRING(*request.inputJSON, "scopeId", "");
 
     // Validate input parameters
     if (appName.empty())
@@ -142,8 +142,8 @@ API::APIReturn AdminPortal_Endpoints_ApplicationsScopes::addApplicationScopeToRo
     API::APIReturn response;
 
     if (!Globals::getIdentityManager()->authController->addApplicationScopeToRole(authClientDetails, request.jwtToken->getSubject(),
-                                                                                  {JSON_ASSTRING(*request.inputJSON, "appName", ""), JSON_ASSTRING(*request.inputJSON, "scopeId", "")},
-                                                                                  JSON_ASSTRING(*request.inputJSON, "roleId", "")))
+                                                                                  {Helpers::JSON::ASSTRING(*request.inputJSON, "appName", ""), Helpers::JSON::ASSTRING(*request.inputJSON, "scopeId", "")},
+                                                                                  Helpers::JSON::ASSTRING(*request.inputJSON, "roleId", "")))
     {
         return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to add the application scope to the role."};
     }
@@ -155,8 +155,8 @@ API::APIReturn AdminPortal_Endpoints_ApplicationsScopes::removeApplicationScopeF
     API::APIReturn response;
 
     if (!Globals::getIdentityManager()->authController->removeApplicationScopeFromRole(authClientDetails, request.jwtToken->getSubject(),
-                                                                                       {JSON_ASSTRING(*request.inputJSON, "appName", ""), JSON_ASSTRING(*request.inputJSON, "scopeId", "")},
-                                                                                       JSON_ASSTRING(*request.inputJSON, "roleId", "")))
+                                                                                       {Helpers::JSON::ASSTRING(*request.inputJSON, "appName", ""), Helpers::JSON::ASSTRING(*request.inputJSON, "scopeId", "")},
+                                                                                       Helpers::JSON::ASSTRING(*request.inputJSON, "roleId", "")))
     {
         return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Internal Error"};
     }

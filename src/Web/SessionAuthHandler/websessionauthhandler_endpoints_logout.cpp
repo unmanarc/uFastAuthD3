@@ -23,17 +23,17 @@ static void setLogoutCookies(API::APIReturn &response, const ApplicationTokenPro
     // Clear AccessToken
     response.cookiesMap["AccessToken"] = HTTP::Headers::Cookie();
     response.cookiesMap["AccessToken"].deleteCookie();
-    response.cookiesMap["AccessToken"].path = JSON_ASSTRING(tokenProps.tokensConfiguration["accessToken"], "path", "/");
+    response.cookiesMap["AccessToken"].path = Helpers::JSON::ASSTRING(tokenProps.tokensConfiguration["accessToken"], "path", "/");
 
     // Clear RefreshToken
     response.cookiesMap["RefreshToken"] = HTTP::Headers::Cookie();
     response.cookiesMap["RefreshToken"].deleteCookie();
-    response.cookiesMap["RefreshToken"].path = JSON_ASSTRING(tokenProps.tokensConfiguration["refreshToken"], "path", "/auth");
+    response.cookiesMap["RefreshToken"].path = Helpers::JSON::ASSTRING(tokenProps.tokensConfiguration["refreshToken"], "path", "/auth");
 
     // Clear RefreshTokenId
     response.cookiesMap["RefreshTokenId"] = HTTP::Headers::Cookie();
     response.cookiesMap["RefreshTokenId"].deleteCookie();
-    response.cookiesMap["RefreshTokenId"].path = JSON_ASSTRING(tokenProps.tokensConfiguration["refreshToken"], "path", "/auth");
+    response.cookiesMap["RefreshTokenId"].path = Helpers::JSON::ASSTRING(tokenProps.tokensConfiguration["refreshToken"], "path", "/auth");
 
     // Clear SessionPublicData
     response.cookiesMap["SessionPublicData"] = HTTP::Headers::Cookie();

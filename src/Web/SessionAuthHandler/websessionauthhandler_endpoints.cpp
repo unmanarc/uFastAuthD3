@@ -149,8 +149,8 @@ bool WebSessionAuthHandler_Endpoints::validateAndDecodeRefreshToken(const std::s
     }
 
     // 2. Extraer Claims básicos
-    const std::string &refreshTokenApp = JSON_ASSTRING_D(refreshTokenNoVerified.getClaim("app"), "");
-    const std::string &tokenType = JSON_ASSTRING_D(refreshTokenNoVerified.getClaim("type"), "");
+    const std::string &refreshTokenApp = Helpers::JSON::ASSTRING_D(refreshTokenNoVerified.getClaim("app"), "");
+    const std::string &tokenType = Helpers::JSON::ASSTRING_D(refreshTokenNoVerified.getClaim("type"), "");
 
     // Validar tipo de token
     if (tokenType != "refresher")
@@ -204,8 +204,8 @@ bool WebSessionAuthHandler_Endpoints::validateAndDecodeRefreshToken(const std::s
     outData.app = refreshTokenApp;
     outData.user = refreshTokenUser;
     outData.jwtId = refreshTokenVerified.getJwtId();
-    outData.slotIds = Helpers::JSON::jsonToUInt32Set(refreshTokenVerified.getClaim("slotIds"));
-    outData.useEmbeddedAuthentication = JSON_ASBOOL_D(refreshTokenVerified.getClaim("useEmbeddedAuthentication"), false);
+    outData.slotIds = Helpers::JSON::toUInt32Set(refreshTokenVerified.getClaim("slotIds"));
+    outData.useEmbeddedAuthentication = Helpers::JSON::ASBOOL_D(refreshTokenVerified.getClaim("useEmbeddedAuthentication"), false);
     outData.tokenProps = tokenProps;
 
     return true;
@@ -279,7 +279,7 @@ bool WebSessionAuthHandler_Endpoints::validateAPIKey(const std::string &app, API
 
 std::string WebSessionAuthHandler_Endpoints::signApplicationToken(JWT::Token &accessToken, const ApplicationTokenProperties &tokenProperties)
 {
-    std::string appName = JSON_ASSTRING_D(accessToken.getClaim("app"), "");
+    std::string appName = Helpers::JSON::ASSTRING_D(accessToken.getClaim("app"), "");
     std::shared_ptr<JWT> signingJWT = Globals::getIdentityManager()->applications->getAppJWTSigner(appName);
     if (!signingJWT)
     {

@@ -17,7 +17,7 @@ API::APIReturn LoginPortal_Endpoints::changeCredential(void *context, const Requ
     IdentityManager *identityManager = Globals::getIdentityManager();
 
     // INPUTS:
-    uint32_t slotId = JSON_ASUINT(*request.inputJSON, "slotId", 0);
+    uint32_t slotId = Helpers::JSON::ASUINT(*request.inputJSON, "slotId", 0);
     Credential newCredential = Credential::createFromJSON((*request.inputJSON)["newCredential"]);
 
     // Set the expiration timestamp automatically on authController->changeAccountCredential

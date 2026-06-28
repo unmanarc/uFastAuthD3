@@ -27,7 +27,7 @@ API::APIReturn AdminPortal_Endpoints_AccountCredentials::getAccountCredentialSlo
     json jResponse;
 
     // Extract and validate input
-    std::string accountUUID = JSON_ASSTRING(*request.inputJSON, "accountUUID", "");
+    std::string accountUUID = Helpers::JSON::ASSTRING(*request.inputJSON, "accountUUID", "");
 
     if (accountUUID.empty())
     {
@@ -67,8 +67,8 @@ API::APIReturn AdminPortal_Endpoints_AccountCredentials::removeAccountCredential
     API::APIReturn response;
 
     // Extract and validate input
-    std::string accountUUID = JSON_ASSTRING(*request.inputJSON, "accountUUID", "");
-    uint32_t slotId = JSON_ASUINT(*request.inputJSON, "slotId", 0);
+    std::string accountUUID = Helpers::JSON::ASSTRING(*request.inputJSON, "accountUUID", "");
+    uint32_t slotId = Helpers::JSON::ASUINT(*request.inputJSON, "slotId", 0);
 
     if (accountUUID.empty())
     {
@@ -99,9 +99,9 @@ API::APIReturn AdminPortal_Endpoints_AccountCredentials::setAccountCredentialLoc
     API::APIReturn response;
 
     // Extract and validate input
-    std::string accountUUID = JSON_ASSTRING(*request.inputJSON, "accountUUID", "");
-    uint32_t slotId = JSON_ASUINT(*request.inputJSON, "slotId", 0);
-    bool lockedStatus = JSON_ASBOOL(*request.inputJSON, "lockedStatus", false);
+    std::string accountUUID = Helpers::JSON::ASSTRING(*request.inputJSON, "accountUUID", "");
+    uint32_t slotId = Helpers::JSON::ASUINT(*request.inputJSON, "slotId", 0);
+    bool lockedStatus = Helpers::JSON::ASBOOL(*request.inputJSON, "lockedStatus", false);
 
     if (accountUUID.empty())
     {
@@ -127,9 +127,9 @@ API::APIReturn AdminPortal_Endpoints_AccountCredentials::setMustChangeCredential
     API::APIReturn response;
 
     // Extract and validate input
-    std::string accountUUID = JSON_ASSTRING(*request.inputJSON, "accountUUID", "");
-    uint32_t slotId = JSON_ASUINT(*request.inputJSON, "slotId", 0);
-    bool mustChange = JSON_ASBOOL(*request.inputJSON, "mustChange", true);
+    std::string accountUUID = Helpers::JSON::ASSTRING(*request.inputJSON, "accountUUID", "");
+    uint32_t slotId = Helpers::JSON::ASUINT(*request.inputJSON, "slotId", 0);
+    bool mustChange = Helpers::JSON::ASBOOL(*request.inputJSON, "mustChange", true);
 
     if (accountUUID.empty())
     {
@@ -155,7 +155,7 @@ API::APIReturn AdminPortal_Endpoints_AccountCredentials::generateMasterPassword(
     API::APIReturn response;
 
     // Extract and validate input
-    std::string accountUUID = JSON_ASSTRING(*request.inputJSON, "accountUUID", "");
+    std::string accountUUID = Helpers::JSON::ASSTRING(*request.inputJSON, "accountUUID", "");
 
     if (accountUUID.empty())
     {
