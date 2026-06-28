@@ -20,7 +20,7 @@ using namespace Network::Protocol;
     ANSWER: it should be at the IAM and the user portal itself, then, when you log into your user portal, you will be able to self-register into some specific app.
 */
 
-API::APIReturn LoginPortal_Endpoints::registerAccount(void *context, const RequestParameters &request, ClientDetails &clientDetails)
+API::APIReturn LoginPortal_Endpoints::registerAccount(void *context, const RequestContext &request, ClientDetails &clientDetails)
 {
     API::APIReturn response;
     /*
@@ -60,7 +60,7 @@ API::APIReturn LoginPortal_Endpoints::registerAccount(void *context, const Reque
         }
     }
 
-    std::string accountToCreate = JSON_ASSTRING((*request.inputJSON)["accountDetails"], "accountName", "");
+    std::string accountToCreate = JSON_ASSTRING((*request.inputJSON)["accountDetails"], "accountUUID", "");
 
     if (create)
     {

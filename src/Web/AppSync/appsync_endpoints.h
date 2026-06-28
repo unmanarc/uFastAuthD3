@@ -12,7 +12,7 @@ class AppSync_Endpoints
 public:
     using Endpoints = Mantids30::API::RESTful::Endpoints;
     using APIReturn = Mantids30::API::APIReturn;
-    using RequestParameters = Mantids30::API::RESTful::RequestParameters;
+    using RequestContext = Mantids30::API::RESTful::RequestContext;
     using HTTPv1_Base = Mantids30::Network::Protocol::HTTP::HTTPv1_Base;
     using ClientDetails = Mantids30::Sessions::ClientDetails;
     using JWT = Mantids30::DataFormat::JWT;
@@ -24,11 +24,11 @@ public:
     static void addAPIEndpoints(const std::shared_ptr<Endpoints> &endpoints);
 
     // Remote triggered:
-    static APIReturn getApplicationAccountsList(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
-    static APIReturn getApplicationJWTConfig(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
-    //static APIReturn getApplicationJWTSigningKey(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
-    static APIReturn getApplicationJWTValidationKey(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
-    static APIReturn updateAccessControlContext(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
+    static APIReturn getApplicationAccountsList(void *context, const RequestContext &request, ClientDetails &authClientDetails);
+    static APIReturn getApplicationJWTConfig(void *context, const RequestContext &request, ClientDetails &authClientDetails);
+    //static APIReturn getApplicationJWTSigningKey(void *context, const RequestContext &request, ClientDetails &authClientDetails);
+    static APIReturn getApplicationJWTValidationKey(void *context, const RequestContext &request, ClientDetails &authClientDetails);
+    static APIReturn updateAccessControlContext(void *context, const RequestContext &request, ClientDetails &authClientDetails);
 
     /////////////////////////////////
     static void updateAppScopes(const std::string &appName, const std::string &ipAddress, const json &proposedScopes);
@@ -36,6 +36,6 @@ public:
     static void updateAppActivities(const std::string &appName, const std::string &ipAddress, const json &proposedActivities);
 
 private:
-    static AppSync_Endpoints::APIReturn validateAndFetchApplicationAttributes(const RequestParameters &request, ClientDetails &authClientDetails, std::string &appName,
+    static AppSync_Endpoints::APIReturn validateAndFetchApplicationAttributes(const RequestContext &request, ClientDetails &authClientDetails, std::string &appName,
                                                                               std::optional<IdentityManager::Applications::ApplicationAttributes> &attribs);
 };

@@ -33,7 +33,7 @@ void UserPortal_Endpoints::addEndpoints(const std::shared_ptr<Endpoints> &endpoi
     endpoints->addEndpoint(HTTP::Method::POST, "changeCredential", SecurityRequirements::JWT_COOKIE_AUTH, {}, nullptr, &changeCredential);
 }
 
-UserPortal_Endpoints::APIReturn UserPortal_Endpoints::changeCredential(void *context, const RequestParameters &request, ClientDetails &clientDetails)
+UserPortal_Endpoints::APIReturn UserPortal_Endpoints::changeCredential(void *context, const RequestContext &request, ClientDetails &clientDetails)
 {
     API::APIReturn response;
     std::string challengeTokenSignedStr = request.clientRequest->getCookie("ChallengeToken");
@@ -63,14 +63,14 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::changeCredential(void *con
         return {HTTP::Status::Code::S_401_UNAUTHORIZED, "change_credential_failed", "Invalid Operation for Challenge Token"};
     }
 
-    std::string accountName = challengeToken.getSubject();
+    std::string accountUUID = challengeToken.getSubject();
     uint32_t slotId = JSON_ASUINT_D(challengeToken.getClaim("slotId"), 0);
 
     Credential cred;
     cred.fromJSON((*request.inputJSON)["credential"]);
     cred.setExpirationTimeAutomatically();
 
-    if (!Globals::getIdentityManager()->authController->changeAccountCredential(clientDetails, accountName, accountName, cred, slotId))
+    if (!Globals::getIdentityManager()->authController->changeAccountCredential(clientDetails, accountUUID, accountUUID, cred, slotId))
     {
         return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "change_credential_failed", "Failed to change credential"};
     }
@@ -78,11 +78,11 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::changeCredential(void *con
     return response;
 }
 
-UserPortal_Endpoints::APIReturn UserPortal_Endpoints::createChallengeToken(void *context, const RequestParameters &request, ClientDetails &clientDetails)
+UserPortal_Endpoints::APIReturn UserPortal_Endpoints::createChallengeToken(void *context, const RequestContext &request, ClientDetails &clientDetails)
 {
     API::APIReturn response;
 
-    std::string accountName = request.jwtToken->getSubject();
+    std::string accountUUID = request.jwtToken->getSubject();
 
     // Parse input parameters
     if (!request.inputJSON->isMember("slotId") || !request.inputJSON->isMember("verification") || !request.inputJSON->isMember("details"))
@@ -92,10 +92,10 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::createChallengeToken(void 
 
     uint32_t slotId = JSON_ASUINT((*request.inputJSON), "slotId", 0);
     std::string verification = JSON_ASSTRING((*request.inputJSON), "verification", "");
-    AuthenticationResult authResult = Globals::getIdentityManager()->authController->authenticateCredential(clientDetails, accountName, verification, slotId);
+    AuthenticationResult authResult = Globals::getIdentityManager()->authController->authenticateCredential(clientDetails, accountUUID, verification, slotId);
 
     // Log the authentication result
-    LOG_APP->log2(__func__, accountName, clientDetails.ipAddress, authResult != AuthenticationResult::AUTHENTICATED ? Logs::LogLevel::SECURITY_ALERT : Logs::LogLevel::INFO,
+    LOG_APP->log2(__func__, accountUUID, clientDetails.ipAddress, authResult != AuthenticationResult::AUTHENTICATED ? Logs::LogLevel::SECURITY_ALERT : Logs::LogLevel::INFO,
                   "Account Authorization Result: %" PRIu16 " - %s, for application '%s', and slotId = '%" PRIu32 "'", (uint16_t) authResult, authResultToString(authResult),
                   request.jwtToken->getClaim("app").asString().c_str(), slotId);
 
@@ -120,11 +120,11 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::createChallengeToken(void 
     return response;
 }
 
-UserPortal_Endpoints::APIReturn UserPortal_Endpoints::listAllAuthCredentialSlotsPublicData(void *context, const RequestParameters &request, ClientDetails &clientDetails)
+UserPortal_Endpoints::APIReturn UserPortal_Endpoints::listAllAuthCredentialSlotsPublicData(void *context, const RequestContext &request, ClientDetails &clientDetails)
 {
     Json::Value result(Json::arrayValue);
-    std::string accountName = request.jwtToken->getSubject();
-    std::map<uint32_t, std::pair<bool, Credential>> creds = Globals::getIdentityManager()->authController->listAllAuthCredentialSlotsPublicDataForAccount(accountName);
+    std::string accountUUID = request.jwtToken->getSubject();
+    std::map<uint32_t, std::pair<bool, Credential>> creds = Globals::getIdentityManager()->authController->listAllAuthCredentialSlotsPublicDataForAccount(accountUUID);
     const AuthenticationPolicy &authPolicy = Globals::getIdentityManager()->authController->getGlobalAuthenticationPolicy();
 
     for (const auto &credEntry : creds)
@@ -139,12 +139,12 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::listAllAuthCredentialSlots
     return result;
 }
 
-UserPortal_Endpoints::APIReturn UserPortal_Endpoints::listAccountApplicationsFullInfo(void *context, const RequestParameters &request, ClientDetails &clientDetails)
+UserPortal_Endpoints::APIReturn UserPortal_Endpoints::listAccountApplicationsFullInfo(void *context, const RequestContext &request, ClientDetails &clientDetails)
 {
     Json::Value result(Json::arrayValue);
-    std::string accountName = request.jwtToken->getSubject();
+    std::string accountUUID = request.jwtToken->getSubject();
 
-    for (const AccountApplicationInfo &appInfo : Globals::getIdentityManager()->applications->listAccountApplicationsFullInfo(accountName))
+    for (const AccountApplicationInfo &appInfo : Globals::getIdentityManager()->applications->listAccountApplicationsFullInfo(accountUUID))
     {
         result.append(appInfo.toJSON());
     }
@@ -152,11 +152,11 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::listAccountApplicationsFul
     return result;
 }
 
-UserPortal_Endpoints::APIReturn UserPortal_Endpoints::updateAccountDetailFieldsValues(void *context, const RequestParameters &request, ClientDetails &clientDetails)
+UserPortal_Endpoints::APIReturn UserPortal_Endpoints::updateAccountDetailFieldsValues(void *context, const RequestContext &request, ClientDetails &clientDetails)
 {
     API::APIReturn response;
 
-    std::string accountName = request.jwtToken->getSubject();
+    std::string accountUUID = request.jwtToken->getSubject();
 
     // Get the list of field values from input
     Json::Value fieldValuesArray = (*request.inputJSON)["fieldValues"];
@@ -176,7 +176,7 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::updateAccountDetailFieldsV
     }
 
     // Update account detail fields values
-    if (!Globals::getIdentityManager()->accounts->updateAccountDetailFieldValues(clientDetails, accountName, accountName, fieldValues, false))
+    if (!Globals::getIdentityManager()->accounts->updateAccountDetailFieldValues(clientDetails, accountUUID, accountUUID, fieldValues, false))
     {
         return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to update account detail fields values"};
     }
@@ -185,13 +185,13 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::updateAccountDetailFieldsV
     return response;
 }
 
-UserPortal_Endpoints::APIReturn UserPortal_Endpoints::getAccountDetailFieldsValues(void *context, const RequestParameters &request, ClientDetails &clientDetails)
+UserPortal_Endpoints::APIReturn UserPortal_Endpoints::getAccountDetailFieldsValues(void *context, const RequestContext &request, ClientDetails &clientDetails)
 {
     API::APIReturn response;
 
-    std::string accountName = request.jwtToken->getSubject();
+    std::string accountUUID = request.jwtToken->getSubject();
 
-    std::map<std::string, AccountDetailFieldValue> fieldValues = Globals::getIdentityManager()->accounts->getAccountDetailFieldValues(accountName);
+    std::map<std::string, AccountDetailFieldValue> fieldValues = Globals::getIdentityManager()->accounts->getAccountDetailFieldValues(accountUUID);
 
     Json::Value result(Json::arrayValue);
     for (const auto &fieldValue : fieldValues)
@@ -202,24 +202,24 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::getAccountDetailFieldsValu
     return result;
 }
 
-UserPortal_Endpoints::APIReturn UserPortal_Endpoints::searchAccountCredentialsActivity(void *context, const RequestParameters &request, ClientDetails &clientDetails)
+UserPortal_Endpoints::APIReturn UserPortal_Endpoints::searchAccountCredentialsActivity(void *context, const RequestContext &request, ClientDetails &clientDetails)
 {
-    std::string accountName = request.jwtToken->getSubject();
-    return Globals::getIdentityManager()->authController->searchAccountCredentialsActivity(accountName, *request.inputJSON);
+    std::string accountUUID = request.jwtToken->getSubject();
+    return Globals::getIdentityManager()->authController->searchAccountCredentialsActivity(accountUUID, *request.inputJSON);
 }
 
-UserPortal_Endpoints::APIReturn UserPortal_Endpoints::searchAccountSessions(void *context, const RequestParameters &request, ClientDetails &clientDetails)
+UserPortal_Endpoints::APIReturn UserPortal_Endpoints::searchAccountSessions(void *context, const RequestContext &request, ClientDetails &clientDetails)
 {
-    std::string accountName = request.jwtToken->getSubject();
-    return Globals::getIdentityManager()->authController->searchAccountSessions(accountName, *request.inputJSON);
+    std::string accountUUID = request.jwtToken->getSubject();
+    return Globals::getIdentityManager()->authController->searchAccountSessions(accountUUID, *request.inputJSON);
 }
 
-json getLastLoginJSON(const RequestParameters &request)
+json getLastLoginJSON(const RequestContext &request)
 {
     Json::Value result;
 
-    std::string accountName = request.jwtToken->getSubject();
-    IdentityManager::LastAccountAccessResult lastLoginOpt = Globals::getIdentityManager()->authController->getAccountLastAccess(accountName);
+    std::string accountUUID = request.jwtToken->getSubject();
+    IdentityManager::LastAccountAccessResult lastLoginOpt = Globals::getIdentityManager()->authController->getAccountLastAccess(accountUUID);
 
     if (lastLoginOpt.lastAccess)
     {
@@ -234,38 +234,38 @@ json getLastLoginJSON(const RequestParameters &request)
     return result;
 }
 
-UserPortal_Endpoints::APIReturn UserPortal_Endpoints::getDashboardData(void *context, const RequestParameters &request, ClientDetails &clientDetails)
+UserPortal_Endpoints::APIReturn UserPortal_Endpoints::getDashboardData(void *context, const RequestContext &request, ClientDetails &clientDetails)
 {
     Json::Value result;
 
     result["lastLogin"] = getLastLoginJSON(request);
 
-    std::string accountName = request.jwtToken->getSubject();
-    uint32_t activeSessionsCount = Globals::getIdentityManager()->authController->getAccountActiveSessionsCount(accountName);
-    std::pair<uint32_t, uint32_t> activePasswordSlots = Globals::getIdentityManager()->authController->getAccountActiveCredentialsCount(accountName);
+    std::string accountUUID = request.jwtToken->getSubject();
+    uint32_t activeSessionsCount = Globals::getIdentityManager()->authController->getAccountActiveSessionsCount(accountUUID);
+    std::pair<uint32_t, uint32_t> activePasswordSlots = Globals::getIdentityManager()->authController->getAccountActiveCredentialsCount(accountUUID);
 
     result["activeSessionsCount"] = activeSessionsCount;
     result["activePasswordSlots"] = Json::Value(Json::objectValue);
     result["activePasswordSlots"]["used"] = activePasswordSlots.second;
     result["activePasswordSlots"]["total"] = activePasswordSlots.first;
 
-    std::set<std::string> applications = Globals::getIdentityManager()->applications->listAccountApplications(accountName);
+    std::set<std::string> applications = Globals::getIdentityManager()->applications->listAccountApplications(accountUUID);
 
     result["applicationsCount"] = applications.size();
 
     return result;
 }
 
-UserPortal_Endpoints::APIReturn UserPortal_Endpoints::getLastLogin(void *context, const RequestParameters &request, ClientDetails &clientDetails)
+UserPortal_Endpoints::APIReturn UserPortal_Endpoints::getLastLogin(void *context, const RequestContext &request, ClientDetails &clientDetails)
 {
     return getLastLoginJSON(request);
 }
 
-UserPortal_Endpoints::APIReturn UserPortal_Endpoints::activateCredential(void *context, const RequestParameters &request, ClientDetails &clientDetails)
+UserPortal_Endpoints::APIReturn UserPortal_Endpoints::activateCredential(void *context, const RequestContext &request, ClientDetails &clientDetails)
 {
     API::APIReturn response;
 
-    std::string accountName = request.jwtToken->getSubject();
+    std::string accountUUID = request.jwtToken->getSubject();
 
     // Parse input parameters
     if (!request.inputJSON->isMember("slotId") || !request.inputJSON->isMember("hash") || !request.inputJSON->isMember("ssalt"))
@@ -278,12 +278,12 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::activateCredential(void *c
     std::string ssalt = JSON_ASSTRING((*request.inputJSON), "ssalt", "");
 
     // Check if credential already exists using the new function
-    if (Globals::getIdentityManager()->authController->doesCredentialSlotExistOnAccount(accountName, slotId))
+    if (Globals::getIdentityManager()->authController->doesCredentialSlotExistOnAccount(accountUUID, slotId))
     {
         return {HTTP::Status::Code::S_409_CONFLICT, "activation_failed", "Credential is already activated"};
     }
 
-    if (!Globals::getIdentityManager()->authController->activateAccountCredential(clientDetails, accountName, accountName, slotId, hash, ssalt))
+    if (!Globals::getIdentityManager()->authController->activateAccountCredential(clientDetails, accountUUID, accountUUID, slotId, hash, ssalt))
     {
         return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "activation_failed", "Failed to activate credential"};
     }
@@ -291,11 +291,11 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::activateCredential(void *c
     return response;
 }
 
-UserPortal_Endpoints::APIReturn UserPortal_Endpoints::activateOTP(void *context, const RequestParameters &request, ClientDetails &clientDetails)
+UserPortal_Endpoints::APIReturn UserPortal_Endpoints::activateOTP(void *context, const RequestContext &request, ClientDetails &clientDetails)
 {
     API::APIReturn response;
 
-    std::string accountName = request.jwtToken->getSubject();
+    std::string accountUUID = request.jwtToken->getSubject();
 
     if (!request.inputJSON->isMember("slotId") || !request.inputJSON->isMember("seed"))
     {
@@ -305,12 +305,12 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::activateOTP(void *context,
     uint32_t slotId = JSON_ASUINT((*request.inputJSON), "slotId", 0);
     std::string seed = JSON_ASSTRING((*request.inputJSON), "seed", "");
 
-    if (Globals::getIdentityManager()->authController->doesCredentialSlotExistOnAccount(accountName, slotId))
+    if (Globals::getIdentityManager()->authController->doesCredentialSlotExistOnAccount(accountUUID, slotId))
     {
         return {HTTP::Status::Code::S_409_CONFLICT, "activation_failed", "OTP credential is already activated"};
     }
 
-    if (!Globals::getIdentityManager()->authController->activateAccountCredential(clientDetails, accountName, accountName, slotId, seed, ""))
+    if (!Globals::getIdentityManager()->authController->activateAccountCredential(clientDetails, accountUUID, accountUUID, slotId, seed, ""))
     {
         return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "activation_failed", "Failed to activate OTP credential"};
     }
@@ -318,11 +318,11 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::activateOTP(void *context,
     return response;
 }
 
-UserPortal_Endpoints::APIReturn UserPortal_Endpoints::removeCredential(void *context, const RequestParameters &request, ClientDetails &clientDetails)
+UserPortal_Endpoints::APIReturn UserPortal_Endpoints::removeCredential(void *context, const RequestContext &request, ClientDetails &clientDetails)
 {
     API::APIReturn response;
 
-    std::string accountName = request.jwtToken->getSubject();
+    std::string accountUUID = request.jwtToken->getSubject();
 
     // Parse input parameters
     if (!request.inputJSON->isMember("slotId") || !request.inputJSON->isMember("verification"))
@@ -333,10 +333,10 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::removeCredential(void *con
     uint32_t slotId = JSON_ASUINT((*request.inputJSON), "slotId", 0);
     std::string verification = JSON_ASSTRING((*request.inputJSON), "verification", "");
 
-    AuthenticationResult authResult = Globals::getIdentityManager()->authController->authenticateCredential(clientDetails, accountName, verification, slotId);
+    AuthenticationResult authResult = Globals::getIdentityManager()->authController->authenticateCredential(clientDetails, accountUUID, verification, slotId);
 
     // Log the authentication result
-    LOG_APP->log2(__func__, accountName, clientDetails.ipAddress, authResult != AuthenticationResult::AUTHENTICATED ? Logs::LogLevel::SECURITY_ALERT : Logs::LogLevel::INFO,
+    LOG_APP->log2(__func__, accountUUID, clientDetails.ipAddress, authResult != AuthenticationResult::AUTHENTICATED ? Logs::LogLevel::SECURITY_ALERT : Logs::LogLevel::INFO,
                   "Account Authorization Result: %" PRIu16 " - %s, for application '%s', and slotId = '%" PRIu32 "'", (uint16_t) authResult, authResultToString(authResult),
                   request.jwtToken->getClaim("app").asString().c_str(), slotId);
 
@@ -345,7 +345,7 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::removeCredential(void *con
         return {HTTP::Status::Code::S_401_UNAUTHORIZED, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(authResult)), authResultToString(authResult)};
     }
 
-    if (!Globals::getIdentityManager()->authController->removeAccountCredential(clientDetails, accountName, accountName, slotId))
+    if (!Globals::getIdentityManager()->authController->removeAccountCredential(clientDetails, accountUUID, accountUUID, slotId))
     {
         return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "deletion_failed", "Failed to delete credential"};
     }

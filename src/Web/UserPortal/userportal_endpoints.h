@@ -11,7 +11,7 @@ class UserPortal_Endpoints
 public:
     using Endpoints = Mantids30::API::RESTful::Endpoints;
     using APIReturn = Mantids30::API::APIReturn;
-    using RequestParameters = Mantids30::API::RESTful::RequestParameters;
+    using RequestContext = Mantids30::API::RESTful::RequestContext;
     using ClientDetails = Mantids30::Sessions::ClientDetails;
 
     /**
@@ -20,18 +20,18 @@ public:
     */
     static void addEndpoints(const std::shared_ptr<Endpoints> &endpoints);
 
-    static APIReturn getDashboardData(void *context, const RequestParameters &request, ClientDetails &clientDetails);
-    static APIReturn searchAccountSessions(void *context, const RequestParameters &request, ClientDetails &clientDetails);
-    static APIReturn searchAccountCredentialsActivity(void *context, const RequestParameters &request, ClientDetails &clientDetails);
-    static APIReturn getAccountDetailFieldsValues(void *context, const RequestParameters &request, ClientDetails &clientDetails);
-    static APIReturn updateAccountDetailFieldsValues(void *context, const RequestParameters &request, ClientDetails &clientDetails);
-    static APIReturn listAccountApplicationsFullInfo(void *context, const RequestParameters &request, ClientDetails &clientDetails);
-    static APIReturn listAllAuthCredentialSlotsPublicData(void *context, const RequestParameters &request, ClientDetails &clientDetails);
-    static APIReturn activateCredential(void *context, const RequestParameters &request, ClientDetails &clientDetails);
-    static APIReturn activateOTP(void *context, const RequestParameters &request, ClientDetails &clientDetails);
-    static APIReturn removeCredential(void *context, const RequestParameters &request, ClientDetails &clientDetails);
-    static APIReturn createChallengeToken(void *context, const RequestParameters &request, ClientDetails &clientDetails);
-    static APIReturn changeCredential(void *context, const RequestParameters &request, ClientDetails &clientDetails);
+    static APIReturn getDashboardData(void *context, const RequestContext &request, ClientDetails &clientDetails);
+    static APIReturn searchAccountSessions(void *context, const RequestContext &request, ClientDetails &clientDetails);
+    static APIReturn searchAccountCredentialsActivity(void *context, const RequestContext &request, ClientDetails &clientDetails);
+    static APIReturn getAccountDetailFieldsValues(void *context, const RequestContext &request, ClientDetails &clientDetails);
+    static APIReturn updateAccountDetailFieldsValues(void *context, const RequestContext &request, ClientDetails &clientDetails);
+    static APIReturn listAccountApplicationsFullInfo(void *context, const RequestContext &request, ClientDetails &clientDetails);
+    static APIReturn listAllAuthCredentialSlotsPublicData(void *context, const RequestContext &request, ClientDetails &clientDetails);
+    static APIReturn activateCredential(void *context, const RequestContext &request, ClientDetails &clientDetails);
+    static APIReturn activateOTP(void *context, const RequestContext &request, ClientDetails &clientDetails);
+    static APIReturn removeCredential(void *context, const RequestContext &request, ClientDetails &clientDetails);
+    static APIReturn createChallengeToken(void *context, const RequestContext &request, ClientDetails &clientDetails);
+    static APIReturn changeCredential(void *context, const RequestContext &request, ClientDetails &clientDetails);
 
     /**
      * @brief Returns the last login time for the authenticated user.
@@ -40,5 +40,5 @@ public:
      * @param clientDetails Client session details.
      * @return APIReturn with lastLogin timestamp and ISO string.
      */
-    static APIReturn getLastLogin(void *context, const RequestParameters &request, ClientDetails &clientDetails);
+    static APIReturn getLastLogin(void *context, const RequestContext &request, ClientDetails &clientDetails);
 };

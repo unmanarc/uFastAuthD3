@@ -1,6 +1,6 @@
 #include "adminportal_endpoints_applications.h"
 
-#include "Mantids30/Protocol_HTTP/api_return.h"
+#include <Mantids30/Protocol_HTTP/api_return.h>
 #include "defs.h"
 #include "globals.h"
 #include <Mantids30/Program_Logs/applog.h>
@@ -20,7 +20,7 @@ void AdminPortal_Endpoints_Applications::addEndpoints_Applications(const std::sh
 
     endpoints->addEndpoint(HTTP::Method::GET, "searchApplications", SecurityRequirements::JWT_COOKIE_AUTH, {"APP_READ"}, nullptr, &searchApplications);
     endpoints->addEndpoint(HTTP::Method::DELETE, "removeApplication", SecurityRequirements::JWT_COOKIE_AUTH, {"APP_DELETE"}, nullptr, &removeApplication);
-    endpoints->addEndpoint(HTTP::Method::POST, "addApplication", SecurityRequirements::JWT_COOKIE_AUTH, {"APP_CREATE"}, nullptr, &addApplication);
+    endpoints->addEndpoint(HTTP::Method::POST, "createApplication", SecurityRequirements::JWT_COOKIE_AUTH, {"APP_CREATE"}, nullptr, &addApplication);
     endpoints->addEndpoint(HTTP::Method::GET, "doesApplicationExist", SecurityRequirements::JWT_COOKIE_AUTH, {"APP_READ"}, nullptr, &doesApplicationExist);
     endpoints->addEndpoint(HTTP::Method::GET, "getApplicationInfo", SecurityRequirements::JWT_COOKIE_AUTH, {"APP_READ"}, nullptr, &getApplicationInfo);
     endpoints->addEndpoint(HTTP::Method::PATCH, "updateApplicationDetails", SecurityRequirements::JWT_COOKIE_AUTH, {"APP_MODIFY"}, nullptr, &updateApplicationDetails);
@@ -36,12 +36,12 @@ void AdminPortal_Endpoints_Applications::addEndpoints_Applications(const std::sh
     endpoints->addEndpoint(HTTP::Method::PATCH, "changeApplicationAdmin", SecurityRequirements::JWT_COOKIE_AUTH, {"APP_MODIFY"}, nullptr, &changeApplicationAdmin);
 }
 
-API::APIReturn AdminPortal_Endpoints_Applications::searchApplications(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortal_Endpoints_Applications::searchApplications(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
     return Globals::getIdentityManager()->applications->searchApplications(*request.inputJSON);
 }
 
-API::APIReturn AdminPortal_Endpoints_Applications::removeApplication(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortal_Endpoints_Applications::removeApplication(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
@@ -64,7 +64,7 @@ API::APIReturn AdminPortal_Endpoints_Applications::removeApplication(void *conte
     }
     return response;
 }
-API::APIReturn AdminPortal_Endpoints_Applications::addApplication(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortal_Endpoints_Applications::addApplication(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
@@ -99,7 +99,7 @@ API::APIReturn AdminPortal_Endpoints_Applications::addApplication(void *context,
     attribs.fromJSON((*request.inputJSON)["applicationAttributes"]);
 
     // Attempt to create the new application
-    if (!Globals::getIdentityManager()->applications->addApplication(authClientDetails, request.jwtToken->getSubject(),
+    if (!Globals::getIdentityManager()->applications->createApplication(authClientDetails, request.jwtToken->getSubject(),
 
                                                                      JSON_ASSTRING(*request.inputJSON, "appName", ""), JSON_ASSTRING(*request.inputJSON, "description", ""),
                                                                      JSON_ASSTRING(*request.inputJSON, "appURL", ""), JSON_ASSTRING(*request.inputJSON, "appKey", ""), request.jwtToken->getSubject(),
@@ -111,7 +111,7 @@ API::APIReturn AdminPortal_Endpoints_Applications::addApplication(void *context,
     return response;
 }
 
-API::APIReturn AdminPortal_Endpoints_Applications::doesApplicationExist(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortal_Endpoints_Applications::doesApplicationExist(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
     std::string appName = JSON_ASSTRING(*request.inputJSON, "appName", "");
@@ -128,7 +128,7 @@ API::APIReturn AdminPortal_Endpoints_Applications::doesApplicationExist(void *co
     return response;
 }
 
-AdminPortal_Endpoints_Applications::APIReturn AdminPortal_Endpoints_Applications::changeApplicationAdmin(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+AdminPortal_Endpoints_Applications::APIReturn AdminPortal_Endpoints_Applications::changeApplicationAdmin(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
     std::string appName = JSON_ASSTRING(*request.inputJSON, "appName", "");
@@ -138,14 +138,14 @@ AdminPortal_Endpoints_Applications::APIReturn AdminPortal_Endpoints_Applications
         return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Application Name is Empty"};
     }
 
-    std::string accountName = JSON_ASSTRING(*request.inputJSON, "accountName", "");
+    std::string accountUUID = JSON_ASSTRING(*request.inputJSON, "accountUUID", "");
 
-    if (accountName.empty())
+    if (accountUUID.empty())
     {
         return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Account Name is Empty"};
     }
 
-    if (!Globals::getIdentityManager()->applications->changeApplicationAdmin(authClientDetails, request.jwtToken->getSubject(), appName, accountName,
+    if (!Globals::getIdentityManager()->applications->changeApplicationAdmin(authClientDetails, request.jwtToken->getSubject(), appName, accountUUID,
                                                                              JSON_ASBOOL(*request.inputJSON, "isAppAdmin", false)))
     {
         return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Internal Error"};
@@ -153,7 +153,7 @@ AdminPortal_Endpoints_Applications::APIReturn AdminPortal_Endpoints_Applications
     return getApplicationAccountDetails(appName);
 }
 
-API::APIReturn AdminPortal_Endpoints_Applications::getApplicationInfo(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortal_Endpoints_Applications::getApplicationInfo(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
@@ -206,7 +206,7 @@ API::APIReturn AdminPortal_Endpoints_Applications::getApplicationInfo(void *cont
     return response;
 }
 
-API::APIReturn AdminPortal_Endpoints_Applications::updateApplicationDetails(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortal_Endpoints_Applications::updateApplicationDetails(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
@@ -232,7 +232,7 @@ API::APIReturn AdminPortal_Endpoints_Applications::updateApplicationDetails(void
     return response;
 }
 
-API::APIReturn AdminPortal_Endpoints_Applications::updateApplicationAPIKey(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortal_Endpoints_Applications::updateApplicationAPIKey(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
@@ -250,7 +250,7 @@ API::APIReturn AdminPortal_Endpoints_Applications::updateApplicationAPIKey(void 
     return response;
 }
 
-API::APIReturn AdminPortal_Endpoints_Applications::updateWebLoginJWTConfigForApplication(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortal_Endpoints_Applications::updateWebLoginJWTConfigForApplication(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
@@ -268,7 +268,7 @@ API::APIReturn AdminPortal_Endpoints_Applications::updateWebLoginJWTConfigForApp
     return response;
 }
 
-API::APIReturn AdminPortal_Endpoints_Applications::updateApplicationLoginCallbackURI(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortal_Endpoints_Applications::updateApplicationLoginCallbackURI(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
@@ -289,7 +289,7 @@ API::APIReturn AdminPortal_Endpoints_Applications::updateApplicationLoginCallbac
     return response;
 }
 
-API::APIReturn AdminPortal_Endpoints_Applications::addApplicationLoginOrigin(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortal_Endpoints_Applications::addApplicationLoginOrigin(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
@@ -310,7 +310,7 @@ API::APIReturn AdminPortal_Endpoints_Applications::addApplicationLoginOrigin(voi
     return response;
 }
 
-API::APIReturn AdminPortal_Endpoints_Applications::removeApplicationLoginOrigin(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortal_Endpoints_Applications::removeApplicationLoginOrigin(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
@@ -331,7 +331,7 @@ API::APIReturn AdminPortal_Endpoints_Applications::removeApplicationLoginOrigin(
     return response;
 }
 
-API::APIReturn AdminPortal_Endpoints_Applications::addApplicationLoginRedirectURI(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortal_Endpoints_Applications::addApplicationLoginRedirectURI(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
@@ -352,7 +352,7 @@ API::APIReturn AdminPortal_Endpoints_Applications::addApplicationLoginRedirectUR
     return response;
 }
 
-API::APIReturn AdminPortal_Endpoints_Applications::removeApplicationLoginRedirectURI(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortal_Endpoints_Applications::removeApplicationLoginRedirectURI(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
@@ -373,7 +373,7 @@ API::APIReturn AdminPortal_Endpoints_Applications::removeApplicationLoginRedirec
     return response;
 }
 
-AdminPortal_Endpoints_Applications::APIReturn AdminPortal_Endpoints_Applications::updateWebLoginDefaultRedirectURIForApplication(void *context, const RequestParameters &request,
+AdminPortal_Endpoints_Applications::APIReturn AdminPortal_Endpoints_Applications::updateWebLoginDefaultRedirectURIForApplication(void *context, const RequestContext &request,
                                                                                                                                  ClientDetails &authClientDetails)
 {
     API::APIReturn response;

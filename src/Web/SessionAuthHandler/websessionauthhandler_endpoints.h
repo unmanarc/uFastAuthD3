@@ -12,7 +12,7 @@ class WebSessionAuthHandler_Endpoints
 public:
     using Endpoints = Mantids30::API::RESTful::Endpoints;
     using APIReturn = Mantids30::API::APIReturn;
-    using RequestParameters = Mantids30::API::RESTful::RequestParameters;
+    using RequestContext = Mantids30::API::RESTful::RequestContext;
     using HTTPv1_Base = Mantids30::Network::Protocol::HTTP::HTTPv1_Base;
     using ClientDetails = Mantids30::Sessions::ClientDetails;
     using JWT = Mantids30::DataFormat::JWT;
@@ -24,18 +24,18 @@ public:
     static void addEndpoints(const std::shared_ptr<Endpoints> &endpoints);
 
     // Remote triggered:
-    static APIReturn refreshAccessToken(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
-    static APIReturn getApplicationLoginPublicData(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
-    static APIReturn appLogout(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
-    static APIReturn callback(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
-    static APIReturn getLogoutCallbackURL(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
+    static APIReturn refreshAccessToken(void *context, const RequestContext &request, ClientDetails &authClientDetails);
+    static APIReturn getApplicationLoginPublicData(void *context, const RequestContext &request, ClientDetails &authClientDetails);
+    static APIReturn appLogout(void *context, const RequestContext &request, ClientDetails &authClientDetails);
+    static APIReturn callback(void *context, const RequestContext &request, ClientDetails &authClientDetails);
+    static APIReturn getLogoutCallbackURL(void *context, const RequestContext &request, ClientDetails &authClientDetails);
 
     static Mantids30::Network::Protocol::HTTP::Status::Code handleRetokenizeHTML(const std::string &appName, HTTPv1_Base::Request *request, HTTPv1_Base::Response *response,
                                                                                        const std::shared_ptr<void> &);
 
 
 private:
-    static bool validateAPIKey(const std::string &app, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails);
+    static bool validateAPIKey(const std::string &app, APIReturn &response, const RequestContext &request, ClientDetails &authClientDetails);
     static void setupAccessTokenCookies(APIReturn &response, JWT::Token accessToken, const ApplicationTokenProperties &tokenProps);
     static void setupRefreshTokenCookies(APIReturn &response, JWT::Token refreshToken, const ApplicationTokenProperties &tokenProps);
     //static void setupLogoutTokenCookies(APIReturn &response, JWT::Token refreshToken, const ApplicationTokenProperties &tokenProps);

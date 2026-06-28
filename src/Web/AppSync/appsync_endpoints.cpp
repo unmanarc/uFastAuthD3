@@ -41,7 +41,7 @@ void AppSync_Endpoints::updateAppScopes(const std::string &appName, const std::s
 {
     ClientDetails clientDetails;
     clientDetails.ipAddress = ipAddress;
-    std::string performedBy = "%APP:" + appName;
+    std::string performedBy = "00000000-0000-4000-8000-000000000001";
 
     // Current elements...
     std::set<ApplicationScope> currentScopes = Globals::getIdentityManager()->authController->listApplicationScopes(appName);
@@ -74,7 +74,7 @@ void AppSync_Endpoints::updateAppScopes(const std::string &appName, const std::s
                 {
                     // Add new scope
                     LOG_APP->log2(__func__, "", ipAddress, Logs::LogLevel::INFO, "Adding new scope '%s' to application '%s'.", id.c_str(), appName.c_str());
-                    Globals::getIdentityManager()->authController->addApplicationScope(clientDetails, performedBy, newScope);
+                    Globals::getIdentityManager()->authController->createApplicationScope(clientDetails, performedBy, newScope);
                 }
             }
         }
@@ -95,7 +95,7 @@ void AppSync_Endpoints::updateAppRoles(const std::string &appName, const std::st
 {
     ClientDetails clientDetails;
     clientDetails.ipAddress = ipAddress;
-    std::string performedBy = "%APP:" + appName;
+    std::string performedBy = "00000000-0000-4000-8000-000000000001";
 
     std::set<ApplicationRole> currentRoles = Globals::getIdentityManager()->applicationRoles->getApplicationRolesList(appName);
 
@@ -133,7 +133,7 @@ void AppSync_Endpoints::updateAppRoles(const std::string &appName, const std::st
             {
                 // Add new role
                 LOG_APP->log2(__func__, "", ipAddress, Logs::LogLevel::INFO, "Adding new role '%s' to application '%s'.", id.c_str(), appName.c_str());
-                Globals::getIdentityManager()->applicationRoles->addRole(clientDetails, performedBy, appName, id, description);
+                Globals::getIdentityManager()->applicationRoles->createRole(clientDetails, performedBy, appName, id, description);
             }
         }
         // Remove roles that are not in proposed list
@@ -201,7 +201,7 @@ void AppSync_Endpoints::updateAppActivities(const std::string &appName, const st
 {
     ClientDetails clientDetails;
     clientDetails.ipAddress = ipAddress;
-    std::string performedBy = "%APP:" + appName;
+    std::string performedBy = "00000000-0000-4000-8000-000000000001";
 
     std::map<std::string, IdentityManager::ApplicationActivities::ActivityData> currentActivities = Globals::getIdentityManager()->applicationActivities->listApplicationActivities(appName);
 
@@ -244,7 +244,7 @@ void AppSync_Endpoints::updateAppActivities(const std::string &appName, const st
                 LOG_APP->log2(__func__, "", ipAddress, Logs::LogLevel::INFO, "Adding new activity '%s' to application '%s'.", name.c_str(), appName.c_str());
 
                 // First register basic activity data
-                Globals::getIdentityManager()->applicationActivities->addApplicationActivity(clientDetails, performedBy, appName, name, activityData.description);
+                Globals::getIdentityManager()->applicationActivities->createApplicationActivity(clientDetails, performedBy, appName, name, activityData.description);
 
                 // Then apply remaining metadata
                 if (!activityData.parentActivity.empty())
@@ -267,7 +267,7 @@ void AppSync_Endpoints::updateAppActivities(const std::string &appName, const st
     }
 }
 
-AppSync_Endpoints::APIReturn AppSync_Endpoints::validateAndFetchApplicationAttributes(const RequestParameters &request, ClientDetails &authClientDetails, std::string &appName,
+AppSync_Endpoints::APIReturn AppSync_Endpoints::validateAndFetchApplicationAttributes(const RequestContext &request, ClientDetails &authClientDetails, std::string &appName,
                                                                                       std::optional<IdentityManager::Applications::ApplicationAttributes> &attribs)
 {
     appName = request.clientRequest->requestLine.urlVars()->getStringValue("APP");
@@ -305,7 +305,7 @@ AppSync_Endpoints::APIReturn AppSync_Endpoints::validateAndFetchApplicationAttri
     return {}; // Success
 }
 
-AppSync_Endpoints::APIReturn AppSync_Endpoints::updateAccessControlContext(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+AppSync_Endpoints::APIReturn AppSync_Endpoints::updateAccessControlContext(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
     std::string appName;
     std::optional<IdentityManager::Applications::ApplicationAttributes> attribs;
@@ -324,7 +324,7 @@ AppSync_Endpoints::APIReturn AppSync_Endpoints::updateAccessControlContext(void 
     return {}; // Success
 }
 
-AppSync_Endpoints::APIReturn AppSync_Endpoints::getApplicationAccountsList(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+AppSync_Endpoints::APIReturn AppSync_Endpoints::getApplicationAccountsList(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
     std::string appName;
     std::optional<IdentityManager::Applications::ApplicationAttributes> attribs;
@@ -342,9 +342,9 @@ AppSync_Endpoints::APIReturn AppSync_Endpoints::getApplicationAccountsList(void 
     // Retrieve and return the list of users
     std::set<std::string> accountList = Globals::getIdentityManager()->applications->listApplicationAccounts(appName);
     Json::Value response = Json::arrayValue;
-    for (const std::string &accountName : accountList)
+    for (const std::string &accountUUID : accountList)
     {
-        if (std::optional<AccountDetails> x = Globals::getIdentityManager()->accounts->getAccountDetails(accountName, AccountDetailsToShow::APISYNC))
+        if (std::optional<AccountDetails> x = Globals::getIdentityManager()->accounts->getAccountDetails(accountUUID, AccountDetailsToShow::APISYNC))
         {
             response.append(x->toJSON());
         }
@@ -360,7 +360,7 @@ AppSync_Endpoints::APIReturn AppSync_Endpoints::getApplicationAccountsList(void 
  * @param authClientDetails Client authentication details including IP address
  * @return APIReturn containing JWT configuration or error response
  */
-AppSync_Endpoints::APIReturn AppSync_Endpoints::getApplicationJWTConfig(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+AppSync_Endpoints::APIReturn AppSync_Endpoints::getApplicationJWTConfig(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
     std::string appName;
     std::optional<IdentityManager::Applications::ApplicationAttributes> attribs;
@@ -381,7 +381,7 @@ AppSync_Endpoints::APIReturn AppSync_Endpoints::getApplicationJWTConfig(void *co
  * @param authClientDetails Client authentication details including IP address
  * @return APIReturn containing JWT signing key or error response
  */ /*
-AppSync_Endpoints::APIReturn AppSync_Endpoints::getApplicationJWTSigningKey(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+AppSync_Endpoints::APIReturn AppSync_Endpoints::getApplicationJWTSigningKey(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
     std::string appName;
     std::optional<IdentityManager::Applications::ApplicationAttributes> attribs;
@@ -400,7 +400,7 @@ AppSync_Endpoints::APIReturn AppSync_Endpoints::getApplicationJWTSigningKey(void
  * @param authClientDetails Client authentication details including IP address
  * @return APIReturn containing JWT validation key or error response
  */
-AppSync_Endpoints::APIReturn AppSync_Endpoints::getApplicationJWTValidationKey(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+AppSync_Endpoints::APIReturn AppSync_Endpoints::getApplicationJWTValidationKey(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
     std::string appName;
     std::optional<IdentityManager::Applications::ApplicationAttributes> attribs;

@@ -4,34 +4,20 @@
 #include <Mantids30/Program_Logs/applog.h>
 #include <json/value.h>
 
-#include "Mantids30/Helpers/json.h"
+#include <Mantids30/Helpers/json.h>
 #include "defs.h"
 #include "globals.h"
-#include <regex>
 
 using namespace Mantids30::Program;
 using namespace Mantids30;
 using namespace Mantids30::Network::Protocol;
-
-std::map<std::string, std::string> AdminPortal_Endpoints_Accounts::jsonToMap(const json &jValue)
-{
-    std::map<std::string, std::string> r;
-    for (const std::string &memberName : jValue.getMemberNames())
-    {
-        if (jValue[memberName].isString())
-        {
-            r[memberName] = JSON_ASSTRING(jValue, memberName, "");
-        }
-    }
-    return r;
-}
 
 void AdminPortal_Endpoints_Accounts::addEndpoints_Accounts(const std::shared_ptr<Endpoints> &endpoints)
 {
     using SecurityRequirements = API::Security::Requirements;
 
     // Accounts:
-    endpoints->addEndpoint(HTTP::Method::POST, "addAccount", SecurityRequirements::JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"}, nullptr, &addAccount);
+    endpoints->addEndpoint(HTTP::Method::POST, "createAccount", SecurityRequirements::JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"}, nullptr, &createAccount);
     endpoints->addEndpoint(HTTP::Method::GET, "doesAccountExist", SecurityRequirements::JWT_COOKIE_AUTH, {"ACCOUNT_READ"}, nullptr, &doesAccountExist);
     endpoints->addEndpoint(HTTP::Method::GET, "searchAccounts", SecurityRequirements::JWT_COOKIE_AUTH, {"ACCOUNT_READ"}, nullptr, &searchAccounts);
     endpoints->addEndpoint(HTTP::Method::GET, "getAccountDetailFieldsValues", SecurityRequirements::JWT_COOKIE_AUTH, {"ACCOUNT_READ"}, nullptr, &getAccountDetailFieldsValues);
@@ -46,7 +32,7 @@ void AdminPortal_Endpoints_Accounts::addEndpoints_Accounts(const std::shared_ptr
     endpoints->addEndpoint(HTTP::Method::DELETE, "removeAccountFromApplication", SecurityRequirements::JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"}, nullptr, &removeAccountFromApplication);
     // Fields
     endpoints->addEndpoint(HTTP::Method::GET, "searchFields", SecurityRequirements::JWT_COOKIE_AUTH, {"CONFIG_READ"}, nullptr, &searchFields);
-    endpoints->addEndpoint(HTTP::Method::POST, "addAccountDetailField", SecurityRequirements::JWT_COOKIE_AUTH, {"CONFIG_WRITE"}, nullptr, &addAccountDetailField);
+    endpoints->addEndpoint(HTTP::Method::POST, "createAccountDetailField", SecurityRequirements::JWT_COOKIE_AUTH, {"CONFIG_WRITE"}, nullptr, &createAccountDetailField);
     endpoints->addEndpoint(HTTP::Method::PUT, "updateAccountDetailField", SecurityRequirements::JWT_COOKIE_AUTH, {"CONFIG_WRITE"}, nullptr, &updateAccountDetailField);
     endpoints->addEndpoint(HTTP::Method::DELETE, "removeAccountDetailField", SecurityRequirements::JWT_COOKIE_AUTH, {"CONFIG_WRITE"}, nullptr, &removeAccountDetailField);
     endpoints->addEndpoint(HTTP::Method::GET, "getAccountDetailField", SecurityRequirements::JWT_COOKIE_AUTH, {"CONFIG_READ"}, nullptr, &getAccountDetailField);
@@ -54,18 +40,18 @@ void AdminPortal_Endpoints_Accounts::addEndpoints_Accounts(const std::shared_ptr
     endpoints->addEndpoint(HTTP::Method::POST, "extendAccountInactivity",SecurityRequirements::JWT_COOKIE_AUTH,{"ACCOUNT_MODIFY"}, nullptr, &extendInactivity );
 }
 
-AdminPortal_Endpoints_Accounts::APIReturn AdminPortal_Endpoints_Accounts::extendInactivity(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+AdminPortal_Endpoints_Accounts::APIReturn AdminPortal_Endpoints_Accounts::extendInactivity(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
-    std::string accountName = JSON_ASSTRING(*request.inputJSON, "accountName", "");
+    std::string accountUUID = JSON_ASSTRING(*request.inputJSON, "accountUUID", "");
     time_t validUntil = JSON_ASINT64(*request.inputJSON, "validUntil", 0);
 
     // Validate that account name is not empty
-    if (accountName.empty())
+    if (accountUUID.empty())
     {
         return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Account Name is Empty"};
     }
 
-    if (!Globals::getIdentityManager()->accounts->extendInactivity(accountName,validUntil))
+    if (!Globals::getIdentityManager()->accounts->extendInactivity(accountUUID,validUntil))
     {
         return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed extend inactivity"};
     }
@@ -73,40 +59,23 @@ AdminPortal_Endpoints_Accounts::APIReturn AdminPortal_Endpoints_Accounts::extend
     return {};
 }
 
-API::APIReturn AdminPortal_Endpoints_Accounts::addAccount(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortal_Endpoints_Accounts::createAccount(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
     // Extract account name from request
-    std::string accountName = JSON_ASSTRING(*request.inputJSON, "accountName", "");
-
-    // Check if account already exists
-    if (Globals::getIdentityManager()->accounts->doesAccountExist(accountName))
-    {
-        return {HTTP::Status::Code::S_406_NOT_ACCEPTABLE, "unacceptable_request", "Account Already Exist"};
-    }
-
-    // Validate that account name is not empty
-    if (accountName.empty())
-    {
-        return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Account Name is Empty"};
-    }
-
-    // Validate account name format using regex (alphanumeric only)
-    std::regex accountNameExpr("[a-zA-Z0-9]+");
-    if (!regex_match(accountName, accountNameExpr))
-    {
-        return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Account name have invalid characters"};
-    }
 
     // Initialize account flags from request
     AccountFlags accountFlags;
     accountFlags.fromJSON(request.inputJSON);
 
     // Add the new account to the system with specified expiration and flags
-    if (!Globals::getIdentityManager()->accounts->addAccount(accountName, JSON_ASUINT64(*request.inputJSON, "expirationDate", 0), accountFlags, authClientDetails, request.jwtToken->getSubject()))
+    std::optional<std::string> _accountUUID = Globals::getIdentityManager()->accounts->createAccount(JSON_ASUINT64(*request.inputJSON, "expirationDate", 0), accountFlags, authClientDetails, request.jwtToken->getSubject());
+    if (!_accountUUID.has_value())
     {
-        return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to add the new account. Check if user already exists"};
+        return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to add the new account."};
     }
+
+    const std::string& accountUUID = _accountUUID.value();
 
     // Extract credential information from request
     json tempCredential = (*request.inputJSON)["tempCredential"];
@@ -132,7 +101,7 @@ API::APIReturn AdminPortal_Endpoints_Accounts::addAccount(void *context, const R
     newCredentialData.setExpirationTimeAutomatically();
 
     // Apply the credential to the new account
-    if (!Globals::getIdentityManager()->authController->changeAccountCredential(authClientDetails, request.jwtToken->getSubject(), accountName, newCredentialData, slotId))
+    if (!Globals::getIdentityManager()->authController->changeAccountCredential(authClientDetails, request.jwtToken->getSubject(), accountUUID, newCredentialData, slotId))
     {
         return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to change the credential on the new user."};
     }
@@ -141,17 +110,17 @@ API::APIReturn AdminPortal_Endpoints_Accounts::addAccount(void *context, const R
     flags.fromJSON((*request.inputJSON)["flags"]);
 
     // Apply the credential to the new account
-    if (!Globals::getIdentityManager()->accounts->changeAccountFlags(authClientDetails, request.jwtToken->getSubject(), accountName, flags))
+    if (!Globals::getIdentityManager()->accounts->changeAccountFlags(authClientDetails, request.jwtToken->getSubject(), accountUUID, flags))
     {
         return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to change the credential on the new user."};
     }
 
-    if (!Globals::getIdentityManager()->applications->addAccountToApplication(authClientDetails, request.jwtToken->getSubject(), IAM_USRPORTAL_APPNAME, accountName))
+    if (!Globals::getIdentityManager()->applications->addAccountToApplication(authClientDetails, request.jwtToken->getSubject(), IAM_USRPORTAL_APPNAME, accountUUID))
     {
         return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to assign user with GENERIC_USER in app '" IAM_USRPORTAL_APPNAME "'."};
     }
 
-    if (!Globals::getIdentityManager()->applicationRoles->addAccountToRole(authClientDetails, request.jwtToken->getSubject(), IAM_USRPORTAL_APPNAME, "GENERIC_USER", accountName))
+    if (!Globals::getIdentityManager()->applicationRoles->addAccountToRole(authClientDetails, request.jwtToken->getSubject(), IAM_USRPORTAL_APPNAME, "GENERIC_USER", accountUUID))
     {
         return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to assign user with GENERIC_USER in app '" IAM_USRPORTAL_APPNAME "'."};
     }
@@ -159,30 +128,30 @@ API::APIReturn AdminPortal_Endpoints_Accounts::addAccount(void *context, const R
     return response;
 }
 
-API::APIReturn AdminPortal_Endpoints_Accounts::getAccountFlags(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortal_Endpoints_Accounts::getAccountFlags(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
     APIReturn response;
-    std::string accountName = JSON_ASSTRING(*request.inputJSON, "accountName", "");
+    std::string accountUUID = JSON_ASSTRING(*request.inputJSON, "accountUUID", "");
 
-    if (accountName.empty())
+    if (accountUUID.empty())
     {
         return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Account name is required"};
     }
 
-    return Globals::getIdentityManager()->accounts->getAccountFlags(accountName).toJSON();
+    return Globals::getIdentityManager()->accounts->getAccountFlags(accountUUID).toJSON();
 }
 
-API::APIReturn AdminPortal_Endpoints_Accounts::changeAccountFlags(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortal_Endpoints_Accounts::changeAccountFlags(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
     APIReturn response;
-    std::string accountName = JSON_ASSTRING(*request.inputJSON, "accountName", "");
+    std::string accountUUID = JSON_ASSTRING(*request.inputJSON, "accountUUID", "");
 
     if (!(*request.inputJSON).isMember("flags"))
     {
         return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Account flags are required"};
     }
 
-    if (accountName.empty())
+    if (accountUUID.empty())
     {
         return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Account name is required"};
     }
@@ -190,7 +159,7 @@ API::APIReturn AdminPortal_Endpoints_Accounts::changeAccountFlags(void *context,
     AccountFlags flags;
     flags.fromJSON((*request.inputJSON)["flags"]);
 
-    bool changed = Globals::getIdentityManager()->accounts->changeAccountFlags(authClientDetails, request.jwtToken->getSubject(), accountName, flags);
+    bool changed = Globals::getIdentityManager()->accounts->changeAccountFlags(authClientDetails, request.jwtToken->getSubject(), accountUUID, flags);
 
     if (!changed)
     {
@@ -199,49 +168,49 @@ API::APIReturn AdminPortal_Endpoints_Accounts::changeAccountFlags(void *context,
     return response;
 }
 
-API::APIReturn AdminPortal_Endpoints_Accounts::doesAccountExist(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortal_Endpoints_Accounts::doesAccountExist(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
-    std::string accountName = JSON_ASSTRING(*request.inputJSON, "accountName", "");
+    std::string accountUUID = JSON_ASSTRING(*request.inputJSON, "accountUUID", "");
 
-    if (accountName.empty())
+    if (accountUUID.empty())
     {
         return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Account Name is Empty"};
     }
 
-    if (!Globals::getIdentityManager()->accounts->doesAccountExist(accountName))
+    if (!Globals::getIdentityManager()->accounts->doesAccountExist(accountUUID))
     {
         return {HTTP::Status::Code::S_404_NOT_FOUND, "not_found", "The Account does not exist in the system."};
     }
     return response;
 }
 
-API::APIReturn AdminPortal_Endpoints_Accounts::searchAccounts(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortal_Endpoints_Accounts::searchAccounts(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
     return Globals::getIdentityManager()->accounts->searchAccounts(*request.inputJSON);
 }
 
-API::APIReturn AdminPortal_Endpoints_Accounts::getAccountApplications(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortal_Endpoints_Accounts::getAccountApplications(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
-    const std::string accountName = JSON_ASSTRING(*request.inputJSON, "accountName", "");
+    const std::string accountUUID = JSON_ASSTRING(*request.inputJSON, "accountUUID", "");
 
     int i = 0;
 
-    std::set<std::string> listAccountApplications = Globals::getIdentityManager()->applications->listAccountApplications(accountName);
-    std::set<ApplicationScope> directScopes = Globals::getIdentityManager()->authController->getAccountDirectApplicationScopes(accountName);
+    std::set<std::string> listAccountApplications = Globals::getIdentityManager()->applications->listAccountApplications(accountUUID);
+    std::set<ApplicationScope> directScopes = Globals::getIdentityManager()->authController->getAccountDirectApplicationScopes(accountUUID);
 
     for (const std::string &applicationName : listAccountApplications)
     {
-        std::set<ApplicationScope> usableScopes = Globals::getIdentityManager()->authController->getAccountUsableApplicationScopes(applicationName, accountName);
+        std::set<ApplicationScope> usableScopes = Globals::getIdentityManager()->authController->getAccountUsableApplicationScopes(applicationName, accountUUID);
 
         (*response.responseJSON())["applications"][i]["name"] = applicationName;
         // TODO: optimize:
         (*response.responseJSON())["applications"][i]["description"] = Globals::getIdentityManager()->applications->getApplicationDescription(applicationName);
 
         std::set<ApplicationRole> allAppRoles = Globals::getIdentityManager()->applicationRoles->getApplicationRolesList(applicationName);
-        std::set<ApplicationRole> usedAppRoles = Globals::getIdentityManager()->accounts->getAccountApplicationRoles(applicationName, accountName);
+        std::set<ApplicationRole> usedAppRoles = Globals::getIdentityManager()->accounts->getAccountApplicationRoles(applicationName, accountUUID);
 
         // Add used roles
         for (const ApplicationRole &role : usedAppRoles)
@@ -307,14 +276,14 @@ API::APIReturn AdminPortal_Endpoints_Accounts::getAccountApplications(void *cont
     return response;
 }
 
-API::APIReturn AdminPortal_Endpoints_Accounts::addAccountToApplication(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortal_Endpoints_Accounts::addAccountToApplication(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
-    std::string accountName = JSON_ASSTRING(*request.inputJSON, "accountName", "");
+    std::string accountUUID = JSON_ASSTRING(*request.inputJSON, "accountUUID", "");
     std::string appName = JSON_ASSTRING(*request.inputJSON, "appName", "");
 
-    if (accountName.empty())
+    if (accountUUID.empty())
     {
         return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Account name is required"};
     }
@@ -324,7 +293,7 @@ API::APIReturn AdminPortal_Endpoints_Accounts::addAccountToApplication(void *con
         return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Application name is required"};
     }
 
-    if (!Globals::getIdentityManager()->applications->addAccountToApplication(authClientDetails, request.jwtToken->getSubject(), appName, accountName))
+    if (!Globals::getIdentityManager()->applications->addAccountToApplication(authClientDetails, request.jwtToken->getSubject(), appName, accountUUID))
     {
         return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to add the account to the application."};
     }
@@ -332,14 +301,14 @@ API::APIReturn AdminPortal_Endpoints_Accounts::addAccountToApplication(void *con
     return response;
 }
 
-API::APIReturn AdminPortal_Endpoints_Accounts::removeAccountFromApplication(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortal_Endpoints_Accounts::removeAccountFromApplication(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
-    std::string accountName = JSON_ASSTRING(*request.inputJSON, "accountName", "");
+    std::string accountUUID = JSON_ASSTRING(*request.inputJSON, "accountUUID", "");
     std::string appName = JSON_ASSTRING(*request.inputJSON, "appName", "");
 
-    if (accountName.empty())
+    if (accountUUID.empty())
     {
         return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Account name is required"};
     }
@@ -349,19 +318,19 @@ API::APIReturn AdminPortal_Endpoints_Accounts::removeAccountFromApplication(void
         return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Application name is required"};
     }
 
-    if (!Globals::getIdentityManager()->applications->removeAccountFromApplication(authClientDetails, request.jwtToken->getSubject(), appName, accountName))
+    if (!Globals::getIdentityManager()->applications->removeAccountFromApplication(authClientDetails, request.jwtToken->getSubject(), appName, accountUUID))
     {
         return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to remove the account from the application."};
     }
     return response;
 }
 
-API::APIReturn AdminPortal_Endpoints_Accounts::searchFields(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortal_Endpoints_Accounts::searchFields(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
     return Globals::getIdentityManager()->accounts->searchFields(*request.inputJSON);
 }
 
-API::APIReturn AdminPortal_Endpoints_Accounts::addAccountDetailField(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortal_Endpoints_Accounts::createAccountDetailField(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
@@ -372,7 +341,7 @@ API::APIReturn AdminPortal_Endpoints_Accounts::addAccountDetailField(void *conte
     {
         return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Field Name is Empty"};
     }
-    if (!Globals::getIdentityManager()->accounts->addAccountDetailField(authClientDetails, request.jwtToken->getSubject(), fieldName, fieldDetails))
+    if (!Globals::getIdentityManager()->accounts->createAccountDetailField(authClientDetails, request.jwtToken->getSubject(), fieldName, fieldDetails))
     {
         return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "field_already_exists", "Field already exists"};
     }
@@ -380,7 +349,7 @@ API::APIReturn AdminPortal_Endpoints_Accounts::addAccountDetailField(void *conte
     return response;
 }
 
-AdminPortal_Endpoints_Accounts::APIReturn AdminPortal_Endpoints_Accounts::updateAccountDetailField(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+AdminPortal_Endpoints_Accounts::APIReturn AdminPortal_Endpoints_Accounts::updateAccountDetailField(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
     AccountDetailField fieldDetails;
@@ -398,7 +367,7 @@ AdminPortal_Endpoints_Accounts::APIReturn AdminPortal_Endpoints_Accounts::update
     return {};
 }
 
-API::APIReturn AdminPortal_Endpoints_Accounts::removeAccountDetailField(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortal_Endpoints_Accounts::removeAccountDetailField(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
     std::string fieldName = JSON_ASSTRING((*request.inputJSON), "fieldName", "");
     if (fieldName.empty())
@@ -413,7 +382,7 @@ API::APIReturn AdminPortal_Endpoints_Accounts::removeAccountDetailField(void *co
     return {};
 }
 
-API::APIReturn AdminPortal_Endpoints_Accounts::getAccountDetailField(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortal_Endpoints_Accounts::getAccountDetailField(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
@@ -431,17 +400,17 @@ API::APIReturn AdminPortal_Endpoints_Accounts::getAccountDetailField(void *conte
     return field.value().toJSON();
 }
 
-API::APIReturn AdminPortal_Endpoints_Accounts::getAccountDetailFieldsValues(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortal_Endpoints_Accounts::getAccountDetailFieldsValues(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
-    std::string accountName = JSON_ASSTRING((*request.inputJSON), "accountName", "");
-    if (accountName.empty())
+    std::string accountUUID = JSON_ASSTRING((*request.inputJSON), "accountUUID", "");
+    if (accountUUID.empty())
     {
         return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Account Name is Empty"};
     }
 
-    std::map<std::string, AccountDetailFieldValue> fieldValues = Globals::getIdentityManager()->accounts->getAccountDetailFieldValues(accountName);
+    std::map<std::string, AccountDetailFieldValue> fieldValues = Globals::getIdentityManager()->accounts->getAccountDetailFieldValues(accountUUID);
 
     Json::Value result(Json::arrayValue);
     for (const auto &fieldValue : fieldValues)
@@ -452,12 +421,12 @@ API::APIReturn AdminPortal_Endpoints_Accounts::getAccountDetailFieldsValues(void
     return result;
 }
 
-API::APIReturn AdminPortal_Endpoints_Accounts::updateAccountDetailFieldsValues(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortal_Endpoints_Accounts::updateAccountDetailFieldsValues(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
-    std::string accountName = JSON_ASSTRING((*request.inputJSON), "accountName", "");
-    if (accountName.empty())
+    std::string accountUUID = JSON_ASSTRING((*request.inputJSON), "accountUUID", "");
+    if (accountUUID.empty())
     {
         return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Account Name is Empty"};
     }
@@ -480,7 +449,7 @@ API::APIReturn AdminPortal_Endpoints_Accounts::updateAccountDetailFieldsValues(v
     }
 
     // Update account detail fields values
-    if (!Globals::getIdentityManager()->accounts->updateAccountDetailFieldValues(authClientDetails, request.jwtToken->getSubject(), accountName, fieldValues, true))
+    if (!Globals::getIdentityManager()->accounts->updateAccountDetailFieldValues(authClientDetails, request.jwtToken->getSubject(), accountUUID, fieldValues, true))
     {
         return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to update account detail fields values"};
     }
@@ -489,17 +458,17 @@ API::APIReturn AdminPortal_Endpoints_Accounts::updateAccountDetailFieldsValues(v
     return response;
 }
 
-API::APIReturn AdminPortal_Endpoints_Accounts::removeAccount(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortal_Endpoints_Accounts::removeAccount(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
-    std::string accountName = JSON_ASSTRING(*request.inputJSON, "accountName", "");
+    std::string accountUUID = JSON_ASSTRING(*request.inputJSON, "accountUUID", "");
 
-    if (accountName.empty())
+    if (accountUUID.empty())
     {
         return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Account name is required"};
     }
 
-    if (!Globals::getIdentityManager()->accounts->removeAccount(authClientDetails, request.jwtToken->getSubject(), accountName))
+    if (!Globals::getIdentityManager()->accounts->removeAccount(authClientDetails, request.jwtToken->getSubject(), accountUUID))
     {
         return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to remove the account."};
     }

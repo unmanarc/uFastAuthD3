@@ -16,7 +16,7 @@ void AdminPortal_Endpoints_ApplicationActivities::addEndpoints_Activities(const 
 
     endpoints->addEndpoint(HTTP::Method::GET, "getActivityInfo", SecurityRequirements::JWT_COOKIE_AUTH, {"APP_READ"}, nullptr, &getActivityInfo);
     endpoints->addEndpoint(HTTP::Method::GET, "listApplicationActivities", SecurityRequirements::JWT_COOKIE_AUTH, {"APP_READ"}, nullptr, &listApplicationActivities);
-    endpoints->addEndpoint(HTTP::Method::POST, "addApplicationActivity", SecurityRequirements::JWT_COOKIE_AUTH, {"APP_MODIFY"}, nullptr, &addApplicationActivity);
+    endpoints->addEndpoint(HTTP::Method::POST, "createApplicationActivity", SecurityRequirements::JWT_COOKIE_AUTH, {"APP_MODIFY"}, nullptr, &createApplicationActivity);
     endpoints->addEndpoint(HTTP::Method::DELETE, "removeApplicationActivity", SecurityRequirements::JWT_COOKIE_AUTH, {"APP_MODIFY"}, nullptr, &removeApplicationActivity);
 
     endpoints->addEndpoint(HTTP::Method::PATCH, "updateActivityDescription", SecurityRequirements::JWT_COOKIE_AUTH, {"APP_MODIFY"}, nullptr, &updateActivityDescription);
@@ -28,7 +28,7 @@ void AdminPortal_Endpoints_ApplicationActivities::addEndpoints_Activities(const 
     endpoints->addEndpoint(HTTP::Method::PATCH, "updateDefaultSchemeOnApplicationActivity", SecurityRequirements::JWT_COOKIE_AUTH, {"APP_MODIFY"}, nullptr, &updateDefaultSchemeOnApplicationActivity);
 }
 
-API::APIReturn AdminPortal_Endpoints_ApplicationActivities::updateDefaultSchemeOnApplicationActivity(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortal_Endpoints_ApplicationActivities::updateDefaultSchemeOnApplicationActivity(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
@@ -58,7 +58,7 @@ API::APIReturn AdminPortal_Endpoints_ApplicationActivities::updateDefaultSchemeO
     return response;
 }
 
-API::APIReturn AdminPortal_Endpoints_ApplicationActivities::addSchemeToApplicationActivity(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortal_Endpoints_ApplicationActivities::addSchemeToApplicationActivity(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
@@ -88,7 +88,7 @@ API::APIReturn AdminPortal_Endpoints_ApplicationActivities::addSchemeToApplicati
     return response;
 }
 
-API::APIReturn AdminPortal_Endpoints_ApplicationActivities::removeSchemeFromApplicationActivity(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortal_Endpoints_ApplicationActivities::removeSchemeFromApplicationActivity(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
@@ -118,7 +118,7 @@ API::APIReturn AdminPortal_Endpoints_ApplicationActivities::removeSchemeFromAppl
     return response;
 }
 
-API::APIReturn AdminPortal_Endpoints_ApplicationActivities::updateActivityDescription(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortal_Endpoints_ApplicationActivities::updateActivityDescription(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
@@ -148,7 +148,7 @@ API::APIReturn AdminPortal_Endpoints_ApplicationActivities::updateActivityDescri
     return response;
 }
 
-API::APIReturn AdminPortal_Endpoints_ApplicationActivities::updateActivityParentActivity(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortal_Endpoints_ApplicationActivities::updateActivityParentActivity(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
@@ -173,7 +173,7 @@ API::APIReturn AdminPortal_Endpoints_ApplicationActivities::updateActivityParent
     return response;
 }
 
-API::APIReturn AdminPortal_Endpoints_ApplicationActivities::getActivityInfo(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortal_Endpoints_ApplicationActivities::getActivityInfo(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
     std::string appName = JSON_ASSTRING(*request.inputJSON, "appName", "");
@@ -244,7 +244,7 @@ API::APIReturn AdminPortal_Endpoints_ApplicationActivities::getActivityInfo(void
     return response;
 }
 
-API::APIReturn AdminPortal_Endpoints_ApplicationActivities::listApplicationActivities(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortal_Endpoints_ApplicationActivities::listApplicationActivities(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
     std::string appName = JSON_ASSTRING(*request.inputJSON, "appName", "");
@@ -267,7 +267,7 @@ API::APIReturn AdminPortal_Endpoints_ApplicationActivities::listApplicationActiv
     return response;
 }
 
-API::APIReturn AdminPortal_Endpoints_ApplicationActivities::addApplicationActivity(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortal_Endpoints_ApplicationActivities::createApplicationActivity(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
@@ -290,14 +290,14 @@ API::APIReturn AdminPortal_Endpoints_ApplicationActivities::addApplicationActivi
         return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Activity description cannot be empty."};
     }
 
-    if (!Globals::getIdentityManager()->applicationActivities->addApplicationActivity(authClientDetails, request.jwtToken->getSubject(), appName, activityName, activityDescription))
+    if (!Globals::getIdentityManager()->applicationActivities->createApplicationActivity(authClientDetails, request.jwtToken->getSubject(), appName, activityName, activityDescription))
     {
         return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to create the new activity.\nThe activity ID may already exist."};
     }
     return response;
 }
 
-API::APIReturn AdminPortal_Endpoints_ApplicationActivities::removeApplicationActivity(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortal_Endpoints_ApplicationActivities::removeApplicationActivity(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 

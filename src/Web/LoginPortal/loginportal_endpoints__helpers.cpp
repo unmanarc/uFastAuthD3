@@ -1,5 +1,5 @@
 #include "IdentityManager/ds_authentication.h"
-#include "Mantids30/Protocol_HTTP/api_return.h"
+#include <Mantids30/Protocol_HTTP/api_return.h>
 #include "loginportal_endpoints.h"
 #include <Mantids30/Helpers/json.h>
 
@@ -25,7 +25,7 @@ std::vector<AuthenticationSchemeUsedSlot> LoginPortal_Endpoints::calculateRequir
     IdentityManager *identityManager = Globals::getIdentityManager();
 
     requiredAuthSlotsOnScheme = identityManager->authController->listAuthenticationSlotsUsedByScheme(authContext->schemeId);
-    std::set<uint32_t> usedAuthSlotsOnAccount = identityManager->authController->listUsedAuthenticationSlotsOnAccount(authContext->accountName);
+    std::set<uint32_t> usedAuthSlotsOnAccount = identityManager->authController->listUsedAuthenticationSlotsOnAccount(authContext->accountUUID);
 
     // Remove unused requiredAuthSlots if they are optional (eg. requiredAuthSlots[0].optional) and don't exist in usedAuthSlotsOnAccount
     std::vector<AuthenticationSchemeUsedSlot> filteredAuthSlots;
@@ -45,7 +45,7 @@ std::vector<AuthenticationSchemeUsedSlot> LoginPortal_Endpoints::calculateRequir
     return filteredAuthSlots;
 }
 
-void LoginPortal_Endpoints::deleteLoginCookies(void *, const RequestParameters &request, ClientDetails &, APIReturn *response)
+void LoginPortal_Endpoints::deleteLoginCookies(void *, const RequestContext &request, ClientDetails &, APIReturn *response)
 {
     if (request.clientRequest->headers.getOptionValueStringByName("X-Logout") != "1")
     {

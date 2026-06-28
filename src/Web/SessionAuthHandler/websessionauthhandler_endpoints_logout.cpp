@@ -1,7 +1,7 @@
 #include "websessionauthhandler_endpoints.h"
 
-#include "Mantids30/Program_Logs/loglevels.h"
-#include "Mantids30/Protocol_HTTP/httpv1_base.h"
+#include <Mantids30/Program_Logs/loglevels.h>
+#include <Mantids30/Protocol_HTTP/httpv1_base.h>
 #include <Mantids30/Helpers/json.h>
 #include <Mantids30/Helpers/encoders.h>
 #include <json/value.h>
@@ -41,7 +41,7 @@ static void setLogoutCookies(API::APIReturn &response, const ApplicationTokenPro
     response.cookiesMap["SessionPublicData"].path = "/";
 }
 
-API::APIReturn WebSessionAuthHandler_Endpoints::appLogout(void *context, const RequestParameters &request, IdentityManager::ClientDetails &authClientDetails)
+API::APIReturn WebSessionAuthHandler_Endpoints::appLogout(void *context, const RequestContext &request, IdentityManager::ClientDetails &authClientDetails)
 {
     // Helper to extract common request parameters safely
     API::APIReturn response;
@@ -87,7 +87,7 @@ API::APIReturn WebSessionAuthHandler_Endpoints::appLogout(void *context, const R
     return response;
 }
 
-WebSessionAuthHandler_Endpoints::APIReturn WebSessionAuthHandler_Endpoints::getLogoutCallbackURL(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+WebSessionAuthHandler_Endpoints::APIReturn WebSessionAuthHandler_Endpoints::getLogoutCallbackURL(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
     IdentityManager *identityManager = Globals::getIdentityManager();

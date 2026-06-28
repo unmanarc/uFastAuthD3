@@ -1,4 +1,4 @@
-#include "Mantids30/Program_Logs/loglevels.h"
+#include <Mantids30/Program_Logs/loglevels.h>
 #include "loginportal_endpoints.h"
 #include <Mantids30/Helpers/json.h>
 #include <json/value.h>
@@ -65,7 +65,7 @@ bool LoginPortal_Endpoints::token_createAndSignApplicationRefreshAndAccessJWTs(c
         return false;
     }
 
-    std::set<uint32_t> authenticatedSlotIdsSet = Mantids30::Helpers::jsonToUInt32Set(jwtToken->getClaim("slotIds"));
+    std::set<uint32_t> authenticatedSlotIdsSet = Helpers::JSON::jsonToUInt32Set(jwtToken->getClaim("slotIds"));
     std::string refreshTokenId = Mantids30::Helpers::Random::createRandomString(16);
 
     JWT::Token accessToken, refreshToken; //, logoutToken;
@@ -128,7 +128,7 @@ bool LoginPortal_Endpoints::token_validateAuthenticationScheme(const JWT::Token 
     IdentityManager *identityManager = Globals::getIdentityManager();
 
     // 1. Extract authenticated slot IDs from the JWT token
-    std::set<uint32_t> authenticatedSlotIdsSet = Mantids30::Helpers::jsonToUInt32Set(jwtToken->getClaim("slotIds"));
+    std::set<uint32_t> authenticatedSlotIdsSet = Helpers::JSON::jsonToUInt32Set(jwtToken->getClaim("slotIds"));
 
     // 2. Get schemes allowed for this activity
     std::set<uint32_t> schemesInActivity = identityManager->applicationActivities->listAuthenticationSchemesForApplicationActivity(requestedApp, requestedActivity);
@@ -208,7 +208,7 @@ bool LoginPortal_Endpoints::token_validateAuthenticationScheme(const JWT::Token 
 
 bool LoginPortal_Endpoints::token_validateAppAuthorization(const JWT::Token *jwtToken, const std::string &app, const std::string &user, const std::string &ipAddress)
 {
-    std::set<std::string> authenticatedAppsSet = Mantids30::Helpers::jsonToStringSet(jwtToken->getClaim("apps"));
+    std::set<std::string> authenticatedAppsSet = Helpers::JSON::jsonToStringSet(jwtToken->getClaim("apps"));
     if (authenticatedAppsSet.find(app) == authenticatedAppsSet.end())
     {
         LOG_APP->log2(__func__, user, ipAddress, Logs::LogLevel::SECURITY_ALERT, "Token request denied: Unauthorized application '%s' access.", app.c_str());

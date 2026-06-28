@@ -27,7 +27,7 @@ class AdminPortal_Endpoints : private AdminPortal_Endpoints_Accounts,
 public:
     using Endpoints = Mantids30::API::RESTful::Endpoints;
     using APIReturn = Mantids30::API::APIReturn;
-    using RequestParameters = Mantids30::API::RESTful::RequestParameters;
+    using RequestContext = Mantids30::API::RESTful::RequestContext;
 
     /**
     * @brief Adds the available login authentication methods as server functions.

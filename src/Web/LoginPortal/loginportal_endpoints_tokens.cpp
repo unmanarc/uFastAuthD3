@@ -1,4 +1,4 @@
-#include "Mantids30/Program_Logs/loglevels.h"
+#include <Mantids30/Program_Logs/loglevels.h>
 #include "defs.h"
 #include "loginportal_endpoints.h"
 #include <Mantids30/Helpers/json.h>
@@ -18,7 +18,7 @@ using namespace Network::Protocol;
 /*
     This will tranform the current authentication into the login token for an APP first access...
 */
-API::APIReturn LoginPortal_Endpoints::token(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn LoginPortal_Endpoints::token(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
 
     IdentityManager *identityManager = Globals::getIdentityManager();
@@ -26,11 +26,11 @@ API::APIReturn LoginPortal_Endpoints::token(void *context, const RequestParamete
     std::string authenticatedUser = request.jwtToken->getSubject();
 
     bool isEmbeddedAuthentication = false;
-    bool keepAuthenticated = JSON_ASBOOL_D(request.jwtToken->getClaim("keepAuthenticated"), false);
-    std::string activity = JSON_ASSTRING(*request.inputJSON, "activity", "");       // APP ACTIVITY NAME.
+    bool keepAuthenticated  = JSON_ASBOOL_D(request.jwtToken->getClaim("keepAuthenticated"), false);
+    std::string activity    = JSON_ASSTRING(*request.inputJSON, "activity", "");       // APP ACTIVITY NAME.
     std::string redirectURI = JSON_ASSTRING(*request.inputJSON, "redirectURI", ""); // APP REDIRECT URI.
-    uint32_t schemeId = JSON_ASUINT(*request.inputJSON, "schemeId", 0);             // APP SCHEME ID.
-    bool mock = JSON_ASBOOL(*request.inputJSON, "mock", false);                     // MOCK
+    uint32_t schemeId       = JSON_ASUINT(*request.inputJSON, "schemeId", 0);             // APP SCHEME ID.
+    bool mock               = JSON_ASBOOL(*request.inputJSON, "mock", false);                     // MOCK
 
 
     // Determine appName: prioritize x-api-key header, fallback to inputJSON "app" field
@@ -128,7 +128,6 @@ API::APIReturn LoginPortal_Endpoints::token(void *context, const RequestParamete
     {
         return {};
     }
-
 
     API::APIReturn response;
 

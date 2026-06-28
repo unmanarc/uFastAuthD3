@@ -9,27 +9,27 @@ class AdminPortal_Endpoints_ApplicationsScopes
 public:
     using Endpoints = Mantids30::API::RESTful::Endpoints;
     using APIReturn = Mantids30::API::APIReturn;
-    using RequestParameters = Mantids30::API::RESTful::RequestParameters;
+    using RequestContext = Mantids30::API::RESTful::RequestContext;
     using ClientDetails = Mantids30::Sessions::ClientDetails;
 
 protected:
     static void addEndpoints_Scopes(const std::shared_ptr<Endpoints> &endpoints);
 
-    static APIReturn addApplicationScopeToAccount(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
-    static APIReturn removeApplicationScopeFromAccount(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
+    static APIReturn addApplicationScopeToAccount(void *context, const RequestContext &request, ClientDetails &authClientDetails);
+    static APIReturn removeApplicationScopeFromAccount(void *context, const RequestContext &request, ClientDetails &authClientDetails);
 
-    static APIReturn addApplicationScope(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
-    static APIReturn removeApplicationScope(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
-    static APIReturn addApplicationScopeToRole(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
-    static APIReturn removeApplicationScopeFromRole(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
+    static APIReturn createApplicationScope(void *context, const RequestContext &request, ClientDetails &authClientDetails);
+    static APIReturn removeApplicationScope(void *context, const RequestContext &request, ClientDetails &authClientDetails);
+    static APIReturn addApplicationScopeToRole(void *context, const RequestContext &request, ClientDetails &authClientDetails);
+    static APIReturn removeApplicationScopeFromRole(void *context, const RequestContext &request, ClientDetails &authClientDetails);
 
-    static APIReturn searchApplicationScopes(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
+    static APIReturn searchApplicationScopes(void *context, const RequestContext &request, ClientDetails &authClientDetails);
 
     /*
-    static APIReturn updateApplicationScopeDescription(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
-    static APIReturn listApplicationScopes(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
-    static APIReturn getApplicationRolesForScope(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
-    static APIReturn listAccountsOnApplicationScope(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
-    static APIReturn scopesLeftListForRole(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
-    static APIReturn getApplicationScopeDescription(void *context, const RequestParameters &request, ClientDetails &authClientDetails);*/
+    static APIReturn updateApplicationScopeDescription(void *context, const RequestContext &request, ClientDetails &authClientDetails);
+    static APIReturn listApplicationScopes(void *context, const RequestContext &request, ClientDetails &authClientDetails);
+    static APIReturn getApplicationRolesForScope(void *context, const RequestContext &request, ClientDetails &authClientDetails);
+    static APIReturn listAccountsOnApplicationScope(void *context, const RequestContext &request, ClientDetails &authClientDetails);
+    static APIReturn scopesLeftListForRole(void *context, const RequestContext &request, ClientDetails &authClientDetails);
+    static APIReturn getApplicationScopeDescription(void *context, const RequestContext &request, ClientDetails &authClientDetails);*/
 };

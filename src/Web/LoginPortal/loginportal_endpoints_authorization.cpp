@@ -1,6 +1,6 @@
 #include "IdentityManager/ds_authentication.h"
-#include "Mantids30/Program_Logs/loglevels.h"
-#include "Mantids30/Protocol_HTTP/api_return.h"
+#include <Mantids30/Program_Logs/loglevels.h>
+#include <Mantids30/Protocol_HTTP/api_return.h>
 #include "Tokens/tokensmanager.h"
 #include "loginportal_endpoints.h"
 #include "json/value.h"
@@ -22,7 +22,7 @@ using namespace Network::Protocol;
 using namespace Mantids30::DataFormat;
 
 // Validate user and get authorization flow:
-API::APIReturn LoginPortal_Endpoints::preAuthorize(void *context, const API::RESTful::RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn LoginPortal_Endpoints::preAuthorize(void *context, const API::RESTful::RequestContext &request, ClientDetails &authClientDetails)
 {
     json r;
     API::APIReturn response;
@@ -36,6 +36,11 @@ API::APIReturn LoginPortal_Endpoints::preAuthorize(void *context, const API::RES
     // Input parameters:
     authContext->accountName = JSON_ASSTRING(*request.inputJSON, "accountName", ""); // ACCOUNT ID.
     std::string activityName = JSON_ASSTRING(*request.inputJSON, "activity", "");    // APP ACTIVITY NAME.
+    authContext->loadUUIDFromAccountName();
+
+    // Account UUID
+    std::optional<std::string> _accountUUID = Globals::getIdentityManager()->accounts->getAccountUUIDByAccountName(authContext->accountName);
+    std::string accountUUID = _accountUUID.has_value()? _accountUUID.value() : "745bedd8-dfb5-439d-811b-1ad0a8d14a32";
 
     // Determine appName: prioritize x-api-key header, fallback to inputJSON "app" field
     std::string apiKey = request.clientRequest->getHeaderOption("x-api-key");
@@ -80,11 +85,11 @@ API::APIReturn LoginPortal_Endpoints::preAuthorize(void *context, const API::RES
 
     if (activityName == "LOGIN")
     {
-        r = identityManager->authController->getApplicableAuthenticationSchemesForAccount(IAM_LOGINPORTAL_APPNAME, activityName, authContext->accountName, authContext->authenticatedSlots);
+        r = identityManager->authController->getApplicableAuthenticationSchemesForAccount(IAM_LOGINPORTAL_APPNAME, activityName, accountUUID, authContext->authenticatedSlots);
     }
     else
     { // Activity from the application.
-        r = identityManager->authController->getApplicableAuthenticationSchemesForAccount(appName, activityName, authContext->accountName, authContext->authenticatedSlots);
+        r = identityManager->authController->getApplicableAuthenticationSchemesForAccount(appName, activityName, accountUUID, authContext->authenticatedSlots);
     }
 
     if (r["defaultScheme"] == Json::nullValue)
@@ -101,7 +106,7 @@ API::APIReturn LoginPortal_Endpoints::preAuthorize(void *context, const API::RES
     return response;
 }
 
-void LoginPortal_Endpoints::issueTransientAuthTokenResponse(const RequestParameters &request, Mantids30::API::APIReturn &response, const std::shared_ptr<TransientAuthenticationContext> &authContext,
+void LoginPortal_Endpoints::issueTransientAuthTokenResponse(const RequestContext &request, Mantids30::API::APIReturn &response, const std::shared_ptr<TransientAuthenticationContext> &authContext,
                                                             const std::vector<AuthenticationSchemeUsedSlot> &requiredAuthSlots, bool mustChangeCredential, bool canSkipPasswordChange)
 {
     // Retrieve configuration parameters from global settings.
@@ -140,8 +145,10 @@ void LoginPortal_Endpoints::issueTransientAuthTokenResponse(const RequestParamet
     }
     else
     {
+
+
         // We can give the credential public data for the next credential:
-        Credential credentialPublicData = identityManager->authController->getAccountCredentialPublicData(authContext->accountName, nextSlotId.value());
+        Credential credentialPublicData = identityManager->authController->getAccountCredentialPublicData(authContext->accountUUID, nextSlotId.value());
 
         json nextSlot;
         nextSlot["slotId"] = nextSlotId.value();
@@ -154,7 +161,7 @@ void LoginPortal_Endpoints::issueTransientAuthTokenResponse(const RequestParamet
 }
 
 // Validate credential:
-API::APIReturn LoginPortal_Endpoints::authorize(void *context, const RequestParameters &request, ClientDetails &clientDetails)
+API::APIReturn LoginPortal_Endpoints::authorize(void *context, const RequestContext &request, ClientDetails &clientDetails)
 {
     API::APIReturn response;
 
@@ -181,12 +188,12 @@ API::APIReturn LoginPortal_Endpoints::authorize(void *context, const RequestPara
     std::map<uint32_t, AuthenticationSlotDetails> authSlots = identityManager->authController->listAllAuthenticationSlots();
 
     // TODO implement other authentication modes (Eg. CRAM)
-    AuthenticationResult authRetCode = identityManager->authController->authenticateCredential(clientDetails, authContext->accountName, JSON_ASSTRING(*request.inputJSON, "password", ""),
+    AuthenticationResult authRetCode = identityManager->authController->authenticateCredential(clientDetails, authContext->accountUUID, JSON_ASSTRING(*request.inputJSON, "password", ""),
                                                                                                authContext->currentSlotId.value(),
                                                                                                getAuthModeFromString(JSON_ASSTRING(*request.inputJSON, "authMode", "MODE_PLAIN")),
                                                                                                JSON_ASSTRING(*request.inputJSON, "challengeSalt", ""), authContext);
 
-    LOG_APP->log2(__func__, authContext->accountName, clientDetails.ipAddress, !IS_CREDENTIAL_AUTHENTICATED(authRetCode) ? Logs::LogLevel::SECURITY_ALERT : Logs::LogLevel::INFO,
+    LOG_APP->log2(__func__, authContext->accountUUID, clientDetails.ipAddress, !IS_CREDENTIAL_AUTHENTICATED(authRetCode) ? Logs::LogLevel::SECURITY_ALERT : Logs::LogLevel::INFO,
                   "Account Authorization Result: %" PRIu32 " - %s, scheme '%" PRIu32 "' and slotId = %'" PRIu32 "'", authRetCode, authResultToString(authRetCode), authContext->schemeId,
                   authContext->currentSlotId.value());
 
@@ -231,7 +238,7 @@ API::APIReturn LoginPortal_Endpoints::authorize(void *context, const RequestPara
         return {HTTP::Status::Code::S_401_UNAUTHORIZED, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(authRetCode)), authResultToString(authRetCode)};
     }
 
-    LOG_APP->log2(__func__, authContext->accountName, clientDetails.ipAddress, response.getHTTPResponseCode() != HTTP::Status::Code::S_200_OK ? Logs::LogLevel::SECURITY_ALERT : Logs::LogLevel::INFO,
+    LOG_APP->log2(__func__, authContext->accountUUID, clientDetails.ipAddress, response.getHTTPResponseCode() != HTTP::Status::Code::S_200_OK ? Logs::LogLevel::SECURITY_ALERT : Logs::LogLevel::INFO,
                   "R/%03" PRIu16 ": %s", static_cast<uint16_t>(response.getHTTPResponseCode()), request.clientRequest->getURI().c_str());
 
     return response;

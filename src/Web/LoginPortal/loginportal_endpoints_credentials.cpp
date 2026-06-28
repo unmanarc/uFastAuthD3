@@ -1,4 +1,4 @@
-#include "Mantids30/Protocol_HTTP/api_return.h"
+#include <Mantids30/Protocol_HTTP/api_return.h>
 #include "loginportal_endpoints.h"
 //#include "Tokens/tokensmanager.h"
 
@@ -9,7 +9,7 @@ using namespace Program;
 using namespace API::RESTful;
 using namespace Network::Protocol;
 
-API::APIReturn LoginPortal_Endpoints::changeCredential(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn LoginPortal_Endpoints::changeCredential(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
@@ -43,7 +43,7 @@ API::APIReturn LoginPortal_Endpoints::changeCredential(void *context, const Requ
                 authResultToString(AuthenticationResult::AUTHENTICATION_FAILED)};
     }
 
-    if (!identityManager->authController->changeAccountCredential(authClientDetails, authContext->accountName, authContext->accountName, newCredential, slotId))
+    if (!identityManager->authController->changeAccountCredential(authClientDetails, authContext->accountUUID, authContext->accountUUID, newCredential, slotId))
     {
         return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Internal Error: Failed to change the credential."};
     }

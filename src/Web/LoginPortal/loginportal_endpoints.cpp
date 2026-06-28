@@ -1,6 +1,6 @@
 #include "loginportal_endpoints.h"
 
-#include "Mantids30/Protocol_HTTP/httpv1_base.h"
+#include <Mantids30/Protocol_HTTP/httpv1_base.h>
 #include "globals.h"
 #include "json/value.h"
 
@@ -48,7 +48,7 @@ void LoginPortal_Endpoints::addEndpoints(const std::shared_ptr<Endpoints> &endpo
     //endpoints->addEndpoint(HTTP::Method::POST, "tempMFAToken", SecurityRequirements::JWT_COOKIE_AUTH, {}, nullptr,&tempMFAToken);
 }
 
-LoginPortal_Endpoints::APIReturn LoginPortal_Endpoints::getApplicationLoginPublicData(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+LoginPortal_Endpoints::APIReturn LoginPortal_Endpoints::getApplicationLoginPublicData(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
     Json::Value r;
     // Get the identity manager from global settings to handle authentication.

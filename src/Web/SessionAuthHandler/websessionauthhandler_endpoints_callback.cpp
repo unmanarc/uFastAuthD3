@@ -1,5 +1,5 @@
-#include "Mantids30/Program_Logs/loglevels.h"
-#include "Mantids30/Protocol_HTTP/httpv1_base.h"
+#include <Mantids30/Program_Logs/loglevels.h>
+#include <Mantids30/Protocol_HTTP/httpv1_base.h>
 #include "websessionauthhandler_endpoints.h"
 #include <Mantids30/Helpers/json.h>
 #include <json/value.h>
@@ -17,7 +17,7 @@ using namespace Network::Protocol;
 using namespace Network::Protocol::HTTP;
 
 // Receives the token from the Login Portal (Via proxy, this is why we receive the X-API-Key from the intermediate app), and then, we set the refresh/access token as cookies
-API::APIReturn WebSessionAuthHandler_Endpoints::callback(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn WebSessionAuthHandler_Endpoints::callback(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
     IdentityManager *identityManager = Globals::getIdentityManager();

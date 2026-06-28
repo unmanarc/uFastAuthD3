@@ -14,7 +14,7 @@
 #include <string>
 
 #include "IdentityManager/ds_authentication.h"
-#include "Mantids30/API_EndpointsAndSessions/api_options_handler.h"
+#include <Mantids30/API_EndpointsAndSessions/api_options_handler.h>
 #include "globals.h"
 
 using namespace Mantids30;
@@ -204,14 +204,14 @@ bool WebSessionAuthHandler_Endpoints::validateAndDecodeRefreshToken(const std::s
     outData.app = refreshTokenApp;
     outData.user = refreshTokenUser;
     outData.jwtId = refreshTokenVerified.getJwtId();
-    outData.slotIds = Mantids30::Helpers::jsonToUInt32Set(refreshTokenVerified.getClaim("slotIds"));
+    outData.slotIds = Helpers::JSON::jsonToUInt32Set(refreshTokenVerified.getClaim("slotIds"));
     outData.useEmbeddedAuthentication = JSON_ASBOOL_D(refreshTokenVerified.getClaim("useEmbeddedAuthentication"), false);
     outData.tokenProps = tokenProps;
 
     return true;
 }
 
-WebSessionAuthHandler_Endpoints::APIReturn WebSessionAuthHandler_Endpoints::getApplicationLoginPublicData(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+WebSessionAuthHandler_Endpoints::APIReturn WebSessionAuthHandler_Endpoints::getApplicationLoginPublicData(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
     std::string refreshTokenStr = request.clientRequest->getCookies()->getSubVar("RefreshToken");
@@ -247,7 +247,7 @@ WebSessionAuthHandler_Endpoints::APIReturn WebSessionAuthHandler_Endpoints::getA
 }
 
 // TODO: manage errors?
-bool WebSessionAuthHandler_Endpoints::validateAPIKey(const std::string &app, APIReturn &response, const RequestParameters &request, ClientDetails &authClientDetails)
+bool WebSessionAuthHandler_Endpoints::validateAPIKey(const std::string &app, APIReturn &response, const RequestContext &request, ClientDetails &authClientDetails)
 {
     IdentityManager *identityManager = Globals::getIdentityManager();
 

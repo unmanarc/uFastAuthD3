@@ -1,6 +1,6 @@
 #include "adminportal_endpoints_application_roles.h"
 
-#include "Mantids30/API_EndpointsAndSessions/security.h"
+#include <Mantids30/API_EndpointsAndSessions/security.h>
 #include "globals.h"
 #include <Mantids30/Program_Logs/applog.h>
 
@@ -12,7 +12,7 @@ void AdminPortal_Endpoints_ApplicationRoles::addEndpoints_Roles(const std::share
 {
     using SecurityRequirements = API::Security::Requirements;
     endpoints->addEndpoint(HTTP::Method::GET, "searchApplicationRoles", API::Security::Requirements::JWT_COOKIE_AUTH, {"APP_READ"}, nullptr, &searchApplicationRoles);
-    endpoints->addEndpoint(HTTP::Method::POST, "addRole", SecurityRequirements::JWT_COOKIE_AUTH, {"APP_MODIFY"}, nullptr, &addRole);
+    endpoints->addEndpoint(HTTP::Method::POST, "createRole", SecurityRequirements::JWT_COOKIE_AUTH, {"APP_MODIFY"}, nullptr, &createRole);
     endpoints->addEndpoint(HTTP::Method::GET, "getRoleInfo", SecurityRequirements::JWT_COOKIE_AUTH, {"APP_READ"}, nullptr, &getRoleInfo);
     endpoints->addEndpoint(HTTP::Method::PATCH, "updateRoleDescription", SecurityRequirements::JWT_COOKIE_AUTH, {"APP_MODIFY"}, nullptr, &updateRoleDescription);
     endpoints->addEndpoint(HTTP::Method::DELETE, "removeRole", SecurityRequirements::JWT_COOKIE_AUTH, {"APP_MODIFY"}, nullptr, &removeRole);
@@ -21,12 +21,12 @@ void AdminPortal_Endpoints_ApplicationRoles::addEndpoints_Roles(const std::share
     endpoints->addEndpoint(HTTP::Method::DELETE, "removeApplicationRoleFromAccount", SecurityRequirements::JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"}, nullptr, &removeApplicationRoleFromAccount);
 }
 
-API::APIReturn AdminPortal_Endpoints_ApplicationRoles::searchApplicationRoles(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortal_Endpoints_ApplicationRoles::searchApplicationRoles(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
     return Globals::getIdentityManager()->applicationRoles->searchApplicationRoles(*request.inputJSON);
 }
 
-API::APIReturn AdminPortal_Endpoints_ApplicationRoles::updateRoleDescription(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortal_Endpoints_ApplicationRoles::updateRoleDescription(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
@@ -56,7 +56,7 @@ API::APIReturn AdminPortal_Endpoints_ApplicationRoles::updateRoleDescription(voi
     return response;
 }
 
-API::APIReturn AdminPortal_Endpoints_ApplicationRoles::addRole(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortal_Endpoints_ApplicationRoles::createRole(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
@@ -79,7 +79,7 @@ API::APIReturn AdminPortal_Endpoints_ApplicationRoles::addRole(void *context, co
         return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Role description cannot be empty."};
     }
 
-    if (!Globals::getIdentityManager()->applicationRoles->addRole(authClientDetails, request.jwtToken->getSubject(), appName, roleName, roleDescription))
+    if (!Globals::getIdentityManager()->applicationRoles->createRole(authClientDetails, request.jwtToken->getSubject(), appName, roleName, roleDescription))
     {
         return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to create the new role.\nThe role ID may already exist."};
     }
@@ -87,7 +87,7 @@ API::APIReturn AdminPortal_Endpoints_ApplicationRoles::addRole(void *context, co
     return response;
 }
 
-API::APIReturn AdminPortal_Endpoints_ApplicationRoles::getRoleInfo(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortal_Endpoints_ApplicationRoles::getRoleInfo(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
@@ -109,9 +109,9 @@ API::APIReturn AdminPortal_Endpoints_ApplicationRoles::getRoleInfo(void *context
 
     int i = 0;
     std::set<std::string> roleAccounts = Globals::getIdentityManager()->applicationRoles->getApplicationRoleAccounts(appName, roleName);
-    for (const std::string &accountName : roleAccounts)
+    for (const std::string &accountUUID : roleAccounts)
     {
-        payloadOut["accounts"][i] = accountName;
+        payloadOut["accounts"][i] = accountUUID;
         i++;
     }
 
@@ -139,7 +139,7 @@ API::APIReturn AdminPortal_Endpoints_ApplicationRoles::getRoleInfo(void *context
     return response;
 }
 
-API::APIReturn AdminPortal_Endpoints_ApplicationRoles::removeRole(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortal_Endpoints_ApplicationRoles::removeRole(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
     const std::string roleName = JSON_ASSTRING(*request.inputJSON, "roleName", "");
@@ -162,13 +162,13 @@ API::APIReturn AdminPortal_Endpoints_ApplicationRoles::removeRole(void *context,
     return response;
 }
 
-API::APIReturn AdminPortal_Endpoints_ApplicationRoles::addApplicationRoleToAccount(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortal_Endpoints_ApplicationRoles::addApplicationRoleToAccount(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
     std::string appName = JSON_ASSTRING(*request.inputJSON, "appName", "");
     std::string roleName = JSON_ASSTRING(*request.inputJSON, "roleId", "");
-    std::string accountName = JSON_ASSTRING(*request.inputJSON, "accountName", "");
+    std::string accountUUID = JSON_ASSTRING(*request.inputJSON, "accountUUID", "");
 
     if (appName.empty())
     {
@@ -180,25 +180,25 @@ API::APIReturn AdminPortal_Endpoints_ApplicationRoles::addApplicationRoleToAccou
         return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Role ID is required"};
     }
 
-    if (accountName.empty())
+    if (accountUUID.empty())
     {
         return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Account name is required"};
     }
 
-    if (!Globals::getIdentityManager()->applicationRoles->addAccountToRole(authClientDetails, request.jwtToken->getSubject(), appName, roleName, accountName))
+    if (!Globals::getIdentityManager()->applicationRoles->addAccountToRole(authClientDetails, request.jwtToken->getSubject(), appName, roleName, accountUUID))
     {
         return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to assign the role to the account."};
     }
     return response;
 }
 
-API::APIReturn AdminPortal_Endpoints_ApplicationRoles::removeApplicationRoleFromAccount(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortal_Endpoints_ApplicationRoles::removeApplicationRoleFromAccount(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
     std::string appName = JSON_ASSTRING(*request.inputJSON, "appName", "");
     std::string roleName = JSON_ASSTRING(*request.inputJSON, "roleId", "");
-    std::string accountName = JSON_ASSTRING(*request.inputJSON, "accountName", "");
+    std::string accountUUID = JSON_ASSTRING(*request.inputJSON, "accountUUID", "");
 
     if (appName.empty())
     {
@@ -210,12 +210,12 @@ API::APIReturn AdminPortal_Endpoints_ApplicationRoles::removeApplicationRoleFrom
         return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Role ID is required"};
     }
 
-    if (accountName.empty())
+    if (accountUUID.empty())
     {
         return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Account name is required"};
     }
 
-    if (!Globals::getIdentityManager()->applicationRoles->removeAccountFromRole(authClientDetails, request.jwtToken->getSubject(), appName, roleName, accountName))
+    if (!Globals::getIdentityManager()->applicationRoles->removeAccountFromRole(authClientDetails, request.jwtToken->getSubject(), appName, roleName, accountUUID))
     {
         return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to remove the role from the account."};
     }

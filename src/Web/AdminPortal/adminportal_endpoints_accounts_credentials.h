@@ -9,18 +9,18 @@ class AdminPortal_Endpoints_AccountsCredentials
 public:
     using Endpoints = Mantids30::API::RESTful::Endpoints;
     using APIReturn = Mantids30::API::APIReturn;
-    using RequestParameters = Mantids30::API::RESTful::RequestParameters;
+    using RequestContext = Mantids30::API::RESTful::RequestContext;
     using ClientDetails = Mantids30::Sessions::ClientDetails;
 
 protected:
     static void addEndpoints_AccountsCredentials(std::shared_ptr<Endpoints> endpoints);
 
     // Account Credential Slots:
-    static APIReturn getAccountCredentialSlots(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
-    static APIReturn removeAccountCredentialSlot(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
-    static APIReturn setAccountCredentialLockedStatus(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
-    static APIReturn unsetAccountCredentialLockedStatus(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
-    static APIReturn setMustChangeCredential(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
-    static APIReturn cancelMustChangeCredential(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
-    static APIReturn generateMasterPassword(void *context, const RequestParameters &request, ClientDetails &authClientDetails);
+    static APIReturn getAccountCredentialSlots(void *context, const RequestContext &request, ClientDetails &authClientDetails);
+    static APIReturn removeAccountCredentialSlot(void *context, const RequestContext &request, ClientDetails &authClientDetails);
+    static APIReturn setAccountCredentialLockedStatus(void *context, const RequestContext &request, ClientDetails &authClientDetails);
+    static APIReturn unsetAccountCredentialLockedStatus(void *context, const RequestContext &request, ClientDetails &authClientDetails);
+    static APIReturn setMustChangeCredential(void *context, const RequestContext &request, ClientDetails &authClientDetails);
+    static APIReturn cancelMustChangeCredential(void *context, const RequestContext &request, ClientDetails &authClientDetails);
+    static APIReturn generateMasterPassword(void *context, const RequestContext &request, ClientDetails &authClientDetails);
 };

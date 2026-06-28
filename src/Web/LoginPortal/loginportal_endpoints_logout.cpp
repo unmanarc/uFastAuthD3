@@ -213,7 +213,7 @@ HTTP::Status::Code LoginPortal_Endpoints::handleLogoutDynamicRequest(const std::
     return HTTP::Status::Code::S_200_OK;
 }
 
-API::APIReturn LoginPortal_Endpoints::logout(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn LoginPortal_Endpoints::logout(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
     deleteLoginCookies(context, request, authClientDetails, &response);

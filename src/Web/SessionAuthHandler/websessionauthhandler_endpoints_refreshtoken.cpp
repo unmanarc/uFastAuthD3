@@ -15,7 +15,7 @@ using namespace Program;
 using namespace API::RESTful;
 using namespace Network::Protocol;
 
-API::APIReturn WebSessionAuthHandler_Endpoints::refreshAccessToken(void *context, const RequestParameters &request, ClientDetails &authClientDetails)
+API::APIReturn WebSessionAuthHandler_Endpoints::refreshAccessToken(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
     std::string refreshTokenStr = request.clientRequest->getCookies()->getSubVar("RefreshToken");
