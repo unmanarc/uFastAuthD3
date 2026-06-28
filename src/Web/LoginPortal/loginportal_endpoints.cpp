@@ -2,7 +2,7 @@
 
 #include <Mantids30/Protocol_HTTP/httpv1_base.h>
 #include "globals.h"
-#include "json/value.h"
+#include <json/value.h>
 
 using namespace Mantids30;
 using namespace Mantids30::Program;

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "json/value.h"
+#include <json/value.h>
 #include <Mantids30/Helpers/json.h>
 #include <ctime>
 #include <optional>

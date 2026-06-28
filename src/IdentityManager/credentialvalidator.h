@@ -1,6 +1,6 @@
 #pragma once
 
-#include "json/value.h"
+#include <json/value.h>
 #include <Mantids30/API_EndpointsAndSessions/session.h>
 #include <Mantids30/DataFormat_JWT/jwt.h>
 #include <Mantids30/Threads/garbagecollector.h>

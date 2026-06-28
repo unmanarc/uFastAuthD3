@@ -1,7 +1,7 @@
 #include "IdentityManager/ds_authentication.h"
 #include "identitymanager.h"
 
-#include "json/value.h"
+#include <json/value.h>
 #include <Mantids30/Helpers/random.h>
 #include <Mantids30/Threads/lock_shared.h>
 #include <optional>
