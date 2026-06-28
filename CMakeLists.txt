@@ -102,7 +102,7 @@ set(Mantids30_LIBRARIES
     Mantids30_Protocol_APISync
 )
 
-set(ENV{PKG_CONFIG_PATH} "/home/coding/Devel/ROOT/share/pkgconfig:$ENV{PKG_CONFIG_PATH}")
+set(ENV{PKG_CONFIG_PATH} "/home/user/Devel/ROOT/share/pkgconfig:$ENV{PKG_CONFIG_PATH}")
 
 # Iterate over the list of Mantids30 libraries and add include directories and linker flags to the target
 foreach(LIBRARY ${Mantids30_LIBRARIES})
