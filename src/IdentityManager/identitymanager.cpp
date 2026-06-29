@@ -101,11 +101,13 @@ bool IdentityManager::initializeAdminAccountWithPasswordIfNotExist(const uint32_
 
     std::optional<std::string> _accountUUID = accounts->createAdminAccount();
 
-    if (_accountUUID.has_value())
+    if (!_accountUUID.has_value())
     {
         LOG_APP->log0(__func__, LogLevel::CRITICAL, "Error creating admin account (DB).");
         return false;
     }
+
+    accountUUID = _accountUUID.value();
 
     if (!authController->setAccountPasswordOnScheme(clientDetails, performedByUUID, accountUUID, &adminPW, schemeId))
     {
