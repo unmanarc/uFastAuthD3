@@ -129,10 +129,12 @@ public:
          */
         enum class UpdateAccountDetailFieldResult : uint8_t
         {
-            SUCCESS = 0,                    // Field updated successfully.
-            FIELD_NOT_FOUND = 1,            // Field does not exist.
-            LAST_LOGIN_IDENTIFIER = 2,      // Cannot update: this is the last login identifier field and you are trying to disable it.
-            DB_ERROR = 3                    // Database error occurred.
+            SUCCESS = 0,                                    // Field updated successfully.
+            FIELD_NOT_FOUND = 1,                            // Field does not exist.
+            LAST_LOGIN_IDENTIFIER = 2,                      // Cannot update: this is the last login identifier field and you are trying to disable it.
+            DB_ERROR = 3,                                   // Database error occurred.
+            DUPLICATE_VALUES_FOR_UNIQUE_FIELD = 4,          // Cannot enable isUnique: duplicate values already exist for this field.
+            LOGIN_IDENTIFIER_VALUE_CONFLICT = 5             // Cannot enable isLoginIdentifier: value would conflict with existing login identifier values across accounts.
         };
 
         // Account Details Fields

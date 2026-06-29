@@ -416,6 +416,8 @@ AdminPortal_Endpoints_Accounts::APIReturn AdminPortal_Endpoints_Accounts::update
         return {HTTP::Status::Code::S_404_NOT_FOUND, "field_not_found", "Field not found"};
     case IdentityManager::Accounts::UpdateAccountDetailFieldResult::LAST_LOGIN_IDENTIFIER:
         return {HTTP::Status::Code::S_400_BAD_REQUEST, "last_login_identifier", "Cannot disable the last login identifier field"};
+    case IdentityManager::Accounts::UpdateAccountDetailFieldResult::DUPLICATE_VALUES_FOR_UNIQUE_FIELD:
+        return {HTTP::Status::Code::S_409_CONFLICT, "duplicate_values_for_unique_field", "Cannot enable unique constraint: duplicate values already exist for this field"};
     case IdentityManager::Accounts::UpdateAccountDetailFieldResult::DB_ERROR:
     default:
         return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "db_error", "Failed to update account detail field"};
