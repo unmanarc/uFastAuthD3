@@ -150,13 +150,26 @@ bool IdentityManager::initializeAdminAccountWithPasswordIfNotExist(const uint32_
 
         std::map<std::string, std::string> fieldValues;
         fieldValues["USERNAME"] = adminUsername;
-        accounts->updateAccountDetailFieldValues(clientDetails,performedByUUID, accountUUID, fieldValues, true);
+
+
+        UpdateAccountDetailFieldValuesResult result = accounts->updateAccountDetailFieldValues(clientDetails,performedByUUID, accountUUID, fieldValues, true);
+        if (result.status == UpdateAccountDetailFieldValuesResult::Status::SUCCESS)
+        {
+            LOG_APP->log0(__func__, LogLevel::INFO, "New admin account '%s' successfully created.", accountUUID.c_str());
+            createPassFile(adminPW);
+            return true;
+        }
+        else if (result.status == UpdateAccountDetailFieldValuesResult::Status::DUPLICATE_LOGIN_IDENTIFIER)
+        {
+            // Continue...
+        }
+        else
+        {
+            LOG_APP->log0(__func__, LogLevel::CRITICAL, "Error creating admin account (USERNAME_FIELD).");
+            return false;
+        }
     }
 
-    LOG_APP->log0(__func__, LogLevel::INFO, "New admin account '%s' successfully created.", accountUUID.c_str());
-
-    createPassFile(adminPW);
-    return true;
 }
 
 bool IdentityManager::initializeApplicationWithScheme(const std::string &appName, const std::string &appDescription, const std::string &appURL, const uint32_t &schemeId, bool *alreadyExist) const

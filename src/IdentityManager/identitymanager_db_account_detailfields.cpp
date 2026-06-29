@@ -578,7 +578,7 @@ UpdateAccountDetailFieldValuesResult IdentityManager_DB::Accounts_DB::updateAcco
                     R"(SELECT COUNT(*) FROM iam.accountDetailValues vadv
                        INNER JOIN iam.accountDetailFields vadf ON vadf.fieldName = vadv.f_fieldName
                        WHERE vadf.isUnique = 1
-                         AND vadv.fieldName = :fieldName
+                         AND vadf.fieldName = :fieldName
                          AND vadv.value = :value
                          AND vadv.f_accountUUID != :accountUUID)",
                     {{":fieldName", MAKE_VAR(STRING, fieldName)}, {":value", MAKE_VAR(STRING, fieldValue)}, {":accountUUID", MAKE_VAR(STRING, accountUUID)}}, {&conflictCount}))
