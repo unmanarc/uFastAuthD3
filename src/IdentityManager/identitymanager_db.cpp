@@ -1,9 +1,9 @@
 #include "identitymanager_db.h"
+#include "ds_security_events.h"
+#include "globals.h"
 #include <Mantids30/Memory/a_int32.h>
 #include <Mantids30/Memory/a_string.h>
 #include <Mantids30/Memory/a_uint32.h>
-#include "ds_security_events.h"
-#include "globals.h"
 
 using namespace Mantids30::Program;
 using namespace Mantids30;
@@ -519,6 +519,19 @@ bool IdentityManager_DB::initializeDatabase()
             LOG_APP->log0(__func__, Logs::LogLevel::CRITICAL, "Failed to execute SQL: '%s'", std::string(sql).c_str());
             success = false;
             break;
+        }
+    }
+
+    // Insert special system account with UUID 00000000-0000-4000-8000-000000000000
+    if (success)
+    {
+        success = m_sqlConnector->qExecuteEx(
+            R"(INSERT OR IGNORE INTO iam.accounts
+               (`accountUUID`, `expiration`, `isAdmin`, `isEnabled`, `isBlocked`, `isAccountConfirmed`)
+               VALUES ('00000000-0000-4000-8000-000000000000', '1999-12-31 23:59:59', 0, 0, 1, 0);)");
+        if (!success)
+        {
+            LOG_APP->log0(__func__, Logs::LogLevel::CRITICAL, "Failed to insert system account with UUID '00000000-0000-4000-8000-000000000000'");
         }
     }
 
