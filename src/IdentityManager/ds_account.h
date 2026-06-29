@@ -66,6 +66,7 @@ struct AccountDetailField
     bool isOptionalField = true;
     bool isUnique = false;
     bool isLoginIdentifier = false;
+    int orderPriority = 0;
     Json::Value extendedAttributes;
 
     [[nodiscard]] std::string getRegexpValidatorText() const { return Mantids30::Helpers::JSON::ASSTRING(extendedAttributes["behavior"], "regexpValidator", ""); }
@@ -75,6 +76,7 @@ struct AccountDetailField
     [[nodiscard]] Json::Value toJSON() const
     {
         Json::Value r;
+        r["orderPriority"] = orderPriority;
         r["description"] = description;
         r["fieldType"] = fieldType;
         r["isOptionalField"] = isOptionalField;
@@ -86,6 +88,7 @@ struct AccountDetailField
 
     void fromJSON(const Json::Value &r)
     {
+        orderPriority = Mantids30::Helpers::JSON::ASINT(r, "orderPriority", 0);
         description = Mantids30::Helpers::JSON::ASSTRING(r, "description", "");
         fieldType = Mantids30::Helpers::JSON::ASSTRING(r, "fieldType", "TEXTLINE");
         isOptionalField = Mantids30::Helpers::JSON::ASBOOL(r, "isOptionalField", true);

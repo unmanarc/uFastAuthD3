@@ -24,7 +24,6 @@ using namespace Mantids30;
 using namespace Mantids30::Memory;
 using namespace Mantids30::Database;
 
-
 std::optional<AccountDetails> IdentityManager_DB::Accounts_DB::getAccountDetails(const std::string &accountUUID, const AccountDetailsToShow &detailsToShow)
 {
     Threads::Sync::Lock_RD lock(_parent->m_mutex);
@@ -88,7 +87,8 @@ Json::Value IdentityManager_DB::Accounts_DB::searchFields(const Json::Value &dat
         fieldType,
         isOptionalField,
         isUnique,
-        isLoginIdentifier
+        isLoginIdentifier,
+        orderPriority
     FROM accountDetailFields
     )";
 
@@ -100,10 +100,11 @@ Json::Value IdentityManager_DB::Accounts_DB::searchFields(const Json::Value &dat
     }
 
     {
+        Abstract::INT32 orderPriority;
         Abstract::STRING fieldName, fieldDescription, fieldType;
         Abstract::BOOL isOptionalField, isUnique, isLoginIdentifier;
         std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelectWithFilters(sqlQueryStr, whereFilters, {{":SEARCHWORDS", MAKE_VAR(STRING, searchValue)}},
-                                                                               {&fieldName, &fieldDescription, &fieldType, &isOptionalField, &isUnique, &isLoginIdentifier},
+                                                                               {&fieldName, &fieldDescription, &fieldType, &isOptionalField, &isUnique, &isLoginIdentifier, &orderPriority},
                                                                                orderByStatement, // Order by
                                                                                limit,            // LIMIT
                                                                                offset            // OFFSET
@@ -125,6 +126,8 @@ Json::Value IdentityManager_DB::Accounts_DB::searchFields(const Json::Value &dat
             row["isUnique"] = isUnique.getValue();
             // isLoginIdentifier
             row["isLoginIdentifier"] = isLoginIdentifier.getValue();
+            // orderPriority
+            row["orderPriority"] = orderPriority.getValue();
 
             ret["data"].append(row);
         }
@@ -139,7 +142,6 @@ Json::Value IdentityManager_DB::Accounts_DB::searchFields(const Json::Value &dat
     return ret;
 }
 
-
 bool IdentityManager_DB::Accounts_DB::createAccountDetailField(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &fieldName, const AccountDetailField &details)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
@@ -151,15 +153,16 @@ bool IdentityManager_DB::Accounts_DB::createAccountDetailField(const ClientDetai
     }
 
     if (_parent->m_sqlConnector
-            ->qExecuteEx("INSERT INTO iam.accountDetailFields (`fieldName`, `fieldDescription`, `fieldType`, `isOptionalField`, `isUnique`,`isLoginIdentifier`, `jsonExtendedAttribs`)"
-                         " VALUES (:fieldName, :fieldDescription, :fieldType, :isOptionalField, :isUnique, :isLoginIdentifier, :jsonExtendedAttribs);",
+            ->qExecuteEx("INSERT INTO iam.accountDetailFields (`fieldName`, `fieldDescription`, `fieldType`, `isOptionalField`, `isUnique`,`isLoginIdentifier`, `jsonExtendedAttribs`, `orderPriority`)"
+                         " VALUES (:fieldName, :fieldDescription, :fieldType, :isOptionalField, :isUnique, :isLoginIdentifier, :jsonExtendedAttribs, :orderPriority);",
                          {{":fieldName", MAKE_VAR(STRING, fieldName)},
                           {":fieldDescription", MAKE_VAR(STRING, details.description)},
                           {":fieldType", MAKE_VAR(STRING, details.fieldType)},
                           {":isOptionalField", MAKE_VAR(BOOL, details.isOptionalField)},
                           {":isUnique", MAKE_VAR(BOOL, details.isUnique)},
                           {":isLoginIdentifier", MAKE_VAR(BOOL, details.isLoginIdentifier)},
-                          {":jsonExtendedAttribs", MAKE_VAR(STRING, details.extendedAttributes.toStyledString())}}))
+                          {":jsonExtendedAttribs", MAKE_VAR(STRING, details.extendedAttributes.toStyledString())},
+                          {":orderPriority", MAKE_VAR(INT32, details.orderPriority)}}))
     {
         _parent->logSecurityEventOnAccountDetailFields(fieldName, SecurityEventAction::CREATE, "Account detail field created", performedBy, clientDetails);
         return true;
@@ -236,8 +239,7 @@ IdentityManager::Accounts::UpdateAccountDetailFieldResult IdentityManager_DB::Ac
         std::vector<std::string> loginIdentifierFields;
         {
             Abstract::STRING liFieldName;
-            std::shared_ptr<Query> liQuery = _parent->m_sqlConnector->qSelect(
-                "SELECT `fieldName` FROM iam.accountDetailFields WHERE `isLoginIdentifier` = 1;", {}, {&liFieldName});
+            std::shared_ptr<Query> liQuery = _parent->m_sqlConnector->qSelect("SELECT `fieldName` FROM iam.accountDetailFields WHERE `isLoginIdentifier` = 1;", {}, {&liFieldName});
             if (liQuery && liQuery->isSuccessful())
             {
                 while (liQuery->step())
@@ -265,16 +267,17 @@ IdentityManager::Accounts::UpdateAccountDetailFieldResult IdentityManager_DB::Ac
 
             // The query checks if any non-null value exists in more than one account
             // across all login-identifier fields (including the one being enabled).
-            std::string sqlQuery =
-                "SELECT COUNT(*) FROM ("
-                "  SELECT value FROM iam.accountDetailValues"
-                "  WHERE f_fieldName IN (" + boost::algorithm::join(placeholders, ", ") + ")"
-                "    AND value IS NOT NULL"
-                "    AND value != ''"
-                "  GROUP BY value"
-                "  HAVING COUNT(DISTINCT f_accountUUID) > 1"
-                "  LIMIT 1"
-                ") AS duplicates";
+            std::string sqlQuery = "SELECT COUNT(*) FROM ("
+                                   "  SELECT value FROM iam.accountDetailValues"
+                                   "  WHERE f_fieldName IN ("
+                                   + boost::algorithm::join(placeholders, ", ")
+                                   + ")"
+                                     "    AND value IS NOT NULL"
+                                     "    AND value != ''"
+                                     "  GROUP BY value"
+                                     "  HAVING COUNT(DISTINCT f_accountUUID) > 1"
+                                     "  LIMIT 1"
+                                     ") AS duplicates";
 
             Abstract::INT32 conflictCount;
             if (_parent->m_sqlConnector->qSelectSingleRow(sqlQuery, params, {&conflictCount}))
@@ -357,10 +360,11 @@ std::map<std::string, AccountDetailField> IdentityManager_DB::Accounts_DB::listA
     Abstract::STRING fieldName, fieldDescription, fieldType;
     Abstract::BOOL isOptionalField, isUnique, isLoginIdentifier;
     Abstract::STRING jsonExtendedAttribsText;
+    Abstract::INT32 orderPriority;
 
     std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelect(
-        "SELECT `fieldName`, `fieldDescription`, `fieldType`, `isOptionalField`, `isUnique`, `isLoginIdentifier`, `jsonExtendedAttribs` FROM `iam`.`accountDetailFields`;", {},
-        {&fieldName, &fieldDescription, &fieldType, &isOptionalField, &isUnique, &isLoginIdentifier, &jsonExtendedAttribsText});
+        "SELECT `fieldName`, `fieldDescription`, `fieldType`, `isOptionalField`, `isUnique`, `isLoginIdentifier`, `jsonExtendedAttribs`, `orderPriority` FROM `iam`.`accountDetailFields` ORDER BY `orderPriority` ASC;", {},
+        {&fieldName, &fieldDescription, &fieldType, &isOptionalField, &isUnique, &isLoginIdentifier, &jsonExtendedAttribsText, &orderPriority});
 
     if (i && i->isSuccessful())
     {
@@ -376,6 +380,7 @@ std::map<std::string, AccountDetailField> IdentityManager_DB::Accounts_DB::listA
             field.isUnique = isUnique.getValue();
             field.isLoginIdentifier = isLoginIdentifier.getValue();
             field.extendedAttributes = r;
+            field.orderPriority = orderPriority.getValue();
 
             fieldMap[fieldName.getValue()] = field;
         }
@@ -393,10 +398,11 @@ std::optional<AccountDetailField> IdentityManager_DB::Accounts_DB::getAccountDet
     Abstract::STRING fieldDescription, fieldType;
     Abstract::BOOL isOptionalField, isUnique, isLoginIdentifier;
     Abstract::STRING jsonExtendedAttribsText;
+    Abstract::INT32 orderPriority;
 
     if (_parent->m_sqlConnector->qSelectSingleRow(
-            "SELECT `fieldDescription`,`fieldType`,`isOptionalField`, `isUnique`, `isLoginIdentifier`,`jsonExtendedAttribs` FROM `iam`.`accountDetailFields` WHERE `fieldName` = :fieldName;",
-            {{":fieldName", MAKE_VAR(STRING, fieldName)}}, {&fieldDescription, &fieldType, &isOptionalField, &isUnique, &isLoginIdentifier, &jsonExtendedAttribsText}))
+            "SELECT `fieldDescription`,`fieldType`,`isOptionalField`, `isUnique`, `isLoginIdentifier`,`jsonExtendedAttribs`,`orderPriority` FROM `iam`.`accountDetailFields` WHERE `fieldName` = :fieldName;",
+            {{":fieldName", MAKE_VAR(STRING, fieldName)}}, {&fieldDescription, &fieldType, &isOptionalField, &isUnique, &isLoginIdentifier, &jsonExtendedAttribsText, &orderPriority}))
     {
         Json::Value r;
         Json::Reader().parse(jsonExtendedAttribsText.getValue(), r);
@@ -407,6 +413,7 @@ std::optional<AccountDetailField> IdentityManager_DB::Accounts_DB::getAccountDet
         field.isUnique = isUnique.getValue();
         field.isLoginIdentifier = isLoginIdentifier.getValue();
         field.extendedAttributes = r;
+        field.orderPriority = orderPriority.getValue();
 
         return field;
     }
