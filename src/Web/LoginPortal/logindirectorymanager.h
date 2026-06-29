@@ -1,11 +1,12 @@
 #pragma once
 
+#include <cstdint>
 #include <string>
 
 class LoginDirectoryManager
 {
 public:
-    enum class ErrorCode
+    enum class ErrorCode : uint8_t
     {
         SUCCESS,
         PATH_RESOLUTION_ERROR,
