@@ -117,7 +117,7 @@ std::map<uint32_t, AuthenticationSlotDetails> IdentityManager_DB::AuthController
     while (i && i->isSuccessful() && i->step())
     {
         // Build AuthenticationSlotDetails and insert it to the maps
-        ret.insert({uSlotId.getValue(), AuthenticationSlotDetails(sDescription.getValue(), (HashFunction) uFunction.getValue(), parse(sStrengthJSONValidator.getValue().c_str()),
+        ret.insert({uSlotId.getValue(), AuthenticationSlotDetails(sDescription.getValue(), static_cast<HashFunction>(uFunction.getValue()), parse(sStrengthJSONValidator.getValue().c_str()),
                                                                   uDefaultExpirationSeconds.getValue(), uTotp2FAStepsToleranceWindow.getValue(), canSkipWhenExpired.getValue())});
     }
 

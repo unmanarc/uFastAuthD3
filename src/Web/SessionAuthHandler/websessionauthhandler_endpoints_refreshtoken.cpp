@@ -53,7 +53,7 @@ API::APIReturn WebSessionAuthHandler_Endpoints::refreshAccessToken(void *context
 
     Globals::getIdentityManager()->authController->updateApplicationAuthLogAccessTokenId(tokenData.user, tokenData.app, tokenData.jwtId, newAccessToken.getJwtId(), newAccessToken.getExpirationTime());
 
-    (*response.responseJSON())["maxAge"] = (time_t) (newAccessToken.getExpirationTime() - time(nullptr));
+    (*response.responseJSON())["maxAge"] = (newAccessToken.getExpirationTime() - time(nullptr));
 
     return response;
 }
