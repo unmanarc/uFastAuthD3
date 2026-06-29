@@ -1,6 +1,5 @@
 #include "logindirectorymanager.h"
 
-#include <cstdlib>
 #include <fstream>
 #include <iostream>
 #include <linux/limits.h>

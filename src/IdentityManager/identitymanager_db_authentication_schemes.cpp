@@ -150,7 +150,7 @@ std::vector<AuthenticationSchemeUsedSlot> IdentityManager_DB::AuthController_DB:
         // Add the fetched slot details to the list
         if (allAuthSlots.find(slotId) != allAuthSlots.end())
         {
-            slotsList.push_back(AuthenticationSchemeUsedSlot{slotId, orderPriority, optional, allAuthSlots[slotId]});
+            slotsList.emplace_back(slotId, orderPriority, optional, allAuthSlots[slotId]);
         }
     }
 
@@ -185,7 +185,6 @@ bool IdentityManager_DB::AuthController_DB::updateAuthenticationSlotUsedByScheme
         }
     }
 
-    if (true)
     {
         _parent->logSecurityEventOnAuthenticationSchemes(schemeId, SecurityEventAction::UPDATE, "Authentication scheme slots configuration updated", performedBy, clientDetails);
     }

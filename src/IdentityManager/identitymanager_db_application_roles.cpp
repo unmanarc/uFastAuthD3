@@ -190,7 +190,7 @@ Json::Value IdentityManager_DB::ApplicationRoles_DB::searchApplicationRoles(cons
 
     // Extract the search value from dataTablesFilters
     std::string searchValue = Helpers::JSON::ASSTRING(dataTablesFilters["search"], "value", "");
-    std::string whereFilters = "";
+    std::string whereFilters;
 
     // Build the SQL query with WHERE clause for DataTables search
     std::string sqlQueryStr = R"(

@@ -109,7 +109,9 @@ void AppSync_Endpoints::updateAppRoles(const std::string &appName, const std::st
         {
             std::string id = Helpers::JSON::ASSTRING(role, "id", "");
             if (id.empty())
+            {
                 continue; // skip invalid entries
+            }
             proposedRoleIds.insert(id);
             proposedRoleData[id] = role; // Store for scope processing
 
@@ -213,7 +215,9 @@ void AppSync_Endpoints::updateAppActivities(const std::string &appName, const st
         {
             std::string name = Helpers::JSON::ASSTRING(act, "id", "");
             if (name.empty())
+            {
                 continue; // skip invalid entries
+            }
 
             proposedActivityNames.insert(name);
 
@@ -274,32 +278,32 @@ AppSync_Endpoints::APIReturn AppSync_Endpoints::validateAndFetchApplicationAttri
     if (appName.empty())
     {
         LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LogLevel::WARN, "Missing application name in request.");
-        return APIReturn(HTTP::Status::Code::S_400_BAD_REQUEST, "missing_app_name", "Application name is required.");
+        return {HTTP::Status::Code::S_400_BAD_REQUEST, "missing_app_name", "Application name is required."};
     }
 
     attribs = Globals::getIdentityManager()->applications->getApplicationAttributes(appName);
     if (!attribs.has_value())
     {
-        return APIReturn(HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to retrieve the application attributes.");
+        return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to retrieve the application attributes."};
     }
 
     if (!attribs->appSyncEnabled)
     {
         LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LogLevel::SECURITY_ALERT, "Application '%s' does not have sync enabled.", appName.c_str());
-        return APIReturn(HTTP::Status::Code::S_400_BAD_REQUEST, "sync_not_enabled", "Application sync is not enabled.");
+        return {HTTP::Status::Code::S_400_BAD_REQUEST, "sync_not_enabled", "Application sync is not enabled."};
     }
 
     std::string apiKey = Helpers::JSON::ASSTRING(*request.inputJSON, "APIKEY", "");
     if (apiKey.empty())
     {
         LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LogLevel::WARN, "Missing API key in request for application '%s'.", appName.c_str());
-        return APIReturn(HTTP::Status::Code::S_400_BAD_REQUEST, "missing_api_key", "API key is required.");
+        return {HTTP::Status::Code::S_400_BAD_REQUEST, "missing_api_key", "API key is required."};
     }
 
     if (Globals::getIdentityManager()->applications->getApplicationNameByAPIKey(apiKey) != appName)
     {
         LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LogLevel::SECURITY_ALERT, "Invalid API Key for Application '%s'. Possible attack attempt.", appName.c_str());
-        return APIReturn(HTTP::Status::Code::S_401_UNAUTHORIZED, "invalid_api_key", "Invalid API Key for the specified application.");
+        return {HTTP::Status::Code::S_401_UNAUTHORIZED, "invalid_api_key", "Invalid API Key for the specified application."};
     }
 
     return {}; // Success
@@ -331,12 +335,14 @@ AppSync_Endpoints::APIReturn AppSync_Endpoints::getApplicationAccountsList(void 
 
     APIReturn result = validateAndFetchApplicationAttributes(request, authClientDetails, appName, attribs);
     if (result.getHTTPResponseCode() != HTTP::Status::Code::S_200_OK)
+    {
         return result;
+    }
 
     if (!attribs->appSyncCanRetrieveAppAccountsList)
     {
         LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LogLevel::SECURITY_ALERT, "Application '%s' does not have user list retrieval enabled.", appName.c_str());
-        return APIReturn(HTTP::Status::Code::S_400_BAD_REQUEST, "user_list_not_enabled", "Retrieving the application user list is not enabled for this application.");
+        return {HTTP::Status::Code::S_400_BAD_REQUEST, "user_list_not_enabled", "Retrieving the application user list is not enabled for this application."};
     }
 
     // Retrieve and return the list of users
