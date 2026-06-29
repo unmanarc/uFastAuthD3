@@ -15,7 +15,7 @@ void TokensManager::configureApplicationAccessToken(Mantids30::DataFormat::JWT::
     std::string tokenId = Mantids30::Helpers::Random::createRandomString(16);
     accessToken.setSubject(commonParams.jwtAccountName);
     accessToken.setIssuedAt(time(nullptr));
-    time_t expectedExpirationTime = time(nullptr) + Helpers::JSON::ASUINT64(commonParams.tokenProperties.tokensConfiguration["accessToken"], "timeout", 300);
+    time_t expectedExpirationTime = time(nullptr) + Helpers::JSON::ASINT64(commonParams.tokenProperties.tokensConfiguration["accessToken"], "timeout", 300);
     time_t accountExpirationTime = identityManager->accounts->getAccountExpirationTime(commonParams.jwtAccountName);
 
     if (accountExpirationTime == 0 || accountExpirationTime >= expectedExpirationTime)
@@ -65,7 +65,7 @@ void TokensManager::configureApplicationAccessToken(Mantids30::DataFormat::JWT::
 
 void TokensManager::configureApplicationRefreshToken(Mantids30::DataFormat::JWT::Token &refreshToken, const ApplicationTokenCommonParams &commonParams, const RefreshTokenParams &refreshParams)
 {
-    time_t expectedExpirationTime = time(nullptr) + Helpers::JSON::ASUINT64(commonParams.tokenProperties.tokensConfiguration["refreshToken"], "timeout", 2592000);
+    time_t expectedExpirationTime = time(nullptr) + Helpers::JSON::ASINT64(commonParams.tokenProperties.tokensConfiguration["refreshToken"], "timeout", 2592000);
     time_t accountExpirationTime = Globals::getIdentityManager()->accounts->getAccountExpirationTime(commonParams.jwtAccountName);
 
     if (accountExpirationTime == 0 || accountExpirationTime >= expectedExpirationTime)
