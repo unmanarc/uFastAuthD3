@@ -1,9 +1,9 @@
 #include "adminportal_endpoints_applications.h"
 
-#include <Mantids30/Protocol_HTTP/api_return.h>
 #include "defs.h"
 #include "globals.h"
 #include <Mantids30/Program_Logs/applog.h>
+#include <Mantids30/Protocol_HTTP/api_return.h>
 #include <json/value.h>
 #include <optional>
 #include <string>
@@ -99,11 +99,9 @@ API::APIReturn AdminPortal_Endpoints_Applications::addApplication(void *context,
     attribs.fromJSON((*request.inputJSON)["applicationAttributes"]);
 
     // Attempt to create the new application
-    if (!Globals::getIdentityManager()->applications->createApplication(authClientDetails, request.jwtToken->getSubject(),
-
-                                                                     Helpers::JSON::ASSTRING(*request.inputJSON, "appName", ""), Helpers::JSON::ASSTRING(*request.inputJSON, "description", ""),
-                                                                     Helpers::JSON::ASSTRING(*request.inputJSON, "appURL", ""), Helpers::JSON::ASSTRING(*request.inputJSON, "appKey", ""), request.jwtToken->getSubject(),
-                                                                     attribs, Helpers::JSON::ASBOOL(*request.inputJSON, "initializeDefaults", true)))
+    if (!Globals::getIdentityManager()->applications->createApplication(authClientDetails, request.jwtToken->getSubject(), appName, appDescription,
+                                                                        Helpers::JSON::ASSTRING(*request.inputJSON, "appURL", ""), Helpers::JSON::ASSTRING(*request.inputJSON, "appKey", ""),
+                                                                        request.jwtToken->getSubject(), attribs, Helpers::JSON::ASBOOL(*request.inputJSON, "initializeDefaults", true)))
     {
         return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to create application"};
     }
@@ -225,7 +223,8 @@ API::APIReturn AdminPortal_Endpoints_Applications::updateApplicationDetails(void
         return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to update some application attributes."};
     }
 
-    if (!Globals::getIdentityManager()->applications->updateApplicationDescription(authClientDetails, request.jwtToken->getSubject(), appName, Helpers::JSON::ASSTRING(*request.inputJSON, "description", "")))
+    if (!Globals::getIdentityManager()->applications->updateApplicationDescription(authClientDetails, request.jwtToken->getSubject(), appName,
+                                                                                   Helpers::JSON::ASSTRING(*request.inputJSON, "description", "")))
     {
         return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to update application description."};
     }
@@ -258,7 +257,7 @@ API::APIReturn AdminPortal_Endpoints_Applications::updateWebLoginJWTConfigForApp
     std::optional<AppError> err = tokenInfo.fromJSON(*request.inputJSON);
     if (err.has_value())
     {
-        return {(Network::Protocol::HTTP::Status::Code) err->http_code, err->error, err->message};
+        return {static_cast<Network::Protocol::HTTP::Status::Code>(err->http_code), err->error, err->message};
     }
 
     if (!Globals::getIdentityManager()->applications->updateWebLoginJWTConfigForApplication(authClientDetails, request.jwtToken->getSubject(), tokenInfo))

@@ -316,7 +316,9 @@ AppSync_Endpoints::APIReturn AppSync_Endpoints::updateAccessControlContext(void 
 
     APIReturn result = validateAndFetchApplicationAttributes(request, authClientDetails, appName, attribs);
     if (result.getHTTPResponseCode() != HTTP::Status::Code::S_200_OK)
+    {
         return result;
+    }
 
     // Scopes, Roles, and Activities...
     // ------------------------------------------------------
@@ -413,7 +415,9 @@ AppSync_Endpoints::APIReturn AppSync_Endpoints::getApplicationJWTValidationKey(v
 
     APIReturn result = validateAndFetchApplicationAttributes(request, authClientDetails, appName, attribs);
     if (result.getHTTPResponseCode() != HTTP::Status::Code::S_200_OK)
+    {
         return result;
+    }
 
-    return (Json::Value) Globals::getIdentityManager()->applications->getWebLoginJWTValidationKeyForApplication(appName);
+    return Json::Value(Globals::getIdentityManager()->applications->getWebLoginJWTValidationKeyForApplication(appName));
 }

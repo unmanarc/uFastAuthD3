@@ -29,10 +29,7 @@ public:
     static APIReturn appLogout(void *context, const RequestContext &request, ClientDetails &authClientDetails);
     static APIReturn callback(void *context, const RequestContext &request, ClientDetails &authClientDetails);
     static APIReturn getLogoutCallbackURL(void *context, const RequestContext &request, ClientDetails &authClientDetails);
-
-    static Mantids30::Network::Protocol::HTTP::Status::Code handleRetokenizeHTML(const std::string &appName, HTTPv1_Base::Request *request, HTTPv1_Base::Response *response,
-                                                                                       const std::shared_ptr<void> &);
-
+    static Mantids30::Network::Protocol::HTTP::Status::Code handleRetokenizeHTML(const std::string &urlPostfix, HTTPv1_Base::Request *request, HTTPv1_Base::Response *response, const std::shared_ptr<void> &);
 
 private:
     static bool validateAPIKey(const std::string &app, APIReturn &response, const RequestContext &request, ClientDetails &authClientDetails);
