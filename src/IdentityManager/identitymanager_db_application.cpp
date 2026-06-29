@@ -19,7 +19,7 @@ using namespace Mantids30::Helpers;
 using namespace Mantids30;
 
 bool IdentityManager_DB::Applications_DB::createApplication(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &applicationDescription,
-                                                         const std::string &appURL, const std::string &apiKey, const std::string &creatorAccountName, const ApplicationAttributes &appAttributes,
+                                                         const std::string &appURL, const std::string &apiKey, const std::string &creatorAccountUUID, const ApplicationAttributes &appAttributes,
                                                          bool initializeDefaultValues)
 {
     bool tokenInsertSuccess;
@@ -30,7 +30,7 @@ bool IdentityManager_DB::Applications_DB::createApplication(const ClientDetails 
         bool appInsertSuccess = _parent->m_sqlConnector->qExecuteEx("INSERT INTO iam.applications (`appName`, `f_appCreatorAccountUUID`, `appDescription`, `apiKey`, `appAttributesJSON`) VALUES (:appName, "
                                                                     ":appCreatorAccountUUID, :description, :apiKey, :appAttributesJSON);",
                                                                     {{":appName", MAKE_VAR(STRING, appName)},
-                                                                     {":appCreatorAccountUUID", MAKE_VAR(STRING, creatorAccountName)},
+                                                                     {":appCreatorAccountUUID", MAKE_VAR(STRING, creatorAccountUUID)},
                                                                      {":description", MAKE_VAR(STRING, applicationDescription)},
                                                                      {":apiKey", MAKE_VAR(STRING, Encoders::encodeToBase64Obf(apiKey))},
                                                                      {":appAttributesJSON", MAKE_VAR(STRING, appAttributes.toJSON().toStyledString())}});

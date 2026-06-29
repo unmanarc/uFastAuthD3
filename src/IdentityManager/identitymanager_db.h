@@ -296,7 +296,7 @@ public:
 
         // Application CRUD Operations
         bool createApplication(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &applicationDescription, const std::string &appURL,
-                            const std::string &apiKey, const std::string &creatorAccountName, const ApplicationAttributes &appAttributes, bool initializeDefaultValues) override;
+                               const std::string &apiKey, const std::string &creatorAccountUUID, const ApplicationAttributes &appAttributes, bool initializeDefaultValues) override;
 
         bool removeApplication(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName) override;
         bool doesApplicationExist(const std::string &appName) override;
