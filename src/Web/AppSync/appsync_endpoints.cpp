@@ -44,7 +44,7 @@ void AppSync_Endpoints::updateAppScopes(const std::string &appName, const std::s
     std::string performedBy = "00000000-0000-4000-8000-000000000001";
 
     // Current elements...
-    std::set<ApplicationScope> currentScopes = Globals::getIdentityManager()->authController->listApplicationScopes(appName);
+    std::set<ApplicationScope> currentScopes = Globals::getIdentityManager()->applicationScopes->listApplicationScopes(appName);
     if (proposedScopes.isArray())
     {
         std::set<std::string> proposedScopeIds;
@@ -67,14 +67,14 @@ void AppSync_Endpoints::updateAppScopes(const std::string &appName, const std::s
                     if (existingScope->description != newScope.description)
                     {
                         LOG_APP->log2(__func__, "", ipAddress, Logs::LogLevel::INFO, "Updating description for scope '%s' in application '%s'.", id.c_str(), appName.c_str());
-                        Globals::getIdentityManager()->authController->updateApplicationScopeDescription(clientDetails, performedBy, newScope);
+                        Globals::getIdentityManager()->applicationScopes->updateApplicationScopeDescription(clientDetails, performedBy, newScope);
                     }
                 }
                 else
                 {
                     // Add new scope
                     LOG_APP->log2(__func__, "", ipAddress, Logs::LogLevel::INFO, "Adding new scope '%s' to application '%s'.", id.c_str(), appName.c_str());
-                    Globals::getIdentityManager()->authController->createApplicationScope(clientDetails, performedBy, newScope);
+                    Globals::getIdentityManager()->applicationScopes->createApplicationScope(clientDetails, performedBy, newScope);
                 }
             }
         }
@@ -85,7 +85,7 @@ void AppSync_Endpoints::updateAppScopes(const std::string &appName, const std::s
             if (proposedScopeIds.find(currentScope.id) == proposedScopeIds.end())
             {
                 LOG_APP->log2(__func__, "", ipAddress, Logs::LogLevel::INFO, "Removing scope '%s' from application '%s'.", currentScope.id.c_str(), appName.c_str());
-                Globals::getIdentityManager()->authController->removeApplicationScope(clientDetails, performedBy, currentScope);
+                Globals::getIdentityManager()->applicationScopes->removeApplicationScope(clientDetails, performedBy, currentScope);
             }
         }
     }
@@ -178,7 +178,7 @@ void AppSync_Endpoints::updateAppRoles(const std::string &appName, const std::st
                         appScope.appName = appName;
                         appScope.id = scopeId;
                         LOG_APP->log2(__func__, "", ipAddress, Logs::LogLevel::INFO, "Adding scope '%s' to role '%s' in application '%s'.", scopeId.c_str(), roleId.c_str(), appName.c_str());
-                        Globals::getIdentityManager()->authController->addApplicationScopeToRole(clientDetails, performedBy, appScope, roleId);
+                        Globals::getIdentityManager()->applicationScopes->addApplicationScopeToRole(clientDetails, performedBy, appScope, roleId);
                     }
                 }
             }
@@ -192,7 +192,7 @@ void AppSync_Endpoints::updateAppRoles(const std::string &appName, const std::st
                     appScope.appName = appName;
                     appScope.id = currentScopeId;
                     LOG_APP->log2(__func__, "", ipAddress, Logs::LogLevel::INFO, "Removing scope '%s' from role '%s' in application '%s'.", currentScopeId.c_str(), roleId.c_str(), appName.c_str());
-                    Globals::getIdentityManager()->authController->removeApplicationScopeFromRole(clientDetails, performedBy, appScope, roleId);
+                    Globals::getIdentityManager()->applicationScopes->removeApplicationScopeFromRole(clientDetails, performedBy, appScope, roleId);
                 }
             }
         }

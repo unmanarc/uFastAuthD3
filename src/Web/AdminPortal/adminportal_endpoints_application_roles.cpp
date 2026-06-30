@@ -115,8 +115,8 @@ API::APIReturn AdminPortal_Endpoints_ApplicationRoles::getRoleInfo(void *context
         i++;
     }
 
-    std::set<ApplicationScope> usedScopes = Globals::getIdentityManager()->authController->getRoleApplicationScopes(appName, roleName);
-    std::set<ApplicationScope> fullScopes = Globals::getIdentityManager()->authController->listApplicationScopes(appName);
+    std::set<ApplicationScope> usedScopes = Globals::getIdentityManager()->applicationScopes->getRoleApplicationScopes(appName, roleName);
+    std::set<ApplicationScope> fullScopes = Globals::getIdentityManager()->applicationScopes->listApplicationScopes(appName);
     // Populate used scopes
 
     i = 0;

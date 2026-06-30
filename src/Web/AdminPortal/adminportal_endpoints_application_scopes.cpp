@@ -37,7 +37,7 @@ API::APIReturn AdminPortal_Endpoints_ApplicationsScopes::addApplicationScopeToAc
     }
 
     // Perform the operation
-    if (!Globals::getIdentityManager()->authController->addApplicationScopeToAccount(authClientDetails, request.jwtToken->getSubject(), {appName, scopeId}, accountUUID))
+    if (!Globals::getIdentityManager()->applicationScopes->addApplicationScopeToAccount(authClientDetails, request.jwtToken->getSubject(), {appName, scopeId}, accountUUID))
     {
         return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Internal Error"};
     }
@@ -59,7 +59,7 @@ API::APIReturn AdminPortal_Endpoints_ApplicationsScopes::removeApplicationScopeF
     }
 
     // Perform the operation
-    if (!Globals::getIdentityManager()->authController->removeApplicationScopeFromAccount(authClientDetails, request.jwtToken->getSubject(), {appName, scopeId}, accountUUID))
+    if (!Globals::getIdentityManager()->applicationScopes->removeApplicationScopeFromAccount(authClientDetails, request.jwtToken->getSubject(), {appName, scopeId}, accountUUID))
     {
         return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Internal Error"};
     }
@@ -97,7 +97,7 @@ API::APIReturn AdminPortal_Endpoints_ApplicationsScopes::createApplicationScope(
         return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Can't add application scope to the IAM"};
     }
 
-    if (!Globals::getIdentityManager()->authController->createApplicationScope(authClientDetails, request.jwtToken->getSubject(), {appName, scopeId, scopeDescription}))
+    if (!Globals::getIdentityManager()->applicationScopes->createApplicationScope(authClientDetails, request.jwtToken->getSubject(), {appName, scopeId, scopeDescription}))
     {
         return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "The application scope may already exist."};
     }
@@ -129,7 +129,7 @@ API::APIReturn AdminPortal_Endpoints_ApplicationsScopes::removeApplicationScope(
         return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Can't remove application scope to the IAM"};
     }
 
-    if (!Globals::getIdentityManager()->authController->removeApplicationScope(authClientDetails, request.jwtToken->getSubject(), {appName, scopeId}))
+    if (!Globals::getIdentityManager()->applicationScopes->removeApplicationScope(authClientDetails, request.jwtToken->getSubject(), {appName, scopeId}))
     {
         return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Internal Error"};
     }
@@ -141,7 +141,7 @@ API::APIReturn AdminPortal_Endpoints_ApplicationsScopes::addApplicationScopeToRo
 {
     API::APIReturn response;
 
-    if (!Globals::getIdentityManager()->authController->addApplicationScopeToRole(authClientDetails, request.jwtToken->getSubject(),
+    if (!Globals::getIdentityManager()->applicationScopes->addApplicationScopeToRole(authClientDetails, request.jwtToken->getSubject(),
                                                                                   {Helpers::JSON::ASSTRING(*request.inputJSON, "appName", ""), Helpers::JSON::ASSTRING(*request.inputJSON, "scopeId", "")},
                                                                                   Helpers::JSON::ASSTRING(*request.inputJSON, "roleId", "")))
     {
@@ -154,7 +154,7 @@ API::APIReturn AdminPortal_Endpoints_ApplicationsScopes::removeApplicationScopeF
 {
     API::APIReturn response;
 
-    if (!Globals::getIdentityManager()->authController->removeApplicationScopeFromRole(authClientDetails, request.jwtToken->getSubject(),
+    if (!Globals::getIdentityManager()->applicationScopes->removeApplicationScopeFromRole(authClientDetails, request.jwtToken->getSubject(),
                                                                                        {Helpers::JSON::ASSTRING(*request.inputJSON, "appName", ""), Helpers::JSON::ASSTRING(*request.inputJSON, "scopeId", "")},
                                                                                        Helpers::JSON::ASSTRING(*request.inputJSON, "roleId", "")))
     {
@@ -166,5 +166,5 @@ API::APIReturn AdminPortal_Endpoints_ApplicationsScopes::removeApplicationScopeF
 
 API::APIReturn AdminPortal_Endpoints_ApplicationsScopes::searchApplicationScopes(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
-    return Globals::getIdentityManager()->authController->searchApplicationScopes(*request.inputJSON);
+    return Globals::getIdentityManager()->applicationScopes->searchApplicationScopes(*request.inputJSON);
 }

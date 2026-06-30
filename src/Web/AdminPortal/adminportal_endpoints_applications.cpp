@@ -33,7 +33,7 @@ void AdminPortal_Endpoints_Applications::addEndpoints_Applications(const std::sh
     endpoints->addEndpoint(HTTP::Method::DELETE, "removeApplicationLoginRedirectURI", SecurityRequirements::JWT_COOKIE_AUTH, {"APP_MODIFY"}, nullptr, &removeApplicationLoginRedirectURI);
     endpoints->addEndpoint(HTTP::Method::PATCH, "updateWebLoginDefaultRedirectURIForApplication", SecurityRequirements::JWT_COOKIE_AUTH, {"APP_MODIFY"}, nullptr,
                            &updateWebLoginDefaultRedirectURIForApplication);
-    endpoints->addEndpoint(HTTP::Method::PATCH, "changeApplicationAdmin", SecurityRequirements::JWT_COOKIE_AUTH, {"APP_MODIFY"}, nullptr, &changeApplicationAdmin);
+    endpoints->addEndpoint(HTTP::Method::PATCH, "setAccountAsApplicationAdmin", SecurityRequirements::JWT_COOKIE_AUTH, {"APP_MODIFY"}, nullptr, &setAccountAsApplicationAdmin);
 }
 
 API::APIReturn AdminPortal_Endpoints_Applications::searchApplications(void *context, const RequestContext &request, ClientDetails &authClientDetails)
@@ -126,7 +126,7 @@ API::APIReturn AdminPortal_Endpoints_Applications::doesApplicationExist(void *co
     return response;
 }
 
-AdminPortal_Endpoints_Applications::APIReturn AdminPortal_Endpoints_Applications::changeApplicationAdmin(void *context, const RequestContext &request, ClientDetails &authClientDetails)
+AdminPortal_Endpoints_Applications::APIReturn AdminPortal_Endpoints_Applications::setAccountAsApplicationAdmin(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
     std::string appName = Helpers::JSON::ASSTRING(*request.inputJSON, "appName", "");
@@ -143,7 +143,7 @@ AdminPortal_Endpoints_Applications::APIReturn AdminPortal_Endpoints_Applications
         return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Account Name is Empty"};
     }
 
-    if (!Globals::getIdentityManager()->applications->changeApplicationAdmin(authClientDetails, request.jwtToken->getSubject(), appName, accountUUID,
+    if (!Globals::getIdentityManager()->applications->setAccountAsApplicationAdmin(authClientDetails, request.jwtToken->getSubject(), appName, accountUUID,
                                                                              Helpers::JSON::ASBOOL(*request.inputJSON, "isAppAdmin", false)))
     {
         return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Internal Error"};
@@ -179,7 +179,7 @@ API::APIReturn AdminPortal_Endpoints_Applications::getApplicationInfo(void *cont
 
     // Get associated scope...
     payloadOut["scopes"] = Json::arrayValue;
-    std::set<ApplicationScope> attrList = Globals::getIdentityManager()->authController->listApplicationScopes(appName);
+    std::set<ApplicationScope> attrList = Globals::getIdentityManager()->applicationScopes->listApplicationScopes(appName);
     int i = 0;
     for (const ApplicationScope &scope : attrList)
     {

@@ -29,7 +29,7 @@ protected:
     static APIReturn addApplicationLoginRedirectURI(void *context, const RequestContext &request, ClientDetails &authClientDetails);
     static APIReturn removeApplicationLoginRedirectURI(void *context, const RequestContext &request, ClientDetails &authClientDetails);
     static APIReturn updateWebLoginDefaultRedirectURIForApplication(void *context, const RequestContext &request, ClientDetails &authClientDetails);
-    static APIReturn changeApplicationAdmin(void *context, const RequestContext &request, ClientDetails &authClientDetails);
+    static APIReturn setAccountAsApplicationAdmin(void *context, const RequestContext &request, ClientDetails &authClientDetails);
 
 private:
     static Json::Value getLoginFlowDetails(const std::string &appName);
