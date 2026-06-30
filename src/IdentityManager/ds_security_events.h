@@ -92,6 +92,9 @@ inline Mantids30::Program::Logs::LogLevel SecurityEventActionToLogLevel(Security
 {
     switch (action)
     {
+    case SecurityEventAction::CREATE:
+    case SecurityEventAction::UPDATE:
+    case SecurityEventAction::DELETE:
     case SecurityEventAction::LOGIN:
     case SecurityEventAction::LOGOUT:
     case SecurityEventAction::RENEW:
@@ -106,9 +109,6 @@ inline Mantids30::Program::Logs::LogLevel SecurityEventActionToLogLevel(Security
     case SecurityEventAction::LOCK:
     case SecurityEventAction::DISABLE:
         return Mantids30::Program::Logs::LogLevel::SECURITY_ALERT;
-    case SecurityEventAction::CREATE:
-    case SecurityEventAction::UPDATE:
-    case SecurityEventAction::DELETE:
     case SecurityEventAction::REVOKE_ACCOUNT:
     case SecurityEventAction::REVOKE_ROLE:
     case SecurityEventAction::REVOKE_SCHEME:

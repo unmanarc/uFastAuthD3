@@ -31,7 +31,7 @@
                         <th scope="row" id=ulist-accountUUID-${accountId}></th>
                         <td>
                             <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" id="ulist-isAppAdmin-${accountId}" ${account["isAppAdmin"] ? 'checked' : ''} onclick="javascript:changeApplicationAdmin(${accountId})">
+                                <input class="form-check-input" type="checkbox" id="ulist-isAppAdmin-${accountId}" ${account["isAppAdmin"] ? 'checked' : ''} onclick="javascript:setAccountAsApplicationAdmin(${accountId})">
                             </div>
                         </td>
                         <td style="text-align: right;">
@@ -47,7 +47,7 @@
         }
     }
 
-    function changeApplicationAdmin(accountId) {
+    function setAccountAsApplicationAdmin(accountId) {
 
         showYesNoDialog("<b>SECURITY ALERT:</b> Modifying administrator privileges can significantly impact system security and access controls. Confirm to proceed with this security-sensitive change.", function (result) {
 
@@ -55,7 +55,7 @@
             let isChecked = document.getElementById(`ulist-isAppAdmin-${accountId}`).checked;
             var appName = currentApplication;
             $.ajax({
-                url: '/api/v1/changeApplicationAdmin',
+                url: '/api/v1/setAccountAsApplicationAdmin',
                 type: 'PATCH',
                 contentType: 'application/json',
                 data: JSON.stringify({
