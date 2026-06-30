@@ -7,6 +7,8 @@
 #include <string>
 #include <sys/stat.h>
 
+#include "defs.h"
+
 #ifdef WIN32
 #include <windows.h>
 #endif
@@ -99,77 +101,37 @@ bool IdentityManager::initializeAdminAccountWithPasswordIfNotExist(const uint32_
         return true;
     }
 
-    std::optional<std::string> _accountUUID = accounts->createAdminAccount();
-
-    if (!_accountUUID.has_value())
-    {
-        LOG_APP->log0(__func__, LogLevel::CRITICAL, "Error creating admin account (DB).");
-        return false;
-    }
-
-    accountUUID = _accountUUID.value();
-
-    if (!authController->setAccountPasswordOnScheme(clientDetails, performedByUUID, accountUUID, &adminPW, schemeId))
-    {
-        LOG_APP->log0(__func__, LogLevel::CRITICAL, "Error creating admin account (SCHEME).");
-        return false;
-    }
-
-    // si no hay username... crear campo username.
-
-    std::map<std::string, AccountDetailField> detailFields = accounts->listAccountDetailFields();
-    if (!detailFields.count("USERNAME"))
-    {
-        AccountDetailField field;
-        field.description = "Login Username";
-        field.fieldType = "TEXTLINE";
-        field.isLoginIdentifier = true;
-        field.isOptionalField = false;
-        field.isUnique = true;
-        field.extendedAttributes["security"]["canUserEdit"] = true;
-        field.extendedAttributes["security"]["canUserView"] = true;
-        field.extendedAttributes["behavior"]["regexpValidator"] = "^[a-zA-Z0-9_]+$";
-        if (!accounts->createAccountDetailField(clientDetails, performedByUUID, "USERNAME", field))
-        {
-            LOG_APP->log0(__func__, LogLevel::CRITICAL, "Error creating admin account (CREATE_USERNAME_DETAIL_FIELD).");
-            return false;
-        }
-    }
-
 
     const std::string adminBaseName = "admin";
-    int i=0;
+    int i = 0;
 
-    for (size_t i=0;i<100;i++)
+    for (size_t i = 0; i < 100; i++)
     {
         std::string adminUsername = adminBaseName;
-        if (i!=0)
+        if (i != 0)
         {
-            adminUsername+=std::to_string(i);
+            adminUsername += std::to_string(i);
         }
 
-        std::map<std::string, std::string> fieldValues;
-        fieldValues["USERNAME"] = adminUsername;
+        std::optional<std::string> _accountUUID = accounts->createAdminAccount(clientDetails,adminUsername, performedByUUID);
 
-
-        UpdateAccountDetailFieldValuesResult result = accounts->updateAccountDetailFieldValues(clientDetails,performedByUUID, accountUUID, fieldValues, true);
-        if (result.status == UpdateAccountDetailFieldValuesResult::Status::SUCCESS)
+        if (_accountUUID.has_value())
         {
-            LOG_APP->log0(__func__, LogLevel::INFO, "New admin account '%s' successfully created.", accountUUID.c_str());
+            LOG_APP->log0(__func__, LogLevel::WARN, "New admin account '%s'/'%s' successfully created.", _accountUUID.value().c_str(), adminUsername.c_str() );
+
+            if (!authController->setAccountPasswordOnScheme(clientDetails, performedByUUID, _accountUUID.value(), &adminPW, schemeId))
+            {
+                LOG_APP->log0(__func__, LogLevel::CRITICAL, "Failed to create the password on the account '%s'.", accountUUID.c_str());
+                return false;
+            }
+
             createPassFile(adminPW);
             return true;
         }
-        else if (result.status == UpdateAccountDetailFieldValuesResult::Status::DUPLICATE_LOGIN_IDENTIFIER)
-        {
-            // Continue...
-        }
-        else
-        {
-            LOG_APP->log0(__func__, LogLevel::CRITICAL, "Error creating admin account (USERNAME_FIELD).");
-            return false;
-        }
     }
 
+    LOG_APP->log0(__func__, LogLevel::CRITICAL, "Unable to create admin account.");
+    return false;
 }
 
 bool IdentityManager::initializeApplicationWithScheme(const std::string &appName, const std::string &appDescription, const std::string &appURL, const uint32_t &schemeId, bool *alreadyExist) const
@@ -193,15 +155,44 @@ bool IdentityManager::initializeApplicationWithScheme(const std::string &appName
     return r;
 }
 
-std::optional<std::string> IdentityManager::Accounts::createAdminAccount()
+std::optional<std::string> IdentityManager::Accounts::createAdminAccount(const ClientDetails &clientDetails, const std::string &accountName, const std::string &performedByUUID)
 {
+    // si no hay username... crear campo username.
+    std::map<std::string, AccountDetailField> detailFields = listAccountDetailFields();
+    if (!detailFields.count("USERNAME"))
+    {
+        AccountDetailField field;
+        field.description = "Login Username";
+        field.fieldType = "TEXTLINE";
+        field.isLoginIdentifier = true;
+        field.isOptionalField = false;
+        field.isUnique = true;
+        field.extendedAttributes["security"]["canUserEdit"] = true;
+        field.extendedAttributes["security"]["canUserView"] = true;
+        field.extendedAttributes["behavior"]["regexpValidator"] = "^[a-zA-Z0-9_]+$";
+        if (!createAccountDetailField(clientDetails, performedByUUID, "USERNAME", field))
+        {
+            LOG_APP->log0(__func__, LogLevel::CRITICAL, "Error creating admin account (CREATE_USERNAME_DETAIL_FIELD).");
+            return std::nullopt;
+        }
+    }
+
     AccountFlags accountFlags;
     accountFlags.confirmed = true;
     accountFlags.enabled = true;
     accountFlags.admin = true;
     accountFlags.blocked = false;
 
-    return createAccount(0, accountFlags);
+    ApplicationDef x;
+
+    CreateAccountResult result = createAccount(0, accountFlags, {}, performedByUUID, {{IAM_LOGINPORTAL_APPNAME, {true}}, {IAM_ADMPORTAL_APPNAME, {true}}, {IAM_USRPORTAL_APPNAME, {true}}},
+                                               {{"USERNAME", accountName}});
+    if (result.success)
+    {
+        return result.accountUUID;
+    }
+
+    return std::nullopt;
 }
 
 std::shared_ptr<JWT> IdentityManager::Applications::getAppJWTValidator(const std::string &appName)

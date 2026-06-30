@@ -16,74 +16,6 @@ using namespace Mantids30::Memory;
 using namespace Mantids30::Database;
 using namespace Mantids30;
 
-bool IdentityManager_DB::AuthController_DB::validateApplicationScopeOnRole(const std::string &roleName, const ApplicationScope &scope, bool lock)
-{
-    bool ret = false;
-    if (lock)
-    {
-        _parent->m_mutex.lockShared();
-    }
-
-    ret = _parent->m_sqlConnector->qSelectSingleRow("SELECT `f_roleName` FROM iam.applicationRolesScopes WHERE `f_scopeId`=:scopeId AND `f_appName`=:appName AND `f_roleName`=:roleName;",
-                                                    {{":scopeId", MAKE_VAR(STRING, scope.id)}, {":appName", MAKE_VAR(STRING, scope.appName)}, {":roleName", MAKE_VAR(STRING, roleName)}}, {});
-
-    if (lock)
-    {
-        _parent->m_mutex.unlockShared();
-    }
-
-    return ret;
-}
-
-std::set<ApplicationScope> IdentityManager_DB::AuthController_DB::getRoleApplicationScopes(const std::string &appName, const std::string &roleName, bool lock)
-{
-    std::set<ApplicationScope> ret;
-
-    if (lock)
-    {
-        _parent->m_mutex.lockShared();
-    }
-
-    Abstract::STRING sScopeName, sDescription;
-    std::shared_ptr<Query> i = _parent->m_sqlConnector
-                                   ->qSelect("SELECT ars.`f_scopeId`,ascope.description FROM iam.applicationRolesScopes ars LEFT JOIN iam.applicationScopes ascope ON (ars.`f_scopeId` = "
-                                             "ascope.scopeId AND ars.`f_appName` = ascope.f_appName) WHERE ars.`f_roleName`=:roleName AND ars.`f_appName`=:appName;",
-                                             {{":roleName", MAKE_VAR(STRING, roleName)}, {":appName", MAKE_VAR(STRING, appName)}}, {&sScopeName, &sDescription});
-    while (i && i->isSuccessful() && i->step())
-    {
-        ret.insert({appName, sScopeName.getValue(), sDescription.getValue()});
-    }
-
-    if (lock)
-    {
-        _parent->m_mutex.unlockShared();
-    }
-
-    return ret;
-}
-
-std::set<std::string> IdentityManager_DB::AuthController_DB::getApplicationRolesForScope(const ApplicationScope &applicationScope, bool lock)
-{
-    std::set<std::string> ret;
-    if (lock)
-    {
-        _parent->m_mutex.lockShared();
-    }
-
-    Abstract::STRING roleName;
-    std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelect("SELECT `f_roleName` FROM iam.applicationRolesScopes WHERE `f_scopeId`=:scopeId AND `f_appName`=:appName;",
-                                                                {{":appName", MAKE_VAR(STRING, applicationScope.appName)}, {":scopeId", MAKE_VAR(STRING, applicationScope.id)}}, {&roleName});
-    while (i && i->isSuccessful() && i->step())
-    {
-        ret.insert(roleName.getValue());
-    }
-
-    if (lock)
-    {
-        _parent->m_mutex.unlockShared();
-    }
-    return ret;
-}
 
 std::string IdentityManager_DB::AuthController_DB::getAccountConfirmationToken(const std::string &accountUUID)
 {
@@ -122,29 +54,6 @@ IdentityManager::LastAccountAccessResult IdentityManager_DB::AuthController_DB::
     }
 
     return result;
-}
-
-std::set<ApplicationScope> IdentityManager_DB::AuthController_DB::getAccountDirectApplicationScopes(const std::string &accountUUID, bool lock)
-{
-    std::set<ApplicationScope> ret;
-    if (lock)
-    {
-        _parent->m_mutex.lockShared();
-    }
-
-    Abstract::STRING appName, scopeId;
-    std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelect("SELECT `f_appName`,`f_scopeId` FROM iam.applicationScopeAccounts WHERE `f_accountUUID`=:accountUUID;",
-                                                                {{":accountUUID", MAKE_VAR(STRING, accountUUID)}}, {&appName, &scopeId});
-    while (i && i->isSuccessful() && i->step())
-    {
-        ret.insert({appName.getValue(), scopeId.getValue()});
-    }
-
-    if (lock)
-    {
-        _parent->m_mutex.unlockShared();
-    }
-    return ret;
 }
 
 // ------------------------------------------------------------------------
