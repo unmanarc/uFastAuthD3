@@ -395,6 +395,7 @@ bool IdentityManager_DB::ApplicationActivities_DB::createLoginActivity()
 
     _parent->applicationActivities->setApplicationActivities(clientDetails, performedByUUID, IAM_LOGINPORTAL_APPNAME, {{"LOGIN", {.description = "Main Login", .parentActivity = ""}}});
     _parent->applicationActivities->addAuthenticationSchemeToApplicationActivity(clientDetails, performedByUUID, IAM_LOGINPORTAL_APPNAME, "LOGIN", *defaultSchemeId);
+
     if (!_parent->applicationActivities->setApplicationActivityDefaultScheme(clientDetails, performedByUUID, IAM_LOGINPORTAL_APPNAME, "LOGIN", *defaultSchemeId))
     {
         return false;

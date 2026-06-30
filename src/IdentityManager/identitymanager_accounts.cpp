@@ -3,10 +3,7 @@
 #include <Mantids30/Helpers/random.h>
 #include <Mantids30/Threads/lock_shared.h>
 
-IdentityManager::Accounts::Accounts(IdentityManager *m_parent)
-{
-    this->m_parent = m_parent;
-}
+
 
 bool IdentityManager::Accounts::isAccountExpired(const std::string &accountUUID)
 {
