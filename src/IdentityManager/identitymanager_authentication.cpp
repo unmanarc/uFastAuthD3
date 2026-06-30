@@ -270,24 +270,8 @@ bool IdentityManager::AuthController::changeAccountAuthenticatedCredential(const
     return changeAccountCredential(clientInfo, performedBy, accountUUID, passwordData, slotId);
 }
 
-bool IdentityManager::AuthController::validateAccountApplicationScope(const std::string &accountUUID, const ApplicationScope &applicationScope)
-{
-    Threads::Sync::Lock_RD lock(m_parent->m_mutex);
-    if (validateAccountDirectApplicationScope(accountUUID, applicationScope))
-    {
-        return true;
-    }
-    for (const ApplicationRole &role : m_parent->accounts->getAccountApplicationRoles(applicationScope.appName, accountUUID, false))
-    {
-        if (validateApplicationScopeOnRole(role.id, applicationScope, false))
-        {
-            return true;
-        }
-    }
-    return false;
-}
 
-std::set<ApplicationScope> IdentityManager::AuthController::getAccountUsableApplicationScopes(const std::string &appName, const std::string &accountUUID)
+std::set<ApplicationScope> IdentityManager::ApplicationScopes::getAccountUsableApplicationScopes(const std::string &appName, const std::string &accountUUID)
 {
     std::set<ApplicationScope> x;
     Threads::Sync::Lock_RD lock(m_parent->m_mutex);
@@ -306,6 +290,23 @@ std::set<ApplicationScope> IdentityManager::AuthController::getAccountUsableAppl
         }
     }
     return x;
+}
+
+bool IdentityManager::ApplicationScopes::validateAccountApplicationScope(const std::string &accountUUID, const ApplicationScope &applicationScope)
+{
+    Threads::Sync::Lock_RD lock(m_parent->m_mutex);
+    if (validateAccountDirectApplicationScope(accountUUID, applicationScope))
+    {
+        return true;
+    }
+    for (const ApplicationRole &role : m_parent->accounts->getAccountApplicationRoles(applicationScope.appName, accountUUID, false))
+    {
+        if (validateApplicationScopeOnRole(role.id, applicationScope, false))
+        {
+            return true;
+        }
+    }
+    return false;
 }
 
 bool IdentityManager::AuthController::setAccountPasswordOnScheme(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountUUID, std::string *sInitPW,

@@ -20,7 +20,6 @@ public:
                                                const ClientDetails &clientDetails);
     void logSecurityEventOnAuthenticationSchemes(uint32_t schemeId, SecurityEventAction eventAction, const std::string &eventDescription, const std::string &performedBy,
                                                  const ClientDetails &clientDetails);
-
     void logSecurityEventOnApplications(const std::string &applicationName, SecurityEventAction eventAction, const std::string &eventDescription, const std::string &performedBy,
                                         const ClientDetails &clientDetails);
     void logSecurityEventOnApplicationRoles(const std::string &applicationName, const std::string &roleName, const std::string &accountUUID, SecurityEventAction eventAction,
@@ -35,19 +34,24 @@ public:
     class Accounts_DB : public Accounts
     {
     public:
-        Accounts_DB(IdentityManager_DB *parent)
-            : Accounts(parent)
+        Accounts_DB(IdentityManager_DB *parent) : Accounts(parent)
         {
             _parent = parent;
         }
 
         ~Accounts_DB() override = default;
 
+        // Friend declarations to access private methods of other DB classes
+        friend class Applications_DB;
+        friend class ApplicationRoles_DB;
+        friend class ApplicationScopes_DB;
+
         bool extendInactivity(const std::string &accountUUID, const time_t &validUntil) override;
 
         // Account Management
-        std::optional<std::string> createAccount(time_t expirationDate = 0, // Note: use 1 to create an expired account.
-                                   const AccountFlags &accountFlags = {true, true, false, false}, const ClientDetails &clientDetails = {}, const std::string &sCreatorAccountName = "") override;
+        CreateAccountResult createAccount(time_t expirationDate, // Note: use 1 to create an expired account.
+                                          const AccountFlags &accountFlags, const ClientDetails &clientDetails, const std::string &performedBy, const std::map<std::string,ApplicationDef> &appDefs,
+                                          const std::map<std::string, std::string> &detailFieldsValues) override;
 
         bool removeAccount(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountUUID) override;
         bool doesAccountExist(const std::string &accountUUID) override;
@@ -83,7 +87,8 @@ public:
 
         // Account Details Fields
         bool createAccountDetailField(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &fieldName, const AccountDetailField &details) override;
-        UpdateAccountDetailFieldResult updateAccountDetailField(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &fieldName, const AccountDetailField &details) override;
+        UpdateAccountDetailFieldResult updateAccountDetailField(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &fieldName,
+                                                                const AccountDetailField &details) override;
         RemoveAccountDetailFieldResult removeAccountDetailField(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &fieldName) override;
         std::map<std::string, AccountDetailField> listAccountDetailFields() override;
         std::optional<AccountDetailField> getAccountDetailField(const std::string &fieldName) override;
@@ -96,10 +101,56 @@ public:
 
         std::map<std::string, AccountDetailFieldValue> getAccountDetailFieldValues(const std::string &accountUUID, const AccountDetailsToShow &detailsToShow = AccountDetailsToShow::ALL) override;
         UpdateAccountDetailFieldValuesResult updateAccountDetailFieldValues(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountUUID,
-                                             const std::map<std::string, std::string> &inputFieldValues, bool isAdmin) override;
+                                                                            const std::map<std::string, std::string> &inputFieldValues, bool isAdmin) override;
 
     private:
+        std::map<std::string, AccountDetailField> _listAccountDetailFields();
+        UpdateAccountDetailFieldValuesResult _updateAccountDetailFieldValues(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountUUID,
+                                                                             const std::map<std::string, std::string> &inputFieldValues, bool isAdmin);
         bool isThereAnotherAdmin(const std::string &accountUUID);
+        IdentityManager_DB *_parent;
+    };
+
+    class ApplicationScopes_DB : public ApplicationScopes
+
+    {
+    public:
+        ApplicationScopes_DB(IdentityManager_DB *parent)
+            : ApplicationScopes(parent)
+        {
+            _parent = parent;
+        }
+        ~ApplicationScopes_DB() override = default;
+
+        // Friend declaration to allow Accounts_DB to access private methods
+        friend class Accounts_DB;
+
+        // Application Scopes
+        std::set<ApplicationScope> getAccountDirectApplicationScopes(const std::string &accountUUID, bool lock = true) override;
+
+        bool validateApplicationScopeOnRole(const std::string &roleName, const ApplicationScope &scope, bool lock = true) override;
+        std::set<ApplicationScope> getRoleApplicationScopes(const std::string &appName, const std::string &roleName, bool lock = true) override;
+
+        // Scope CRUD Operations
+        bool createApplicationScope(const ClientDetails &clientDetails, const std::string &performedBy, const ApplicationScope &applicationScope) override;
+        bool removeApplicationScope(const ClientDetails &clientDetails, const std::string &performedBy, const ApplicationScope &applicationScope) override;
+        bool doesApplicationScopeExist(const ApplicationScope &applicationScope) override;
+        bool addApplicationScopeToRole(const ClientDetails &clientDetails, const std::string &performedBy, const ApplicationScope &applicationScope, const std::string &roleName) override;
+        bool removeApplicationScopeFromRole(const ClientDetails &clientDetails, const std::string &performedBy, const ApplicationScope &applicationScope, const std::string &roleName,
+                                            bool lock = true) override;
+        bool addApplicationScopeToAccount(const ClientDetails &clientDetails, const std::string &performedBy, const ApplicationScope &applicationScope, const std::string &accountUUID) override;
+        bool removeApplicationScopeFromAccount(const ClientDetails &clientDetails, const std::string &performedBy, const ApplicationScope &applicationScope, const std::string &accountUUID,
+                                               bool lock = true) override;
+        bool updateApplicationScopeDescription(const ClientDetails &clientDetails, const std::string &performedBy, const ApplicationScope &applicationScope) override;
+        std::string getApplicationScopeDescription(const ApplicationScope &applicationScope) override;
+        std::set<ApplicationScope> listApplicationScopes(const std::string &applicationName = "") override;
+        std::set<std::string> getApplicationRolesForScope(const ApplicationScope &applicationScope, bool lock = true) override;
+        std::set<std::string> listAccountsOnApplicationScope(const ApplicationScope &applicationScope, bool lock = true) override;
+        Json::Value searchApplicationScopes(const Json::Value &dataTablesFilters) override;
+        bool validateAccountDirectApplicationScope(const std::string &accountUUID, const ApplicationScope &applicationScope) override;
+
+    private:
+        bool _addApplicationScopeToAccount(const ClientDetails &clientDetails, const std::string &performedBy, const ApplicationScope &applicationScope, const std::string &accountUUID);
         IdentityManager_DB *_parent;
     };
 
@@ -115,6 +166,9 @@ public:
         }
 
         ~ApplicationRoles_DB() override = default;
+
+        // Friend declaration to allow Accounts_DB to access private methods
+        friend class Accounts_DB;
 
         // Role Management
         bool createRole(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &roleName, const std::string &roleDescription) override;
@@ -136,6 +190,7 @@ public:
         Json::Value searchApplicationRoles(const Json::Value &dataTablesFilters) override;
 
     private:
+        bool _addAccountToRole(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &roleName, const std::string &accountUUID);
         IdentityManager_DB *_parent;
     };
 
@@ -156,7 +211,7 @@ public:
 
         // Activity Management
         bool createApplicationActivity(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &activityName,
-                                    const std::string &activityDescription) override;
+                                       const std::string &activityDescription) override;
         bool removeApplicationActivity(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &activityName) override;
         bool setApplicationActivities(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::map<std::string, ActivityData> &activities) override;
         bool removeAllApplicationActivities(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName) override;
@@ -202,30 +257,6 @@ public:
         void insertApplicationAccountAccessAuthLog(const std::string &accountUUID, const std::string &appName, const uint32_t &schemeId, const ClientDetails &clientDetails,
                                                    const std::string &refresherTokenId, const std::string &accessTokenId, const time_t &accessTokenExpiration,
                                                    const time_t &refreshTokenExpiration) override;
-
-        // Application Scopes
-        std::set<ApplicationScope> getAccountDirectApplicationScopes(const std::string &accountUUID, bool lock = true) override;
-
-        bool validateApplicationScopeOnRole(const std::string &roleName, const ApplicationScope &scope, bool lock = true) override;
-        std::set<ApplicationScope> getRoleApplicationScopes(const std::string &appName, const std::string &roleName, bool lock = true) override;
-
-        // Scope CRUD Operations
-        bool createApplicationScope(const ClientDetails &clientDetails, const std::string &performedBy, const ApplicationScope &applicationScope) override;
-        bool removeApplicationScope(const ClientDetails &clientDetails, const std::string &performedBy, const ApplicationScope &applicationScope) override;
-        bool doesApplicationScopeExist(const ApplicationScope &applicationScope) override;
-        bool addApplicationScopeToRole(const ClientDetails &clientDetails, const std::string &performedBy, const ApplicationScope &applicationScope, const std::string &roleName) override;
-        bool removeApplicationScopeFromRole(const ClientDetails &clientDetails, const std::string &performedBy, const ApplicationScope &applicationScope, const std::string &roleName,
-                                            bool lock = true) override;
-        bool addApplicationScopeToAccount(const ClientDetails &clientDetails, const std::string &performedBy, const ApplicationScope &applicationScope, const std::string &accountUUID) override;
-        bool removeApplicationScopeFromAccount(const ClientDetails &clientDetails, const std::string &performedBy, const ApplicationScope &applicationScope, const std::string &accountUUID,
-                                               bool lock = true) override;
-        bool updateApplicationScopeDescription(const ClientDetails &clientDetails, const std::string &performedBy, const ApplicationScope &applicationScope) override;
-        std::string getApplicationScopeDescription(const ApplicationScope &applicationScope) override;
-        std::set<ApplicationScope> listApplicationScopes(const std::string &applicationName = "") override;
-        std::set<std::string> getApplicationRolesForScope(const ApplicationScope &applicationScope, bool lock = true) override;
-        std::set<std::string> listAccountsOnApplicationScope(const ApplicationScope &applicationScope, bool lock = true) override;
-        Json::Value searchApplicationScopes(const Json::Value &dataTablesFilters) override;
-        bool validateAccountDirectApplicationScope(const std::string &accountUUID, const ApplicationScope &applicationScope) override;
 
         // Sessions:
         LastAccountAccessResult getAccountLastAccess(const std::string &accountUUID) override;
@@ -294,6 +325,9 @@ public:
 
         ~Applications_DB() override = default;
 
+        // Friend declaration to allow Accounts_DB to access private methods
+        friend class Accounts_DB;
+
         // Application CRUD Operations
         bool createApplication(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &applicationDescription, const std::string &appURL,
                                const std::string &apiKey, const std::string &creatorAccountUUID, const ApplicationAttributes &appAttributes, bool initializeDefaultValues) override;
@@ -320,7 +354,7 @@ public:
         std::set<std::string> listAccountApplications(const std::string &accountUUID) override;
         bool addAccountToApplication(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &accountUUID) override;
         bool removeAccountFromApplication(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &accountUUID) override;
-        bool changeApplicationAdmin(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &accountUUID, bool isAppAdmin) override;
+        bool setAccountAsApplicationAdmin(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &accountUUID, bool isAppAdmin) override;
 
         // Search
         Json::Value searchApplications(const Json::Value &dataTablesFilters) override;
@@ -354,6 +388,8 @@ public:
         std::string getWebLoginJWTValidationKeyForApplication(const std::string &appName) override;
 
     private:
+        bool _setAccountAsApplicationAdmin(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &accountUUID, bool isAppAdmin);
+        bool _addAccountToApplication(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &accountUUID);
         IdentityManager_DB *_parent;
     };
 

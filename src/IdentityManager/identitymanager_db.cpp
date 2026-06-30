@@ -14,6 +14,7 @@ IdentityManager_DB::IdentityManager_DB(Mantids30::Database::SQLConnector *_SQLDi
     accounts = new Accounts_DB(this);
     applicationRoles = new ApplicationRoles_DB(this);
     applicationActivities = new ApplicationActivities_DB(this);
+    applicationScopes = new ApplicationScopes_DB(this);
     authController = new AuthController_DB(this);
 
     //    _SQLDirConnection->setThrowCPPErrorOnQueryFailure(true);
