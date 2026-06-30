@@ -3,6 +3,7 @@
 #include <Mantids30/Helpers/json.h>
 #include <cstdint>
 #include <optional>
+#include <set>
 #include <string>
 
 struct AppError
@@ -10,6 +11,13 @@ struct AppError
     uint16_t http_code = 999;
     std::string error;
     std::string message;
+};
+
+struct ApplicationDef
+{
+    bool isAppAdmin = false;
+    std::set<std::string> roles;
+    std::set<std::string> scopes;
 };
 
 struct AccountApplicationInfo

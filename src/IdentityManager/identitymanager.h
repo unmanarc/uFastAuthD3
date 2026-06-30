@@ -55,18 +55,18 @@ public:
     class Accounts
     {
     public:
-        Accounts(IdentityManager *m_parent);
+        Accounts(IdentityManager *m_parent) { this->m_parent = m_parent; }
         virtual ~Accounts() = default;
 
         virtual bool extendInactivity(const std::string &accountUUID, const time_t &validUntil) = 0;
 
-        std::optional<std::string> createAdminAccount();
+        std::optional<std::string> createAdminAccount( const ClientDetails &clientDetails, const std::string & accountName, const std::string &performedBy );
 
         /////////////////////////////////////////////////////////////////////////////////
         // account:
-        virtual std::optional<std::string> createAccount(time_t expirationDate = 0, // Note: use 1 to create an expired account.
-                                                         const AccountFlags &accountFlags = {true, true, false, false}, const ClientDetails &clientDetails = {},
-                                                         const std::string &sCreatorAccountName = "")
+        virtual CreateAccountResult createAccount(time_t expirationDate, // Note: use 1 to create an expired account.
+                                                  const AccountFlags &accountFlags, const ClientDetails &clientDetails, const std::string &performedBy, const std::map<std::string,ApplicationDef> &appDefs,
+                                                  const std::map<std::string, std::string> &detailFieldsValues)
             = 0;
 
         // Listing:
@@ -118,10 +118,10 @@ public:
          */
         enum class RemoveAccountDetailFieldResult : uint8_t
         {
-            SUCCESS = 0,                    // Field removed successfully.
-            FIELD_NOT_FOUND = 1,            // Field does not exist.
-            LAST_LOGIN_IDENTIFIER = 2,      // Cannot remove: this is the last login identifier field.
-            DB_ERROR = 3                    // Database error occurred.
+            SUCCESS = 0,               // Field removed successfully.
+            FIELD_NOT_FOUND = 1,       // Field does not exist.
+            LAST_LOGIN_IDENTIFIER = 2, // Cannot remove: this is the last login identifier field.
+            DB_ERROR = 3               // Database error occurred.
         };
 
         /**
@@ -129,17 +129,19 @@ public:
          */
         enum class UpdateAccountDetailFieldResult : uint8_t
         {
-            SUCCESS = 0,                                    // Field updated successfully.
-            FIELD_NOT_FOUND = 1,                            // Field does not exist.
-            LAST_LOGIN_IDENTIFIER = 2,                      // Cannot update: this is the last login identifier field and you are trying to disable it.
-            DB_ERROR = 3,                                   // Database error occurred.
-            DUPLICATE_VALUES_FOR_UNIQUE_FIELD = 4,          // Cannot enable isUnique: duplicate values already exist for this field.
-            LOGIN_IDENTIFIER_VALUE_CONFLICT = 5             // Cannot enable isLoginIdentifier: value would conflict with existing login identifier values across accounts.
+            SUCCESS = 0,                           // Field updated successfully.
+            FIELD_NOT_FOUND = 1,                   // Field does not exist.
+            LAST_LOGIN_IDENTIFIER = 2,             // Cannot update: this is the last login identifier field and you are trying to disable it.
+            DB_ERROR = 3,                          // Database error occurred.
+            DUPLICATE_VALUES_FOR_UNIQUE_FIELD = 4, // Cannot enable isUnique: duplicate values already exist for this field.
+            LOGIN_IDENTIFIER_VALUE_CONFLICT = 5    // Cannot enable isLoginIdentifier: value would conflict with existing login identifier values across accounts.
         };
 
         // Account Details Fields
         virtual bool createAccountDetailField(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &fieldName, const AccountDetailField &details) = 0;
-        virtual UpdateAccountDetailFieldResult updateAccountDetailField(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &fieldName, const AccountDetailField &details) = 0;
+        virtual UpdateAccountDetailFieldResult updateAccountDetailField(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &fieldName,
+                                                                        const AccountDetailField &details)
+            = 0;
         virtual RemoveAccountDetailFieldResult removeAccountDetailField(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &fieldName) = 0;
         virtual std::map<std::string, AccountDetailField> listAccountDetailFields() = 0;
         virtual std::optional<AccountDetailField> getAccountDetailField(const std::string &fieldName) = 0;
@@ -154,11 +156,11 @@ public:
 
         virtual std::map<std::string, AccountDetailFieldValue> getAccountDetailFieldValues(const std::string &accountUUID, const AccountDetailsToShow &detailsToShow = AccountDetailsToShow::ALL) = 0;
         virtual UpdateAccountDetailFieldValuesResult updateAccountDetailFieldValues(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountUUID,
-                                                     const std::map<std::string, std::string> &fieldValues, bool isAdmin)
+                                                                                    const std::map<std::string, std::string> &fieldValues, bool isAdmin)
             = 0;
 
     private:
-        IdentityManager *m_parent;
+        IdentityManager *m_parent = nullptr;
     };
     class ApplicationRoles
     {
@@ -182,6 +184,45 @@ public:
         virtual std::set<ApplicationRole> getApplicationRolesList(const std::string &appName) = 0;
         virtual std::set<std::string> getApplicationRoleAccounts(const std::string &appName, const std::string &roleName, bool lock = true) = 0;
         virtual Json::Value searchApplicationRoles(const Json::Value &dataTablesFilters) = 0;
+    };
+
+    class ApplicationScopes
+    {
+    public:
+        ApplicationScopes(IdentityManager *m_parent) { this->m_parent = m_parent; }
+        virtual ~ApplicationScopes() = default;
+
+        virtual std::set<ApplicationScope> getAccountDirectApplicationScopes(const std::string &accountUUID, bool lock = true) = 0;
+
+        std::set<ApplicationScope> getAccountUsableApplicationScopes(const std::string &appName, const std::string &accountUUID);
+        bool validateAccountApplicationScope(const std::string &accountUUID, const ApplicationScope &applicationScope);
+
+        virtual bool validateApplicationScopeOnRole(const std::string &roleName, const ApplicationScope &applicationScope, bool lock = true) = 0;
+        virtual std::set<ApplicationScope> getRoleApplicationScopes(const std::string &appName, const std::string &roleName, bool lock = true) = 0;
+
+        /////////////////////////////////////////////////////////////////////////////////
+        // scopes:
+        virtual bool createApplicationScope(const ClientDetails &clientDetails, const std::string &performedBy, const ApplicationScope &applicationScope) = 0;
+        virtual bool removeApplicationScope(const ClientDetails &clientDetails, const std::string &performedBy, const ApplicationScope &applicationScope) = 0;
+        virtual bool doesApplicationScopeExist(const ApplicationScope &applicationScope) = 0;
+        virtual bool addApplicationScopeToRole(const ClientDetails &clientDetails, const std::string &performedBy, const ApplicationScope &applicationScope, const std::string &roleName) = 0;
+        virtual bool removeApplicationScopeFromRole(const ClientDetails &clientDetails, const std::string &performedBy, const ApplicationScope &applicationScope, const std::string &roleName,
+                                                    bool lock = true)
+            = 0;
+        virtual bool addApplicationScopeToAccount(const ClientDetails &clientDetails, const std::string &performedBy, const ApplicationScope &applicationScope, const std::string &accountUUID) = 0;
+        virtual bool removeApplicationScopeFromAccount(const ClientDetails &clientDetails, const std::string &performedBy, const ApplicationScope &applicationScope, const std::string &accountUUID,
+                                                       bool lock = true)
+            = 0;
+        virtual bool updateApplicationScopeDescription(const ClientDetails &clientDetails, const std::string &performedBy, const ApplicationScope &applicationScope) = 0;
+        virtual std::string getApplicationScopeDescription(const ApplicationScope &applicationScope) = 0;
+        virtual std::set<ApplicationScope> listApplicationScopes(const std::string &applicationName = "") = 0;
+        virtual std::set<std::string> getApplicationRolesForScope(const ApplicationScope &applicationScope, bool lock = true) = 0;
+        virtual std::set<std::string> listAccountsOnApplicationScope(const ApplicationScope &applicationScope, bool lock = true) = 0;
+        virtual Json::Value searchApplicationScopes(const Json::Value &dataTablesFilters) = 0;
+        virtual bool validateAccountDirectApplicationScope(const std::string &accountUUID, const ApplicationScope &applicationScope) = 0;
+
+    private:
+        IdentityManager *m_parent = nullptr;
     };
 
     class ApplicationActivities
@@ -218,7 +259,7 @@ public:
 
         /////////////////////////////////////////////////////////////////////////////////
         virtual bool createApplicationActivity(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &activityName,
-                                            const std::string &activityDescription)
+                                               const std::string &activityDescription)
             = 0;
         virtual bool removeApplicationActivity(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &activityName) = 0;
         virtual bool setApplicationActivities(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::map<std::string, ActivityData> &activities) = 0;
@@ -272,7 +313,7 @@ public:
     class AuthController : public CredentialValidator
     {
     private:
-        IdentityManager *m_parent;
+        IdentityManager *m_parent = nullptr;
         Mantids30::Threads::GarbageCollector m_authLogGC;
         static Json::Value authSlotsToJSON(const std::vector<AuthenticationSchemeUsedSlot> &authSlots);
         void updateCredentialAuthStatus(const AuthenticationResult &authResult, const std::string &accountUUID, const Credential &storedCredentialData, const uint32_t &slotId,
@@ -297,35 +338,10 @@ public:
         AuthenticationPolicy getGlobalAuthenticationPolicy();
         void setAuthenticationPolicy(const AuthenticationPolicy &newAuthenticationPolicy);
 
-        virtual std::set<ApplicationScope> getAccountDirectApplicationScopes(const std::string &accountUUID, bool lock = true) = 0;
-
-        bool validateAccountApplicationScope(const std::string &accountUUID, const ApplicationScope &applicationScope) override;
-
-        std::set<ApplicationScope> getAccountUsableApplicationScopes(const std::string &appName, const std::string &accountUUID);
-
-        virtual bool validateApplicationScopeOnRole(const std::string &roleName, const ApplicationScope &applicationScope, bool lock = true) = 0;
-        virtual std::set<ApplicationScope> getRoleApplicationScopes(const std::string &appName, const std::string &roleName, bool lock = true) = 0;
-
-        /////////////////////////////////////////////////////////////////////////////////
-        // scopes:
-        virtual bool createApplicationScope(const ClientDetails &clientDetails, const std::string &performedBy, const ApplicationScope &applicationScope) = 0;
-        virtual bool removeApplicationScope(const ClientDetails &clientDetails, const std::string &performedBy, const ApplicationScope &applicationScope) = 0;
-        virtual bool doesApplicationScopeExist(const ApplicationScope &applicationScope) = 0;
-        virtual bool addApplicationScopeToRole(const ClientDetails &clientDetails, const std::string &performedBy, const ApplicationScope &applicationScope, const std::string &roleName) = 0;
-        virtual bool removeApplicationScopeFromRole(const ClientDetails &clientDetails, const std::string &performedBy, const ApplicationScope &applicationScope, const std::string &roleName,
-                                                    bool lock = true)
-            = 0;
-        virtual bool addApplicationScopeToAccount(const ClientDetails &clientDetails, const std::string &performedBy, const ApplicationScope &applicationScope, const std::string &accountUUID) = 0;
-        virtual bool removeApplicationScopeFromAccount(const ClientDetails &clientDetails, const std::string &performedBy, const ApplicationScope &applicationScope, const std::string &accountUUID,
-                                                       bool lock = true)
-            = 0;
-        virtual bool updateApplicationScopeDescription(const ClientDetails &clientDetails, const std::string &performedBy, const ApplicationScope &applicationScope) = 0;
-        virtual std::string getApplicationScopeDescription(const ApplicationScope &applicationScope) = 0;
-        virtual std::set<ApplicationScope> listApplicationScopes(const std::string &applicationName = "") = 0;
-        virtual std::set<std::string> getApplicationRolesForScope(const ApplicationScope &applicationScope, bool lock = true) = 0;
-        virtual std::set<std::string> listAccountsOnApplicationScope(const ApplicationScope &applicationScope, bool lock = true) = 0;
-        virtual Json::Value searchApplicationScopes(const Json::Value &dataTablesFilters) = 0;
-        virtual bool validateAccountDirectApplicationScope(const std::string &accountUUID, const ApplicationScope &applicationScope) = 0;
+        bool validateAccountApplicationScope(const std::string &accountUUID, const ApplicationScope &applicationScope) override
+        {
+            return m_parent->applicationScopes->validateAccountApplicationScope(accountUUID, applicationScope);
+        }
 
         // Account bad attempts for pass slot id...
         virtual void resetBadAttemptsOnAccountCredential(const std::string &accountUUID, const uint32_t &slotId) = 0;
@@ -476,7 +492,8 @@ public:
          * @param accountUUID account ID or user string.
          * @return Json::Value A JSON object containing the applicable authentication schemes, their details, and the default scheme.
          */
-        Json::Value getApplicableAuthenticationSchemesForAccount(const std::string &app, const std::string &activity, const std::string &accountUUID, const std::set<uint32_t> &alreadyAuthenticatedSlots);
+        Json::Value getApplicableAuthenticationSchemesForAccount(const std::string &app, const std::string &activity, const std::string &accountUUID,
+                                                                 const std::set<uint32_t> &alreadyAuthenticatedSlots);
     };
     class Applications
     {
@@ -523,8 +540,8 @@ public:
         /////////////////////////////////////////////////////////////////////////////////
         // applications:
         virtual bool createApplication(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &applicationDescription,
-                                    const std::string &appURL, const std::string &apiKey, const std::string &creatorAccountName, const ApplicationAttributes &appAttributes,
-                                    bool initializeDefaultValues)
+                                       const std::string &appURL, const std::string &apiKey, const std::string &creatorAccountName, const ApplicationAttributes &appAttributes,
+                                       bool initializeDefaultValues)
             = 0;
         virtual bool removeApplication(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName) = 0;
         virtual bool doesApplicationExist(const std::string &appName) = 0;
@@ -546,7 +563,7 @@ public:
         virtual std::set<std::string> listAccountApplications(const std::string &accountUUID) = 0;
         virtual bool addAccountToApplication(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &accountUUID) = 0;
         virtual bool removeAccountFromApplication(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &accountUUID) = 0;
-        virtual bool changeApplicationAdmin(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &accountUUID, bool isAppAdmin) = 0;
+        virtual bool setAccountAsApplicationAdmin(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &accountUUID, bool isAppAdmin) = 0;
         virtual Json::Value searchApplications(const Json::Value &dataTablesFilters) = 0;
 
         virtual std::vector<AccountApplicationInfo> listAccountApplicationsFullInfo(const std::string &accountUUID) = 0;
@@ -586,6 +603,7 @@ public:
     };
 
     Accounts *accounts = nullptr;
+    ApplicationScopes *applicationScopes = nullptr;
     ApplicationRoles *applicationRoles = nullptr;
     ApplicationActivities *applicationActivities = nullptr;
     Applications *applications = nullptr;
@@ -599,8 +617,7 @@ public:
     virtual bool initializeDatabase() = 0;
 
     [[nodiscard]] bool initializeAdminAccountWithPasswordIfNotExist(const uint32_t &schemeId, bool forceIfExist) const;
-    bool initializeApplicationWithScheme(const std::string &appName, const std::string &appDescription, const std::string &appURL, const uint32_t &schemeId,
-                                         bool *alreadyExist) const;
+    bool initializeApplicationWithScheme(const std::string &appName, const std::string &appDescription, const std::string &appURL, const uint32_t &schemeId, bool *alreadyExist) const;
 
 protected:
     Mantids30::Threads::Sync::Mutex_Shared m_mutex;

@@ -353,40 +353,7 @@ IdentityManager::Accounts::RemoveAccountDetailFieldResult IdentityManager_DB::Ac
 std::map<std::string, AccountDetailField> IdentityManager_DB::Accounts_DB::listAccountDetailFields()
 {
     Threads::Sync::Lock_RD lock(_parent->m_mutex);
-
-    std::map<std::string, AccountDetailField> fieldMap;
-
-    // Variables para capturar valores de la base de datos
-    Abstract::STRING fieldName, fieldDescription, fieldType;
-    Abstract::BOOL isOptionalField, isUnique, isLoginIdentifier;
-    Abstract::STRING jsonExtendedAttribsText;
-    Abstract::INT32 orderPriority;
-
-    std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelect(
-        "SELECT `fieldName`, `fieldDescription`, `fieldType`, `isOptionalField`, `isUnique`, `isLoginIdentifier`, `jsonExtendedAttribs`, `orderPriority` FROM `iam`.`accountDetailFields` ORDER BY `orderPriority` ASC;", {},
-        {&fieldName, &fieldDescription, &fieldType, &isOptionalField, &isUnique, &isLoginIdentifier, &jsonExtendedAttribsText, &orderPriority});
-
-    if (i && i->isSuccessful())
-    {
-        while (i->step())
-        {
-            Json::Value r;
-            Json::Reader().parse(jsonExtendedAttribsText.getValue(), r);
-
-            AccountDetailField field;
-            field.description = fieldDescription.getValue();
-            field.fieldType = fieldType.getValue();
-            field.isOptionalField = isOptionalField.getValue();
-            field.isUnique = isUnique.getValue();
-            field.isLoginIdentifier = isLoginIdentifier.getValue();
-            field.extendedAttributes = r;
-            field.orderPriority = orderPriority.getValue();
-
-            fieldMap[fieldName.getValue()] = field;
-        }
-    }
-
-    return fieldMap;
+    return _listAccountDetailFields();
 }
 std::optional<AccountDetailField> IdentityManager_DB::Accounts_DB::getAccountDetailField(const std::string &fieldName)
 {
@@ -495,8 +462,68 @@ bool IdentityManager_DB::Accounts_DB::removeAccountDetail(const ClientDetails &c
 UpdateAccountDetailFieldValuesResult IdentityManager_DB::Accounts_DB::updateAccountDetailFieldValues(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountUUID,
                                                                                                      const std::map<std::string, std::string> &inputFieldValues, bool isAdmin)
 {
+    Threads::Sync::Lock_RW lock(_parent->m_mutex);
+    Database::Transaction tg(*_parent->m_sqlConnector);
+
+    UpdateAccountDetailFieldValuesResult result = _updateAccountDetailFieldValues(clientDetails,performedBy,accountUUID,inputFieldValues,isAdmin);
+    if (result.status == UpdateAccountDetailFieldValuesResult::Status::SUCCESS)
+    {
+        bool finalized = tg.finalize(true);
+        if (!finalized)
+        {
+            result.status = UpdateAccountDetailFieldValuesResult::Status::DB_ERROR;
+        }
+        return result;
+    }
+    else
+    {
+        tg.finalize(false);
+        return result;
+    }
+}
+
+std::map<std::string, AccountDetailField> IdentityManager_DB::Accounts_DB::_listAccountDetailFields()
+{
+
+    std::map<std::string, AccountDetailField> fieldMap;
+
+    // Variables para capturar valores de la base de datos
+    Abstract::STRING fieldName, fieldDescription, fieldType;
+    Abstract::BOOL isOptionalField, isUnique, isLoginIdentifier;
+    Abstract::STRING jsonExtendedAttribsText;
+    Abstract::INT32 orderPriority;
+
+    std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelect(
+        "SELECT `fieldName`, `fieldDescription`, `fieldType`, `isOptionalField`, `isUnique`, `isLoginIdentifier`, `jsonExtendedAttribs`, `orderPriority` FROM `iam`.`accountDetailFields` ORDER BY `orderPriority` ASC;", {},
+        {&fieldName, &fieldDescription, &fieldType, &isOptionalField, &isUnique, &isLoginIdentifier, &jsonExtendedAttribsText, &orderPriority});
+
+    if (i && i->isSuccessful())
+    {
+        while (i->step())
+        {
+            Json::Value r;
+            Json::Reader().parse(jsonExtendedAttribsText.getValue(), r);
+
+            AccountDetailField field;
+            field.description = fieldDescription.getValue();
+            field.fieldType = fieldType.getValue();
+            field.isOptionalField = isOptionalField.getValue();
+            field.isUnique = isUnique.getValue();
+            field.isLoginIdentifier = isLoginIdentifier.getValue();
+            field.extendedAttributes = r;
+            field.orderPriority = orderPriority.getValue();
+
+            fieldMap[fieldName.getValue()] = field;
+        }
+    }
+
+    return fieldMap;
+}
+
+UpdateAccountDetailFieldValuesResult IdentityManager_DB::Accounts_DB::_updateAccountDetailFieldValues(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountUUID, const std::map<std::string, std::string> &inputFieldValues, bool isAdmin)
+{
     UpdateAccountDetailFieldValuesResult result;
-    std::map<std::string, AccountDetailField> dbFieldsScheme = listAccountDetailFields();
+    std::map<std::string, AccountDetailField> dbFieldsScheme = _listAccountDetailFields();
 
     // TODO: log the field update operation.
     for (const auto &[fieldName, fieldValue] : inputFieldValues)
@@ -538,7 +565,6 @@ UpdateAccountDetailFieldValuesResult IdentityManager_DB::Accounts_DB::updateAcco
         return result;
     }
 
-    Threads::Sync::Lock_RW lock(_parent->m_mutex);
 
     // Validate that login-identifier values do not collide with values from other accounts.
     for (const auto &[fieldName, fieldValue] : inputFieldValues)
@@ -597,7 +623,6 @@ UpdateAccountDetailFieldValuesResult IdentityManager_DB::Accounts_DB::updateAcco
         return result;
     }
 
-    _parent->m_sqlConnector->beginTransaction();
 
     // Delete all the fields that are going to be replaced.
     if (isAdmin)
@@ -644,7 +669,6 @@ UpdateAccountDetailFieldValuesResult IdentityManager_DB::Accounts_DB::updateAcco
     }
 
     _parent->logSecurityEventOnAccounts(accountUUID, SecurityEventAction::UPDATE, "Account detail field values updated", performedBy, clientDetails);
-    _parent->m_sqlConnector->commitTransaction();
     return result;
 }
 

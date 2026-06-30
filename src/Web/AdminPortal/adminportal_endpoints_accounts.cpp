@@ -1,5 +1,6 @@
 #include "adminportal_endpoints_accounts.h"
 #include "IdentityManager/ds_account.h"
+#include "IdentityManager/ds_application.h"
 #include "IdentityManager/ds_authentication.h"
 #include <Mantids30/Program_Logs/applog.h>
 #include <json/value.h>
@@ -70,21 +71,82 @@ API::APIReturn AdminPortal_Endpoints_Accounts::createAccount(void *context, cons
     AccountFlags accountFlags;
     accountFlags.fromJSON(request.inputJSON);
 
+    // Can't create admin from non-admin account:
+    if (accountFlags.admin && !request.jwtToken->isAdmin())
+    {
+        accountFlags.admin = false;
+    }
+
+    // Parse application definitions from request
+    std::map<std::string,ApplicationDef> applicationDefs;
+    if ((*request.inputJSON).isMember("applications") && (*request.inputJSON)["applications"].isArray())
+    {
+        for (const auto &app : (*request.inputJSON)["applications"])
+        {
+            ApplicationDef appDef;
+            std::string appName = Helpers::JSON::ASSTRING(app, "name", "");
+            appDef.isAppAdmin = Helpers::JSON::ASBOOL(app, "isAppAdmin", false);
+
+            // Can't create application admin without APP_MODIFY scope.
+            if (appDef.isAppAdmin && !request.jwtToken->hasScope("APP_MODIFY"))
+            {
+                appDef.isAppAdmin = false;
+            }
+
+            // Parse roles
+            if (app.isMember("roles") && app["roles"].isArray())
+            {
+                for (const auto &role : app["roles"])
+                {
+                    appDef.roles.insert(Helpers::JSON::ASSTRING_D(role, ""));
+                }
+            }
+
+            // Parse scopes
+            if (app.isMember("scopes") && app["scopes"].isArray())
+            {
+                for (const auto &scope : app["scopes"])
+                {
+                    appDef.scopes.insert(Helpers::JSON::ASSTRING_D(scope, ""));
+                }
+            }
+
+            if (!applicationDefs.count(appName))
+            {
+                applicationDefs[appName]= appDef;
+            }
+        }
+    }
+
+    // Parse detail field values from request
+    std::map<std::string, std::string> fieldValues;
+    if ((*request.inputJSON).isMember("fieldValues") && (*request.inputJSON)["fieldValues"].isArray())
+    {
+        for (const auto &fv : (*request.inputJSON)["fieldValues"])
+        {
+            std::string fieldName = Helpers::JSON::ASSTRING(fv, "name", "");
+            std::string fieldValue = Helpers::JSON::ASSTRING(fv, "value", "");
+            if (!fieldName.empty())
+            {
+                fieldValues[fieldName] = fieldValue;
+            }
+        }
+    }
+
     // Add the new account to the system with specified expiration and flags
     int64_t expirationDate = Helpers::JSON::ASINT64(*request.inputJSON, "expirationDate", 0);
-    std::optional<std::string> _accountUUID = Globals::getIdentityManager()->accounts->createAccount(expirationDate, accountFlags, authClientDetails, request.jwtToken->getSubject());
-    if (!_accountUUID.has_value())
+    CreateAccountResult createResult = Globals::getIdentityManager()->accounts->createAccount(expirationDate, accountFlags, authClientDetails, request.jwtToken->getSubject(), applicationDefs,
+                                                                                                                 fieldValues);
+    if (!createResult.success)
     {
         return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to add the new account."};
     }
 
-    const std::string &accountUUID = _accountUUID.value();
+    const std::string &accountUUID = createResult.accountUUID;
 
     // Extract credential information from request
     Json::Value tempCredential = (*request.inputJSON)["tempCredential"];
     std::string secretTempPass = Helpers::JSON::ASSTRING(*request.inputJSON, "secretTempPass", "");
-
-    //   std::map<std::string,std::string> detailsMap = Helpers::JSON::toMap((*request.inputJSON)["detailsValues"]);
 
     Credential newCredentialData;
     uint32_t slotId = Helpers::JSON::ASUINT(*request.inputJSON, "slotId", 1);
@@ -118,41 +180,6 @@ API::APIReturn AdminPortal_Endpoints_Accounts::createAccount(void *context, cons
     if (!Globals::getIdentityManager()->accounts->changeAccountFlags(authClientDetails, request.jwtToken->getSubject(), accountUUID, flags))
     {
         return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to change the credential on the new user."};
-    }
-
-    // Update account detail field values if provided
-    if ((*request.inputJSON).isMember("fieldValues") && (*request.inputJSON)["fieldValues"].isArray())
-    {
-        std::map<std::string, std::string> fieldValues;
-        for (const auto &fv : (*request.inputJSON)["fieldValues"])
-        {
-            std::string fieldName = Helpers::JSON::ASSTRING(fv, "name", "");
-            std::string fieldValue = Helpers::JSON::ASSTRING(fv, "value", "");
-            if (!fieldName.empty())
-            {
-                fieldValues[fieldName] = fieldValue;
-            }
-        }
-
-        if (!fieldValues.empty())
-        {
-            UpdateAccountDetailFieldValuesResult result = Globals::getIdentityManager()->accounts->updateAccountDetailFieldValues(authClientDetails, request.jwtToken->getSubject(), accountUUID,
-                                                                                                                                  fieldValues, true);
-            if (result.status != UpdateAccountDetailFieldValuesResult::Status::SUCCESS)
-            {
-                return {HTTP::Status::Code::S_400_BAD_REQUEST, "field_values_error", "Failed to set account detail field values"};
-            }
-        }
-    }
-
-    if (!Globals::getIdentityManager()->applications->addAccountToApplication(authClientDetails, request.jwtToken->getSubject(), IAM_USRPORTAL_APPNAME, accountUUID))
-    {
-        return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to assign user with GENERIC_USER in app '" IAM_USRPORTAL_APPNAME "'."};
-    }
-
-    if (!Globals::getIdentityManager()->applicationRoles->addAccountToRole(authClientDetails, request.jwtToken->getSubject(), IAM_USRPORTAL_APPNAME, "GENERIC_USER", accountUUID))
-    {
-        return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to assign user with GENERIC_USER in app '" IAM_USRPORTAL_APPNAME "'."};
     }
 
     return response;
@@ -229,11 +256,11 @@ API::APIReturn AdminPortal_Endpoints_Accounts::getAccountApplications(void *cont
     int i = 0;
 
     std::set<std::string> listAccountApplications = Globals::getIdentityManager()->applications->listAccountApplications(accountUUID);
-    std::set<ApplicationScope> directScopes = Globals::getIdentityManager()->authController->getAccountDirectApplicationScopes(accountUUID);
+    std::set<ApplicationScope> directScopes = Globals::getIdentityManager()->applicationScopes->getAccountDirectApplicationScopes(accountUUID);
 
     for (const std::string &applicationName : listAccountApplications)
     {
-        std::set<ApplicationScope> usableScopes = Globals::getIdentityManager()->authController->getAccountUsableApplicationScopes(applicationName, accountUUID);
+        std::set<ApplicationScope> usableScopes = Globals::getIdentityManager()->applicationScopes->getAccountUsableApplicationScopes(applicationName, accountUUID);
 
         (*response.responseJSON())["applications"][i]["name"] = applicationName;
         // TODO: optimize:
@@ -274,7 +301,7 @@ API::APIReturn AdminPortal_Endpoints_Accounts::getAccountApplications(void *cont
         }
 
         j = 0;
-        for (const ApplicationScope &scope : Globals::getIdentityManager()->authController->listApplicationScopes(applicationName))
+        for (const ApplicationScope &scope : Globals::getIdentityManager()->applicationScopes->listApplicationScopes(applicationName))
         {
             if (directScopes.find(scope) == directScopes.end())
             {

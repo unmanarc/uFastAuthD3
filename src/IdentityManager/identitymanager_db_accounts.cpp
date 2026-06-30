@@ -62,10 +62,12 @@ bool IdentityManager_DB::Accounts_DB::extendInactivity(const std::string &accoun
     return tg.finalize();
 }
 
-std::optional<std::string> IdentityManager_DB::Accounts_DB::createAccount(time_t expirationDate, const AccountFlags &accountFlags, const ClientDetails &clientDetails,
-                                                                          const std::string &sCreatorAccountName)
+CreateAccountResult IdentityManager_DB::Accounts_DB::createAccount(time_t expirationDate, const AccountFlags &accountFlags, const ClientDetails &clientDetails, const std::string &performedBy,
+                                                                   const std::map<std::string, ApplicationDef> &appDefs, const std::map<std::string, std::string> &detailFieldsValues)
 {
     Threads::Sync::Lock_RW lock(_parent->m_mutex);
+    Database::Transaction tg(*_parent->m_sqlConnector);
+
     std::string accountUUID = Helpers::Random::createUUIDv4();
 
     bool r = _parent->m_sqlConnector->qExecuteEx("INSERT INTO iam.accounts (`accountUUID`,`isAdmin`,`isEnabled`,`isBlocked`,`expiration`,`isAccountConfirmed`,`creator`) "
@@ -76,7 +78,7 @@ std::optional<std::string> IdentityManager_DB::Accounts_DB::createAccount(time_t
                                                   {":blocked", MAKE_VAR(BOOL, accountFlags.blocked)},
                                                   {":expiration", MAKE_VAR(DATETIME, expirationDate)},
                                                   {":confirmed", MAKE_VAR(BOOL, accountFlags.confirmed)},
-                                                  {":creator", sCreatorAccountName.empty() ? MAKE_NULL_VAR /* null */ : MAKE_VAR(STRING, sCreatorAccountName)}});
+                                                  {":creator", performedBy.empty() ? MAKE_NULL_VAR /* null */ : MAKE_VAR(STRING, performedBy)}});
 
     if (r)
     {
@@ -84,24 +86,91 @@ std::optional<std::string> IdentityManager_DB::Accounts_DB::createAccount(time_t
         r = _parent->m_sqlConnector->qExecuteEx("INSERT INTO iam.accountsActivationToken (`f_accountUUID`,`confirmationToken`) "
                                                 "VALUES(:accountUUID,:confirmationToken);",
                                                 {{":accountUUID", MAKE_VAR(STRING, accountUUID)}, {":confirmationToken", MAKE_VAR(STRING, _parent->authController->genRandomConfirmationToken())}});
-        if (r)
+    }
+
+    // Insert application associations, roles, scopes, and admin status
+    // Use the private _ methods from the DB classes to avoid double-locking
+    // (createAccount already holds the lock)
+    if (r && !appDefs.empty())
+    {
+        // Cast base pointers to DB-derived types to access private methods
+        Applications_DB *appsDB = static_cast<Applications_DB *>(_parent->applications);
+        ApplicationRoles_DB *rolesDB = static_cast<ApplicationRoles_DB *>(_parent->applicationRoles);
+        ApplicationScopes_DB *scopesDB = static_cast<ApplicationScopes_DB *>(_parent->applicationScopes);
+
+        for (const auto &appDef : appDefs)
         {
-            // Now create the credential... but!!... the credential should be a valid subset from an authentication mode...
+            // Add account to application using the private helper (no locking)
+            r = appsDB->_addAccountToApplication(clientDetails, performedBy, appDef.first, accountUUID);
+            if (!r)
+            {
+                break;
+            }
+
+            // Set as application admin if requested using the private helper (no locking)
+            if (appDef.second.isAppAdmin)
+            {
+                r = appsDB->_setAccountAsApplicationAdmin(clientDetails, performedBy, appDef.first, accountUUID, true);
+                if (!r)
+                {
+                    break;
+                }
+            }
+
+            // Insert roles using the private helper (no locking)
+            for (const auto &role : appDef.second.roles)
+            {
+                r = rolesDB->_addAccountToRole(clientDetails, performedBy, appDef.first, role, accountUUID);
+                if (!r)
+                {
+                    break;
+                }
+            }
+
+            // Insert scopes using the private helper (no locking)
+            for (const auto &scopeId : appDef.second.scopes)
+            {
+                ApplicationScope applicationScope{appDef.first, scopeId};
+                r = scopesDB->_addApplicationScopeToAccount(clientDetails, performedBy, applicationScope, accountUUID);
+                if (!r)
+                {
+                    break;
+                }
+            }
+        }
+    }
+
+    // Prepare the CreateAccountResult
+    CreateAccountResult result;
+
+    if (r)
+    {
+        _parent->logSecurityEventOnAccounts(accountUUID, SecurityEventAction::CREATE, "New account created", performedBy, clientDetails);
+        result.success = true;
+        result.accountUUID = accountUUID;
+
+        // Use _updateAccountDetailFieldValues to insert detail field values
+        result.detailResult = _updateAccountDetailFieldValues(clientDetails, performedBy, accountUUID, detailFieldsValues, true);
+
+        // If _updateAccountDetailFieldValues failed, mark account creation as failed
+        if (result.detailResult.status != UpdateAccountDetailFieldValuesResult::Status::SUCCESS)
+        {
+            r = false;
+            result.success = false;
+            result.accountUUID = "";
         }
     }
 
     if (r)
     {
-        _parent->logSecurityEventOnAccounts(accountUUID, SecurityEventAction::CREATE, "New account created", sCreatorAccountName.empty() ? accountUUID : sCreatorAccountName, clientDetails);
-    }
-
-    if (r)
-    {
-        return accountUUID;
+        return tg.finalize(true) ? result : CreateAccountResult{false, "", {}};
     }
     else
     {
-        return std::nullopt;
+        tg.finalize(false);
+        result.success = false;
+        result.accountUUID = "";
+        return result;
     }
 }
 
@@ -252,7 +321,6 @@ bool IdentityManager_DB::Accounts_DB::changeAccountFlags(const ClientDetails &cl
     return result;
 }
 
-
 time_t IdentityManager_DB::Accounts_DB::getAccountExpirationTime(const std::string &accountUUID)
 {
     Threads::Sync::Lock_RD lock(_parent->m_mutex);
@@ -279,7 +347,6 @@ time_t IdentityManager_DB::Accounts_DB::getAccountCreationTime(const std::string
 
     return std::numeric_limits<time_t>::max();
 }
-
 
 Json::Value IdentityManager_DB::Accounts_DB::searchAccounts(const Json::Value &dataTablesFilters)
 {
@@ -327,6 +394,7 @@ Json::Value IdentityManager_DB::Accounts_DB::searchAccounts(const Json::Value &d
     LEFT JOIN iam.accountCredentials
         ON iam.accountCredentials.f_accountUUID = iam.accounts.accountUUID
         AND iam.accountCredentials.f_AuthSlotId = 1
+    WHERE accounts.accountUUID <> '00000000-0000-4000-8000-000000000000'
     )";
 
     // Add WHERE clause for search term if provided
@@ -335,6 +403,7 @@ Json::Value IdentityManager_DB::Accounts_DB::searchAccounts(const Json::Value &d
         searchValue = "%" + searchValue + "%";
         whereFilters += "accountUUID LIKE :SEARCHWORDS";
     }
+
 
     {
         Abstract::STRING accountUUID;

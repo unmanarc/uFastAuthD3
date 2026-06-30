@@ -117,6 +117,13 @@ struct UpdateAccountDetailFieldValuesResult
     std::set<std::string> regexInvalidFields;   // Field names that failed regex validation.
 };
 
+struct CreateAccountResult
+{
+    bool success = false;                            // true if account creation succeeded.
+    std::string accountUUID;                         // The created account UUID (empty if failed).
+    UpdateAccountDetailFieldValuesResult detailResult; // Result of setting account detail field values.
+};
+
 struct AccountFlags
 {
     AccountFlags(bool enabled, bool confirmed, bool admin, bool blocked)
