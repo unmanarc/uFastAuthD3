@@ -165,13 +165,6 @@ bool AuthStorageImpl::createAuth()
         }
     }
 
-    if (r)
-    {
-        if (!identityManager->initializeAdminAccountWithPasswordIfNotExist(*schemeId, Globals::getDoCreateNewAdminAccount()))
-        {
-            return false;
-        }
-    }
 
     // Helper struct to hold configuration for each app
     struct AppConfig
@@ -230,69 +223,31 @@ bool AuthStorageImpl::createAuth()
         LOG_APP->log0(__func__, Logs::LogLevel::INFO, "APP '%s' LOGIN ACTIVITY successfully created.", IAM_LOGINPORTAL_APPNAME);
     }
 
-    // If password marked for reset, reset:
-/*    if (!.empty())
+    if (!setupAdminPortalScopesAndRoles())
     {
-        LOG_APP->log0(__func__, Logs::LogLevel::WARN, "Password marked to be reseted...");
-        std::string sInitPW;
-        IdentityManager::ClientDetails clientDetails;
-        std::string performedBy = "00000000-0000-4000-8000-000000000000";
-
-        std::optional<std::string> accountUUIDToChangePWD = Globals::getIdentityManager()->accounts->getAccountUUIDByAccountName(Globals::getDoCreateNewAdminAccount());
-
-        if (accountUUIDToChangePWD.has_value())
-        {
-            if (!schemeId.has_value() || !identityManager->authController->setAccountPasswordOnScheme(clientDetails, performedBy, accountUUIDToChangePWD.value(), &sInitPW, *schemeId))
-            {
-                LOG_APP->log0(__func__, Logs::LogLevel::ERR, "Password not resetted (Maybe the account '%s' does not have admin privileges?)...", accountUUIDToChangePWD.value().c_str());
-                return false;
-            }
-        }
+        return false;
     }
-*/
-/*    if (!sInitPW.empty())
+
+    if (!setupUserPortalScopesAndRoles())
     {
-        // Create the password file if there is a new password...
-        if (!(sInitPW))
+        return false;
+    }
+
+    if (r)
+    {
+        if (!identityManager->initializeAdminAccountWithPasswordIfNotExist(*schemeId, Globals::getDoCreateNewAdminAccount()))
         {
             return false;
         }
-    }*/
-
-    if (!configureAdminPortalApplication(identityManager))
-    {
-        return false;
-    }
-
-    if (!configureUserPortalApplication(identityManager))
-    {
-        return false;
     }
 
     return true;
 }
 
 
-/*
-bool AuthStorageImpl::resetAdminPwd(IdentityManager_DB *identityManager, std::string *sInitPW)
+bool AuthStorageImpl::setupAdminPortalScopesAndRoles()
 {
-    *sInitPW = Mantids30::Helpers::Random::createRandomString(16);
-
-    Credential credentialData;
-    credentialData.hash = Helpers::Crypto::calcSHA256(*sInitPW);
-
-    credentialData.
-    credentialData.passwordFunction = HashFunction::SHA256;
-    credentialData.mustChange = true; // Expired (to be changed on the first login).
-
-    return identityManager->authController->changeCredential("admin", credentialData);
-}*/
-
-
-
-bool AuthStorageImpl::configureAdminPortalApplication(IdentityManager_DB *identityManager)
-{
-    if (!identityManager->applications->doesApplicationExist(IAM_ADMPORTAL_APPNAME))
+    if (!Globals::getIdentityManager()->applications->doesApplicationExist(IAM_ADMPORTAL_APPNAME))
     {
         LOG_APP->log0(__func__, Logs::LogLevel::CRITICAL, "Application '%s' does not exist, aborting.", IAM_ADMPORTAL_APPNAME);
         return false;
@@ -386,38 +341,15 @@ bool AuthStorageImpl::configureAdminPortalApplication(IdentityManager_DB *identi
             }
         ]
     )"));
-/*
-    Sessions::ClientDetails clientDetails;
-    std::string performedBy = "00000000-0000-4000-8000-000000000000";
 
-    if (!identityManager->applications->validateApplicationAccount(IAM_ADMPORTAL_APPNAME, adminUserUUID))
-    {
-        LOG_APP->log0(__func__, Logs::LogLevel::WARN, "Setting up '%s' user as application '%s' user.", adminUserUUID.c_str(), IAM_ADMPORTAL_APPNAME);
-
-        if (!identityManager->applications->addAccountToApplication(clientDetails, performedBy, IAM_ADMPORTAL_APPNAME, adminUserUUID))
-        {
-            LOG_APP->log0(__func__, Logs::LogLevel::CRITICAL, "Failed to set the '%s' account as application '%s' user.", adminUserUUID.c_str(), IAM_ADMPORTAL_APPNAME);
-            return false;
-        }
-    }
-
-    if (!identityManager->applications->isApplicationAdmin(IAM_ADMPORTAL_APPNAME, adminUserUUID))
-    {
-        LOG_APP->log0(__func__, Logs::LogLevel::WARN, "Setting up '%s' user as application '%s' admin.", adminUserUUID.c_str(), IAM_ADMPORTAL_APPNAME);
-
-        if (!identityManager->applications->changeApplicationAdmin(clientDetails, performedBy, IAM_ADMPORTAL_APPNAME, adminUserUUID, true))
-        {
-            LOG_APP->log0(__func__, Logs::LogLevel::CRITICAL, "Failed to set the '%s' account as application '%s' admin.", adminUserUUID.c_str(), IAM_ADMPORTAL_APPNAME);
-            return false;
-        }
-    }*/
 
     return true;
 }
 
-bool AuthStorageImpl::configureUserPortalApplication(IdentityManager_DB *identityManager)
+bool AuthStorageImpl::setupUserPortalScopesAndRoles()
 {
-    if (!identityManager->applications->doesApplicationExist(IAM_USRPORTAL_APPNAME))
+
+    if (!Globals::getIdentityManager()->applications->doesApplicationExist(IAM_USRPORTAL_APPNAME))
     {
         LOG_APP->log0(__func__, Logs::LogLevel::CRITICAL, "Application '%s' does not exist, aborting.", IAM_USRPORTAL_APPNAME);
         return false;
@@ -484,32 +416,6 @@ bool AuthStorageImpl::configureUserPortalApplication(IdentityManager_DB *identit
     ]
     )"));
 
-    /*
-    Sessions::ClientDetails clientDetails;
-    std::string performedBy = "00000000-0000-4000-8000-000000000000";
-
-    if (!identityManager->applications->validateApplicationAccount(IAM_USRPORTAL_APPNAME, adminUserUUID))
-    {
-        LOG_APP->log0(__func__, Logs::LogLevel::WARN, "Setting up '%s' user as application '%s' user.", adminUserUUID.c_str(), IAM_USRPORTAL_APPNAME);
-
-        if (!identityManager->applications->addAccountToApplication(clientDetails, performedBy, IAM_USRPORTAL_APPNAME, adminUserUUID))
-        {
-            LOG_APP->log0(__func__, Logs::LogLevel::CRITICAL, "Failed to set the '%s' account as application '%s' user.", adminUserUUID.c_str(), IAM_USRPORTAL_APPNAME);
-            return false;
-        }
-    }
-
-    std::set<std::string> accounts = identityManager->applicationRoles->getApplicationRoleAccounts(IAM_USRPORTAL_APPNAME, "GENERIC_USER");
-    if (accounts.find(adminUserUUID) == accounts.end())
-    {
-        LOG_APP->log0(__func__, Logs::LogLevel::WARN, "Setting up '%s' user with role 'GENERIC_USER' in application '%s'.", adminUserUUID.c_str(), IAM_USRPORTAL_APPNAME);
-
-        if (!identityManager->applicationRoles->addAccountToRole(clientDetails, performedBy, IAM_USRPORTAL_APPNAME, "GENERIC_USER", adminUserUUID))
-        {
-            LOG_APP->log0(__func__, Logs::LogLevel::CRITICAL, "Failed to set up '%s' user with role 'GENERIC_USER' in application '%s'.", adminUserUUID.c_str(), IAM_USRPORTAL_APPNAME);
-            return false;
-        }
-    }*/
 
     return true;
 }
