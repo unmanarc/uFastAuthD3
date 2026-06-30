@@ -19,21 +19,22 @@ using namespace Mantids30::Helpers;
 using namespace Mantids30;
 
 bool IdentityManager_DB::Applications_DB::createApplication(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &applicationDescription,
-                                                         const std::string &appURL, const std::string &apiKey, const std::string &creatorAccountUUID, const ApplicationAttributes &appAttributes,
-                                                         bool initializeDefaultValues)
+                                                            const std::string &appURL, const std::string &apiKey, const std::string &creatorAccountUUID, const ApplicationAttributes &appAttributes,
+                                                            bool initializeDefaultValues)
 {
     bool tokenInsertSuccess;
     {
         Threads::Sync::Lock_RW lock(_parent->m_mutex);
 
         // Insert into iam.applications.
-        bool appInsertSuccess = _parent->m_sqlConnector->qExecuteEx("INSERT INTO iam.applications (`appName`, `f_appCreatorAccountUUID`, `appDescription`, `apiKey`, `appAttributesJSON`) VALUES (:appName, "
-                                                                    ":appCreatorAccountUUID, :description, :apiKey, :appAttributesJSON);",
-                                                                    {{":appName", MAKE_VAR(STRING, appName)},
-                                                                     {":appCreatorAccountUUID", MAKE_VAR(STRING, creatorAccountUUID)},
-                                                                     {":description", MAKE_VAR(STRING, applicationDescription)},
-                                                                     {":apiKey", MAKE_VAR(STRING, Encoders::encodeToBase64Obf(apiKey))},
-                                                                     {":appAttributesJSON", MAKE_VAR(STRING, appAttributes.toJSON().toStyledString())}});
+        bool appInsertSuccess = _parent->m_sqlConnector
+                                    ->qExecuteEx("INSERT INTO iam.applications (`appName`, `f_appCreatorAccountUUID`, `appDescription`, `apiKey`, `appAttributesJSON`) VALUES (:appName, "
+                                                 ":appCreatorAccountUUID, :description, :apiKey, :appAttributesJSON);",
+                                                 {{":appName", MAKE_VAR(STRING, appName)},
+                                                  {":appCreatorAccountUUID", MAKE_VAR(STRING, creatorAccountUUID)},
+                                                  {":description", MAKE_VAR(STRING, applicationDescription)},
+                                                  {":apiKey", MAKE_VAR(STRING, Encoders::encodeToBase64Obf(apiKey))},
+                                                  {":appAttributesJSON", MAKE_VAR(STRING, appAttributes.toJSON().toStyledString())}});
 
         // If the insertion is successful, insert another row default values into iam.applicationsJWTTokenConfig.
         if (appInsertSuccess)
@@ -281,9 +282,8 @@ std::set<std::string> IdentityManager_DB::Applications_DB::listAccountApplicatio
     return ret;
 }
 
-bool IdentityManager_DB::Applications_DB::addAccountToApplication(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &accountUUID)
+bool IdentityManager_DB::Applications_DB::_addAccountToApplication(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &accountUUID)
 {
-    Threads::Sync::Lock_RW lock(_parent->m_mutex);
     bool result = _parent->m_sqlConnector->qExecuteEx("INSERT INTO iam.applicationAccounts (`f_accountUUID`,`f_appName`) VALUES(:accountUUID,:appName);",
                                                       {{":appName", MAKE_VAR(STRING, appName)}, {":accountUUID", MAKE_VAR(STRING, accountUUID)}});
     if (result)
@@ -291,6 +291,12 @@ bool IdentityManager_DB::Applications_DB::addAccountToApplication(const ClientDe
         _parent->logSecurityEventOnApplications(appName, SecurityEventAction::ASSIGN_ACCOUNT, "Assigned account '" + accountUUID + "'", performedBy, clientDetails);
     }
     return result;
+}
+
+bool IdentityManager_DB::Applications_DB::addAccountToApplication(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &accountUUID)
+{
+    Threads::Sync::Lock_RW lock(_parent->m_mutex);
+    return _addAccountToApplication(clientDetails, performedBy, appName, accountUUID);
 }
 
 bool IdentityManager_DB::Applications_DB::removeAccountFromApplication(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &accountUUID)
@@ -306,11 +312,9 @@ bool IdentityManager_DB::Applications_DB::removeAccountFromApplication(const Cli
     return ret;
 }
 
-bool IdentityManager_DB::Applications_DB::changeApplicationAdmin(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &accountUUID,
-                                                                 bool isAppAdmin)
+bool IdentityManager_DB::Applications_DB::_setAccountAsApplicationAdmin(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &accountUUID,
+                                                                        bool isAppAdmin)
 {
-    Threads::Sync::Lock_RW lock(_parent->m_mutex);
-
     bool result = _parent->m_sqlConnector->qExecuteEx("UPDATE iam.applicationAccounts SET `isAppAdmin`=:isAppAdmin WHERE `f_accountUUID`=:accountUUID AND `f_appName`=:appName;",
                                                       {{":appName", MAKE_VAR(STRING, appName)}, {":accountUUID", MAKE_VAR(STRING, accountUUID)}, {":isAppAdmin", MAKE_VAR(BOOL, isAppAdmin)}});
     if (result)
@@ -318,6 +322,13 @@ bool IdentityManager_DB::Applications_DB::changeApplicationAdmin(const ClientDet
         _parent->logSecurityEventOnApplications(appName, SecurityEventAction::UPDATE, "Set account '" + accountUUID + "' as admin=" + std::to_string(isAppAdmin), performedBy, clientDetails);
     }
     return result;
+}
+
+bool IdentityManager_DB::Applications_DB::setAccountAsApplicationAdmin(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &accountUUID,
+                                                                       bool isAppAdmin)
+{
+    Threads::Sync::Lock_RW lock(_parent->m_mutex);
+    return _setAccountAsApplicationAdmin(clientDetails, performedBy, appName, accountUUID, isAppAdmin);
 }
 
 Json::Value IdentityManager_DB::Applications_DB::searchApplications(const Json::Value &dataTablesFilters)
@@ -352,7 +363,8 @@ Json::Value IdentityManager_DB::Applications_DB::searchApplications(const Json::
 
     {
         Abstract::STRING appName, appCreatorAccountUUID, appDescription;
-        std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelectWithFilters(sqlQueryStr, whereFilters, {{":SEARCHWORDS", MAKE_VAR(STRING, searchValue)}}, {&appName, &appCreatorAccountUUID, &appDescription},
+        std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelectWithFilters(sqlQueryStr, whereFilters, {{":SEARCHWORDS", MAKE_VAR(STRING, searchValue)}},
+                                                                               {&appName, &appCreatorAccountUUID, &appDescription},
                                                                                orderByStatement, // Order by
                                                                                limit,            // LIMIT
                                                                                offset            // OFFSET

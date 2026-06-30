@@ -44,10 +44,8 @@ bool IdentityManager_DB::ApplicationRoles_DB::doesRoleExist(const std::string &a
                                                      {{":roleName", MAKE_VAR(STRING, roleName)}, {":appName", MAKE_VAR(STRING, appName)}}, {});
 }
 
-bool IdentityManager_DB::ApplicationRoles_DB::addAccountToRole(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &roleName,
-                                                               const std::string &accountUUID)
+bool IdentityManager_DB::ApplicationRoles_DB::_addAccountToRole(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &roleName, const std::string &accountUUID)
 {
-    Threads::Sync::Lock_RW lock(_parent->m_mutex);
     bool success = _parent->m_sqlConnector->qExecuteEx("INSERT INTO iam.applicationRolesAccounts (`f_roleName`,`f_accountUUID`,`f_appName`) VALUES(:roleName,:accountUUID,:appName);",
                                                        {{":roleName", MAKE_VAR(STRING, roleName)}, {":appName", MAKE_VAR(STRING, appName)}, {":accountUUID", MAKE_VAR(STRING, accountUUID)}});
 
@@ -57,6 +55,14 @@ bool IdentityManager_DB::ApplicationRoles_DB::addAccountToRole(const ClientDetai
     }
 
     return success;
+}
+
+
+bool IdentityManager_DB::ApplicationRoles_DB::addAccountToRole(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &roleName,
+                                                               const std::string &accountUUID)
+{
+    Threads::Sync::Lock_RW lock(_parent->m_mutex);
+    return _addAccountToRole(clientDetails,performedBy,appName,roleName,accountUUID);
 }
 
 bool IdentityManager_DB::ApplicationRoles_DB::removeAccountFromRole(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &roleName,
@@ -234,3 +240,4 @@ Json::Value IdentityManager_DB::ApplicationRoles_DB::searchApplicationRoles(cons
 
     return ret;
 }
+
