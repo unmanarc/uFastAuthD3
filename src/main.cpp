@@ -29,11 +29,12 @@
 #include <boost/property_tree/info_parser.hpp>
 
 using namespace Mantids30;
+using namespace Mantids30::Program;
 
-class Main : public Program::Application
+class Main : public Application
 {
 public:
-    void _initvars(int, char *[], Program::Arguments::GlobalArguments *globalArguments) override
+    void _initvars(int, char *[], Arguments::GlobalArguments *globalArguments) override
     {
         // init variables (pre-config):
         globalArguments->setInifiniteWaitAtEnd(true);
@@ -47,11 +48,11 @@ public:
         globalArguments->addCommandLineOption("Recovery Options", 'r', "createnewadmin", "Create new admin account", "false", Memory::Abstract::Var::Type::BOOL);
     }
 
-    bool _config(int, char *argv[], Program::Arguments::GlobalArguments *globalArguments) override
+    bool _config(int, char *argv[], Arguments::GlobalArguments *globalArguments) override
     {
         // process config:
-        std::shared_ptr<Mantids30::Program::Logs::AppLog> initLog = Program::Config::Logs::createInitLog();
-        Program::Logs::Mode logMode = Program::Logs::Mode::STANDARD;
+        std::shared_ptr<Logs::AppLog> initLog = Config::Logs::createInitLog();
+        Logs::Mode logMode = Logs::Mode::STANDARD;
 
         Network::Sockets::Socket_TLS::prepareTLS();
 
@@ -60,11 +61,11 @@ public:
 
         std::string configFile = configDir + "/ufastauthd3.conf";
 
-        initLog->log0(__func__, Program::Logs::LogLevel::INFO, "Loading configuration: %s", (configFile).c_str());
+        initLog->log0(__func__, Logs::LogLevel::INFO, "Loading configuration: %s", (configFile).c_str());
 
         if (access(configDir.c_str(), R_OK))
         {
-            initLog->log0(__func__, Program::Logs::LogLevel::CRITICAL, "Missing configuration dir: %s", configDir.c_str());
+            initLog->log0(__func__, Logs::LogLevel::CRITICAL, "Missing configuration dir: %s", configDir.c_str());
             return false;
         }
 
@@ -73,13 +74,13 @@ public:
         bool isConfigFileInsecure = true;
         if (!Helpers::File::isSensitiveConfigPermissionInsecure(configFile, &isConfigFileInsecure))
         {
-            initLog->log0(__func__, Program::Logs::LogLevel::WARN, "The configuration 'ufastauthd3.conf' file is inaccessible, loading defaults...");
+            initLog->log0(__func__, Logs::LogLevel::WARNING, "The configuration 'ufastauthd3.conf' file is inaccessible, loading defaults...");
         }
         else
         {
             if (isConfigFileInsecure)
             {
-                initLog->log0(__func__, Program::Logs::LogLevel::SECURITY_ALERT,
+                initLog->log0(__func__, Logs::LogLevel::SECURITY_ALERT,
                               "The permissions of the '%s' file are currently not set to 0600. This may leave your API key exposed to potential security threats. To mitigate this risk, "
                               "we are changing the permissions of the file to ensure that your API key remains secure. Please ensure that you take necessary precautions to protect your API key and "
                               "update any affected applications or services as necessary.",
@@ -87,11 +88,11 @@ public:
 
                 if (Helpers::File::fixSensitiveConfigPermission(configFile))
                 {
-                    initLog->log0(__func__, Program::Logs::LogLevel::SECURITY_ALERT, "The permissions of the 'ufastauthd3.conf' file has been changed to 0600.");
+                    initLog->log0(__func__, Logs::LogLevel::SECURITY_ALERT, "The permissions of the 'ufastauthd3.conf' file has been changed to 0600.");
                 }
                 else
                 {
-                    initLog->log0(__func__, Program::Logs::LogLevel::CRITICAL, "The permissions of the 'ufastauthd3.conf' file can't be changed.");
+                    initLog->log0(__func__, Logs::LogLevel::CRITICAL, "The permissions of the 'ufastauthd3.conf' file can't be changed.");
                     return false;
                 }
             }
@@ -102,30 +103,30 @@ public:
             }
             catch (const boost::property_tree::info_parser_error &ex)
             {
-                initLog->log0(__func__, Program::Logs::LogLevel::CRITICAL, "Unable to read configuration file '%s' (line %lu): %s", configFile.c_str(), static_cast<unsigned long>(ex.line()),
+                initLog->log0(__func__, Logs::LogLevel::CRITICAL, "Unable to read configuration file '%s' (line %lu): %s", configFile.c_str(), static_cast<unsigned long>(ex.line()),
                               ex.what());
                 return false;
             }
             catch (const std::exception &ex)
             {
-                initLog->log0(__func__, Program::Logs::LogLevel::CRITICAL, "Unexpected error while reading configuration file '%s': %s", configFile.c_str(), ex.what());
+                initLog->log0(__func__, Logs::LogLevel::CRITICAL, "Unexpected error while reading configuration file '%s': %s", configFile.c_str(), ex.what());
                 return false;
             }
         }
 
-        Globals::appLog = Program::Config::Logs::createAppLog(Globals::pConfig);
-        Globals::rpcLog = Program::Config::Logs::createRPCLog(Globals::pConfig);
+        Globals::appLog = Config::Logs::createAppLog(Globals::pConfig);
+        Globals::rpcLog = Config::Logs::createRPCLog(Globals::pConfig);
 
         return true;
     }
 
-    int _start(int, char *[], Program::Arguments::GlobalArguments *globalArguments) override
+    int _start(int, char *[], Arguments::GlobalArguments *globalArguments) override
     {
         std::string configDir = globalArguments->getCommandLineOptionValue("config-dir")->toString();
 
         // start program.
-        LOG_APP->log0(__func__, Program::Logs::LogLevel::INFO, "Starting... (Build date %s %s), PID: %" PRIi32, __DATE__, __TIME__, getpid());
-        LOG_APP->log0(__func__, Program::Logs::LogLevel::INFO, "Using config dir: %s", configDir.c_str());
+        LOG_APP->log0(__func__, Logs::LogLevel::INFO, "Starting... (Build date %s %s), PID: %" PRIi32, __DATE__, __TIME__, getpid());
+        LOG_APP->log0(__func__, Logs::LogLevel::INFO, "Using config dir: %s", configDir.c_str());
 
         // TODO: for MySQL/PostgreSQL Authenticator, how reconnect takes place?
         // Initiate the authenticator
@@ -177,7 +178,7 @@ public:
             _exit(-4);
         }*/
 
-        LOG_APP->log0(__func__, Program::Logs::LogLevel::INFO, (globalArguments->getDaemonName() + " initialized with PID: %" PRIi32).c_str(), getpid());
+        LOG_APP->log0(__func__, Logs::LogLevel::INFO, (globalArguments->getDaemonName() + " initialized with PID: %" PRIi32).c_str(), getpid());
 
         return 0;
     }
