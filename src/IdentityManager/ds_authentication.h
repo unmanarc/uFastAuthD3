@@ -160,8 +160,8 @@ struct Credential
         slotDetails.fromJSON(j["slotDetails"]);
         mustChange = Mantids30::Helpers::JSON::ASBOOL(j, "mustChange", true);
         badAttempts = Mantids30::Helpers::JSON::ASUINT(j, "badAttempts", 0);
-        lastChange = static_cast<time_t>(Mantids30::Helpers::JSON::ASUINT64(j, "lastChange", 0));
-        expirationTimestamp = static_cast<time_t>(Mantids30::Helpers::JSON::ASUINT64(j, "expirationTimestamp", 0));
+        lastChange = static_cast<time_t>(Mantids30::Helpers::JSON::ASINT64(j, "lastChange", 0));
+        expirationTimestamp = static_cast<time_t>(Mantids30::Helpers::JSON::ASINT64(j, "expirationTimestamp", 0));
         hash = Mantids30::Helpers::JSON::ASSTRING(j, "hash", "");
         Mantids30::Helpers::Encoders::fromHex(Mantids30::Helpers::JSON::ASSTRING(j, "ssalt", "FFFFFFFF"), ssalt, 4);
     }
@@ -315,7 +315,7 @@ struct AuthenticationSchemeUsedSlot
         , optional(isOptional)
     {}
 
-    AuthenticationSchemeUsedSlot(uint32_t id, uint32_t priority, bool isOptional, const AuthenticationSlotDetails &_details)
+    AuthenticationSchemeUsedSlot(uint32_t id, uint32_t priority, bool isOptional, const AuthenticationSlotDetails & _details)
         : slotId(id)
         , orderPriority(priority)
         , optional(isOptional)
