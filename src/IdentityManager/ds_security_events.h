@@ -112,7 +112,7 @@ inline Mantids30::Program::Logs::LogLevel SecurityEventActionToLogLevel(Security
     case SecurityEventAction::REVOKE_ACCOUNT:
     case SecurityEventAction::REVOKE_ROLE:
     case SecurityEventAction::REVOKE_SCHEME:
-        return Mantids30::Program::Logs::LogLevel::WARN;
+        return Mantids30::Program::Logs::LogLevel::WARNING;
     default:
         return Mantids30::Program::Logs::LogLevel::INFO;
     }

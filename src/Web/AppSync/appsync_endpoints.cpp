@@ -277,7 +277,7 @@ AppSync_Endpoints::APIReturn AppSync_Endpoints::validateAndFetchApplicationAttri
     appName = request.clientRequest->requestLine.urlVars()->getStringValue("APP");
     if (appName.empty())
     {
-        LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LogLevel::WARN, "Missing application name in request.");
+        LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LogLevel::WARNING, "Missing application name in request.");
         return {HTTP::Status::Code::S_400_BAD_REQUEST, "missing_app_name", "Application name is required."};
     }
 
@@ -296,7 +296,7 @@ AppSync_Endpoints::APIReturn AppSync_Endpoints::validateAndFetchApplicationAttri
     std::string apiKey = Helpers::JSON::ASSTRING(*request.inputJSON, "APIKEY", "");
     if (apiKey.empty())
     {
-        LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LogLevel::WARN, "Missing API key in request for application '%s'.", appName.c_str());
+        LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LogLevel::WARNING, "Missing API key in request for application '%s'.", appName.c_str());
         return {HTTP::Status::Code::S_400_BAD_REQUEST, "missing_api_key", "API key is required."};
     }
 

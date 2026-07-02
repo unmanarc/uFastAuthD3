@@ -145,7 +145,7 @@ bool AuthStorageImpl::createAuth()
         if (!schemeId.has_value())
         {
             r = false;
-            LOG_APP->log0(__func__, Logs::LogLevel::ERR, "Default password scheme for simple login does not exist anymore.");
+            LOG_APP->log0(__func__, Logs::LogLevel::ERROR, "Default password scheme for simple login does not exist anymore.");
         }
         else
         {
@@ -157,7 +157,7 @@ bool AuthStorageImpl::createAuth()
         if (!schemeId.has_value())
         {
             r = false;
-            LOG_APP->log0(__func__, Logs::LogLevel::ERR, "Default password scheme for simple login can't be created.");
+            LOG_APP->log0(__func__, Logs::LogLevel::ERROR, "Default password scheme for simple login can't be created.");
         }
         else
         {

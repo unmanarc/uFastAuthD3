@@ -76,10 +76,10 @@ bool createPassFile(const std::string &sInitPW)
 #ifndef WIN32
     if (chmod(initPassOutFile.c_str(), 0600) != 0)
     {
-        LOG_APP->log0(__func__, LogLevel::WARN, "Failed to chmod the password file (be careful with this file and content).");
+        LOG_APP->log0(__func__, LogLevel::WARNING, "Failed to chmod the password file (be careful with this file and content).");
     }
 #else
-    LOG_APP->log0(__func__, LogLevel::WARN, "Initial password was saved without special owner read-only privileges (be careful).");
+    LOG_APP->log0(__func__, LogLevel::WARNING, "Initial password was saved without special owner read-only privileges (be careful).");
 #endif
     ofstr << sInitPW;
     ofstr.close();
@@ -117,7 +117,7 @@ bool IdentityManager::initializeAdminAccountWithPasswordIfNotExist(const uint32_
 
         if (_accountUUID.has_value())
         {
-            LOG_APP->log0(__func__, LogLevel::WARN, "New admin account '%s'/'%s' successfully created.", _accountUUID.value().c_str(), adminUsername.c_str() );
+            LOG_APP->log0(__func__, LogLevel::WARNING, "New admin account '%s'/'%s' successfully created.", _accountUUID.value().c_str(), adminUsername.c_str() );
 
             if (!authController->setAccountPasswordOnScheme(clientDetails, performedByUUID, _accountUUID.value(), &adminPW, schemeId))
             {
