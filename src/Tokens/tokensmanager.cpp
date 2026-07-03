@@ -129,7 +129,7 @@ void TokensManager::issueLPTokenCookie(APIReturn &response, const RequestContext
     Json::Value authenticationPublicData;
     authenticationPublicData["exp"] = std::to_string(lpToken.getExpirationTime());
     authenticationPublicData["subject"] = authContext->accountUUID;
-    authenticationPublicData["slotIds"] = authContext->getAllAuthenticatedSlotsIds();
+    authenticationPublicData["slotIds"] = Helpers::JSON::fromSet(authContext->authenticatedSlots);
     authenticationPublicData["authenticatedSchemes"] = authContext->getAllAuthenticatedSchemes();
     authenticationPublicData["authenticatedAppsCallbackURLs"] = authContext->getAllAuthenticatedAppsCallbackURLs();
 
