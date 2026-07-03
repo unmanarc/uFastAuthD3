@@ -5,7 +5,6 @@
 #include <Mantids30/Program_Logs/applog.h>
 #include <json/value.h>
 
-#include "defs.h"
 #include "globals.h"
 #include <Mantids30/Helpers/json.h>
 #include <boost/algorithm/string/join.hpp>
