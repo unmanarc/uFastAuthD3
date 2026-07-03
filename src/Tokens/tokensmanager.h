@@ -3,6 +3,7 @@
 
 #include "IdentityManager/credentialvalidator.h"
 #include "IdentityManager/ds_application.h"
+#include "IdentityManager/identitymanager.h"
 
 #include <Mantids30/API_EndpointsAndSessions/api_restful_endpoints.h>
 #include <Mantids30/Helpers/json.h>
@@ -40,6 +41,9 @@ public:
     //static void configureLogoutToken(const Mantids30::DataFormat::JWT::Token &refreshToken, Mantids30::DataFormat::JWT::Token &logoutToken);
 
     static void issueLPTokenCookie(APIReturn &response, const RequestContext &request, const std::shared_ptr<TransientAuthenticationContext> &authContext);
+
+private:
+    static time_t getExpirationTime(const ApplicationTokenCommonParams &commonParams, IdentityManager *identityManager, const std::string &tokenType, time_t defaultTimeout);
 };
 
 #endif // TOKENSMANAGER_H

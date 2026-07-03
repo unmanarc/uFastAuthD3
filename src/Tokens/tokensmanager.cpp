@@ -1,12 +1,28 @@
 #include "tokensmanager.h"
 
-#include "IdentityManager/identitymanager.h"
 #include "globals.h"
 #include <memory>
 
 using namespace Mantids30;
 using namespace Mantids30::Network::Protocol;
 using namespace API::RESTful;
+
+time_t TokensManager::getExpirationTime(const ApplicationTokenCommonParams &commonParams, IdentityManager *identityManager, const std::string &tokenType, time_t defaultTimeout)
+{
+    time_t expectedExpirationTime = time(nullptr) + Helpers::JSON::ASINT64(commonParams.tokenProperties.tokensConfiguration[tokenType], "timeout", defaultTimeout);
+    time_t accountExpirationTime = identityManager->accounts->getAccountExpirationTime(commonParams.jwtAccountName);
+
+    if (accountExpirationTime == 0 || accountExpirationTime >= expectedExpirationTime)
+    {
+        // We can safely use the expected token expiration time
+        return expectedExpirationTime;
+    }
+    else
+    {
+        // The account expires before, so the tokens need to expire before:
+        return accountExpirationTime;
+    }
+}
 
 void TokensManager::configureApplicationAccessToken(Mantids30::DataFormat::JWT::Token &accessToken, const ApplicationTokenCommonParams &commonParams)
 {
@@ -15,20 +31,7 @@ void TokensManager::configureApplicationAccessToken(Mantids30::DataFormat::JWT::
     std::string tokenId = Mantids30::Helpers::Random::createRandomString(16);
     accessToken.setSubject(commonParams.jwtAccountName);
     accessToken.setIssuedAt(time(nullptr));
-    time_t expectedExpirationTime = time(nullptr) + Helpers::JSON::ASINT64(commonParams.tokenProperties.tokensConfiguration["accessToken"], "timeout", 300);
-    time_t accountExpirationTime = identityManager->accounts->getAccountExpirationTime(commonParams.jwtAccountName);
-
-    if (accountExpirationTime == 0 || accountExpirationTime >= expectedExpirationTime)
-    {
-        // We can safely use the expected token expiration time
-        accessToken.setExpirationTime(expectedExpirationTime);
-    }
-    else
-    {
-        // The account expires before, so the tokens need to expire before:
-        accessToken.setExpirationTime(accountExpirationTime);
-    }
-
+    accessToken.setExpirationTime(TokensManager::getExpirationTime(commonParams, identityManager, "accessToken", 300));
     accessToken.setNotBefore(time(nullptr) - 30);
     accessToken.setClaim("sessionInactivityTimeout", commonParams.tokenProperties.sessionInactivityTimeout);
     accessToken.setClaim("slotIds", Helpers::JSON::fromSet(commonParams.slotIds));
@@ -65,20 +68,9 @@ void TokensManager::configureApplicationAccessToken(Mantids30::DataFormat::JWT::
 
 void TokensManager::configureApplicationRefreshToken(Mantids30::DataFormat::JWT::Token &refreshToken, const ApplicationTokenCommonParams &commonParams, const RefreshTokenParams &refreshParams)
 {
-    time_t expectedExpirationTime = time(nullptr) + Helpers::JSON::ASINT64(commonParams.tokenProperties.tokensConfiguration["refreshToken"], "timeout", 2592000);
-    time_t accountExpirationTime = Globals::getIdentityManager()->accounts->getAccountExpirationTime(commonParams.jwtAccountName);
+    IdentityManager *identityManager = Globals::getIdentityManager();
 
-    if (accountExpirationTime == 0 || accountExpirationTime >= expectedExpirationTime)
-    {
-        // We can safely use the expected token expiration time
-        refreshToken.setExpirationTime(expectedExpirationTime);
-    }
-    else
-    {
-        // The account expires before, so the tokens need to expire before:
-        refreshToken.setExpirationTime(accountExpirationTime);
-    }
-
+    refreshToken.setExpirationTime(TokensManager::getExpirationTime(commonParams, identityManager, "refreshToken", 2592000));
     refreshToken.setSubject(commonParams.jwtAccountName);
     refreshToken.setIssuedAt(time(nullptr));
     refreshToken.setNotBefore(time(nullptr) - 30);
