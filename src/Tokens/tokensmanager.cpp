@@ -82,12 +82,11 @@ void TokensManager::configureApplicationRefreshToken(Mantids30::DataFormat::JWT:
     refreshToken.setClaim("type", "refresher");
 }
 
-void TokensManager::issueLPTokenCookie(APIReturn &response, const RequestContext &request, const std::shared_ptr<TransientAuthenticationContext> &authContext)
+void TokensManager::configureLPToken(Mantids30::DataFormat::JWT::Token &lpToken, const std::shared_ptr<TransientAuthenticationContext> &authContext)
 {
     IdentityManager *identityManager = Globals::getIdentityManager();
-    Mantids30::DataFormat::JWT::Token lpToken;
+
     time_t accountExpirationTime = identityManager->accounts->getAccountExpirationTime(authContext->accountUUID);
-    authContext->appCallbackURL = identityManager->applications->getApplicationCallbackURI(authContext->appName);
     time_t expectedRefresherTokenTimeoutTime = safe_add(time(nullptr), Globals::pConfig.get<time_t>("LoginPortal.IAMTokenTimeout", 2592000));
 
     if (!authContext->keepAuthenticated)
@@ -107,8 +106,16 @@ void TokensManager::issueLPTokenCookie(APIReturn &response, const RequestContext
     lpToken.setClaim("type", "access");
     lpToken.setClaim("app", IAM_LOGINPORTAL_APPNAME);
     lpToken.setClaim("keepAuthenticated", authContext->keepAuthenticated);
-
     lpToken.setJwtId(Mantids30::Helpers::Random::createRandomString(16));
+}
+
+void TokensManager::issueLPTokenCookie(APIReturn &response, const RequestContext &request, const std::shared_ptr<TransientAuthenticationContext> &authContext)
+{
+    IdentityManager *identityManager = Globals::getIdentityManager();
+    Mantids30::DataFormat::JWT::Token lpToken;
+    authContext->appCallbackURL = identityManager->applications->getApplicationCallbackURI(authContext->appName);
+
+    TokensManager::configureLPToken(lpToken, authContext);
 
     std::string sAuthToken = request.jwtSigner->signFromToken(lpToken, false);
 
@@ -122,7 +129,7 @@ void TokensManager::issueLPTokenCookie(APIReturn &response, const RequestContext
     Json::Value authenticationPublicData;
     authenticationPublicData["exp"] = std::to_string(lpToken.getExpirationTime());
     authenticationPublicData["subject"] = authContext->accountUUID;
-    authenticationPublicData["slotIds"] = Helpers::JSON::fromSet(authContext->authenticatedSlots);
+    authenticationPublicData["slotIds"] = authContext->getAllAuthenticatedSlotsIds();
     authenticationPublicData["authenticatedSchemes"] = authContext->getAllAuthenticatedSchemes();
     authenticationPublicData["authenticatedAppsCallbackURLs"] = authContext->getAllAuthenticatedAppsCallbackURLs();
 

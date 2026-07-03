@@ -38,6 +38,8 @@ public:
 
     static void configureApplicationRefreshToken(Mantids30::DataFormat::JWT::Token &refreshToken, const ApplicationTokenCommonParams &commonParams, const RefreshTokenParams &refreshParams);
 
+    static void configureLPToken(Mantids30::DataFormat::JWT::Token &lpToken, const std::shared_ptr<TransientAuthenticationContext> &authContext);
+
     //static void configureLogoutToken(const Mantids30::DataFormat::JWT::Token &refreshToken, Mantids30::DataFormat::JWT::Token &logoutToken);
 
     static void issueLPTokenCookie(APIReturn &response, const RequestContext &request, const std::shared_ptr<TransientAuthenticationContext> &authContext);
