@@ -1,9 +1,9 @@
 
 function commonFunctionError(xhr, status, error) {
   if (xhr.responseJSON && xhr.responseJSON.error && xhr.responseJSON.message) {
-    showToastError("Error: " + xhr.responseJSON.error + " - " + xhr.responseJSON.message);
+    showTextToastError("Error: " + xhr.responseJSON.error + " - " + xhr.responseJSON.message);
   } else {
-    showToastError("Error " + xhr.status);
+    showTextToastError("Error " + xhr.status);
   }
 }
 

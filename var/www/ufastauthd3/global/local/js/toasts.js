@@ -1,6 +1,6 @@
-function showToast(htmlMessage, type) {
+function showTextToast(textMessage, type) {
     // Sanitize htmlMessage to prevent XSS
-    const sanitizedMessage = htmlMessage
+    const sanitizedMessage = textMessage
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
@@ -29,17 +29,15 @@ function showToast(htmlMessage, type) {
     bsToast.show();
 }
 
-function showToastSuccess(htmlMessage) {
-    showToast(htmlMessage, 'success');
+function showTextToastSuccess(textMessage) {
+    showTextToast(textMessage, 'success');
 }
 
-function showToastError(htmlMessage) {
-    showToast(htmlMessage, 'error');
+function showTextToastError(textMessage) {
+    showTextToast(textMessage, 'error');
 }
 
-
-
-function showYesNoDialog(message, callback) {
+function showYesNoHTMLDialog(htmlMessage, yesCallback, noCallback = null) {
     const dialog = $(`
         <div class="modal fade" id="yesNoDialog" tabindex="-1" aria-labelledby="yesNoLabel" aria-hidden="true">
             <div class="modal-dialog">
@@ -49,7 +47,7 @@ function showYesNoDialog(message, callback) {
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
-                        ${message}
+                        ${htmlMessage}
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">No</button>
@@ -62,8 +60,15 @@ function showYesNoDialog(message, callback) {
 
     $('body').append(dialog);
 
-    dialog.on('click', '#confirmYes', function() {
-        callback(true);
+    dialog.on('click', '#confirmYes', function () {
+        yesCallback(true);
+        dialog.modal('hide');
+    });
+
+    dialog.on('click', '.btn-secondary[data-bs-dismiss="modal"]', function () {
+        if (noCallback !== null) {
+            noCallback(false);
+        }
         dialog.modal('hide');
     });
 
