@@ -17,6 +17,7 @@
     - [Storage](#storage)
     - [Backend Validation](#backend-validation)
     - [Password Change](#password-change)
+    - [Password Strength Validation - Login vs. Admin Portal](#password-strength-validation---login-vs-admin-portal)
 6. [Admin Account Inactivity Policy](#admin-account-inactivity-policy)
 
 ---
@@ -161,7 +162,7 @@ Synchronizes the application's access-control definitions (scopes, roles, and ac
 *   The backend can utilize a CRAM-like mechanism to validate passwords.
 *   This approach ensures that the raw password never needs to be transmitted to our server, enhancing security during the authentication process.
 
-### Password Change: UI/GUI-Based Enforcement
+### Password Change
 
 #### Design Philosophy
 
@@ -205,6 +206,37 @@ Administrators and users are encouraged to:
 *   Always use the provided GUI interfaces for password changes, which enforce strength validation and old-password confirmation.
 *   Be aware that direct API manipulation of password hashes is possible but unsupported and carries self-inflicted risk.
 *   Monitor for unusually weak password patterns if audit capabilities are enabled, as an indicator of potential misuse.
+
+### Password Strength Validation - Login vs. Admin Portal
+
+Password strength validation rules may include checks that reference the user's login/username (e.g., preventing the password from containing the username). However, the scope of this validation differs between the Login Portal and the Admin (User) Portal due to information disclosure considerations.
+
+#### Single Login Field Recommendation
+
+It is recommended to configure applications with a **single login field** rather than allowing multiple login identifiers (e.g., username, email, phone number). Using a single login field simplifies the password strength validation logic and reduces the complexity of information disclosure risks during the authentication flow.
+
+#### Password Never Travels in Plaintext
+
+The reason password strength validation is enforced exclusively on the client side is that **the password never travels in plaintext to the server**. The password hash is computed entirely within the browser using client-side JavaScript, and only the resulting hash is transmitted to the backend for authentication or storage.
+
+This architectural decision has two important implications:
+
+1. **The backend cannot validate password strength** because it never receives the plaintext password—only its hash. Therefore, all complexity checks, pattern validations, and personal-data comparisons must be performed client-side before hashing.
+2. **The validation scope is inherently limited by the authentication phase.** During the Login Portal flow (pre-full-authentication), only the login field value is available for validation. During the User Portal flow (post-full-authentication), the complete set of account data is available, allowing for more comprehensive validation rules.
+
+#### Login Portal
+
+In the Login Portal (the initial authentication flow where a user changes a password before fully completing login), the password strength validation **only checks that the new password does not contain the user's recently introduced login/username**.
+
+**Rationale:** At this stage, the user has already entered their login credentials but is not yet fully authenticated. Validating the password against a broader set of account data (such as email addresses, full names, or other personal information) could inadvertently disclose sensitive account information to an attacker.
+
+By limiting the validation to only the username that the user already provided, the system minimizes the risk of information leakage during the pre-authentication phase.
+
+#### User Portal
+
+In the User Portal (where a fully authenticated user manages their credentials), the password strength validation **checks the new password against the complete set of login names associated with the account**, which may include the username, email address, full name, and other account data fields.
+
+**Rationale:** By the time a user accesses the User Portal to change their password, they have already successfully completed the full authentication sequence (providing all required credentials). At this point, the user is fully authenticated and has legitimate access to view their own account data. Therefore, there is no risk of information disclosure through the validation rules, as the user already has permission to see all their account details. The system can safely enforce all configured password strength rules without concern for leaking sensitive information.
 
 ---
 
