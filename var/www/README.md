@@ -5,7 +5,7 @@ This command updates the specified npm packages to their latest versions availab
 
 ```bash
 npm install -D browserify terser
-npm update jquery bootstrap datatables.net datatables.net-dt @fortawesome/fontawesome-free jssha qrcode otplib
+npm update jquery bootstrap datatables.net datatables.net-bs5 @fortawesome/fontawesome-free jssha qrcode otplib
 ```
 
 ## Install files into the project
