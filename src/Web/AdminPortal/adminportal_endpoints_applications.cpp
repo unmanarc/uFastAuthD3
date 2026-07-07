@@ -70,7 +70,7 @@ API::APIReturn AdminPortal_Endpoints_Applications::addApplication(void *context,
 
     // Extract application name and description from input JSON
     std::string appName = Helpers::JSON::ASSTRING(*request.inputJSON, "appName", "");
-    std::string appDescription = Helpers::JSON::ASSTRING(*request.inputJSON, "appDescription", "");
+    std::string appDescription = Helpers::JSON::ASSTRING(*request.inputJSON, "description", "");
 
     // Validate input data
     if (appName.empty())
