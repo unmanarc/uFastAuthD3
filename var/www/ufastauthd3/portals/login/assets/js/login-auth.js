@@ -22,7 +22,7 @@ function initializeAuthentication(username) {
         success: function (response) {
             const defaultSchemeIndex = response.defaultScheme;
             if (defaultSchemeIndex == null) {
-                updateMessage('ERROR: No available authentication scheme found for this user.');
+                updateTextMessage('ERROR: No available authentication scheme found for this user.');
                 return;
             }
             schemesAvailable = response.availableSchemes;
@@ -92,7 +92,7 @@ function handleAuthorizeResponse(response, skipStrengthValidation) {
         cachedLastAuthorizeResponse = null;
         if (response.nextSlot === null) {
             loggedIn = true;
-            updateMessage("Authenticated! Redirecting...");
+            updateTextMessage("Authenticated! Redirecting...");
             loadTokenAndRedirect();
         } else {
             currentSlot = response.nextSlot;
@@ -171,7 +171,7 @@ function hideAllScreens() {
  */
 function showNextSlot() {
     if (currentSlot == null) {
-        updateMessage("Authenticated! Redirecting...");
+        updateTextMessage("Authenticated! Redirecting...");
         loadTokenAndRedirect();
         return;
     }
@@ -182,7 +182,7 @@ function showNextSlot() {
 
     const { description, passwordFunction } = currentSlot.details;
 
-    updateMessage("Please enter your " + description);
+    updateTextMessage("Please enter your " + description);
 
     if (passwordFunction === 5) {
         // OTP input

@@ -74,7 +74,7 @@ function showChangePasswordScreen() {
     // Show the screen
     $("#changePasswordScreen").removeClass('d-none');
 
-    updateMessage("Change Password - " + currentSlot.details.description);
+    updateTextMessage("Change Password - " + currentSlot.details.description);
     $("#changeNewPassword").focus();
 
     // Show/hide skip button based on canSkipPasswordChange
@@ -102,7 +102,7 @@ function cancelChangePassword() {
 function skipPasswordChange() {
     currentStrengthValidator = null;
     $("#changePasswordScreen").addClass('d-none');
-    updateMessage('Password change skipped. Continuing login...');
+    updateTextMessage('Password change skipped. Continuing login...');
     // Continue with the cached authorization response, skipping strength validation to avoid infinite loop
     handleAuthorizeResponse(cachedLastAuthorizeResponse, true);
 }
@@ -118,11 +118,11 @@ function submitChangePassword() {
 
     // Validations
     if (!newPassword) {
-        updateMessage('Error: New password is required.');
+        updateTextMessage('Error: New password is required.');
         return;
     }
     if (newPassword !== confirmPassword) {
-        updateMessage('Error: Passwords do not match.');
+        updateTextMessage('Error: Passwords do not match.');
         return;
     }
 
@@ -130,7 +130,7 @@ function submitChangePassword() {
     if (currentStrengthValidator) {
         var strengthResult = validatePasswordAgainstStrength(currentPassword, newPassword, currentStrengthValidator, username);
         if (!allStrengthRequirementsMet(strengthResult)) {
-            updateMessage('Error: Password does not meet all strength requirements.');
+            updateTextMessage('Error: Password does not meet all strength requirements.');
             return;
         }
     }
@@ -164,7 +164,7 @@ function submitChangePassword() {
 
             // Password changed successfully
             $("#changePasswordScreen").addClass('d-none');
-            updateMessage('Password changed successfully. Continuing login...');
+            updateTextMessage('Password changed successfully. Continuing login...');
             // Handle response same as authorize (nextSlot, changeCredential, etc.)
             handleAuthorizeResponse(cachedLastAuthorizeResponse, true);
         },
@@ -173,7 +173,7 @@ function submitChangePassword() {
             if (xhr.responseJSON && xhr.responseJSON.message) {
                 msg = 'Error: ' + xhr.responseJSON.message;
             }
-            updateMessage(msg);
+            updateTextMessage(msg);
         }
     });
 }

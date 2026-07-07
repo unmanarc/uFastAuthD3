@@ -18,7 +18,7 @@ function showChangeOTPScreen() {
     // Show the screen
     $("#changeOtpScreen").removeClass('d-none');
 
-    updateMessage("Change OTP - " + currentSlot.details.description);
+    updateTextMessage("Change OTP - " + currentSlot.details.description);
     $("#changeOtpVerificationCode").focus();
 
     var label = $("#username").val() + ' - ' + currentSlot.details.description;
@@ -40,7 +40,7 @@ function showChangeOTPScreen() {
     QRCode.toCanvas(canvas, uri, { width: 200 }, function (error) {
         if (error) {
             console.error('QR Code generation failed:', error);
-            updateMessage('Error: Failed to generate QR code.');
+            updateTextMessage('Error: Failed to generate QR code.');
         } else {
             $("#changeOtpQrCanvas").removeClass('d-none');
         }
@@ -62,7 +62,7 @@ function submitChangeOTP() {
     var verificationCode = $("#changeOtpVerificationCode").val().trim();
 
     if (!verificationCode || verificationCode.length !== 6) {
-        updateMessage('Error: Please enter a valid 6-digit OTP code.');
+        updateTextMessage('Error: Please enter a valid 6-digit OTP code.');
         return;
     }
 
@@ -73,7 +73,7 @@ function submitChangeOTP() {
     });
 
     if (!result || !result.valid) {
-        updateMessage('Error: Invalid OTP code. Please scan the QR code again and try.');
+        updateTextMessage('Error: Invalid OTP code. Please scan the QR code again and try.');
         return;
     }
 
@@ -102,7 +102,7 @@ function submitChangeOTP() {
 
             // OTP changed successfully
             $("#changeOtpScreen").addClass('d-none');
-            updateMessage('OTP credential changed successfully. Continuing login...');
+            updateTextMessage('OTP credential changed successfully. Continuing login...');
             // Handle response same as authorize (nextSlot, changeCredential, etc.)
             handleAuthorizeResponse(cachedLastAuthorizeResponse, true);
         },
@@ -111,7 +111,7 @@ function submitChangeOTP() {
             if (xhr.responseJSON && xhr.responseJSON.message) {
                 msg = 'Error: ' + xhr.responseJSON.message;
             }
-            updateMessage(msg);
+            updateTextMessage(msg);
         }
     });
 }

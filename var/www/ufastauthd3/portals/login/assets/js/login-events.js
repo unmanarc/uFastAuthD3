@@ -6,7 +6,7 @@ $(document).ready(function () {
     // Focus on username input when the page loads
     $("#username").focus();
 
-    updateMessage('Please enter your username');
+    updateTextMessage('Please enter your username');
 
     const loggedInGETParam = urlParams.get('loggedIn');
 
@@ -40,7 +40,7 @@ $(document).ready(function () {
         try {
             decodedRedirectURI = atob(encodedRedirectURI);
         } catch (error) {
-            updateMessage('ERROR: Invalid redirect URI.');
+            updateTextMessage('ERROR: Invalid redirect URI.');
             $("#usernameForm").addClass("d-none");
             return;
         }

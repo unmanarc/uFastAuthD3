@@ -2,12 +2,12 @@
 // Login Helpers - Utility functions
 // ============================================================
 
-function updateMessage(text) {
+function updateTextMessage(text) {
     $("#message").text(text);
 }
 
 function showError(error) {
-    updateMessage(`${error}`);
+    updateTextMessage(`${error}`);
 }
 
 function showErrorWithDetails(error, message) {

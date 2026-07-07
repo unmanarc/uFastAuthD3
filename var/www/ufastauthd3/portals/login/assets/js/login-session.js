@@ -24,7 +24,7 @@ function validateSessionAndShowScreen() {
             loggedIn = true;
             $("#usernameForm").addClass("d-none");
             $("#logoutForm").removeClass("d-none");
-            updateMessage('Welcome back ' + cachedCookieData.subject + '!');
+            updateTextMessage('Welcome back ' + cachedCookieData.displayName + '!');
         },
         error: function (xhr, status, error) {
             // Session is incomplete - show only logout button (hide "Continue to application" button)
@@ -33,7 +33,7 @@ function validateSessionAndShowScreen() {
             $("#logoutForm").removeClass("d-none");
             // Hide the "Continue to the application" button
             $("#continueToAppBtn").addClass("d-none");
-            updateMessage('Authentication incomplete for this Application.\nPlease logout and authenticate again.');
+            updateTextMessage('Authentication incomplete for this Application.\nPlease logout and authenticate again.');
         }
     });
 }
