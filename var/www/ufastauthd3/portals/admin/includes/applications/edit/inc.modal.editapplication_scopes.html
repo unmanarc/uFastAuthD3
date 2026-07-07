@@ -78,7 +78,12 @@
                 data: "scopeId",
                 title: "Scope Name",
                 render: function (data, type, row) {
-                    return '<i class="fas fa-key"></i> &nbsp;&nbsp;' + data;
+                    var span = document.createElement('span');
+                    var icon = document.createElement('i');
+                    icon.className = 'fas fa-key';
+                    span.appendChild(icon);
+                    span.appendChild(document.createTextNode(' ' + (data || '')));
+                    return span.outerHTML;
                 }
             },
             {

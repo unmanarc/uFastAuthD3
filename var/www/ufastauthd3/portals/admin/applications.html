@@ -54,7 +54,12 @@
         data: "appName",
         title: "Application Name",
         render: function (data, type, row) {
-          return '<i class="fas fa-window-maximize"></i> &nbsp;&nbsp;' + data;
+          var span = document.createElement('span');
+          var icon = document.createElement('i');
+          icon.className = 'fas fa-window-maximize';
+          span.appendChild(icon);
+          span.appendChild(document.createTextNode(' ' + (data || '')));
+          return span.outerHTML;
         }
       },
       {

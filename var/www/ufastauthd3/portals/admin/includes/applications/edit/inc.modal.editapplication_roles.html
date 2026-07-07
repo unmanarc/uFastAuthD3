@@ -72,10 +72,15 @@
         },
         columns: [
             {
-                data: "roleName",
+                data: "roleId",
                 title: "Role Name",
                 render: function (data, type, row) {
-                    return '<i class="fas fa-user-group"></i> &nbsp;&nbsp;' + data;
+                    var span = document.createElement('span');
+                    var icon = document.createElement('i');
+                    icon.className = 'fas fa-user';
+                    span.appendChild(icon);
+                    span.appendChild(document.createTextNode(' ' + (data || '')));
+                    return span.outerHTML;
                 }
             },
             {

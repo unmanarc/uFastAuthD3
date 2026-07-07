@@ -75,8 +75,7 @@
           var icon = document.createElement('i');
           icon.className = 'fa-regular fa-circle-user';
           span.appendChild(icon);
-          span.appendChild(document.createTextNode(' '));
-          span.appendChild(document.createTextNode(row.displayName));
+          span.appendChild(document.createTextNode(' ' + row.displayName));
           return span.outerHTML;
         }
       },
