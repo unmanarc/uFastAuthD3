@@ -425,10 +425,11 @@ Json::Value AdminPortal_Endpoints_Applications::getApplicationAccountDetails(con
     std::set<std::string> appAdmins = Globals::getIdentityManager()->applications->listApplicationAdmins(appName);
     uint32_t i = 0;
     payloadOut = Json::arrayValue;
-    for (const std::string &acct : acctList)
+    for (const std::string &accountUUID : acctList)
     {
-        payloadOut[i]["name"] = acct;
-        payloadOut[i]["isAppAdmin"] = (appAdmins.find(acct) != appAdmins.end());
+        payloadOut[i]["accountUUID"] = accountUUID;
+        payloadOut[i]["displayName"] = Globals::getIdentityManager()->accounts->getAccountDisplayName(accountUUID);
+        payloadOut[i]["isAppAdmin"] = (appAdmins.find(accountUUID) != appAdmins.end());
         i++;
     }
     return payloadOut;

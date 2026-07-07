@@ -28,7 +28,7 @@
 
                 $("#tbody-accounts").append(
                     `<tr> 
-                        <th scope="row" id=ulist-accountUUID-${accountId}></th>
+                        <th scope="row" id=ulist-accountDisplayName-${accountId}></th>
                         <td>
                             <div class="form-check form-switch">
                                 <input class="form-check-input" type="checkbox" id="ulist-isAppAdmin-${accountId}" ${account["isAppAdmin"] ? 'checked' : ''} onclick="javascript:setAccountAsApplicationAdmin(${accountId})">
@@ -40,8 +40,8 @@
                         </td>
                     </tr>`
                 );
-                document.getElementById(`ulist-accountUUIDById-${accountId}`).value = account["name"];
-                $(`#ulist-accountUUID-${accountId}`).text(account["name"]);
+                document.getElementById(`ulist-accountUUIDById-${accountId}`).value = account["accountUUID"];
+                $(`#ulist-accountDisplayName-${accountId}`).text(account["displayName"]);
                 accountId++;
             }
         }
