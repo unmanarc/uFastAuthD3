@@ -138,7 +138,42 @@ API::APIReturn AdminPortal_Endpoints_Accounts::createAccount(void *context, cons
                                                                                                                  fieldValues);
     if (!createResult.success)
     {
-        return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to add the new account."};
+        // Check if the failure is due to detail field validation
+        auto detailStatus = createResult.detailResult.status;
+        if (detailStatus != UpdateAccountDetailFieldValuesResult::Status::SUCCESS)
+        {
+            switch (detailStatus)
+            {
+            case UpdateAccountDetailFieldValuesResult::Status::INVALID_FIELD:
+                return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_field",
+                        "One or more field names do not exist: " + boost::algorithm::join(createResult.detailResult.duplicateFields, ", ")};
+
+            case UpdateAccountDetailFieldValuesResult::Status::PERMISSION_DENIED:
+                return {HTTP::Status::Code::S_403_FORBIDDEN, "permission_denied",
+                        "User lacks permission to edit one or more detail fields"};
+
+            case UpdateAccountDetailFieldValuesResult::Status::REGEX_VALIDATION_FAILED:
+                return {HTTP::Status::Code::S_400_BAD_REQUEST, "regex_validation_failed",
+                        "One or more field values failed regex validation: " + boost::algorithm::join(createResult.detailResult.regexInvalidFields, ", ")};
+
+            case UpdateAccountDetailFieldValuesResult::Status::DUPLICATE_LOGIN_IDENTIFIER:
+                return {HTTP::Status::Code::S_409_CONFLICT, "duplicate_login_identifier",
+                        "Login identifier conflict for field(s): " + boost::algorithm::join(createResult.detailResult.duplicateFields, ", ")};
+
+            case UpdateAccountDetailFieldValuesResult::Status::DUPLICATE_UNIQUE_FIELD:
+                return {HTTP::Status::Code::S_409_CONFLICT, "duplicate_unique_field",
+                        "Unique field conflict for field(s): " + boost::algorithm::join(createResult.detailResult.uniqueInvalidFields, ", ")};
+
+            case UpdateAccountDetailFieldValuesResult::Status::DB_ERROR:
+            default:
+                return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "db_error",
+                        "Database error while setting account detail field values"};
+            }
+        }
+
+        // General database/transaction failure (account insert, activation token, application association, roles, scopes, or transaction commit)
+        return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "db_error",
+                "Failed to create the account in the database. The transaction was rolled back."};
     }
 
     const std::string &accountUUID = createResult.accountUUID;
