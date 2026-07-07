@@ -26,8 +26,6 @@ public:
     static Mantids30::Program::Logs::AppLog *getAppLog();
     static void setAppLog(Mantids30::Program::Logs::AppLog *value);
 
-    //static boost::property_tree::ptree *getConfig();
-
     static inline IdentityManager *getIdentityManager() { return identityManager; }
 
     static void setIdentityManager(IdentityManager *value);
