@@ -168,7 +168,12 @@
       {
         data: "f_appName", title: "Application Name",
         render: function (data, type, row) {
-          return '<i class="fas fa-window-maximize"></i> &nbsp;&nbsp;' + (data || '');
+          var span = document.createElement('span');
+          var icon = document.createElement('i');
+          icon.className = 'fas fa-window-maximize';
+          span.appendChild(icon);
+          span.appendChild(document.createTextNode(' ' + (data || '')));
+          return span.outerHTML;
         }
       },
       {
@@ -229,9 +234,30 @@
           return data ? new Date(data).toLocaleString() : '-';
         }
       },
-      { data: "f_slotId", title: "Slot ID", render: function (data, type, row) { return data || '-'; } },
-      { data: "logIP", title: "IP", render: function (data, type, row) { return data || '-'; } },
-      { data: "logUserAgent", title: "User Agent", render: function (data, type, row) { return data || '-'; } },
+      {
+        data: "f_slotId", title: "Slot ID",
+        render: function (data, type, row) {
+          var div = document.createElement('div');
+          div.appendChild(document.createTextNode(data || '-'));
+          return div.outerHTML;
+        }
+      },
+      {
+        data: "logIP", title: "IP",
+        render: function (data, type, row) {
+          var div = document.createElement('div');
+          div.appendChild(document.createTextNode(data || '-'));
+          return div.outerHTML;
+        }
+      },
+      {
+        data: "logUserAgent", title: "User Agent",
+        render: function (data, type, row) {
+          var div = document.createElement('div');
+          div.appendChild(document.createTextNode(data || '-'));
+          return div.outerHTML;
+        }
+      },
       {
         data: "logStatus", title: "Status", orderable: false, searchable: false, className: "text-center", render: function (data, type, row) {
           const reason = parseInt(data || 0, 10);
