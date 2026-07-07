@@ -26,7 +26,7 @@ using namespace Mantids30::Database;
 
 std::optional<AccountDetails> IdentityManager_DB::Accounts_DB::getAccountDetails(const std::string &accountUUID, const AccountDetailsToShow &detailsToShow)
 {
-    Threads::Sync::Lock_RD lock(_parent->m_mutex);
+    std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
 
     // Definir las variables para capturar los valores de la base de datos
     Abstract::STRING creator;
@@ -64,7 +64,7 @@ std::optional<AccountDetails> IdentityManager_DB::Accounts_DB::getAccountDetails
 Json::Value IdentityManager_DB::Accounts_DB::searchFields(const Json::Value &dataTablesFilters)
 {
     Json::Value ret;
-    Threads::Sync::Lock_RD lock(_parent->m_mutex);
+    std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
 
     // DataTables:
     ret["draw"] = dataTablesFilters["draw"];
@@ -144,7 +144,7 @@ Json::Value IdentityManager_DB::Accounts_DB::searchFields(const Json::Value &dat
 
 bool IdentityManager_DB::Accounts_DB::createAccountDetailField(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &fieldName, const AccountDetailField &details)
 {
-    Threads::Sync::Lock_RW lock(_parent->m_mutex);
+    std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
 
     // Invalid condition.
     if (details.isLoginIdentifier && !details.isUnique)
@@ -174,7 +174,7 @@ bool IdentityManager_DB::Accounts_DB::createAccountDetailField(const ClientDetai
 IdentityManager::Accounts::UpdateAccountDetailFieldResult IdentityManager_DB::Accounts_DB::updateAccountDetailField(const ClientDetails &clientDetails, const std::string &performedBy,
                                                                                                                     const std::string &fieldName, const AccountDetailField &details)
 {
-    Threads::Sync::Lock_RW lock(_parent->m_mutex);
+    std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
 
     // Invalid condition.
     if (details.isLoginIdentifier && !details.isUnique)
@@ -313,7 +313,7 @@ IdentityManager::Accounts::UpdateAccountDetailFieldResult IdentityManager_DB::Ac
 IdentityManager::Accounts::RemoveAccountDetailFieldResult IdentityManager_DB::Accounts_DB::removeAccountDetailField(const ClientDetails &clientDetails, const std::string &performedBy,
                                                                                                                     const std::string &fieldName)
 {
-    Threads::Sync::Lock_RW lock(_parent->m_mutex);
+    std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
 
     // Step 1: Check if the field exists and if it's a login identifier.
     Abstract::BOOL isLoginIdentifier;
@@ -352,12 +352,12 @@ IdentityManager::Accounts::RemoveAccountDetailFieldResult IdentityManager_DB::Ac
 
 std::map<std::string, AccountDetailField> IdentityManager_DB::Accounts_DB::listAccountDetailFields()
 {
-    Threads::Sync::Lock_RD lock(_parent->m_mutex);
+    std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
     return _listAccountDetailFields();
 }
 std::optional<AccountDetailField> IdentityManager_DB::Accounts_DB::getAccountDetailField(const std::string &fieldName)
 {
-    Threads::Sync::Lock_RD lock(_parent->m_mutex);
+    std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
 
     AccountDetailField field;
 
@@ -392,7 +392,7 @@ std::optional<AccountDetailField> IdentityManager_DB::Accounts_DB::getAccountDet
 bool IdentityManager_DB::Accounts_DB::changeAccountDetails(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountUUID,
                                                            const std::map<std::string, std::string> &fieldsValues, bool resetAllValues)
 {
-    Threads::Sync::Lock_RW lock(_parent->m_mutex);
+    std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
     Transaction tg(*_parent->m_sqlConnector);
 
     if (resetAllValues)
@@ -448,7 +448,7 @@ bool IdentityManager_DB::Accounts_DB::changeAccountDetails(const ClientDetails &
 
 bool IdentityManager_DB::Accounts_DB::removeAccountDetail(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountUUID, const std::string &fieldName)
 {
-    Threads::Sync::Lock_RW lock(_parent->m_mutex);
+    std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
 
     bool result = _parent->m_sqlConnector->qExecuteEx("DELETE FROM iam.accountDetailValues WHERE `f_accountUUID` = :accountUUID AND `f_fieldName` = :fieldName;",
                                                       {{":accountUUID", MAKE_VAR(STRING, accountUUID)}, {":fieldName", MAKE_VAR(STRING, fieldName)}});
@@ -462,7 +462,7 @@ bool IdentityManager_DB::Accounts_DB::removeAccountDetail(const ClientDetails &c
 UpdateAccountDetailFieldValuesResult IdentityManager_DB::Accounts_DB::updateAccountDetailFieldValues(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountUUID,
                                                                                                      const std::map<std::string, std::string> &inputFieldValues, bool isAdmin)
 {
-    Threads::Sync::Lock_RW lock(_parent->m_mutex);
+    std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
     Database::Transaction tg(*_parent->m_sqlConnector);
 
     UpdateAccountDetailFieldValuesResult result = _updateAccountDetailFieldValues(clientDetails,performedBy,accountUUID,inputFieldValues,isAdmin);
@@ -674,7 +674,7 @@ UpdateAccountDetailFieldValuesResult IdentityManager_DB::Accounts_DB::_updateAcc
 
 std::map<std::string, AccountDetailFieldValue> IdentityManager_DB::Accounts_DB::getAccountDetailFieldValues(const std::string &accountUUID, const AccountDetailsToShow &detailsToShow)
 {
-    Threads::Sync::Lock_RD lock(_parent->m_mutex);
+    std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
 
     std::map<std::string, AccountDetailFieldValue> detailValues;
 

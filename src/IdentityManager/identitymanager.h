@@ -16,7 +16,7 @@
 #include <string>
 
 #include <Mantids30/DataFormat_JWT/jwt.h>
-#include <Mantids30/Threads/mutex_shared.h>
+
 #include <Mantids30/Threads/safe_mapitem.h>
 
 class IdentityManager : public Mantids30::Threads::Safe::MapItem
@@ -625,5 +625,5 @@ public:
     bool initializeApplicationWithScheme(const std::string &appName, const std::string &appDescription, const std::string &appURL, const uint32_t &schemeId, bool *alreadyExist) const;
 
 protected:
-    Mantids30::Threads::Sync::Mutex_Shared m_mutex;
+    std::shared_mutex m_mutex;
 };

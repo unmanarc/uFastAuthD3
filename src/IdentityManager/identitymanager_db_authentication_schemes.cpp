@@ -18,7 +18,7 @@ using namespace Mantids30;
 
 bool IdentityManager_DB::AuthController_DB::updateDefaultAuthScheme(const ClientDetails &clientDetails, const std::string &performedBy, const uint32_t &schemeId)
 {
-    Threads::Sync::Lock_RW lock(_parent->m_mutex);
+    std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
 
     // Delete any existing default scheme
     _parent->m_sqlConnector->qExecuteEx("DELETE FROM iam.defaultAuthScheme;", {});
@@ -36,7 +36,7 @@ bool IdentityManager_DB::AuthController_DB::updateDefaultAuthScheme(const Client
 
 std::optional<uint32_t> IdentityManager_DB::AuthController_DB::getDefaultAuthScheme()
 {
-    Threads::Sync::Lock_RD lock(_parent->m_mutex);
+    std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
     Abstract::UINT32 schemeId;
     if (!_parent->m_sqlConnector->qSelectSingleRow("SELECT f_defaultSchemeId FROM iam.defaultAuthScheme WHERE id = 1;", {}, {&schemeId}))
     {
@@ -47,7 +47,7 @@ std::optional<uint32_t> IdentityManager_DB::AuthController_DB::getDefaultAuthSch
 
 std::optional<uint32_t> IdentityManager_DB::AuthController_DB::createAuthenticationScheme(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &description)
 {
-    Threads::Sync::Lock_RW lock(_parent->m_mutex);
+    std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
 
     uint32_t newSchemeId = 0;
     {
@@ -68,7 +68,7 @@ std::optional<uint32_t> IdentityManager_DB::AuthController_DB::createAuthenticat
 
 bool IdentityManager_DB::AuthController_DB::updateAuthenticationScheme(const ClientDetails &clientDetails, const std::string &performedBy, const uint32_t &schemeId, const std::string &description)
 {
-    Threads::Sync::Lock_RW lock(_parent->m_mutex);
+    std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
 
     // Update...
     bool success = _parent->m_sqlConnector->qExecuteEx("UPDATE iam.authenticationSchemes SET "
@@ -86,7 +86,7 @@ bool IdentityManager_DB::AuthController_DB::updateAuthenticationScheme(const Cli
 
 bool IdentityManager_DB::AuthController_DB::removeAuthenticationScheme(const ClientDetails &clientDetails, const std::string &performedBy, const uint32_t &schemeId)
 {
-    Threads::Sync::Lock_RW lock(_parent->m_mutex);
+    std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
 
     bool success = _parent->m_sqlConnector->qExecuteEx("DELETE FROM iam.authenticationSchemes WHERE `schemeId`=:schemeId;", {{":schemeId", MAKE_VAR(UINT32, schemeId)}});
 
@@ -100,7 +100,7 @@ bool IdentityManager_DB::AuthController_DB::removeAuthenticationScheme(const Cli
 
 std::map<uint32_t, std::string> IdentityManager_DB::AuthController_DB::listAuthenticationSchemes()
 {
-    Threads::Sync::Lock_RD lock(_parent->m_mutex);
+    std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
 
     std::map<uint32_t, std::string> ret;
 
@@ -125,7 +125,7 @@ std::vector<AuthenticationSchemeUsedSlot> IdentityManager_DB::AuthController_DB:
     std::map<uint32_t, AuthenticationSlotDetails> allAuthSlots = listAllAuthenticationSlots();
 
     // Acquire a read lock for thread-safe read operation
-    Threads::Sync::Lock_RD lock(_parent->m_mutex);
+    std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
 
     Abstract::UINT32 uSlotId;
     Abstract::UINT32 uOrderPriority;
@@ -161,7 +161,7 @@ bool IdentityManager_DB::AuthController_DB::updateAuthenticationSlotUsedByScheme
                                                                                  const std::list<AuthenticationSchemeUsedSlot> &slotsUsedByScheme)
 {
     // Acquire a write lock for thread-safe database modification
-    Threads::Sync::Lock_RW lock(_parent->m_mutex);
+    std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
 
     // Remove existing slots for the scheme
     std::string deleteSql = "DELETE FROM `iam`.`authenticationSchemeUsedSlots` WHERE `f_schemeId` = :schemeId;";

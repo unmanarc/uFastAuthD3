@@ -19,7 +19,7 @@ using namespace Mantids30;
 
 std::string IdentityManager_DB::AuthController_DB::getAccountConfirmationToken(const std::string &accountUUID)
 {
-    Threads::Sync::Lock_RD lock(_parent->m_mutex);
+    std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
 
     Abstract::STRING token;
     if (_parent->m_sqlConnector->qSelectSingleRow("SELECT confirmationToken FROM iam.accountsActivationToken WHERE `f_accountUUID`=:accountUUID LIMIT 1;",
@@ -31,7 +31,7 @@ std::string IdentityManager_DB::AuthController_DB::getAccountConfirmationToken(c
 }
 IdentityManager::LastAccountAccessResult IdentityManager_DB::AuthController_DB::getAccountLastAccess(const std::string &accountUUID)
 {
-    Threads::Sync::Lock_RD lock(_parent->m_mutex);
+    std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
 
     IdentityManager::LastAccountAccessResult result;
     Abstract::DATETIME lastLogin;
@@ -62,7 +62,7 @@ IdentityManager::LastAccountAccessResult IdentityManager_DB::AuthController_DB::
 bool IdentityManager_DB::AuthController_DB::updateApplicationAuthLogAccessTokenId(const std::string &accountUUID, const std::string &appName, const std::string &refresherTokenId,
                                                                                   const std::string &accessTokenId, const time_t &accessTokenExpiration)
 {
-    Threads::Sync::Lock_RW lock(_parent->m_mutex);
+    std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
 
     // Update the log entry identified by the refresher token id
     return _parent->m_sqlConnector->qExecuteEx("UPDATE logs.applicationAccess_accountSessions "
@@ -82,7 +82,7 @@ bool IdentityManager_DB::AuthController_DB::updateApplicationAuthLogAccessTokenI
 
 bool IdentityManager_DB::AuthController_DB::logoutApplicationAuthLog(const std::string &accountUUID, const std::string &appName, const std::string &refresherTokenId, LogoutReason reason)
 {
-    Threads::Sync::Lock_RW lock(_parent->m_mutex);
+    std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
     return _parent->m_sqlConnector->qExecuteEx("UPDATE logs.applicationAccess_accountSessions "
                                                "SET `logoutDateTime` = CURRENT_TIMESTAMP, "
                                                "    `logoutReason` = :reason "
@@ -102,7 +102,7 @@ void IdentityManager_DB::AuthController_DB::insertApplicationAccountAccessAuthLo
                                                                                   const ClientDetails &clientDetails, const std::string &refresherTokenId, const std::string &accessTokenId,
                                                                                   const time_t &accessTokenExpiration, const time_t &refreshTokenExpiration)
 {
-    Threads::Sync::Lock_RW lock(_parent->m_mutex);
+    std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
 
     // Use INSERT OR REPLACE to handle upsert logic for accountsLastAccessToApplication
     _parent->m_sqlConnector->qExecuteEx("INSERT OR REPLACE INTO logs.applicationAccess_accountLastLogin (`f_accountUUID`, `f_appName`, `lastLogin`) "

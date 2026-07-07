@@ -22,7 +22,7 @@ bool IdentityManager_DB::ApplicationActivities_DB::createApplicationActivity(con
 {
     std::optional<uint32_t> defaultAuthScheme = _parent->authController->getDefaultAuthScheme();
 
-    Threads::Sync::Lock_RW lock(_parent->m_mutex);
+    std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
 
     // Determine if we should include the default scheme ID in the insert
     uint32_t defaultSchemeId;
@@ -60,7 +60,7 @@ bool IdentityManager_DB::ApplicationActivities_DB::createApplicationActivity(con
 bool IdentityManager_DB::ApplicationActivities_DB::removeApplicationActivity(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName,
                                                                              const std::string &activityName)
 {
-    Threads::Sync::Lock_RW lock(_parent->m_mutex);
+    std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
 
     bool success = _parent->m_sqlConnector->qExecuteEx("DELETE FROM iam.applicationActivities WHERE `f_appName` = :appName AND `activityName` = :activityName;",
                                                        {{":appName", MAKE_VAR(STRING, appName)}, {":activityName", MAKE_VAR(STRING, activityName)}});
@@ -76,7 +76,7 @@ bool IdentityManager_DB::ApplicationActivities_DB::removeApplicationActivity(con
 bool IdentityManager_DB::ApplicationActivities_DB::setApplicationActivities(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName,
                                                                             const std::map<std::string, ActivityData> &activities)
 {
-    Threads::Sync::Lock_RW lock(_parent->m_mutex);
+    std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
 
     // Get the current activities from the database
     std::set<std::string> currentActivities;
@@ -149,7 +149,7 @@ bool IdentityManager_DB::ApplicationActivities_DB::setApplicationActivities(cons
 
 bool IdentityManager_DB::ApplicationActivities_DB::removeAllApplicationActivities(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName)
 {
-    Threads::Sync::Lock_RW lock(_parent->m_mutex);
+    std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
 
     // Delete all activities for the specified application
     bool success = _parent->m_sqlConnector->qExecuteEx("DELETE FROM iam.applicationActivities WHERE `f_appName` = :appName;", {{":appName", MAKE_VAR(STRING, appName)}});
@@ -165,7 +165,7 @@ bool IdentityManager_DB::ApplicationActivities_DB::removeAllApplicationActivitie
 bool IdentityManager_DB::ApplicationActivities_DB::setApplicationActivityParentActivity(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName,
                                                                                         const std::string &activityName, const std::string &parentActivityName)
 {
-    Threads::Sync::Lock_RW lock(_parent->m_mutex);
+    std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
 
     bool success;
 
@@ -196,7 +196,7 @@ bool IdentityManager_DB::ApplicationActivities_DB::setApplicationActivityParentA
 bool IdentityManager_DB::ApplicationActivities_DB::setApplicationActivityDescription(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName,
                                                                                      const std::string &activityName, const std::string &description)
 {
-    Threads::Sync::Lock_RW lock(_parent->m_mutex);
+    std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
 
     // Update the description for the specified application activity
     bool success = _parent->m_sqlConnector->qExecuteEx("UPDATE iam.applicationActivities SET `description`=:description WHERE `f_appName`=:appName AND `activityName`=:activityName;",
@@ -212,7 +212,7 @@ bool IdentityManager_DB::ApplicationActivities_DB::setApplicationActivityDescrip
 
 std::optional<IdentityManager::ApplicationActivities::ActivityData> IdentityManager_DB::ApplicationActivities_DB::getApplicationActivityInfo(const std::string &appName, const std::string &activityName)
 {
-    Threads::Sync::Lock_RD lock(_parent->m_mutex);
+    std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
 
     Abstract::STRING description, parentActivity, defaultSchemeDescription;
     Abstract::UINT32 defaultSchemeId;
@@ -243,7 +243,7 @@ std::optional<IdentityManager::ApplicationActivities::ActivityData> IdentityMana
 
 std::map<std::string, IdentityManager::ApplicationActivities::ActivityData> IdentityManager_DB::ApplicationActivities_DB::listApplicationActivities(const std::string &appName)
 {
-    Threads::Sync::Lock_RD lock(_parent->m_mutex);
+    std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
 
     Abstract::STRING name, description, parentActivity, defaultSchemeDescription;
     Abstract::UINT32 defaultSchemeId;
@@ -272,7 +272,7 @@ std::map<std::string, IdentityManager::ApplicationActivities::ActivityData> Iden
 
 std::optional<uint32_t> IdentityManager_DB::ApplicationActivities_DB::getApplicationActivityDefaultScheme(const std::string &appName, const std::string &activityName)
 {
-    Threads::Sync::Lock_RD lock(_parent->m_mutex);
+    std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
 
     // Temporal variable to store the result
     Abstract::UINT32 uDefaultSchemeId;
@@ -298,7 +298,7 @@ std::optional<uint32_t> IdentityManager_DB::ApplicationActivities_DB::getApplica
 bool IdentityManager_DB::ApplicationActivities_DB::setApplicationActivityDefaultScheme(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName,
                                                                                        const std::string &activityName, const uint32_t &schemeId)
 {
-    Threads::Sync::Lock_RW lock(_parent->m_mutex);
+    std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
 
     // Update the default scheme ID for the specified application activity
     bool success = _parent->m_sqlConnector->qExecuteEx("UPDATE iam.applicationActivities SET `defaultSchemeId`=:schemeId WHERE `f_appName`=:appName AND `activityName`=:activityName;",
@@ -315,7 +315,7 @@ bool IdentityManager_DB::ApplicationActivities_DB::setApplicationActivityDefault
 
 std::set<uint32_t> IdentityManager_DB::ApplicationActivities_DB::listAuthenticationSchemesForApplicationActivity(const std::string &appName, const std::string &activityName)
 {
-    Threads::Sync::Lock_RD lock(_parent->m_mutex);
+    std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
 
     std::set<uint32_t> ret;
 
@@ -365,7 +365,7 @@ bool IdentityManager_DB::ApplicationActivities_DB::removeAuthenticationSchemeFro
                                                                                                      const std::string &activityName, const uint32_t &schemeId)
 {
     // Acquire a write lock since we are modifying the database
-    Threads::Sync::Lock_RW lock(_parent->m_mutex);
+    std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
 
     // Execute the query with direct parameter passing
     bool success = _parent->m_sqlConnector->qExecuteEx("DELETE FROM iam.applicationActivitiesAuthSchemes "

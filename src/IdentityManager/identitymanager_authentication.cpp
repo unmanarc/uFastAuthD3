@@ -93,7 +93,7 @@ AuthenticationResult IdentityManager::AuthController::authenticateCredential(con
 
     // If something changes in between,
     {
-        Threads::Sync::Lock_RD lock(m_parent->m_mutex);
+        std::shared_lock<std::shared_mutex> lock(m_parent->m_mutex);
 
         // Process the extras (using scheme/slot/app)...
         if (authContext)
@@ -185,13 +185,13 @@ std::string IdentityManager::AuthController::genRandomConfirmationToken()
 
 AuthenticationPolicy IdentityManager::AuthController::getGlobalAuthenticationPolicy()
 {
-    Threads::Sync::Lock_RD lock(m_parent->m_mutex);
+    std::shared_lock<std::shared_mutex> lock(m_parent->m_mutex);
     return m_authenticationPolicy;
 }
 
 void IdentityManager::AuthController::setAuthenticationPolicy(const AuthenticationPolicy &newAuthenticationPolicy)
 {
-    Threads::Sync::Lock_RW lock(m_parent->m_mutex);
+    std::unique_lock<std::shared_mutex> lock(m_parent->m_mutex);
     m_authenticationPolicy = newAuthenticationPolicy;
 }
 
@@ -207,7 +207,7 @@ Credential IdentityManager::AuthController::getAccountCredentialPublicData(const
 std::map<uint32_t, Credential> IdentityManager::AuthController::getAccountAllCredentialsPublicData(const std::string &accountUUID)
 {
     // TODO: this function can only be accessed if the user has been authenticated...
-    Threads::Sync::Lock_RD lock(m_parent->m_mutex);
+    std::shared_lock<std::shared_mutex> lock(m_parent->m_mutex);
     std::map<uint32_t, Credential> r;
     std::set<uint32_t> slotIdsUsedByAccount = listUsedAuthenticationSlotsOnAccount(accountUUID);
     for (const uint32_t slotId : slotIdsUsedByAccount)
@@ -227,7 +227,7 @@ bool IdentityManager::AuthController::changeAccountAuthenticatedCredential(const
                                                                            const std::string &sCurrentPassword, const Credential &passwordData, Mode authMode, const std::string &challengeSalt)
 {
     {
-        Threads::Sync::Lock_RD lock(m_parent->m_mutex);
+        std::shared_lock<std::shared_mutex> lock(m_parent->m_mutex);
 
         std::map<uint32_t, AuthenticationSlotDetails> authSlots = listAllAuthenticationSlots();
 
@@ -274,7 +274,7 @@ bool IdentityManager::AuthController::changeAccountAuthenticatedCredential(const
 std::set<ApplicationScope> IdentityManager::ApplicationScopes::getAccountUsableApplicationScopes(const std::string &appName, const std::string &accountUUID)
 {
     std::set<ApplicationScope> x;
-    Threads::Sync::Lock_RD lock(m_parent->m_mutex);
+    std::shared_lock<std::shared_mutex> lock(m_parent->m_mutex);
     // Take scope from the account
     for (const ApplicationScope &scope : getAccountDirectApplicationScopes(accountUUID, false))
     {
@@ -294,7 +294,7 @@ std::set<ApplicationScope> IdentityManager::ApplicationScopes::getAccountUsableA
 
 bool IdentityManager::ApplicationScopes::validateAccountApplicationScope(const std::string &accountUUID, const ApplicationScope &applicationScope)
 {
-    Threads::Sync::Lock_RD lock(m_parent->m_mutex);
+    std::shared_lock<std::shared_mutex> lock(m_parent->m_mutex);
     if (validateAccountDirectApplicationScope(accountUUID, applicationScope))
     {
         return true;
@@ -318,7 +318,7 @@ bool IdentityManager::AuthController::setAccountPasswordOnScheme(const ClientDet
     Credential credentialData;
 
     {
-        Threads::Sync::Lock_RD lock(m_parent->m_mutex);
+        std::shared_lock<std::shared_mutex> lock(m_parent->m_mutex);
 
         authSlots = m_parent->authController->listAuthenticationSlotsUsedByScheme(schemeId);
         // not any slot assigned to this scheme
@@ -422,7 +422,7 @@ Credential IdentityManager::AuthController::createNewCredential(const uint32_t &
 Json::Value IdentityManager::AuthController::getApplicableAuthenticationSchemesForAccount(const std::string &app, const std::string &activity, const std::string &accountUUID,
                                                                                    const std::set<uint32_t> &alreadyAuthenticatedSlots)
 {
-    Threads::Sync::Lock_RD lock(m_parent->m_mutex);
+    std::shared_lock<std::shared_mutex> lock(m_parent->m_mutex);
 
     // Initialize the result JSON
     Json::Value r;

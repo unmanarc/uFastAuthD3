@@ -1,3 +1,4 @@
+#include "Mantids30/Helpers/json.h"
 #include "identitymanager_db.h"
 
 #include <Mantids30/Helpers/datatables.h>
@@ -17,7 +18,7 @@ using namespace Mantids30;
 
 std::optional<uint32_t> IdentityManager_DB::AuthController_DB::createAuthenticationSlot(const ClientDetails &clientDetails, const std::string &performedBy, const AuthenticationSlotDetails &details)
 {
-    Threads::Sync::Lock_RW lock(_parent->m_mutex);
+    std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
 
     uint32_t newSlotId = 0;
     {
@@ -47,7 +48,7 @@ std::optional<uint32_t> IdentityManager_DB::AuthController_DB::createAuthenticat
 
 bool IdentityManager_DB::AuthController_DB::removeAuthenticationSlot(const ClientDetails &clientDetails, const std::string &performedBy, const uint32_t &slotId)
 {
-    Threads::Sync::Lock_RW lock(_parent->m_mutex);
+    std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
 
     bool success = _parent->m_sqlConnector->qExecuteEx("DELETE FROM iam.authenticationSlots WHERE `slotId`=:slotId;", {{":slotId", MAKE_VAR(UINT32, slotId)}});
 
@@ -62,7 +63,7 @@ bool IdentityManager_DB::AuthController_DB::removeAuthenticationSlot(const Clien
 bool IdentityManager_DB::AuthController_DB::updateAuthenticationSlotDetails(const ClientDetails &clientDetails, const std::string &performedBy, const uint32_t &slotId,
                                                                             const AuthenticationSlotDetails &details)
 {
-    Threads::Sync::Lock_RW lock(_parent->m_mutex);
+    std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
 
     // Update...
     bool success = _parent->m_sqlConnector->qExecuteEx("UPDATE iam.authenticationSlots SET "
@@ -89,13 +90,7 @@ bool IdentityManager_DB::AuthController_DB::updateAuthenticationSlotDetails(cons
 
 std::map<uint32_t, AuthenticationSlotDetails> IdentityManager_DB::AuthController_DB::listAllAuthenticationSlots()
 {
-    Threads::Sync::Lock_RD lock(_parent->m_mutex);
-    static std::function<Json::Value(const char *)> parse = [](const char *json)
-    {
-        Json::Value r;
-        Json::Reader().parse(json, r);
-        return r;
-    };
+    std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
 
     std::map<uint32_t, AuthenticationSlotDetails> ret;
 
@@ -117,7 +112,7 @@ std::map<uint32_t, AuthenticationSlotDetails> IdentityManager_DB::AuthController
     while (i && i->isSuccessful() && i->step())
     {
         // Build AuthenticationSlotDetails and insert it to the maps
-        ret.insert({uSlotId.getValue(), AuthenticationSlotDetails(sDescription.getValue(), static_cast<HashFunction>(uFunction.getValue()), parse(sStrengthJSONValidator.getValue().c_str()),
+        ret.insert({uSlotId.getValue(), AuthenticationSlotDetails(sDescription.getValue(), static_cast<HashFunction>(uFunction.getValue()), Mantids30::Helpers::JSON::parse(sStrengthJSONValidator.getValue().c_str()),
                                                                   uDefaultExpirationSeconds.getValue(), uTotp2FAStepsToleranceWindow.getValue(), canSkipWhenExpired.getValue())});
     }
 

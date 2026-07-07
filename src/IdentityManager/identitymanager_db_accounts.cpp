@@ -28,7 +28,7 @@ using namespace Mantids30::Database;
 
 bool IdentityManager_DB::Accounts_DB::extendInactivity(const std::string &accountUUID, const time_t &validUntil)
 {
-    Threads::Sync::Lock_RW lock(_parent->m_mutex);
+    std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
     Database::Transaction tg(*_parent->m_sqlConnector);
 
     // Step 1: Delete the existing record if it exists
@@ -68,7 +68,7 @@ bool IdentityManager_DB::Accounts_DB::extendInactivity(const std::string &accoun
 CreateAccountResult IdentityManager_DB::Accounts_DB::createAccount(time_t expirationDate, const AccountFlags &accountFlags, const ClientDetails &clientDetails, const std::string &performedBy,
                                                                    const std::map<std::string, ApplicationDef> &appDefs, const std::map<std::string, std::string> &detailFieldsValues)
 {
-    Threads::Sync::Lock_RW lock(_parent->m_mutex);
+    std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
     Database::Transaction tg(*_parent->m_sqlConnector);
 
     std::string accountUUID = Helpers::Random::createUUIDv4();
@@ -179,7 +179,7 @@ CreateAccountResult IdentityManager_DB::Accounts_DB::createAccount(time_t expira
 
 bool IdentityManager_DB::Accounts_DB::removeAccount(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountUUID)
 {
-    Threads::Sync::Lock_RW lock(_parent->m_mutex);
+    std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
 
     if (isThereAnotherAdmin(accountUUID))
     {
@@ -196,14 +196,14 @@ bool IdentityManager_DB::Accounts_DB::removeAccount(const ClientDetails &clientD
 bool IdentityManager_DB::Accounts_DB::doesAccountExist(const std::string &accountUUID)
 {
     bool ret = false;
-    Threads::Sync::Lock_RD lock(_parent->m_mutex);
+    std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
     ret = _parent->m_sqlConnector->qSelectSingleRow("SELECT `isEnabled` FROM iam.accounts WHERE `accountUUID`=:accountUUID LIMIT 1;", {{":accountUUID", MAKE_VAR(STRING, accountUUID)}}, {});
     return ret;
 }
 
 bool IdentityManager_DB::Accounts_DB::disableAccount(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountUUID, bool disabled)
 {
-    Threads::Sync::Lock_RW lock(_parent->m_mutex);
+    std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
 
     if (disabled && !isThereAnotherAdmin(accountUUID))
     {
@@ -286,7 +286,7 @@ std::string IdentityManager_DB::Accounts_DB::getAccountDisplayName(const std::st
 
 bool IdentityManager_DB::Accounts_DB::confirmAccount(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountUUID, const std::string &confirmationToken)
 {
-    Threads::Sync::Lock_RW lock(_parent->m_mutex);
+    std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
 
     Abstract::STRING token;
 
@@ -309,7 +309,7 @@ bool IdentityManager_DB::Accounts_DB::confirmAccount(const ClientDetails &client
 
 bool IdentityManager_DB::Accounts_DB::changeAccountExpiration(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountUUID, time_t expiration)
 {
-    Threads::Sync::Lock_RW lock(_parent->m_mutex);
+    std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
 
     bool result = _parent->m_sqlConnector->qExecuteEx("UPDATE iam.accounts SET `expiration`=:expiration WHERE `accountUUID`=:accountUUID;",
                                                       {{":expiration", MAKE_VAR(DATETIME, expiration)}, {":accountUUID", MAKE_VAR(STRING, accountUUID)}});
@@ -342,7 +342,7 @@ AccountFlags IdentityManager_DB::Accounts_DB::getAccountFlags(const std::string 
 bool IdentityManager_DB::Accounts_DB::updateAccountApplicationRoles(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &accountUUID,
                                                                     const std::set<std::string> &roleSet)
 {
-    Threads::Sync::Lock_RW lock(_parent->m_mutex);
+    std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
 
     if (!_parent->m_sqlConnector->qExecuteEx("DELETE FROM iam.applicationRolesAccounts WHERE "
                                              "`f_accountUUID`=:accountUUID AND `f_appName`=:appName;",
@@ -369,7 +369,7 @@ bool IdentityManager_DB::Accounts_DB::updateAccountApplicationRoles(const Client
 
 bool IdentityManager_DB::Accounts_DB::changeAccountFlags(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountUUID, const AccountFlags &accountFlags)
 {
-    Threads::Sync::Lock_RW lock(_parent->m_mutex);
+    std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
 
     if ((!accountFlags.confirmed || !accountFlags.enabled || !accountFlags.admin) && !isThereAnotherAdmin(accountUUID))
     {
@@ -392,7 +392,7 @@ bool IdentityManager_DB::Accounts_DB::changeAccountFlags(const ClientDetails &cl
 
 time_t IdentityManager_DB::Accounts_DB::getAccountExpirationTime(const std::string &accountUUID)
 {
-    Threads::Sync::Lock_RD lock(_parent->m_mutex);
+    std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
 
     Abstract::DATETIME expiration;
     if (_parent->m_sqlConnector->qSelectSingleRow("SELECT `expiration` FROM iam.accounts WHERE `accountUUID`=:accountUUID LIMIT 1;", {{":accountUUID", MAKE_VAR(STRING, accountUUID)}}, {&expiration}))
@@ -405,7 +405,7 @@ time_t IdentityManager_DB::Accounts_DB::getAccountExpirationTime(const std::stri
 
 time_t IdentityManager_DB::Accounts_DB::getAccountCreationTime(const std::string &accountUUID)
 {
-    Threads::Sync::Lock_RD lock(_parent->m_mutex);
+    std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
 
     Abstract::DATETIME creation;
 
@@ -420,7 +420,7 @@ time_t IdentityManager_DB::Accounts_DB::getAccountCreationTime(const std::string
 Json::Value IdentityManager_DB::Accounts_DB::searchAccounts(const Json::Value &dataTablesFilters)
 {
     Json::Value ret;
-    Threads::Sync::Lock_RD lock(_parent->m_mutex);
+    std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
 
     // DataTables:
     ret["draw"] = dataTablesFilters["draw"];
@@ -499,15 +499,15 @@ Json::Value IdentityManager_DB::Accounts_DB::searchAccounts(const Json::Value &d
             Json::Value row;
 
             // accountUUID
-            row["accountUUID"] = accountUUID.toJSON();
+            row["accountUUID"] = accountUUID.getValue();
             // creation
-            row["creation"] = creation.toJSON();
+            row["creation"] = creation.getValue();
             // expiration
-            row["expiration"] = expiration.toJSON();
+            row["expiration"] = expiration.getValue();
             // lastAccess
-            row["lastAccess"] = lastLogin.toJSON();
+            row["lastAccess"] = lastLogin.getValue();
             // lastChange
-            row["lastPasswordChange"] = lastChange.toJSON();
+            row["lastPasswordChange"] = lastChange.getValue();
 
             row["applications"] = Json::arrayValue;
 
@@ -565,7 +565,7 @@ Json::Value IdentityManager_DB::Accounts_DB::searchAccounts(const Json::Value &d
 std::set<std::string> IdentityManager_DB::Accounts_DB::listAccounts()
 {
     std::set<std::string> ret;
-    Threads::Sync::Lock_RD lock(_parent->m_mutex);
+    std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
 
     Abstract::STRING accountUUID;
     std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelect("SELECT `accountUUID` FROM iam.accounts;", {}, {&accountUUID});
@@ -580,7 +580,7 @@ std::set<std::string> IdentityManager_DB::Accounts_DB::listAccounts()
 std::set<std::string> IdentityManager_DB::Accounts_DB::listAdminAccounts()
 {
     std::set<std::string> ret;
-    Threads::Sync::Lock_RD lock(_parent->m_mutex);
+    std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
 
     Abstract::STRING accountUUID;
     std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelect("SELECT `accountUUID` FROM iam.accounts WHERE `isAdmin`=:admin;", {{":admin", MAKE_VAR(BOOL, true)}}, {&accountUUID});
@@ -597,7 +597,7 @@ std::set<ApplicationRole> IdentityManager_DB::Accounts_DB::getAccountApplication
     std::set<ApplicationRole> ret;
     if (lock)
     {
-        _parent->m_mutex.lockShared();
+        _parent->m_mutex.lock_shared();
     }
 
     {
@@ -619,7 +619,7 @@ std::set<ApplicationRole> IdentityManager_DB::Accounts_DB::getAccountApplication
 
     if (lock)
     {
-        _parent->m_mutex.unlockShared();
+        _parent->m_mutex.unlock_shared();
     }
 
     return ret;
@@ -627,7 +627,7 @@ std::set<ApplicationRole> IdentityManager_DB::Accounts_DB::getAccountApplication
 
 bool IdentityManager_DB::Accounts_DB::hasValidAdminAccount()
 {
-    Threads::Sync::Lock_RD lock(_parent->m_mutex);
+    std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
 
     return _parent->m_sqlConnector->qSelectSingleRow("SELECT `isAdmin` FROM iam.accounts WHERE `isAdmin`=:admin LIMIT 1;", {{":admin", MAKE_VAR(BOOL, true)}}, {});
 }
@@ -645,7 +645,7 @@ bool IdentityManager_DB::Accounts_DB::isThereAnotherAdmin(const std::string &acc
 int32_t IdentityManager_DB::Accounts_DB::getAccountBlockTokenNoRenew(const std::string &accountUUID, std::string &token)
 {
     AuthenticationPolicy authenticationPolicy = _parent->authController->getGlobalAuthenticationPolicy();
-    Threads::Sync::Lock_RD lock(_parent->m_mutex);
+    std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
 
     Abstract::STRING blockToken;
     Abstract::DATETIME lastAccess;
@@ -666,13 +666,13 @@ int32_t IdentityManager_DB::Accounts_DB::getAccountBlockTokenNoRenew(const std::
 
 void IdentityManager_DB::Accounts_DB::removeBlockToken(const std::string &accountUUID)
 {
-    Threads::Sync::Lock_RW lock(_parent->m_mutex);
+    std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
     _parent->m_sqlConnector->qExecuteEx("DELETE FROM iam.accountsBlockToken WHERE `f_accountUUID`=:accountUUID;", {{":accountUUID", MAKE_VAR(STRING, accountUUID)}});
 }
 
 void IdentityManager_DB::Accounts_DB::updateOrCreateBlockToken(const std::string &accountUUID)
 {
-    Threads::Sync::Lock_RW lock(_parent->m_mutex);
+    std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
     if (!_parent->m_sqlConnector->qExecuteEx("UPDATE iam.accountsBlockToken SET `lastAccess`=CURRENT_TIMESTAMP WHERE `f_accountUUID`=:accountUUID;", {{":accountUUID", MAKE_VAR(STRING, accountUUID)}}))
     {
         _parent->m_sqlConnector->qExecuteEx("INSERT INTO iam.accountsBlockToken (`f_accountUUID`,`blockToken`) VALUES(:account,:blockToken);",
@@ -731,7 +731,7 @@ bool IdentityManager_DB::Accounts_DB::blockAccountUsingToken(const ClientDetails
 
 std::optional<std::string> IdentityManager_DB::Accounts_DB::getAccountUUIDByAccountName(const std::string &accountName)
 {
-    Threads::Sync::Lock_RD lock(_parent->m_mutex);
+    std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
 
     // Finds the accountUUID for a given accountName by looking up the first
     // login-identifier field (isLoginIdentifier=TRUE) in accountDetailFields
@@ -765,7 +765,7 @@ std::optional<std::string> IdentityManager_DB::Accounts_DB::getAccountUUIDByAcco
 std::set<std::string> IdentityManager_DB::Accounts_DB::getAccountNamesByAccountUUID(const std::string &accountUUID)
 {
     std::set<std::string> result;
-    Threads::Sync::Lock_RD lock(_parent->m_mutex);
+    std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
 
     // Query all login-identifier field values for the given accountUUID
     Abstract::STRING value;

@@ -14,7 +14,7 @@ bool IdentityManager_DB::ApplicationScopes_DB::validateApplicationScopeOnRole(co
     bool ret = false;
     if (lock)
     {
-        _parent->m_mutex.lockShared();
+        _parent->m_mutex.lock_shared();
     }
 
     ret = _parent->m_sqlConnector->qSelectSingleRow("SELECT `f_roleName` FROM iam.applicationRolesScopes WHERE `f_scopeId`=:scopeId AND `f_appName`=:appName AND `f_roleName`=:roleName;",
@@ -22,7 +22,7 @@ bool IdentityManager_DB::ApplicationScopes_DB::validateApplicationScopeOnRole(co
 
     if (lock)
     {
-        _parent->m_mutex.unlockShared();
+        _parent->m_mutex.unlock_shared();
     }
 
     return ret;
@@ -34,7 +34,7 @@ std::set<ApplicationScope> IdentityManager_DB::ApplicationScopes_DB::getRoleAppl
 
     if (lock)
     {
-        _parent->m_mutex.lockShared();
+        _parent->m_mutex.lock_shared();
     }
 
     Abstract::STRING sScopeName, sDescription;
@@ -49,7 +49,7 @@ std::set<ApplicationScope> IdentityManager_DB::ApplicationScopes_DB::getRoleAppl
 
     if (lock)
     {
-        _parent->m_mutex.unlockShared();
+        _parent->m_mutex.unlock_shared();
     }
 
     return ret;
@@ -60,7 +60,7 @@ std::set<std::string> IdentityManager_DB::ApplicationScopes_DB::getApplicationRo
     std::set<std::string> ret;
     if (lock)
     {
-        _parent->m_mutex.lockShared();
+        _parent->m_mutex.lock_shared();
     }
 
     Abstract::STRING roleName;
@@ -73,7 +73,7 @@ std::set<std::string> IdentityManager_DB::ApplicationScopes_DB::getApplicationRo
 
     if (lock)
     {
-        _parent->m_mutex.unlockShared();
+        _parent->m_mutex.unlock_shared();
     }
     return ret;
 }
@@ -82,7 +82,7 @@ std::set<ApplicationScope> IdentityManager_DB::ApplicationScopes_DB::getAccountD
     std::set<ApplicationScope> ret;
     if (lock)
     {
-        _parent->m_mutex.lockShared();
+        _parent->m_mutex.lock_shared();
     }
 
     Abstract::STRING appName, scopeId;
@@ -95,14 +95,14 @@ std::set<ApplicationScope> IdentityManager_DB::ApplicationScopes_DB::getAccountD
 
     if (lock)
     {
-        _parent->m_mutex.unlockShared();
+        _parent->m_mutex.unlock_shared();
     }
     return ret;
 }
 
 bool IdentityManager_DB::ApplicationScopes_DB::createApplicationScope(const ClientDetails &clientDetails, const std::string &performedBy, const ApplicationScope &applicationScope)
 {
-    Threads::Sync::Lock_RW lock(_parent->m_mutex);
+    std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
     bool success = _parent->m_sqlConnector->qExecuteEx("INSERT INTO iam.applicationScopes (`f_appName`,`scopeId`,`description`) VALUES(:appName,:scopeId,:description);",
                                                        {{":appName", MAKE_VAR(STRING, applicationScope.appName)},
                                                         {":scopeId", MAKE_VAR(STRING, applicationScope.id)},
@@ -118,7 +118,7 @@ bool IdentityManager_DB::ApplicationScopes_DB::createApplicationScope(const Clie
 
 bool IdentityManager_DB::ApplicationScopes_DB::removeApplicationScope(const ClientDetails &clientDetails, const std::string &performedBy, const ApplicationScope &applicationScope)
 {
-    Threads::Sync::Lock_RW lock(_parent->m_mutex);
+    std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
     bool success = _parent->m_sqlConnector->qExecuteEx("DELETE FROM iam.applicationScopes WHERE `scopeId`=:scopeId and `f_appName`=:appName;",
                                                        {{":appName", MAKE_VAR(STRING, applicationScope.appName)}, {":scopeId", MAKE_VAR(STRING, applicationScope.id)}});
 
@@ -133,7 +133,7 @@ bool IdentityManager_DB::ApplicationScopes_DB::removeApplicationScope(const Clie
 bool IdentityManager_DB::ApplicationScopes_DB::doesApplicationScopeExist(const ApplicationScope &applicationScope)
 {
     bool ret = false;
-    Threads::Sync::Lock_RD lock(_parent->m_mutex);
+    std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
 
     if (_parent->m_sqlConnector->qSelectSingleRow("SELECT `description` FROM iam.applicationScopes WHERE `scopeId`=:scopeId and `f_appName`=:appName LIMIT 1;",
                                                   {{":appName", MAKE_VAR(STRING, applicationScope.appName)}, {":scopeId", MAKE_VAR(STRING, applicationScope.id)}}, {}))
@@ -146,7 +146,7 @@ bool IdentityManager_DB::ApplicationScopes_DB::doesApplicationScopeExist(const A
 bool IdentityManager_DB::ApplicationScopes_DB::addApplicationScopeToRole(const ClientDetails &clientDetails, const std::string &performedBy, const ApplicationScope &applicationScope,
                                                                          const std::string &roleName)
 {
-    Threads::Sync::Lock_RW lock(_parent->m_mutex);
+    std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
 
     bool success = _parent->m_sqlConnector->qExecuteEx("INSERT INTO iam.applicationRolesScopes (`f_appName`,`f_scopeId`,`f_roleName`) VALUES(:appName,:scopeId,:roleName);",
                                                        {{":appName", MAKE_VAR(STRING, applicationScope.appName)},
@@ -208,7 +208,7 @@ bool IdentityManager_DB::ApplicationScopes_DB::_addApplicationScopeToAccount(con
 bool IdentityManager_DB::ApplicationScopes_DB::addApplicationScopeToAccount(const ClientDetails &clientDetails, const std::string &performedBy, const ApplicationScope &applicationScope,
                                                                             const std::string &accountUUID)
 {
-    Threads::Sync::Lock_RW lock(_parent->m_mutex);
+    std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
     return _addApplicationScopeToAccount(clientDetails, performedBy, applicationScope, accountUUID);
 }
 
@@ -240,7 +240,7 @@ bool IdentityManager_DB::ApplicationScopes_DB::removeApplicationScopeFromAccount
 
 bool IdentityManager_DB::ApplicationScopes_DB::updateApplicationScopeDescription(const ClientDetails &clientDetails, const std::string &performedBy, const ApplicationScope &applicationScope)
 {
-    Threads::Sync::Lock_RW lock(_parent->m_mutex);
+    std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
     bool success = _parent->m_sqlConnector->qExecuteEx("UPDATE iam.applicationScopes SET `description`=:description WHERE `scopeId`=:scopeId AND `f_appName`=:appName;",
                                                        {{":appName", MAKE_VAR(STRING, applicationScope.appName)},
                                                         {":scopeId", MAKE_VAR(STRING, applicationScope.id)},
@@ -256,7 +256,7 @@ bool IdentityManager_DB::ApplicationScopes_DB::updateApplicationScopeDescription
 
 std::string IdentityManager_DB::ApplicationScopes_DB::getApplicationScopeDescription(const ApplicationScope &applicationScope)
 {
-    Threads::Sync::Lock_RD lock(_parent->m_mutex);
+    std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
 
     Abstract::STRING description;
     if (_parent->m_sqlConnector->qSelectSingleRow("SELECT `description` FROM iam.applicationScopes WHERE `scopeId`=:scopeId AND `f_appName`=:appName LIMIT 1;",
@@ -270,7 +270,7 @@ std::string IdentityManager_DB::ApplicationScopes_DB::getApplicationScopeDescrip
 std::set<ApplicationScope> IdentityManager_DB::ApplicationScopes_DB::listApplicationScopes(const std::string &applicationName)
 {
     std::set<ApplicationScope> ret;
-    Threads::Sync::Lock_RD lock(_parent->m_mutex);
+    std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
 
     Abstract::STRING sAppName, sScopeId, sDescription;
 
@@ -294,7 +294,7 @@ std::set<std::string> IdentityManager_DB::ApplicationScopes_DB::listAccountsOnAp
     std::set<std::string> ret;
     if (lock)
     {
-        _parent->m_mutex.lockShared();
+        _parent->m_mutex.lock_shared();
     }
 
     Abstract::STRING accountUUID;
@@ -307,7 +307,7 @@ std::set<std::string> IdentityManager_DB::ApplicationScopes_DB::listAccountsOnAp
 
     if (lock)
     {
-        _parent->m_mutex.unlockShared();
+        _parent->m_mutex.unlock_shared();
     }
     return ret;
 }
@@ -315,7 +315,7 @@ std::set<std::string> IdentityManager_DB::ApplicationScopes_DB::listAccountsOnAp
 Json::Value IdentityManager_DB::ApplicationScopes_DB::searchApplicationScopes(const Json::Value &dataTablesFilters)
 {
     Json::Value ret;
-    Threads::Sync::Lock_RD lock(_parent->m_mutex);
+    std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
 
     // DataTables:
     ret["draw"] = dataTablesFilters["draw"];
@@ -358,9 +358,9 @@ Json::Value IdentityManager_DB::ApplicationScopes_DB::searchApplicationScopes(co
             Json::Value row;
 
             // scopeId
-            row["scopeId"] = scopeId.toJSON();
+            row["scopeId"] = scopeId.getValue();
             // description
-            row["description"] = description.toJSON();
+            row["description"] = description.getValue();
 
             ret["data"].append(row);
         }
@@ -377,7 +377,7 @@ Json::Value IdentityManager_DB::ApplicationScopes_DB::searchApplicationScopes(co
 
 bool IdentityManager_DB::ApplicationScopes_DB::validateAccountDirectApplicationScope(const std::string &accountUUID, const ApplicationScope &applicationScope)
 {
-    Threads::Sync::Lock_RD lock(_parent->m_mutex);
+    std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
 
     return _parent->m_sqlConnector->qSelectSingleRow("SELECT `f_accountUUID` FROM iam.applicationScopeAccounts WHERE "
                                                      "`f_scopeId`=:scopeId AND `f_accountUUID`=:accountUUID AND `f_appName`=:appName;",

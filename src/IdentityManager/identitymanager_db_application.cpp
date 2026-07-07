@@ -24,7 +24,7 @@ bool IdentityManager_DB::Applications_DB::createApplication(const ClientDetails 
 {
     bool tokenInsertSuccess;
     {
-        Threads::Sync::Lock_RW lock(_parent->m_mutex);
+        std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
 
         // Insert into iam.applications.
         bool appInsertSuccess = _parent->m_sqlConnector
@@ -82,7 +82,7 @@ bool IdentityManager_DB::Applications_DB::createApplication(const ClientDetails 
 
 bool IdentityManager_DB::Applications_DB::removeApplication(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName)
 {
-    Threads::Sync::Lock_RW lock(_parent->m_mutex);
+    std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
     bool result = _parent->m_sqlConnector->qExecuteEx("DELETE FROM iam.applications WHERE `appName`=:appName;", {{":appName", MAKE_VAR(STRING, appName)}});
     if (result)
     {
@@ -94,7 +94,7 @@ bool IdentityManager_DB::Applications_DB::removeApplication(const ClientDetails 
 bool IdentityManager_DB::Applications_DB::doesApplicationExist(const std::string &appName)
 {
     bool ret = false;
-    Threads::Sync::Lock_RD lock(_parent->m_mutex);
+    std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
     ret = _parent->m_sqlConnector->qSelectSingleRow("SELECT `appDescription` FROM iam.applications WHERE `appName`=:appName LIMIT 1;", {{":appName", MAKE_VAR(STRING, appName)}}, {});
     return ret;
 }
@@ -102,7 +102,7 @@ bool IdentityManager_DB::Applications_DB::doesApplicationExist(const std::string
 bool IdentityManager_DB::Applications_DB::updateApplicationAttributes(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName,
                                                                       const ApplicationAttributes &appAttributes)
 {
-    Threads::Sync::Lock_RW lock(_parent->m_mutex);
+    std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
     bool result = _parent->m_sqlConnector->qExecuteEx("UPDATE iam.applications SET "
                                                       "`appAttributesJSON`=:appAttributesJSON WHERE `appName`=:appName;",
                                                       {{":appName", MAKE_VAR(STRING, appName)}, {":appAttributesJSON", MAKE_VAR(STRING, appAttributes.toJSON().toStyledString())}});
@@ -115,7 +115,7 @@ bool IdentityManager_DB::Applications_DB::updateApplicationAttributes(const Clie
 
 std::optional<IdentityManager::Applications::ApplicationAttributes> IdentityManager_DB::Applications_DB::getApplicationAttributes(const std::string &appName)
 {
-    Threads::Sync::Lock_RD lock(_parent->m_mutex);
+    std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
     Abstract::STRING appAttributesJSON;
 
     if (_parent->m_sqlConnector->qSelectSingleRow("SELECT `appAttributesJSON` "
@@ -135,7 +135,7 @@ std::optional<IdentityManager::Applications::ApplicationAttributes> IdentityMana
 
 std::string IdentityManager_DB::Applications_DB::getApplicationDescription(const std::string &appName)
 {
-    Threads::Sync::Lock_RD lock(_parent->m_mutex);
+    std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
 
     Abstract::STRING description;
     if (_parent->m_sqlConnector->qSelectSingleRow("SELECT `appDescription` FROM iam.applications WHERE `appName`=:appName LIMIT 1;", {{":appName", MAKE_VAR(STRING, appName)}}, {&description}))
@@ -147,7 +147,7 @@ std::string IdentityManager_DB::Applications_DB::getApplicationDescription(const
 
 std::string IdentityManager_DB::Applications_DB::getApplicationAPIKey(const std::string &appName)
 {
-    Threads::Sync::Lock_RD lock(_parent->m_mutex);
+    std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
 
     Abstract::STRING apiKey;
     if (_parent->m_sqlConnector->qSelectSingleRow("SELECT `apiKey` FROM iam.applications WHERE `appName`=:appName LIMIT 1;", {{":appName", MAKE_VAR(STRING, appName)}}, {&apiKey}))
@@ -160,7 +160,7 @@ std::string IdentityManager_DB::Applications_DB::getApplicationAPIKey(const std:
 
 bool IdentityManager_DB::Applications_DB::updateApplicationAPIKey(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &apiKey)
 {
-    Threads::Sync::Lock_RW lock(_parent->m_mutex);
+    std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
     bool result = _parent->m_sqlConnector->qExecuteEx("UPDATE iam.applications SET `apiKey`=:apiKey WHERE `appName`=:appName;",
                                                       {{":appName", MAKE_VAR(STRING, appName)}, {":apiKey", MAKE_VAR(STRING, Encoders::encodeToBase64Obf(apiKey))}});
     if (result)
@@ -173,7 +173,7 @@ bool IdentityManager_DB::Applications_DB::updateApplicationAPIKey(const ClientDe
 bool IdentityManager_DB::Applications_DB::updateApplicationDescription(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName,
                                                                        const std::string &applicationDescription)
 {
-    Threads::Sync::Lock_RW lock(_parent->m_mutex);
+    std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
     bool result = _parent->m_sqlConnector->qExecuteEx("UPDATE iam.applications SET `appDescription`=:description WHERE `appName`=:appName;",
                                                       {{":appName", MAKE_VAR(STRING, appName)}, {":description", MAKE_VAR(STRING, applicationDescription)}});
     if (result)
@@ -185,7 +185,7 @@ bool IdentityManager_DB::Applications_DB::updateApplicationDescription(const Cli
 
 std::string IdentityManager_DB::Applications_DB::getApplicationNameByAPIKey(const std::string &apiKey)
 {
-    Threads::Sync::Lock_RD lock(_parent->m_mutex);
+    std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
     Abstract::STRING appName;
 
     if (_parent->m_sqlConnector->qSelectSingleRow("SELECT `appName` FROM iam.applications WHERE `apiKey` = :encodedApiKey LIMIT 1;",
@@ -202,7 +202,7 @@ std::string IdentityManager_DB::Applications_DB::getApplicationNameByAPIKey(cons
 std::set<std::string> IdentityManager_DB::Applications_DB::listApplications()
 {
     std::set<std::string> ret;
-    Threads::Sync::Lock_RD lock(_parent->m_mutex);
+    std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
 
     Abstract::STRING sAppName;
     std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelect("SELECT `appName` FROM iam.applications;", {}, {&sAppName});
@@ -215,7 +215,7 @@ std::set<std::string> IdentityManager_DB::Applications_DB::listApplications()
 
 bool IdentityManager_DB::Applications_DB::isApplicationAdmin(const std::string &appName, const std::string &accountUUID)
 {
-    Threads::Sync::Lock_RD lock(_parent->m_mutex);
+    std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
 
     Abstract::BOOL isAppAdmin;
     if (!_parent->m_sqlConnector->qSelectSingleRow("SELECT `isAppAdmin` FROM iam.applicationAccounts WHERE "
@@ -231,7 +231,7 @@ bool IdentityManager_DB::Applications_DB::isApplicationAdmin(const std::string &
 
 bool IdentityManager_DB::Applications_DB::validateApplicationAccount(const std::string &appName, const std::string &accountUUID)
 {
-    Threads::Sync::Lock_RD lock(_parent->m_mutex);
+    std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
 
     return _parent->m_sqlConnector->qSelectSingleRow("SELECT `f_appName` FROM iam.applicationAccounts WHERE `f_accountUUID`=:accountUUID AND `f_appName`=:appName;",
                                                      {{":appName", MAKE_VAR(STRING, appName)}, {":accountUUID", MAKE_VAR(STRING, accountUUID)}},
@@ -240,7 +240,7 @@ bool IdentityManager_DB::Applications_DB::validateApplicationAccount(const std::
 std::set<std::string> IdentityManager_DB::Applications_DB::listApplicationAdmins(const std::string &appName)
 {
     std::set<std::string> ret;
-    Threads::Sync::Lock_RD lock(_parent->m_mutex);
+    std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
 
     Abstract::STRING accountUUID;
     std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelect("SELECT `f_accountUUID` FROM iam.applicationAccounts WHERE `f_appName`=:appName AND `isAppAdmin`='1';",
@@ -257,7 +257,7 @@ std::set<std::string> IdentityManager_DB::Applications_DB::listApplicationAdmins
 std::set<std::string> IdentityManager_DB::Applications_DB::listApplicationAccounts(const std::string &appName)
 {
     std::set<std::string> ret;
-    Threads::Sync::Lock_RD lock(_parent->m_mutex);
+    std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
 
     Abstract::STRING accountUUID;
     std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelect("SELECT `f_accountUUID` FROM iam.applicationAccounts WHERE `f_appName`=:appName;",
@@ -274,7 +274,7 @@ std::set<std::string> IdentityManager_DB::Applications_DB::listApplicationAccoun
 std::set<std::string> IdentityManager_DB::Applications_DB::listAccountApplications(const std::string &accountUUID)
 {
     std::set<std::string> ret;
-    Threads::Sync::Lock_RD lock(_parent->m_mutex);
+    std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
 
     Abstract::STRING applicationName;
     std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelect("SELECT `f_appName` FROM iam.applicationAccounts WHERE `f_accountUUID`=:accountUUID;",
@@ -301,13 +301,13 @@ bool IdentityManager_DB::Applications_DB::_addAccountToApplication(const ClientD
 
 bool IdentityManager_DB::Applications_DB::addAccountToApplication(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &accountUUID)
 {
-    Threads::Sync::Lock_RW lock(_parent->m_mutex);
+    std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
     return _addAccountToApplication(clientDetails, performedBy, appName, accountUUID);
 }
 
 bool IdentityManager_DB::Applications_DB::removeAccountFromApplication(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &accountUUID)
 {
-    Threads::Sync::Lock_RW lock(_parent->m_mutex);
+    std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
 
     bool ret = _parent->m_sqlConnector->qExecuteEx("DELETE FROM iam.applicationAccounts WHERE `f_appName`=:appName AND `f_accountUUID`=:accountUUID;",
                                                    {{":appName", MAKE_VAR(STRING, appName)}, {":accountUUID", MAKE_VAR(STRING, accountUUID)}});
@@ -333,14 +333,14 @@ bool IdentityManager_DB::Applications_DB::_setAccountAsApplicationAdmin(const Cl
 bool IdentityManager_DB::Applications_DB::setAccountAsApplicationAdmin(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &accountUUID,
                                                                        bool isAppAdmin)
 {
-    Threads::Sync::Lock_RW lock(_parent->m_mutex);
+    std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
     return _setAccountAsApplicationAdmin(clientDetails, performedBy, appName, accountUUID, isAppAdmin);
 }
 
 Json::Value IdentityManager_DB::Applications_DB::searchApplications(const Json::Value &dataTablesFilters)
 {
     Json::Value ret;
-    Threads::Sync::Lock_RD lock(_parent->m_mutex);
+    std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
 
     // DataTables:
     ret["draw"] = dataTablesFilters["draw"];
@@ -424,7 +424,7 @@ Json::Value IdentityManager_DB::Applications_DB::searchApplications(const Json::
 std::vector<AccountApplicationInfo> IdentityManager_DB::Applications_DB::listAccountApplicationsFullInfo(const std::string &accountUUID)
 {
     std::vector<AccountApplicationInfo> ret;
-    Threads::Sync::Lock_RD lock(_parent->m_mutex);
+    std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
 
     // Query 1: Obtener apps basicas con JOIN
     {
@@ -507,7 +507,7 @@ std::vector<AccountApplicationInfo> IdentityManager_DB::Applications_DB::listAcc
 bool IdentityManager_DB::Applications_DB::addWebLoginAllowedRedirectURIToApplication(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName,
                                                                                      const std::string &loginRedirectURI)
 {
-    Threads::Sync::Lock_RW lock(_parent->m_mutex);
+    std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
     bool result = _parent->m_sqlConnector->qExecuteEx("INSERT INTO iam.applicationsWebLoginAllowedRedirectURIs (`f_appName`, `loginRedirectURI`) VALUES (:appName, :loginRedirectURI);",
                                                       {{":appName", MAKE_VAR(STRING, appName)}, {":loginRedirectURI", MAKE_VAR(STRING, loginRedirectURI)}});
     if (result)
@@ -520,7 +520,7 @@ bool IdentityManager_DB::Applications_DB::addWebLoginAllowedRedirectURIToApplica
 bool IdentityManager_DB::Applications_DB::removeWebLoginAllowedRedirectURIToApplication(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName,
                                                                                         const std::string &loginRedirectURI)
 {
-    Threads::Sync::Lock_RW lock(_parent->m_mutex);
+    std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
     bool result = _parent->m_sqlConnector->qExecuteEx("DELETE FROM iam.applicationsWebLoginAllowedRedirectURIs WHERE `f_appName`=:appName AND `loginRedirectURI`=:loginRedirectURI;",
                                                       {{":appName", MAKE_VAR(STRING, appName)}, {":loginRedirectURI", MAKE_VAR(STRING, loginRedirectURI)}});
     if (result)
@@ -532,7 +532,7 @@ bool IdentityManager_DB::Applications_DB::removeWebLoginAllowedRedirectURIToAppl
 
 std::set<std::string> IdentityManager_DB::Applications_DB::listWebLoginAllowedRedirectURIsFromApplication(const std::string &appName)
 {
-    Threads::Sync::Lock_RD lock(_parent->m_mutex);
+    std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
 
     Abstract::STRING loginRedirectURI;
     std::set<std::string> redirectURIs;
@@ -550,7 +550,7 @@ std::set<std::string> IdentityManager_DB::Applications_DB::listWebLoginAllowedRe
 bool IdentityManager_DB::Applications_DB::updateWebLoginDefaultRedirectURIForApplication(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName,
                                                                                          const std::string &loginRedirectURI)
 {
-    Threads::Sync::Lock_RW lock(_parent->m_mutex);
+    std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
     bool result = _parent->m_sqlConnector->qExecuteEx("INSERT OR REPLACE INTO iam.applicationsWebLoginDefaultRedirectURI (`f_appName`, `f_loginRedirectURI`) VALUES (:appName, :loginRedirectURI);",
                                                       {{":appName", MAKE_VAR(STRING, appName)}, {":loginRedirectURI", MAKE_VAR(STRING, loginRedirectURI)}});
     if (result)
@@ -562,7 +562,7 @@ bool IdentityManager_DB::Applications_DB::updateWebLoginDefaultRedirectURIForApp
 
 std::string IdentityManager_DB::Applications_DB::getWebLoginDefaultRedirectURIForApplication(const std::string &appName)
 {
-    Threads::Sync::Lock_RD lock(_parent->m_mutex);
+    std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
 
     Abstract::STRING loginRedirectURI;
     if (_parent->m_sqlConnector->qSelectSingleRow("SELECT `f_loginRedirectURI` FROM iam.applicationsWebLoginDefaultRedirectURI WHERE `f_appName`=:appName;",
@@ -577,7 +577,7 @@ std::string IdentityManager_DB::Applications_DB::getWebLoginDefaultRedirectURIFo
 bool IdentityManager_DB::Applications_DB::setApplicationWebLoginCallbackURI(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName,
                                                                             const std::string &callbackURI)
 {
-    Threads::Sync::Lock_RW lock(_parent->m_mutex);
+    std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
 
     bool ret = false;
 
@@ -597,7 +597,7 @@ bool IdentityManager_DB::Applications_DB::setApplicationWebLoginCallbackURI(cons
 }
 std::string IdentityManager_DB::Applications_DB::getApplicationCallbackURI(const std::string &appName)
 {
-    Threads::Sync::Lock_RD lock(_parent->m_mutex);
+    std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
 
     Abstract::STRING callbackURI;
 
@@ -614,7 +614,7 @@ std::string IdentityManager_DB::Applications_DB::getApplicationCallbackURI(const
 
 bool IdentityManager_DB::Applications_DB::addWebLoginOriginURLToApplication(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &originUrl)
 {
-    Threads::Sync::Lock_RW lock(_parent->m_mutex);
+    std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
     bool result = _parent->m_sqlConnector->qExecuteEx("INSERT INTO iam.applicationsWebLoginOrigins (`f_appName`, `originUrl`) VALUES (:appName, :originUrl);",
                                                       {{":appName", MAKE_VAR(STRING, appName)}, {":originUrl", MAKE_VAR(STRING, originUrl)}});
     if (result)
@@ -627,7 +627,7 @@ bool IdentityManager_DB::Applications_DB::addWebLoginOriginURLToApplication(cons
 bool IdentityManager_DB::Applications_DB::removeWebLoginOriginURLToApplication(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName,
                                                                                const std::string &originUrl)
 {
-    Threads::Sync::Lock_RW lock(_parent->m_mutex);
+    std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
     bool result = _parent->m_sqlConnector->qExecuteEx("DELETE FROM iam.applicationsWebLoginOrigins WHERE `f_appName`=:appName AND `originUrl`=:originUrl;",
                                                       {{":appName", MAKE_VAR(STRING, appName)}, {":originUrl", MAKE_VAR(STRING, originUrl)}});
     if (result)
@@ -639,7 +639,7 @@ bool IdentityManager_DB::Applications_DB::removeWebLoginOriginURLToApplication(c
 
 std::set<std::string> IdentityManager_DB::Applications_DB::listWebLoginOriginUrlsFromApplication(const std::string &appName)
 {
-    Threads::Sync::Lock_RD lock(_parent->m_mutex);
+    std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
 
     Abstract::STRING originUrl;
     std::set<std::string> originUrls;
@@ -656,7 +656,7 @@ std::set<std::string> IdentityManager_DB::Applications_DB::listWebLoginOriginUrl
 
 bool IdentityManager_DB::Applications_DB::updateWebLoginJWTConfigForApplication(const ClientDetails &clientDetails, const std::string &performedBy, const ApplicationTokenProperties &tokenInfo)
 {
-    Threads::Sync::Lock_RW lock(_parent->m_mutex);
+    std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
     bool result = _parent->m_sqlConnector->qExecuteEx("UPDATE iam.applicationsJWTTokenConfig SET "
                                                       "sessionInactivityTimeout=:sessionInactivityTimeout, "
                                                       "tokenType=:tokenType, includeApplicationScopes=:includeApplicationScopes, "
@@ -681,7 +681,7 @@ bool IdentityManager_DB::Applications_DB::updateWebLoginJWTConfigForApplication(
 
 ApplicationTokenProperties IdentityManager_DB::Applications_DB::getWebLoginJWTConfigFromApplication(const std::string &appName)
 {
-    Threads::Sync::Lock_RD lock(_parent->m_mutex);
+    std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
 
     ApplicationTokenProperties tokenInfo;
     tokenInfo.appName = appName;
@@ -714,14 +714,14 @@ ApplicationTokenProperties IdentityManager_DB::Applications_DB::getWebLoginJWTCo
 bool IdentityManager_DB::Applications_DB::setWebLoginJWTSigningKeyForApplication(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName,
                                                                                  const std::string &signingKey)
 {
-    Threads::Sync::Lock_RW lock(_parent->m_mutex);
+    std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
     return _parent->m_sqlConnector->qExecuteEx("UPDATE iam.applicationsJWTTokenConfig SET accessTokenSigningKey=:signingKey WHERE f_appName=:appName;",
                                                {{":appName", MAKE_VAR(STRING, appName)}, {":signingKey", MAKE_VAR(STRING, Helpers::Encoders::encodeToBase64Obf(signingKey, 0x8A376C54D999F187))}});
 }
 
 std::string IdentityManager_DB::Applications_DB::getWebLoginJWTSigningKeyForApplication(const std::string &appName)
 {
-    Threads::Sync::Lock_RD lock(_parent->m_mutex);
+    std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
     Abstract::STRING signingKey;
 
     if (_parent->m_sqlConnector->qSelectSingleRow("SELECT accessTokenSigningKey FROM iam.applicationsJWTTokenConfig WHERE f_appName=:appName;",
@@ -737,14 +737,14 @@ std::string IdentityManager_DB::Applications_DB::getWebLoginJWTSigningKeyForAppl
 bool IdentityManager_DB::Applications_DB::setWebLoginJWTValidationKeyForApplication(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName,
                                                                                     const std::string &validationKey)
 {
-    Threads::Sync::Lock_RW lock(_parent->m_mutex);
+    std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
     return _parent->m_sqlConnector->qExecuteEx("UPDATE iam.applicationsJWTTokenConfig SET accessTokenValidationKey=:validationKey WHERE f_appName=:appName;",
                                                {{":appName", MAKE_VAR(STRING, appName)}, {":validationKey", MAKE_VAR(STRING, Helpers::Encoders::encodeToBase64Obf(validationKey, 0x8A376C54D999F187))}});
 }
 
 std::string IdentityManager_DB::Applications_DB::getWebLoginJWTValidationKeyForApplication(const std::string &appName)
 {
-    Threads::Sync::Lock_RD lock(_parent->m_mutex);
+    std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
     Abstract::STRING validationKey;
 
     if (_parent->m_sqlConnector->qSelectSingleRow("SELECT accessTokenValidationKey FROM iam.applicationsJWTTokenConfig WHERE f_appName=:appName;",

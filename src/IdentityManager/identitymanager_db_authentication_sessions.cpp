@@ -18,7 +18,7 @@ using namespace Mantids30;
 
 uint32_t IdentityManager_DB::AuthController_DB::getAccountActiveSessionsCount(const std::string &accountUUID)
 {
-    Threads::Sync::Lock_RD lock(_parent->m_mutex);
+    std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
 
     time_t now = time(nullptr);
     Abstract::UINT32 count;
@@ -37,7 +37,7 @@ uint32_t IdentityManager_DB::AuthController_DB::getAccountActiveSessionsCount(co
 Json::Value IdentityManager_DB::AuthController_DB::searchAccountSessions(const std::string &accountUUID, const Json::Value &dataTablesFilters)
 {
     Json::Value ret;
-    Threads::Sync::Lock_RD lock(_parent->m_mutex);
+    std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
 
     ret["draw"] = dataTablesFilters["draw"];
 
@@ -82,19 +82,19 @@ Json::Value IdentityManager_DB::AuthController_DB::searchAccountSessions(const s
         while (i && i->isSuccessful() && i->step())
         {
             Json::Value row;
-            row["f_accountUUID"] = f_accountUUID.toJSON();
-            row["f_schemeId"] = f_schemeId.toJSON();
-            row["f_appName"] = f_appName.toJSON();
-            row["loginDateTime"] = loginDateTime.toJSON();
-            row["loginIP"] = loginIP.toJSON();
-            row["loginTLSCN"] = loginTLSCN.toJSON();
-            row["loginUserAgent"] = loginUserAgent.toJSON();
-            row["refresherTokenId"] = refresherTokenId.toJSON();
-            row["accessTokenId"] = accessTokenId.toJSON();
-            row["accessTokenExpiration"] = accessTokenExpiration.toJSON();
-            row["refreshTokenExpiration"] = refreshTokenExpiration.toJSON();
-            row["logoutDateTime"] = logoutDateTime.toJSON();
-            row["logoutReason"] = logoutReason.toJSON();
+            row["f_accountUUID"] = f_accountUUID.getValue();
+            row["f_schemeId"] = f_schemeId.getValue();
+            row["f_appName"] = f_appName.getValue();
+            row["loginDateTime"] = loginDateTime.getValue();
+            row["loginIP"] = loginIP.getValue();
+            row["loginTLSCN"] = loginTLSCN.getValue();
+            row["loginUserAgent"] = loginUserAgent.getValue();
+            row["refresherTokenId"] = refresherTokenId.getValue();
+            row["accessTokenId"] = accessTokenId.getValue();
+            row["accessTokenExpiration"] = accessTokenExpiration.getValue();
+            row["refreshTokenExpiration"] = refreshTokenExpiration.getValue();
+            row["logoutDateTime"] = logoutDateTime.getValue();
+            row["logoutReason"] = logoutReason.getValue();
 
             // Flag: session is still active?
             row["isActive"] = (logoutDateTime.isNull() && accessTokenExpiration.isInFuture() && refreshTokenExpiration.isInFuture());
@@ -114,7 +114,7 @@ Json::Value IdentityManager_DB::AuthController_DB::searchAccountSessions(const s
 
 void IdentityManager_DB::AuthController_DB::markExpiredAuthLogSessions()
 {
-    Threads::Sync::Lock_RW lock(_parent->m_mutex);
+    std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
 
     time_t now = time(nullptr);
 
