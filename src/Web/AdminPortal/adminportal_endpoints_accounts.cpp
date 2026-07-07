@@ -19,7 +19,7 @@ void AdminPortal_Endpoints_Accounts::addEndpoints_Accounts(const std::shared_ptr
 
     // Accounts:
     endpoints->addEndpoint(HTTP::Method::POST, "createAccount", SecurityRequirements::JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"}, nullptr, &createAccount);
-    endpoints->addEndpoint(HTTP::Method::GET, "doesAccountExist", SecurityRequirements::JWT_COOKIE_AUTH, {"ACCOUNT_READ"}, nullptr, &doesAccountExist);
+    endpoints->addEndpoint(HTTP::Method::GET, "getAccountDisplayName", SecurityRequirements::JWT_COOKIE_AUTH, {"ACCOUNT_READ"}, nullptr, &getAccountDisplayName);
     endpoints->addEndpoint(HTTP::Method::GET, "searchAccounts", SecurityRequirements::JWT_COOKIE_AUTH, {"ACCOUNT_READ"}, nullptr, &searchAccounts);
     endpoints->addEndpoint(HTTP::Method::GET, "getAccountDetailFieldsValues", SecurityRequirements::JWT_COOKIE_AUTH, {"ACCOUNT_READ"}, nullptr, &getAccountDetailFieldsValues);
     endpoints->addEndpoint(HTTP::Method::PUT, "updateAccountDetailFieldsValues", SecurityRequirements::JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"}, nullptr, &updateAccountDetailFieldsValues);
@@ -224,20 +224,23 @@ API::APIReturn AdminPortal_Endpoints_Accounts::changeAccountFlags(void *context,
     return response;
 }
 
-API::APIReturn AdminPortal_Endpoints_Accounts::doesAccountExist(void *context, const RequestContext &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortal_Endpoints_Accounts::getAccountDisplayName(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
     std::string accountUUID = Helpers::JSON::ASSTRING(*request.inputJSON, "accountUUID", "");
 
     if (accountUUID.empty())
     {
-        return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Account Name is Empty"};
+        return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Account UUID is required"};
     }
 
     if (!Globals::getIdentityManager()->accounts->doesAccountExist(accountUUID))
     {
         return {HTTP::Status::Code::S_404_NOT_FOUND, "not_found", "The Account does not exist in the system."};
     }
+
+    std::string displayName = Globals::getIdentityManager()->accounts->getAccountDisplayName(accountUUID);
+    (*response.responseJSON())["displayName"] = displayName;
     return response;
 }
 
