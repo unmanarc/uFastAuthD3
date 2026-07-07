@@ -178,7 +178,7 @@ var COMMON_PASSWORDS_SET = (function() {
  *   - valid: boolean
  *   - checks: array of { id, label, passed, failed }
  */
-function validatePasswordAgainstStrength(currentPassword, password, rules, username) {
+function validatePasswordAgainstStrength(currentPassword, password, rules, userLogins) {
     var checks = [];
 
     if (!rules || !rules.enabled) {
@@ -336,11 +336,16 @@ function validatePasswordAgainstStrength(currentPassword, password, rules, usern
         });
     }
 
-    // 11. Disallow Username (if username is provided in username)
-    if (rules.disallowUsername && username && password.length > 0) {
-        var userLower = username.toLowerCase();
+    // 11. Disallow Username (check against all user login identifiers)
+    if (rules.disallowUsername && userLogins && userLogins.length > 0 && password.length > 0) {
         var passLower = password.toLowerCase();
-        var passed = passLower.indexOf(userLower) === -1;
+        var passed = true;
+        for (var i = 0; i < userLogins.length; i++) {
+            if (passLower.indexOf(userLogins[i].toLowerCase()) !== -1) {
+                passed = false;
+                break;
+            }
+        }
         checks.push({
             id: 'username',
             label: 'Must not contain username',

@@ -34,7 +34,7 @@ function validateChangePasswordFields() {
     // Strength validation (using shared function from credentials.js)
     var strengthResult = null;
     if (currentStrengthValidator && newPassword) {
-        strengthResult = validatePasswordAgainstStrength(currentPassword, newPassword, currentStrengthValidator, username);
+        strengthResult = validatePasswordAgainstStrength(currentPassword, newPassword, currentStrengthValidator, [username]);
         renderStrengthChecklist(strengthResult, 'changePasswordStrengthItems', null, true);
         // Show the outer wrapper when displaying strength checklist
         $('#changePasswordStrengthChecklist').removeClass('d-none');
@@ -128,7 +128,7 @@ function submitChangePassword() {
 
     // Final strength validation check (using shared function from credentials.js)
     if (currentStrengthValidator) {
-        var strengthResult = validatePasswordAgainstStrength(currentPassword, newPassword, currentStrengthValidator, username);
+        var strengthResult = validatePasswordAgainstStrength(currentPassword, newPassword, currentStrengthValidator, [username]);
         if (!allStrengthRequirementsMet(strengthResult)) {
             updateTextMessage('Error: Password does not meet all strength requirements.');
             return;
