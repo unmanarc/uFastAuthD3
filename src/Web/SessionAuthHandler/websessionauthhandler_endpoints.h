@@ -25,6 +25,7 @@ public:
 
     // Remote triggered:
     static APIReturn refreshAccessToken(void *context, const RequestContext &request, ClientDetails &authClientDetails);
+    static APIReturn getUserPublicData(void *context, const RequestContext &request, ClientDetails &authClientDetails);
     static APIReturn getApplicationLoginPublicData(void *context, const RequestContext &request, ClientDetails &authClientDetails);
     static APIReturn appLogout(void *context, const RequestContext &request, ClientDetails &authClientDetails);
     static APIReturn callback(void *context, const RequestContext &request, ClientDetails &authClientDetails);

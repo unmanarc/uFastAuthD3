@@ -11,11 +11,12 @@
 
 #include <boost/algorithm/string.hpp>
 #include <json/value.h>
+#include <regex>
 #include <string>
 
 #include "IdentityManager/ds_authentication.h"
-#include <Mantids30/API_EndpointsAndSessions/api_options_handler.h>
 #include "globals.h"
+#include <Mantids30/API_EndpointsAndSessions/api_options_handler.h>
 
 using namespace Mantids30;
 using namespace Mantids30::Program;
@@ -30,6 +31,7 @@ void WebSessionAuthHandler_Endpoints::addEndpoints(const std::shared_ptr<Endpoin
     endpoints->addEndpoint(HTTP::Method::GET, "getLogoutCallbackURL", SecurityRequirements::NONE, {}, nullptr, &getLogoutCallbackURL);
     endpoints->addEndpoint(HTTP::Method::POST, "refreshAccessToken", SecurityRequirements::NONE, {}, nullptr, &refreshAccessToken);                      // Using refresh token auth.
     endpoints->addEndpoint(HTTP::Method::GET, "getApplicationLoginPublicData", SecurityRequirements::NONE, {}, nullptr, &getApplicationLoginPublicData); // Using refresh token auth.
+    endpoints->addEndpoint(HTTP::Method::GET, "getUserPublicData", SecurityRequirements::JWT_COOKIE_AUTH, {}, nullptr, &getUserPublicData);              // Using refresh token auth.
     endpoints->addEndpoint(HTTP::Method::POST, "logout", SecurityRequirements::JWT_COOKIE_AUTH, {}, nullptr, &appLogout);
     endpoints->addEndpoint(HTTP::Method::POST, "callback", SecurityRequirements::NONE, {}, nullptr, &callback);
     endpoints->setEndpointOptions("callback", API::OptionsHandlerConfig().insertAllowedOrigin(Globals::pConfig.get<std::string>("AppVars.LoginPortalURL", "")).setAllowCredentials(true));
@@ -209,6 +211,37 @@ bool WebSessionAuthHandler_Endpoints::validateAndDecodeRefreshToken(const std::s
     outData.tokenProps = tokenProps;
 
     return true;
+}
+
+WebSessionAuthHandler_Endpoints::APIReturn WebSessionAuthHandler_Endpoints::getUserPublicData(void *context, const RequestContext &request, ClientDetails &authClientDetails)
+{
+    Json::Value r;
+
+    std::string userUUID = request.jwtToken->getSubject();
+
+    IdentityManager *identityManager = Globals::getIdentityManager();
+
+    // 1. Get all login identifiers (account names) for this user
+    std::set<std::string> accountNames = identityManager->accounts->getAccountNamesByAccountUUID(userUUID);
+    Json::Value loginsArray(Json::arrayValue);
+    for (const auto &name : accountNames)
+    {
+        loginsArray.append(name);
+    }
+    r["logins"] = loginsArray;
+
+    // 2-4. Get the display name from the identity manager
+    r["displayName"] = identityManager->accounts->getAccountDisplayName(userUUID);
+
+    // 5. Account expiration information
+    time_t expirationTime = identityManager->accounts->getAccountExpirationTime(userUUID);
+    r["accountExpiration"] = expirationTime;
+
+    // 6. Account creation time
+    time_t creationTime = identityManager->accounts->getAccountCreationTime(userUUID);
+    r["accountCreation"] = creationTime;
+
+    return r;
 }
 
 WebSessionAuthHandler_Endpoints::APIReturn WebSessionAuthHandler_Endpoints::getApplicationLoginPublicData(void *context, const RequestContext &request, ClientDetails &authClientDetails)
