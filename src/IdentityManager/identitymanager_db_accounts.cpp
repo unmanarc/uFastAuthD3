@@ -467,10 +467,14 @@ Json::Value IdentityManager_DB::Accounts_DB::searchAccounts(const Json::Value &d
     )";
 
     // Add WHERE clause for search term if provided
+    // Search by accountUUID OR by any account detail field value
     if (!searchValue.empty())
     {
         searchValue = "%" + searchValue + "%";
-        whereFilters += "accountUUID LIKE :SEARCHWORDS";
+        whereFilters += "(iam.accounts.accountUUID LIKE :SEARCHWORDS OR EXISTS ("
+                        "SELECT 1 FROM iam.accountDetailValues vadv "
+                        "WHERE vadv.f_accountUUID = iam.accounts.accountUUID "
+                        "AND vadv.value LIKE :SEARCHWORDS2))";
     }
 
     {
@@ -483,7 +487,7 @@ Json::Value IdentityManager_DB::Accounts_DB::searchAccounts(const Json::Value &d
         std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelectWithFilters(
             sqlQueryStr,
             whereFilters,
-            {{":SEARCHWORDS", MAKE_VAR(STRING, searchValue)}},
+            {{":SEARCHWORDS", MAKE_VAR(STRING, searchValue)}, {":SEARCHWORDS2", MAKE_VAR(STRING, searchValue)}},
             {&accountUUID, &creation, &expiration, &lastLogin, &lastChange, &isAdmin, &isEnabled, &isBlocked, &isAccountConfirmed, &creator, &hasBlockedCredential},
             orderByStatement, // Order by
             limit,            // LIMIT
