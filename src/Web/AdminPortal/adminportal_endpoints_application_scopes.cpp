@@ -143,7 +143,7 @@ API::APIReturn AdminPortal_Endpoints_ApplicationsScopes::addApplicationScopeToRo
 
     if (!Globals::getIdentityManager()->applicationScopes->addApplicationScopeToRole(authClientDetails, request.jwtToken->getSubject(),
                                                                                   {Helpers::JSON::ASSTRING(*request.inputJSON, "appName", ""), Helpers::JSON::ASSTRING(*request.inputJSON, "scopeId", "")},
-                                                                                  Helpers::JSON::ASSTRING(*request.inputJSON, "roleId", "")))
+                                                                                  Helpers::JSON::ASSTRING(*request.inputJSON, "roleName", "")))
     {
         return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to add the application scope to the role."};
     }
@@ -156,7 +156,7 @@ API::APIReturn AdminPortal_Endpoints_ApplicationsScopes::removeApplicationScopeF
 
     if (!Globals::getIdentityManager()->applicationScopes->removeApplicationScopeFromRole(authClientDetails, request.jwtToken->getSubject(),
                                                                                        {Helpers::JSON::ASSTRING(*request.inputJSON, "appName", ""), Helpers::JSON::ASSTRING(*request.inputJSON, "scopeId", "")},
-                                                                                       Helpers::JSON::ASSTRING(*request.inputJSON, "roleId", "")))
+                                                                                       Helpers::JSON::ASSTRING(*request.inputJSON, "roleName", "")))
     {
         return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Internal Error"};
     }

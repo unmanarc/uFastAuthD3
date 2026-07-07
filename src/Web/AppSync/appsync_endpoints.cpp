@@ -104,7 +104,7 @@ void AppSync_Endpoints::updateAppRoles(const std::string &appName, const std::st
 
     if (proposedRoles.isArray())
     {
-        std::set<std::string> proposedRoleIds;
+        std::set<std::string> proposedRoleNames;
         for (const Json::Value &role : proposedRoles)
         {
             std::string id = Helpers::JSON::ASSTRING(role, "id", "");
@@ -112,7 +112,7 @@ void AppSync_Endpoints::updateAppRoles(const std::string &appName, const std::st
             {
                 continue; // skip invalid entries
             }
-            proposedRoleIds.insert(id);
+            proposedRoleNames.insert(id);
             proposedRoleData[id] = role; // Store for scope processing
 
             std::string description = Helpers::JSON::ASSTRING(role, "description", "");
@@ -141,7 +141,7 @@ void AppSync_Endpoints::updateAppRoles(const std::string &appName, const std::st
         // Remove roles that are not in proposed list
         for (const ApplicationRole &currentRole : currentRoles)
         {
-            if (proposedRoleIds.find(currentRole.id) == proposedRoleIds.end())
+            if (proposedRoleNames.find(currentRole.id) == proposedRoleNames.end())
             {
                 LOG_APP->log2(__func__, "", ipAddress, Logs::LogLevel::INFO, "Removing role '%s' from application '%s'.", currentRole.id.c_str(), appName.c_str());
                 Globals::getIdentityManager()->applicationRoles->removeRole(clientDetails, performedBy, appName, currentRole.id);
@@ -152,7 +152,7 @@ void AppSync_Endpoints::updateAppRoles(const std::string &appName, const std::st
     // Process scopes for each role
     for (const auto &pair : proposedRoleData)
     {
-        const std::string &roleId = pair.first;
+        const std::string &roleName = pair.first;
         const Json::Value &roleData = pair.second;
 
         Json::Value roleScopes = roleData["scopes"];
@@ -160,7 +160,7 @@ void AppSync_Endpoints::updateAppRoles(const std::string &appName, const std::st
         {
             // Get current scopes assigned to this role
             std::set<std::string> currentScopeIdsForRole = Globals::getIdentityManager()
-                                                               ->applicationRoles->listApplicationScopesOnApplicationRole(appName, roleId); // This won't work correctly, need different approach
+                                                               ->applicationRoles->listApplicationScopesOnApplicationRole(appName, roleName); // This won't work correctly, need different approach
 
             // Collect proposed scope IDs
             std::set<std::string> proposedScopeIds;
@@ -177,8 +177,8 @@ void AppSync_Endpoints::updateAppRoles(const std::string &appName, const std::st
                         ApplicationScope appScope;
                         appScope.appName = appName;
                         appScope.id = scopeId;
-                        LOG_APP->log2(__func__, "", ipAddress, Logs::LogLevel::INFO, "Adding scope '%s' to role '%s' in application '%s'.", scopeId.c_str(), roleId.c_str(), appName.c_str());
-                        Globals::getIdentityManager()->applicationScopes->addApplicationScopeToRole(clientDetails, performedBy, appScope, roleId);
+                        LOG_APP->log2(__func__, "", ipAddress, Logs::LogLevel::INFO, "Adding scope '%s' to role '%s' in application '%s'.", scopeId.c_str(), roleName.c_str(), appName.c_str());
+                        Globals::getIdentityManager()->applicationScopes->addApplicationScopeToRole(clientDetails, performedBy, appScope, roleName);
                     }
                 }
             }
@@ -191,8 +191,8 @@ void AppSync_Endpoints::updateAppRoles(const std::string &appName, const std::st
                     ApplicationScope appScope;
                     appScope.appName = appName;
                     appScope.id = currentScopeId;
-                    LOG_APP->log2(__func__, "", ipAddress, Logs::LogLevel::INFO, "Removing scope '%s' from role '%s' in application '%s'.", currentScopeId.c_str(), roleId.c_str(), appName.c_str());
-                    Globals::getIdentityManager()->applicationScopes->removeApplicationScopeFromRole(clientDetails, performedBy, appScope, roleId);
+                    LOG_APP->log2(__func__, "", ipAddress, Logs::LogLevel::INFO, "Removing scope '%s' from role '%s' in application '%s'.", currentScopeId.c_str(), roleName.c_str(), appName.c_str());
+                    Globals::getIdentityManager()->applicationScopes->removeApplicationScopeFromRole(clientDetails, performedBy, appScope, roleName);
                 }
             }
         }

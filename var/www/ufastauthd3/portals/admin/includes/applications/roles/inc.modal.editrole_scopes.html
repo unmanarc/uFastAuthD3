@@ -67,7 +67,7 @@
       contentType: 'application/json',
       data: JSON.stringify({
         appName: currentApplication,
-        roleId: currentRole,
+        roleName: currentRole,
         scopeId: $("#applicationScopes").val().toUpperCase()
       }),
       success: function (response) {
@@ -86,7 +86,7 @@
       contentType: 'application/json',
       data: JSON.stringify({
         appName: currentApplication,
-        roleId: currentRole,
+        roleName: currentRole,
         scopeId: scopeName
       }),
       success: function (response) {

@@ -169,16 +169,16 @@
 
                                 document.getElementById(`applicationsDirectRoles-${appId}`).innerHTML += `
                                     <tr> 
-                                    <th scope="row" id=ulist-roleId-${appId}-${roleInternalId} width=20%></th>
+                                    <th scope="row" id=ulist-roleName-${appId}-${roleInternalId} width=20%></th>
                                     <td id=ulist-roleDescription-${appId}-${roleInternalId}></td>
                                     <td style="text-align: right;">
-                                        <input type=hidden id="ulist-roleIdByInternalId-${appId}-${roleInternalId}">
+                                        <input type=hidden id="ulist-roleNameByInternalId-${appId}-${roleInternalId}">
                                         <button type="button" class="btn btn-secondary btn-sm" onclick="javascript:removeApplicationRoleFromAccount(${appId},${roleInternalId});"><i class="fas fa-trash"></i></button>
                                     </td>
                                     </tr>`;
 
-                                document.getElementById(`ulist-roleIdByInternalId-${appId}-${roleInternalId}`).value = directRole["id"];
-                                $(`#ulist-roleId-${appId}-${roleInternalId}`).text(directRole["id"]);
+                                document.getElementById(`ulist-roleNameByInternalId-${appId}-${roleInternalId}`).value = directRole["id"];
+                                $(`#ulist-roleName-${appId}-${roleInternalId}`).text(directRole["id"]);
                                 $(`#ulist-roleDescription-${appId}-${roleInternalId}`).text(directRole["description"]);
                                 roleInternalId++;
                             }
@@ -258,7 +258,7 @@
             contentType: 'application/json',
             data: JSON.stringify({
                 appName: $(`#userapp-key-${appId}`).val(),
-                roleId: appItems.value,
+                roleName: appItems.value,
                 accountUUID: currentAccount
             }),
             success: function (response) {
@@ -269,14 +269,14 @@
     }
 
 
-    function removeApplicationRoleFromAccount(appId, roleId) {
+    function removeApplicationRoleFromAccount(appId, roleName) {
         $.ajax({
             url: '/api/v1/removeApplicationRoleFromAccount',
             type: 'DELETE',
             contentType: 'application/json',
             data: JSON.stringify({
                 appName: document.getElementById(`userapp-key-${appId}`).value,
-                roleId: document.getElementById(`ulist-roleIdByInternalId-${appId}-${roleId}`).value,
+                roleName: document.getElementById(`ulist-roleNameByInternalId-${appId}-${roleName}`).value,
                 accountUUID: currentAccount
             }),
             success: function (response) {

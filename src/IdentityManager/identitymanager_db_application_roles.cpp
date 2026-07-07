@@ -139,16 +139,16 @@ std::set<ApplicationRole> IdentityManager_DB::ApplicationRoles_DB::getApplicatio
     std::set<ApplicationRole> ret;
     Threads::Sync::Lock_RD lock(_parent->m_mutex);
 
-    Abstract::STRING roleId, description;
+    Abstract::STRING roleName, description;
     std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelect("SELECT `roleName`,`roleDescription` FROM iam.applicationRoles WHERE `f_appName`=:appName;", {{":appName", MAKE_VAR(STRING, appName)}},
-                                                                {&roleId, &description});
+                                                                {&roleName, &description});
     while (i && i->isSuccessful() && i->step())
     {
         ApplicationRole r;
 
         r.appName = appName;
         r.description = description.getValue();
-        r.id = roleId.getValue();
+        r.id = roleName.getValue();
 
         ret.insert(r);
     }
