@@ -377,12 +377,27 @@ function validatePasswordAgainstStrength(currentPassword, password, rules, userL
 
 /**
  * Check if all strength requirements are met from a validation result.
+ * Logs detailed explanation to console when requirements are not met.
  * @param {Object} result - result from validatePasswordAgainstStrength
  * @returns {boolean}
  */
 function allStrengthRequirementsMet(result) {
     if (!result || !result.checks || result.checks.length === 0) return true;
-    return result.valid;
+
+    if (result.valid) {
+        return true;
+    }
+
+    // Collect failed requirements
+    var failedChecks = result.checks.filter(function(c) { return !c.passed; });
+
+    // Log detailed explanation
+    console.log('⚠️  The password does not meet the following strength requirements:');
+    for (var i = 0; i < failedChecks.length; i++) {
+        console.log('   • ' + failedChecks[i].label);
+    }
+
+    return false;
 }
 
 /**
