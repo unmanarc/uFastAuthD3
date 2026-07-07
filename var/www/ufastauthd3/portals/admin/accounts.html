@@ -199,18 +199,18 @@
         orderable: false,
         searchable: false,
         render: function (data, type, row) {
-          let b64AccountName = window.btoa(row.accountUUID);
+          let b64AccountUUID = window.btoa(row.accountUUID);
           let buttons = '<div style="text-align: right;">';
 
           // Dismiss Inactivity button (only show if inactive)
           if (row.DT_RowData.isInactive === true) {
-            buttons += `<button type="button" class="btn btn-warning btn-sm me-1" onclick="dismissInactivity('${b64AccountName}')" title="Dismiss Inactivity">
+            buttons += `<button type="button" class="btn btn-warning btn-sm me-1" onclick="dismissInactivity('${b64AccountUUID}')" title="Dismiss Inactivity">
                         <i class="fas fa-check-double"></i>
                       </button>`;
           }
 
           // Edit button
-          buttons += `<button type="button" class="btn btn-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#modalEditAccount" onclick="loadAndEditAccount('${b64AccountName}')">
+          buttons += `<button type="button" class="btn btn-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#modalEditAccount" onclick="loadAndEditAccount('${b64AccountUUID}')">
                       <i class="fas fa-edit"></i>
                       </button>`;
 
@@ -221,8 +221,8 @@
     ]
   });
 
-  function dismissInactivity(b64AccountName) {
-    var accountUUID = window.atob(b64AccountName);
+  function dismissInactivity(b64AccountUUID) {
+    var accountUUID = window.atob(b64AccountUUID);
     showYesNoDialog("Do you really want to dismiss inactivity for account '" + accountUUID + "'?", function (result) {
       if (result) {
         $.ajax({

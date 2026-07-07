@@ -68,9 +68,17 @@
         searchable: false
       },
       {
-        data: "appCreatorAccountUUID",
+        data: null,
         title: "Created by",
-        searchable: false
+        searchable: false,
+        render: function (data, type, row) {
+          var a = document.createElement('a');
+          var displayName = row.DT_RowData.appCreatorDisplayName || 'SYSTEM';
+          var b64Uuid = window.btoa(row.DT_RowData.appCreatorAccountUUID);
+          a.href = '/accounts?edit=' + b64Uuid;
+          a.appendChild(document.createTextNode(displayName));
+          return a.outerHTML;
+        }
       },
       {
         data: null,
