@@ -221,6 +221,10 @@
     ]
   });
 
+
+
+
+
   function dismissInactivity(b64AccountUUID) {
     var accountUUID = window.atob(b64AccountUUID);
     showYesNoDialog("Do you really want to dismiss inactivity for account '" + accountUUID + "'?", function (result) {
@@ -251,3 +255,25 @@
 
 <!--<%include:/includes/inc.layout.leftpanel.footer.html%>-->
 <!--<%include:/includes/inc.main.footer.html%>-->
+
+
+
+<script>
+    // Check for 'edit' URL parameter on page load and open edit modal immediately
+  
+    const urlParams = new URLSearchParams(window.location.search);
+    const editUUID = urlParams.get('edit');
+    if (editUUID) 
+    {
+      // Open modal immediately, load account data in background
+      const modalElement = document.getElementById('modalEditAccount');
+      if (modalElement) 
+      {
+        const modal = new bootstrap.Modal(modalElement);
+        modal.show();
+        // Load account data in background and populate the modal when ready
+        loadAndEditAccount(editUUID);
+      }
+    }
+</script>
+
