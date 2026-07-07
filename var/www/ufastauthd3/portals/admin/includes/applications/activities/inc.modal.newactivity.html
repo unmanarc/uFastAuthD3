@@ -34,7 +34,7 @@
             success: function (response, textStatus, xhr) {
                 $('#modalCreateActivity').modal('hide');
                 refreshActivities();
-                showToastSuccess("Activity created successfully.");
+                showTextToastSuccess("Activity created successfully.");
                 closeCreateActivityModal();
             },
             error: commonFunctionError

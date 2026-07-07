@@ -178,13 +178,13 @@
                             appKey: key
                         }),
                         success: function (response, textStatus, xhr) {
-                            showToastSuccess("Application details updated successfully.");
+                            showTextToastSuccess("Application details updated successfully.");
                             discardApplicationDetails();
                         },
                         error: commonFunctionError
                     });
                 } else {
-                    showToastSuccess("Application details updated successfully.");
+                    showTextToastSuccess("Application details updated successfully.");
                     discardApplicationDetails();
                 }
             },

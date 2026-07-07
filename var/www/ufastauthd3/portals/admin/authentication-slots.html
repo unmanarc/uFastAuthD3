@@ -53,7 +53,7 @@
 
     function deleteAuthSlot(slotId) {
 
-        showYesNoDialog("<b>WARNING:</b> Removing this slot will <u>permanently delete</u> your entire password database and authentication data. This action is <i>irreversible</i> and cannot be undone.", function (result) {
+        showYesNoHTMLDialog("<b>WARNING:</b> Removing this slot will <u>permanently delete</u> your entire password database and authentication data. This action is <i>irreversible</i> and cannot be undone.", function (result) {
             $.ajax({
                 url: '/api/v1/deleteAuthenticationSlot',
                 type: 'DELETE',
@@ -63,7 +63,7 @@
                 }),
                 success: function (response, textStatus, xhr) {
                     populateTable();
-                    showToastSuccess("Slot removed successfully.");
+                    showTextToastSuccess("Slot removed successfully.");
                 },
                 error: commonFunctionError
             });

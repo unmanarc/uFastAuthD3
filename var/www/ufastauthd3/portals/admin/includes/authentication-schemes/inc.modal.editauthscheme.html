@@ -20,7 +20,7 @@
         // Validar que al menos un slot sea opcional false
         const hasNonOptionalSlot = authSchemeSlots.some(slot => slot.optional === false);
         if (!hasNonOptionalSlot) {
-            showToastError("At least one slot must be marked as non-optional (not optional).");
+            showTextToastError("At least one slot must be marked as non-optional (not optional).");
             displayAuthSchemeSlots(schemeId);
             return;
         }
@@ -34,7 +34,7 @@
                 authSchemeSlots: authSchemeSlots
             }),
             success: function (response) {
-                showToastSuccess("Slots updated successfully.");
+                showTextToastSuccess("Slots updated successfully.");
                 displayAuthSchemeSlots(schemeId);
             },
             error: function (xhr, status, error) {
@@ -59,7 +59,7 @@
         if (!hasNonOptionalSlot) {
             // If all slots are optional, revert the change and show error
             slot.optional = false;
-            showToastError("At least one slot must be marked as non-optional (not optional).");
+            showTextToastError("At least one slot must be marked as non-optional (not optional).");
             // Update the checkbox to unchecked
             $(`#slotOptional-${slotId}`).prop('checked', false);
             return;
@@ -74,7 +74,7 @@
         // Find the slot to remove from authSchemeSlots
         let index = authSchemeSlots.findIndex(slot => slot.slotId === slotId);
         if (index === -1) {
-            showToastError("Slot not found in the scheme.");
+            showTextToastError("Slot not found in the scheme.");
             return;
         }
 
@@ -88,7 +88,7 @@
         let selectedSlotId = parseInt($("#selectAddSlot").val());
        
         if (isNaN(selectedSlotId)) {
-            showToastError("Please select a valid slot to add.");
+            showTextToastError("Please select a valid slot to add.");
             return;
         }
 
@@ -216,7 +216,7 @@
             }),
             success: function (response, textStatus, xhr) {
                 populateTable();
-                showToastSuccess("Scheme updated successfully.");
+                showTextToastSuccess("Scheme updated successfully.");
                 document.getElementById('modifyButtons').style.display = 'none';
             },
             error: commonFunctionError

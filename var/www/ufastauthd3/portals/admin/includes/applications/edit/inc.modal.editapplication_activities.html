@@ -32,7 +32,7 @@
         function deleteActivityFromApplication(internalId) {
             const activityName = $(`#ulist-activity-name-${internalId}`).text();
             
-            showYesNoDialog(`Are you sure you want to delete the activity?`, function (result) {
+            showYesNoHTMLDialog(`Are you sure you want to delete the activity?`, function (result) {
                 $.ajax({
                     url: '/api/v1/removeApplicationActivity',
                     type: 'DELETE',
@@ -43,7 +43,7 @@
                     }),
                     success: function (response) {
                         refreshActivities();
-                        showToastSuccess('Activity deleted successfully.');
+                        showTextToastSuccess('Activity deleted successfully.');
                     },
                     error: commonFunctionError
                 });

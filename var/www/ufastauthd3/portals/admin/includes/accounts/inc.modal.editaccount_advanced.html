@@ -23,7 +23,7 @@
 <script>
     function removeAccount() 
     {
-        showYesNoDialog("Do you really want to remove this account?", function (result) {
+        showYesNoHTMLDialog("Do you really want to remove this account?", function (result) {
             if (result) {
                 $.ajax({
                     url: '/api/v1/removeAccount',
@@ -33,7 +33,7 @@
                         accountUUID: currentAccountUUID
                     }),
                     success: function (response) {
-                        showToastSuccess("Account Successfully Removed.");
+                        showTextToastSuccess("Account Successfully Removed.");
                         // Refresh the DataTable after successful user deletion
                         var table = new DataTable('#accountsTable');
                         table.ajax.reload();

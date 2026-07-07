@@ -45,7 +45,7 @@
                 }),
                 success: function (response, textStatus, xhr) {
                     // Now update parent activity via PATCH
-                    showToastSuccess("Default scheme updated successfully.");
+                    showTextToastSuccess("Default scheme updated successfully.");
                     // Refresh the scheme table details.
                     //populateTable();
                 },
@@ -56,13 +56,13 @@
             });
         }
         else {
-            showToastError("Please select a default scheme.");
+            showTextToastError("Please select a default scheme.");
         }
     }
 
     function deleteAuthScheme(schemeId) {
 
-        showYesNoDialog("<b>WARNING:</b> Deleting this authentication scheme might cause <u>some applications to lose login functionality</u>. Affected apps may be unable to authenticate users or authorize access, potentially leading to <i>service disruptions</i>.", function (result) {
+        showYesNoHTMLDialog("<b>WARNING:</b> Deleting this authentication scheme might cause <u>some applications to lose login functionality</u>. Affected apps may be unable to authenticate users or authorize access, potentially leading to <i>service disruptions</i>.", function (result) {
             $.ajax({
                 url: '/api/v1/deleteAuthenticationScheme',
                 type: 'DELETE',
@@ -72,7 +72,7 @@
                 }),
                 success: function (response, textStatus, xhr) {
                     populateTable();
-                    showToastSuccess("Scheme removed successfully.");
+                    showTextToastSuccess("Scheme removed successfully.");
                 },
                 error: commonFunctionError
             });

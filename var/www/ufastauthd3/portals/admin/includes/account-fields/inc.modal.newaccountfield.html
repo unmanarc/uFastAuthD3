@@ -121,7 +121,7 @@
                     updateButton.innerText = "Update Field";
                     updateButton.onclick = function () {
 
-                        showYesNoDialog("<b>WARNING:</b> Updating this field will not verify the data already stored in the database against the new parameters. Existing data may become invalid or incompatible with the updated field settings.<br><br>Do you still want to update?", 
+                        showYesNoHTMLDialog("<b>WARNING:</b> Updating this field will not verify the data already stored in the database against the new parameters. Existing data may become invalid or incompatible with the updated field settings.<br><br>Do you still want to update?", 
                         function (result) {
                             ajaxCreateAccountField(true);
                         });
@@ -137,7 +137,7 @@
         // Validate field name to ensure it only contains letters, numbers, hyphens, or underscores
         const fieldNameRegex = /^[A-Za-z0-9_-]+$/;
         if (!fieldNameRegex.test(fieldName)) {
-            showToastError("Field name must contain only letters, numbers, hyphens, or underscores.");
+            showTextToastError("Field name must contain only letters, numbers, hyphens, or underscores.");
             return;
         }
 
@@ -186,7 +186,7 @@
                 table.ajax.reload();
 
                 // Show appropriate success message
-                showToastSuccess(isUpdate
+                showTextToastSuccess(isUpdate
                     ? "Field updated successfully."
                     : "Field created successfully.");
             },

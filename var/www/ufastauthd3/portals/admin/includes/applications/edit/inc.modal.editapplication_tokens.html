@@ -275,7 +275,7 @@
             contentType: 'application/json',
             data: JSON.stringify(getModifiedApplicationTokenConfig()),
             success: function (response, textStatus, xhr) {
-                showToastSuccess("Application token configuration updated successfully.");
+                showTextToastSuccess("Application token configuration updated successfully.");
                 ajaxValidateAndPopulateApplication();
             },
             error: commonFunctionError

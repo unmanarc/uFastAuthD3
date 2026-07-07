@@ -44,18 +44,18 @@
         try {
             var urlObj = new URL(appURL);
             if (urlObj.protocol !== 'https:') {
-                showToastError("URL must use HTTPS protocol");
+                showTextToastError("URL must use HTTPS protocol");
                 $("#appURLCreate").focus();
                 return false;
             }
             // Check that the URL has no path
             if (urlObj.pathname !== '/' || urlObj.search !== '' || urlObj.hash !== '') {
-                showToastError("URL must not contain a path, query parameters, or fragment");
+                showTextToastError("URL must not contain a path, query parameters, or fragment");
                 $("#appURLCreate").focus();
                 return false;
             }
         } catch (e) {
-            showToastError("Please enter a valid URL");
+            showTextToastError("Please enter a valid URL");
             $("#appURLCreate").focus();
             return false;
         }
@@ -85,7 +85,7 @@
                 var table = new DataTable('#applicationsTable');
                 table.ajax.reload();
 
-                showToastSuccess("Application created successfully.");
+                showTextToastSuccess("Application created successfully.");
             },
             error: commonFunctionError
         });

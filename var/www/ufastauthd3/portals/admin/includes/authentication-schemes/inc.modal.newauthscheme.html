@@ -19,7 +19,7 @@
             success: function (response, textStatus, xhr) {
                 $('#modalCreateAuthScheme').modal('hide');
                 populateTable();
-                showToastSuccess("Scheme created successfully.");
+                showTextToastSuccess("Scheme created successfully.");
             },
             error: commonFunctionError
         });

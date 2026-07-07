@@ -226,7 +226,7 @@
 
   function dismissInactivity(b64AccountUUID) {
     var accountUUID = window.atob(b64AccountUUID);
-    showYesNoDialog("Do you really want to dismiss inactivity for account '" + accountUUID + "'?", function (result) {
+    showYesNoHTMLDialog("Do you really want to dismiss inactivity for account '" + accountUUID + "'?", function (result) {
       if (result) {
         $.ajax({
           url: '/api/v1/extendAccountInactivity',
@@ -237,7 +237,7 @@
             validUntil: Math.floor(Date.now() / 1000) + (14 * 24 * 60 * 60)
           }),
           success: function (response) {
-            showToastSuccess("Inactivity dismissed for account " + accountUUID + ".");
+            showTextToastSuccess("Inactivity dismissed for account " + accountUUID + ".");
             var table = $('#accountsTable').DataTable();
             table.ajax.reload();
           },

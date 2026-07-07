@@ -200,7 +200,7 @@
             success: function (response, textStatus, xhr) {
                 $('#modalEditAuthSlot').modal('hide');
                 populateTable();
-                showToastSuccess("Slot updated successfully.");
+                showTextToastSuccess("Slot updated successfully.");
             },
             error: commonFunctionError
         });

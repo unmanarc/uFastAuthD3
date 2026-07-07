@@ -10,7 +10,7 @@
                 $("#modalCreateScope").modal('show');
             }
             function removeScopeFromApplication(scopeIdB64) {
-                showYesNoDialog("Are you sure you want to remove this scope?", function (result) {
+                showYesNoHTMLDialog("Are you sure you want to remove this scope?", function (result) {
                     let scopeId = window.atob(scopeIdB64);
                     $.ajax({
                         url: "/api/v1/removeApplicationScope",
@@ -23,7 +23,7 @@
                         success: function (response) {
                             var table = new DataTable('#scopesTable');
                             table.ajax.reload();
-                            showToastSuccess("Scope removed successfully.");
+                            showTextToastSuccess("Scope removed successfully.");
                         },
                         error: commonFunctionError
                     });

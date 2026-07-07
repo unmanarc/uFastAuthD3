@@ -247,7 +247,7 @@
         var appItems = document.getElementById(`applicationsRolesLeft-${appId}`);
         var selItem = appItems.selectedIndex;
         if (selItem == -1) {
-            showToastError('Please select an role');
+            showTextToastError('Please select an role');
             document.getElementById(`applicationsRolesLeft-${appId}`).focus();
             return;
         }
@@ -291,7 +291,7 @@
         var appItems = document.getElementById(`applicationsScopesLeft-${appId}`);
         var selItem = appItems.selectedIndex;
         if (selItem == -1) {
-            showToastError('Please select an scope');
+            showTextToastError('Please select an scope');
             document.getElementById(`applicationsScopesLeft-${appId}`).focus();
             return;
         }
@@ -314,7 +314,7 @@
 
     function removeAccountFromApplication(appId) {
         var appName = document.getElementById(`userapp-key-${appId}`).value;
-        showYesNoDialog("Do you really want to remove this application from the account?", function (result) {
+        showYesNoHTMLDialog("Do you really want to remove this application from the account?", function (result) {
             if (result) {
                 $.ajax({
                     url: '/api/v1/removeAccountFromApplication',
@@ -337,7 +337,7 @@
         var appItems = document.getElementById("applicationsLeft");
         var selItem = appItems.selectedIndex;
         if (selItem == -1) {
-            showToastError('Please select an application');
+            showTextToastError('Please select an application');
             document.getElementById("applicationsLeft").focus();
             return;
         }

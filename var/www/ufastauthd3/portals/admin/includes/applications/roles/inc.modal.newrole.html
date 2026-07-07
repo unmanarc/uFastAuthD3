@@ -36,7 +36,7 @@
                 // Refresh the DataTable after successful user creation
                 var table = new DataTable('#rolesTable');
                 table.ajax.reload();
-                showToastSuccess("Role created successfully.");
+                showTextToastSuccess("Role created successfully.");
                 closeCreateRoleModal();
             },
             error: commonFunctionError

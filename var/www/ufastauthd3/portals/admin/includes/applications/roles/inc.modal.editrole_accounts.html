@@ -42,7 +42,7 @@
   }
 
   function removeAccountFromRole(accountInternalId) {
-    showYesNoDialog("Do you really want to remove this account from the role?", function (result) {
+    showYesNoHTMLDialog("Do you really want to remove this account from the role?", function (result) {
       $.ajax({
         url: '/api/v1/removeAccountFromRole',
         type: 'DELETE',

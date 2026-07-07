@@ -10,7 +10,7 @@
                 $("#modalCreateRole").modal('show');
             }
             function removeRoleFromApplication(roleNameB64) {
-                showYesNoDialog("Are you sure you want to remove this role?", function (result) {
+                showYesNoHTMLDialog("Are you sure you want to remove this role?", function (result) {
                     let roleName = window.atob(roleNameB64);
                     $.ajax({
                         url: "/api/v1/removeRole",
@@ -23,7 +23,7 @@
                         success: function (response) {
                             var table = new DataTable('#rolesTable');
                             table.ajax.reload();
-                            showToastSuccess("Role removed successfully.");
+                            showTextToastSuccess("Role removed successfully.");
                         },
                         error: commonFunctionError
                     });

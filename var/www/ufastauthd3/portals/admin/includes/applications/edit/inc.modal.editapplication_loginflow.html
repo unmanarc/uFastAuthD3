@@ -164,7 +164,7 @@
                         redirectURI: redirectURI
                     }),
                     success: function (response, textStatus, xhr) {
-                        showToastSuccess("Default Redirect URI successfully updated.");
+                        showTextToastSuccess("Default Redirect URI successfully updated.");
                     },
                     error: function (xhr, status, error) {
                         populateApplication();
@@ -173,7 +173,7 @@
                 });
             }
             else {
-                showToastError("Please select a redirect URI.");
+                showTextToastError("Please select a redirect URI.");
             }
         }
 
@@ -211,7 +211,7 @@
 
             // Validate if redirect URI is not empty
             if (newRedirectURI.trim() === "") {
-                showToastError("Redirect URI cannot be empty.");
+                showTextToastError("Redirect URI cannot be empty.");
                 return;
             }
 
@@ -222,7 +222,7 @@
             if (embedded) {
                 // Embedded: accept https:// URLs or / paths
                 if (!newRedirectURI.startsWith('https://') && !newRedirectURI.startsWith('/')) {
-                    showToastError("Redirect URI must start with 'https://' or '/' (internal path) for embedded auth.");
+                    showTextToastError("Redirect URI must start with 'https://' or '/' (internal path) for embedded auth.");
                     return;
                 }
             } else {
@@ -230,12 +230,12 @@
                 try {
                     newURL = new URL(newRedirectURI);
                 } catch (e) {
-                    showToastError("Invalid URL format for redirect URI.");
+                    showTextToastError("Invalid URL format for redirect URI.");
                     return;
                 }
 
                 if (!newRedirectURI.toLowerCase().startsWith("https://")) {
-                    showToastError("Redirect URI must start with 'https://' for security reasons.");
+                    showTextToastError("Redirect URI must start with 'https://' for security reasons.");
                     return;
                 }
             }
@@ -250,7 +250,7 @@
                     redirectURI: newRedirectURI
                 }),
                 success: function (response, textStatus, xhr) {
-                    showToastSuccess("Application redirect URI added successfully.");
+                    showTextToastSuccess("Application redirect URI added successfully.");
                     document.getElementById("newWebLoginRedirectURI").value = "";
                     populateApplicationLoginFlow(response);
                 },
@@ -265,7 +265,7 @@
 
             // Validate if origin is not empty
             if (newOrigin.trim() === "") {
-                showToastError("Origin cannot be empty.");
+                showTextToastError("Origin cannot be empty.");
                 return;
             }
 
@@ -273,19 +273,19 @@
             try {
                 newURL = new URL(newOrigin);
             } catch (e) {
-                showToastError("Invalid URL format for origin.");
+                showTextToastError("Invalid URL format for origin.");
                 return;
             }
 
             // Validate if origin has no path
             if (newURL.pathname !== "/" || newURL.search !== "" || newURL.hash !== "") {
-                showToastError("Origin must not contain a path, query string, or fragment.");
+                showTextToastError("Origin must not contain a path, query string, or fragment.");
                 return;
             }
 
             // Validate that the last byte of newOrigin is not "/"
             if (newOrigin.endsWith("/")) {
-                showToastError("Origin must not end with '/'.");
+                showTextToastError("Origin must not end with '/'.");
                 return;
             }
 
@@ -295,7 +295,7 @@
 
             // Validate if origin starts with https
             if (!newOrigin.toLowerCase().startsWith("https://")) {
-                showToastError("Origin must start with 'https://' for security reasons.");
+                showTextToastError("Origin must start with 'https://' for security reasons.");
                 return;
             }
 
@@ -309,7 +309,7 @@
                     loginOrigin: newOrigin
                 }),
                 success: function (response, textStatus, xhr) {
-                    showToastSuccess("Application origin added successfully.");
+                    showTextToastSuccess("Application origin added successfully.");
                     document.getElementById("newWebLoginOrigin").value = "";
                     populateApplicationLoginFlow(response);
                 },
@@ -330,7 +330,7 @@
                     loginOrigin: originToRemove
                 }),
                 success: function (response, textStatus, xhr) {
-                    showToastSuccess("Application origin removed successfully.");
+                    showTextToastSuccess("Application origin removed successfully.");
                     populateApplicationLoginFlow(response);
                 },
                 error: commonFunctionError
@@ -350,7 +350,7 @@
                     redirectURI: redirectURIToRemove
                 }),
                 success: function (response, textStatus, xhr) {
-                    showToastSuccess("Application redirect URI removed successfully.");
+                    showTextToastSuccess("Application redirect URI removed successfully.");
                     populateApplicationLoginFlow(response);
                 },
                 error: commonFunctionError
@@ -382,7 +382,7 @@
             if (embedded) {
                 // Embedded: accept https:// URLs or / paths
                 if (!callbackURI.startsWith('https://') && !callbackURI.startsWith('/')) {
-                    showToastError("Callback URI must start with 'https://' or '/' (internal path) for embedded auth.");
+                    showTextToastError("Callback URI must start with 'https://' or '/' (internal path) for embedded auth.");
                     return;
                 }
             } else {
@@ -390,12 +390,12 @@
                 try {
                     new URL(callbackURI);
                 } catch (e) {
-                    showToastError("Invalid URL format for callback URI.");
+                    showTextToastError("Invalid URL format for callback URI.");
                     return;
                 }
 
                 if (!callbackURI.toLowerCase().startsWith("https://")) {
-                    showToastError("Callback URI must start with 'https://' for security reasons.");
+                    showTextToastError("Callback URI must start with 'https://' for security reasons.");
                     return;
                 }
             }
@@ -411,7 +411,7 @@
                     callbackURI: callbackURI
                 }),
                 success: function (response, textStatus, xhr) {
-                    showToastSuccess("Application callback URI updated successfully.");
+                    showTextToastSuccess("Application callback URI updated successfully.");
                     discardLoginCallbackURIDetails();
                     populateApplicationLoginFlow(response);
                 },

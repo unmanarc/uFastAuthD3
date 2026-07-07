@@ -57,7 +57,7 @@
                 }),
                 success: function (response, textStatus, xhr) {
                     // Now update parent activity via PATCH
-                    showToastSuccess("Default scheme updated successfully.");
+                    showTextToastSuccess("Default scheme updated successfully.");
                     // Refresh the activity details.
                     discardActivityDetails();
                     // Refresh Activities List (in the parent dialog)
@@ -67,7 +67,7 @@
             });
         }
         else {
-            showToastError("Please select a default scheme.");
+            showTextToastError("Please select a default scheme.");
         }
     
 
@@ -88,7 +88,7 @@
                 }),
                 success: function (response, textStatus, xhr) {
                     // Now update parent activity via PATCH
-                    showToastSuccess("Scheme added successfully.");
+                    showTextToastSuccess("Scheme added successfully.");
                     // Refresh the activity details.
                     discardActivityDetails();
                     // Refresh Activities List (in the parent dialog)
@@ -98,7 +98,7 @@
             });
         }
         else {
-            showToastError("Please select a scheme.");
+            showTextToastError("Please select a scheme.");
         }
     }
 
@@ -115,7 +115,7 @@
             }),
             success: function (response, textStatus, xhr) {
                 // Now update parent activity via PATCH
-                showToastSuccess("Scheme removed successfully.");
+                showTextToastSuccess("Scheme removed successfully.");
                 // Refresh the activity details.
                 discardActivityDetails();
                 // Refresh Activities List (in the parent dialog)

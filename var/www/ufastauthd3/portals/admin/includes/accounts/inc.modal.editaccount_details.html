@@ -107,7 +107,7 @@
 
                             if (ok === true && !regexp.test(value)) {
 
-                                showToastError("Field '" + fieldName + "' does not match the required format.");
+                                showTextToastError("Field '" + fieldName + "' does not match the required format.");
                                 throw new Error("Validation failed for field '" + fieldName + "'");
                             }
                         }
@@ -156,7 +156,7 @@
                         }
                     }),
                     success: function (response, textStatus, xhr) {
-                        showToastSuccess("Account details updated successfully.");
+                        showTextToastSuccess("Account details updated successfully.");
                         // Reload everything.
                         realoadAccountDetails();
                         // Refresh the DataTable after attribs change

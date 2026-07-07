@@ -60,7 +60,7 @@
             success: function (response, textStatus, xhr) {
                 $('#modalCreateAuthSlot').modal('hide');
                 populateTable();
-                showToastSuccess("Slot created successfully.");
+                showTextToastSuccess("Slot created successfully.");
             },
             error: commonFunctionError
         });

@@ -76,7 +76,7 @@
               }
 
               if (ok === true && !regexp.test(value)) {
-                showToastError("Field '" + fieldName + "' does not match the required format.");
+                showTextToastError("Field '" + fieldName + "' does not match the required format.");
                 throw new Error("Validation failed for field '" + fieldName + "'");
               }
             }
@@ -109,7 +109,7 @@
       }),
       success: function (response, textStatus, xhr) {
         realoadAccountDetails();
-        showToastSuccess("Account details updated successfully.");
+        showTextToastSuccess("Account details updated successfully.");
 
       },
       error: function (xhr, status, error) {

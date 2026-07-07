@@ -160,12 +160,12 @@
         var pwdCheck = checkPasswordReq($("#newpass0").val(), 12);
 
         if ($("#newpass0").val() != $("#newpass1").val()) {
-            showToastError("Password does not match.");
+            showTextToastError("Password does not match.");
             $("#newpass0").focus();
             return;
         }
         else if (pwdCheck != "") {
-            showToastError(pwdCheck);
+            showTextToastError(pwdCheck);
             $("#newpass0").focus();
             return;
         }
@@ -197,7 +197,7 @@
                 var table = new DataTable('#accountsTable');
                 table.ajax.reload();
 
-                showToastSuccess("Account created successfully.");
+                showTextToastSuccess("Account created successfully.");
 
 
             },

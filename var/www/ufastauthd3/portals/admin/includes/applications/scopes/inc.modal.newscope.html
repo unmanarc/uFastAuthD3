@@ -36,7 +36,7 @@
                 // Refresh the DataTable after successful user creation
                 var table = new DataTable('#scopesTable');
                 table.ajax.reload();
-                showToastSuccess("Scope created successfully.");
+                showTextToastSuccess("Scope created successfully.");
                 closeCreateScopeModal();
             },
             error: commonFunctionError
