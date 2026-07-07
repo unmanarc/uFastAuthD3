@@ -1,5 +1,5 @@
 <script>
-    let currentAccount = "";
+    let currentAccountUUID = "";
 </script>
 
 <div class="modal fade" id="modalEditAccount" data-bs-backdrop="static" data-bs-keyboard="true" tabindex="-1"
@@ -10,7 +10,7 @@
                 <button type="button" class="btn btn-sm btn-outline-secondary me-2" onclick="refreshAccount()" title="Refresh">
                     <i class="fa fa-refresh"></i>
                 </button>
-                <h5 class="modal-title" id="modalEditAccountLabel">Edit User Account - <b><span id="editAccountName"></span></b></h5>
+                <h5 class="modal-title" id="modalEditAccountLabel">Edit User Account - <b><span id="editAccountDisplayName"></span></b></h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
@@ -69,13 +69,13 @@
 
     function ajaxValidateAndPopulateAccount() {
         $.ajax({
-            url: '/api/v1/doesAccountExist',
+            url: '/api/v1/getAccountDisplayName',
             type: 'GET',
             contentType: 'application/json',
-            data: JSON.stringify({ accountUUID: currentAccount }),
+            data: JSON.stringify({ accountUUID: currentAccountUUID }),
             success: function (response) 
             {
-                $(`#editAccountName`).text(currentAccount);
+                $(`#editAccountDisplayName`).text(response.displayName);
                 populateAccountDetails();
                 populateAccountApplications();
                 populateAccountCredentials();
@@ -85,9 +85,9 @@
     }
 
 
-    function loadAndEditAccount(b64AccountName) {
+    function loadAndEditAccount(b64AccountUUID) {
         // Decode Base64 to plain text
-        currentAccount = atob(b64AccountName);
+        currentAccountUUID = atob(b64AccountUUID);
 
         ajaxValidateAndPopulateAccount();
 

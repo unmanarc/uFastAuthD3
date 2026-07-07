@@ -30,10 +30,10 @@
                     type: 'DELETE',
                     contentType: 'application/json',
                     data: JSON.stringify({
-                        accountUUID: currentAccount
+                        accountUUID: currentAccountUUID
                     }),
                     success: function (response) {
-                        showToastSuccess("Account " + currentAccount + " successfully removed.");
+                        showToastSuccess("Account Successfully Removed.");
                         // Refresh the DataTable after successful user deletion
                         var table = new DataTable('#accountsTable');
                         table.ajax.reload();
