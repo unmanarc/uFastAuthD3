@@ -90,7 +90,7 @@
                     label.setAttribute("for", "detailField_" + fieldName);
                     label.innerText = fieldDescription + ":";
                     if (!isOptional) {
-                        label.innerHTML += " <span class='text-danger" >*</span > ";
+                        label.innerHTML += "<span class='text-danger'>*</span >";
                     }
                     labelCell.appendChild(label);
 
@@ -226,16 +226,16 @@
                 </div>
 
                 <table width=100% style=" border-spacing: 10px;   border-collapse: separate;">
-                    <tr>
-                        <td colspan="2" align="">
-                            <h6>Account Info</h6>
-                            <hr>
-                        </td>
-                    </tr>
 
                     <!-- Dynamic detail fields will be inserted here -->
                     <tbody id="detailFieldsContainer">
                     </tbody>
+
+                    <tr>
+                        <td colspan="2" align="">
+                        </td>
+                    </tr>
+
 
                     <tr>
                         <td colspan="2" align="">
