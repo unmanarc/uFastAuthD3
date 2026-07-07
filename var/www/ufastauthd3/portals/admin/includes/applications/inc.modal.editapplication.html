@@ -115,8 +115,8 @@
         // Remover clase active de todos
         allTabs.forEach(tab => tab.removeClass('active'));
 
-        // Remover clases show/active del contenido de tabs
-        $('.tab-pane').removeClass('show active');
+        // Remover clases show/active del contenido de tabs (solo en el modal de edición)
+        $('#myTabContent .tab-pane').removeClass('show active');
 
         // === STEP 2: Establecer details-tab como activo por defecto ===
         detailsTab.addClass('active');
