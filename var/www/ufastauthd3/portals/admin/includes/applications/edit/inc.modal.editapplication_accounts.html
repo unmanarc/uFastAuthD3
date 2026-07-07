@@ -49,26 +49,33 @@
 
     function setAccountAsApplicationAdmin(accountId) {
 
-        showYesNoDialog("<b>SECURITY ALERT:</b> Modifying administrator privileges can significantly impact system security and access controls. Confirm to proceed with this security-sensitive change.", function (result) {
+        showYesNoHTMLDialog(
+            "<b>SECURITY ALERT:</b> Modifying administrator privileges can significantly impact system security and access controls. Confirm to proceed with this security-sensitive change.",
+            function (result) {
 
-            let accountUUID = document.getElementById(`ulist-accountUUIDById-${accountId}`).value;
-            let isChecked = document.getElementById(`ulist-isAppAdmin-${accountId}`).checked;
-            var appName = currentApplication;
-            $.ajax({
-                url: '/api/v1/setAccountAsApplicationAdmin',
-                type: 'PATCH',
-                contentType: 'application/json',
-                data: JSON.stringify({
-                    accountUUID: accountUUID,
-                    appName: appName,
-                    isAppAdmin: isChecked
-                }),
-                success: function (response) {
-                    populateApplicationAccounts(reponse);
-                },
-                error: commonFunctionError
-            });
-        });
+                let accountUUID = document.getElementById(`ulist-accountUUIDById-${accountId}`).value;
+                let isChecked = document.getElementById(`ulist-isAppAdmin-${accountId}`).checked;
+                var appName = currentApplication;
+                $.ajax({
+                    url: '/api/v1/setAccountAsApplicationAdmin',
+                    type: 'PATCH',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        accountUUID: accountUUID,
+                        appName: appName,
+                        isAppAdmin: isChecked
+                    }),
+                    success: function (response) {
+                        populateApplicationAccounts(response);
+                    },
+                    error: commonFunctionError
+                });
+            },
+            function (result) {
+                // No callback - re-populate data from server to restore correct state
+                populateApplication();
+            }
+        );
 
     }
 
@@ -78,7 +85,7 @@
 
         let accountUUID = document.getElementById(`ulist-accountUUIDById-${accountId}`).value;
         var appName = currentApplication;
-        showYesNoDialog("Do you really want to remove this account from the application?", function (result) {
+        showYesNoHTMLDialog("Do you really want to remove this account from the application?", function (result) {
             if (result) {
                 $.ajax({
                     url: '/api/v1/removeAccountFromApplication',
