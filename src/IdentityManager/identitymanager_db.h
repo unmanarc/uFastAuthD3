@@ -34,7 +34,8 @@ public:
     class Accounts_DB : public Accounts
     {
     public:
-        Accounts_DB(IdentityManager_DB *parent) : Accounts(parent)
+        Accounts_DB(IdentityManager_DB *parent)
+            : Accounts(parent)
         {
             _parent = parent;
         }
@@ -50,7 +51,7 @@ public:
 
         // Account Management
         CreateAccountResult createAccount(time_t expirationDate, // Note: use 1 to create an expired account.
-                                          const AccountFlags &accountFlags, const ClientDetails &clientDetails, const std::string &performedBy, const std::map<std::string,ApplicationDef> &appDefs,
+                                          const AccountFlags &accountFlags, const ClientDetails &clientDetails, const std::string &performedBy, const std::map<std::string, ApplicationDef> &appDefs,
                                           const std::map<std::string, std::string> &detailFieldsValues) override;
 
         bool removeAccount(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountUUID) override;
@@ -69,6 +70,8 @@ public:
         std::set<std::string> listAccounts() override;
         std::set<std::string> listAdminAccounts() override;
         std::optional<std::string> getAccountUUIDByAccountName(const std::string &accountName) override;
+        std::set<std::string> getAccountNamesByAccountUUID(const std::string &accountUUID) override;
+        std::string getAccountDisplayName(const std::string &accountUUID) override;
 
         // Application Roles
         bool updateAccountApplicationRoles(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &accountUUID,

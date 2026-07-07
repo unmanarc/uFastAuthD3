@@ -1,13 +1,16 @@
 #include "IdentityManager/identitymanager.h"
 #include "identitymanager_db.h"
+#include "globals.h"
 #include <Mantids30/Helpers/json.h>
 
 #include <Mantids30/DB/transaction.h>
 #include <Mantids30/Helpers/datatables.h>
 #include <Mantids30/Helpers/random.h>
 #include <Mantids30/Threads/lock_shared.h>
+#include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/join.hpp>
 #include <boost/regex.hpp>
+#include <regex>
 #include <json/value.h>
 #include <optional>
 
@@ -211,9 +214,73 @@ bool IdentityManager_DB::Accounts_DB::disableAccount(const ClientDetails &client
                                                       {{":enabled", MAKE_VAR(BOOL, !disabled)}, {":accountUUID", MAKE_VAR(STRING, accountUUID)}});
     if (result)
     {
-        _parent->logSecurityEventOnAccounts(accountUUID, disabled ? SecurityEventAction::DISABLE : SecurityEventAction::ENABLE, disabled ? "Account disabled" : "Account enabled", performedBy,
+        _parent->logSecurityEventOnAccounts(accountUUID,
+                                            disabled ? SecurityEventAction::DISABLE : SecurityEventAction::ENABLE,
+                                            disabled ? "Account disabled" : "Account enabled",
+                                            performedBy,
                                             clientDetails);
     }
+    return result;
+}
+
+std::string IdentityManager_DB::Accounts_DB::getAccountDisplayName(const std::string &accountUUID)
+{
+    std::string userDisplayFormat = Globals::pConfig.get<std::string>("UserInfo.DisplayFormat", "{{USERNAME}}");
+
+    // Get account detail field values for template substitution
+    std::map<std::string, AccountDetailFieldValue> detailFieldValues = getAccountDetailFieldValues(accountUUID, AccountDetailsToShow::ALL);
+
+    // Build a map of field name -> value for regex replacement
+    std::map<std::string, std::string> fieldValuesMap;
+    for (const auto &[fieldName, fieldValue] : detailFieldValues)
+    {
+        if (fieldValue.value.has_value())
+        {
+            fieldValuesMap[fieldName] = fieldValue.value.value();
+        }
+        else
+        {
+            fieldValuesMap[fieldName] = "";
+        }
+    }
+
+    // Format the display name by replacing {{tagName}} with random placeholders,
+    // then resolve placeholders to actual values using boost::replace_all.
+    // This prevents field values containing {{...}} from being processed as tags.
+    static const std::regex tagRegex(R"(\{\{(\w+)\}\})");
+    std::regex_iterator<std::string::const_iterator> iter(userDisplayFormat.begin(), userDisplayFormat.end(), tagRegex);
+    std::regex_iterator<std::string::const_iterator> end;
+
+    std::map<std::string, std::string> placeholderToValue;
+    std::string result;
+    std::string::size_type lastPos = 0;
+    for (; iter != end; ++iter)
+    {
+        const auto &match = *iter;
+        std::size_t matchPos = static_cast<std::size_t>(match[0].first - userDisplayFormat.begin());
+        result.append(userDisplayFormat.substr(lastPos, matchPos - lastPos));
+        std::string tagName = match[1].str();
+        auto it = fieldValuesMap.find(tagName);
+        if (it != fieldValuesMap.end())
+        {
+            std::string placeholder = Helpers::Random::createRandomString(16);
+            placeholderToValue[placeholder] = it->second;
+            result.append(placeholder);
+        }
+        else
+        {
+            result.append(match[0].str()); // Leave unchanged if not found
+        }
+        lastPos = static_cast<std::size_t>(match[0].second - userDisplayFormat.begin());
+    }
+    result.append(userDisplayFormat.substr(lastPos));
+
+    // Resolve all placeholders with actual values
+    for (const auto &[placeholder, value] : placeholderToValue)
+    {
+        boost::replace_all(result, placeholder, value);
+    }
+
     return result;
 }
 
@@ -224,7 +291,8 @@ bool IdentityManager_DB::Accounts_DB::confirmAccount(const ClientDetails &client
     Abstract::STRING token;
 
     if (_parent->m_sqlConnector->qSelectSingleRow("SELECT `confirmationToken` FROM iam.accountsActivationToken WHERE `f_accountUUID`=:accountUUID LIMIT 1;",
-                                                  {{":accountUUID", MAKE_VAR(STRING, accountUUID)}}, {&token}))
+                                                  {{":accountUUID", MAKE_VAR(STRING, accountUUID)}},
+                                                  {&token}))
     {
         if (!token.getValue().empty() && token.getValue() == confirmationToken)
         {
@@ -259,7 +327,8 @@ AccountFlags IdentityManager_DB::Accounts_DB::getAccountFlags(const std::string 
     Abstract::BOOL enabled, confirmed, admin, blocked;
 
     if (_parent->m_sqlConnector->qSelectSingleRow("SELECT `isEnabled`,`isAccountConfirmed`,`isAdmin`,`isBlocked` FROM iam.accounts WHERE `accountUUID`=:accountUUID LIMIT 1;",
-                                                  {{":accountUUID", MAKE_VAR(STRING, accountUUID)}}, {&enabled, &confirmed, &admin, &blocked}))
+                                                  {{":accountUUID", MAKE_VAR(STRING, accountUUID)}},
+                                                  {&enabled, &confirmed, &admin, &blocked}))
     {
         r.enabled = enabled.getValue();
         r.confirmed = confirmed.getValue();
@@ -404,7 +473,6 @@ Json::Value IdentityManager_DB::Accounts_DB::searchAccounts(const Json::Value &d
         whereFilters += "accountUUID LIKE :SEARCHWORDS";
     }
 
-
     {
         Abstract::STRING accountUUID;
         Abstract::DATETIME creation, expiration, lastLogin, lastChange;
@@ -412,12 +480,14 @@ Json::Value IdentityManager_DB::Accounts_DB::searchAccounts(const Json::Value &d
         Abstract::STRING creator;
         Abstract::BOOL hasBlockedCredential;
 
-        std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelectWithFilters(sqlQueryStr, whereFilters, {{":SEARCHWORDS", MAKE_VAR(STRING, searchValue)}},
-                                                                               {&accountUUID, &creation, &expiration, &lastLogin, &lastChange, &isAdmin, &isEnabled, &isBlocked, &isAccountConfirmed,
-                                                                                &creator, &hasBlockedCredential},
-                                                                               orderByStatement, // Order by
-                                                                               limit,            // LIMIT
-                                                                               offset            // OFFSET
+        std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelectWithFilters(
+            sqlQueryStr,
+            whereFilters,
+            {{":SEARCHWORDS", MAKE_VAR(STRING, searchValue)}},
+            {&accountUUID, &creation, &expiration, &lastLogin, &lastChange, &isAdmin, &isEnabled, &isBlocked, &isAccountConfirmed, &creator, &hasBlockedCredential},
+            orderByStatement, // Order by
+            limit,            // LIMIT
+            offset            // OFFSET
         );
 
         while (i && i->isSuccessful() && i->step())
@@ -468,7 +538,8 @@ Json::Value IdentityManager_DB::Accounts_DB::searchAccounts(const Json::Value &d
             {
                 Abstract::DATETIME appLastLogin;
                 if (_parent->m_sqlConnector->qSelectSingleRow("SELECT lastLogin FROM logs.applicationAccess_accountLastLogin WHERE f_accountUUID=:accountUUID AND f_appName=:appName;",
-                                                              {{":accountUUID", MAKE_VAR(STRING, accountUUID)}, {":appName", MAKE_VAR(STRING, appName)}}, {&appLastLogin}))
+                                                              {{":accountUUID", MAKE_VAR(STRING, accountUUID)}, {":appName", MAKE_VAR(STRING, appName)}},
+                                                              {&appLastLogin}))
                 {
                     appObj["lastLogin"] = appLastLogin.toJSON();
                 }
@@ -479,6 +550,7 @@ Json::Value IdentityManager_DB::Accounts_DB::searchAccounts(const Json::Value &d
             }
             appsArray.append(appObj);
         }
+        row["displayName"] = getAccountDisplayName(accountUUID);
         row["applications"] = appsArray;
         row["DT_RowData"]["isInactive"] = _parent->authController->isAccountInactive(_parent->authController->getAccountLastAccess(accountUUID), row["DT_RowData"]["isAdmin"].asBool());
     }
@@ -529,7 +601,8 @@ std::set<ApplicationRole> IdentityManager_DB::Accounts_DB::getAccountApplication
         Abstract::STRING roleDescription;
         std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelect("SELECT ar.f_roleName, r.roleDescription FROM iam.applicationRolesAccounts ar LEFT JOIN iam.applicationRoles r ON "
                                                                     "ar.f_roleName = r.roleName AND ar.f_appName = r.f_appName WHERE ar.f_accountUUID=:accountUUID AND ar.f_appName = :appName;",
-                                                                    {{":accountUUID", MAKE_VAR(STRING, accountUUID)}, {":appName", MAKE_VAR(STRING, appName)}}, {&role, &roleDescription});
+                                                                    {{":accountUUID", MAKE_VAR(STRING, accountUUID)}, {":appName", MAKE_VAR(STRING, appName)}},
+                                                                    {&role, &roleDescription});
         while (i && i->isSuccessful() && i->step())
         {
             ApplicationRole appRole;
@@ -561,7 +634,8 @@ bool IdentityManager_DB::Accounts_DB::isThereAnotherAdmin(const std::string &acc
     return _parent->m_sqlConnector
         ->qSelectSingleRow("SELECT `isEnabled` FROM iam.accounts WHERE `accountUUID`!=:accountUUID and "
                            "`isAdmin`=:admin and `isEnabled`=:enabled and `isAccountConfirmed`=:confirmed LIMIT 1;",
-                           {{":accountUUID", MAKE_VAR(STRING, accountUUID)}, {":admin", MAKE_VAR(BOOL, true)}, {":enabled", MAKE_VAR(BOOL, true)}, {":confirmed", MAKE_VAR(BOOL, true)}}, {});
+                           {{":accountUUID", MAKE_VAR(STRING, accountUUID)}, {":admin", MAKE_VAR(BOOL, true)}, {":enabled", MAKE_VAR(BOOL, true)}, {":confirmed", MAKE_VAR(BOOL, true)}},
+                           {});
 }
 
 int32_t IdentityManager_DB::Accounts_DB::getAccountBlockTokenNoRenew(const std::string &accountUUID, std::string &token)
@@ -572,7 +646,8 @@ int32_t IdentityManager_DB::Accounts_DB::getAccountBlockTokenNoRenew(const std::
     Abstract::STRING blockToken;
     Abstract::DATETIME lastAccess;
 
-    if (_parent->m_sqlConnector->qSelectSingleRow("SELECT `blockToken`,`lastAccess` FROM iam.accountsBlockToken WHERE `f_accountUUID`=:accountUUID;", {{":accountUUID", MAKE_VAR(STRING, accountUUID)}},
+    if (_parent->m_sqlConnector->qSelectSingleRow("SELECT `blockToken`,`lastAccess` FROM iam.accountsBlockToken WHERE `f_accountUUID`=:accountUUID;",
+                                                  {{":accountUUID", MAKE_VAR(STRING, accountUUID)}},
                                                   {&blockToken, &lastAccess}))
     {
         if (lastAccess.getValue() + authenticationPolicy.blockTokenTimeout > time(nullptr))
@@ -668,7 +743,8 @@ std::optional<std::string> IdentityManager_DB::Accounts_DB::getAccountUUIDByAcco
               AND vadv.value = :accountName
             LIMIT 1
         )",
-        {{":accountName", MAKE_VAR(STRING, accountName)}}, {&accountUUID});
+        {{":accountName", MAKE_VAR(STRING, accountName)}},
+        {&accountUUID});
 
     if (r)
     {
@@ -680,4 +756,30 @@ std::optional<std::string> IdentityManager_DB::Accounts_DB::getAccountUUIDByAcco
     }
 
     return std::nullopt;
+}
+
+std::set<std::string> IdentityManager_DB::Accounts_DB::getAccountNamesByAccountUUID(const std::string &accountUUID)
+{
+    std::set<std::string> result;
+    Threads::Sync::Lock_RD lock(_parent->m_mutex);
+
+    // Query all login-identifier field values for the given accountUUID
+    Abstract::STRING value;
+    std::shared_ptr<Query> q = _parent->m_sqlConnector->qSelect(
+        R"(
+            SELECT vadv.value
+            FROM iam.accountDetailValues vadv
+            INNER JOIN iam.accountDetailFields vadf ON vadf.fieldName = vadv.f_fieldName
+            WHERE vadf.isLoginIdentifier = 1
+              AND vadv.f_accountUUID = :accountUUID
+        )",
+        {{":accountUUID", MAKE_VAR(STRING, accountUUID)}},
+        {&value});
+
+    while (q && q->isSuccessful() && q->step())
+    {
+        result.insert(value.getValue());
+    }
+
+    return result;
 }

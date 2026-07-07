@@ -84,6 +84,11 @@ public:
 
         // Lookup accountUUID by a login-identifier field value (e.g. email, username):
         virtual std::optional<std::string> getAccountUUIDByAccountName(const std::string &accountName) = 0;
+        // Get all account names (login identifiers) for a given account UUID:
+        virtual std::set<std::string> getAccountNamesByAccountUUID(const std::string &accountUUID) = 0;
+
+        // Get the formatted display name for an account based on the configured DisplayFormat template:
+        virtual std::string getAccountDisplayName(const std::string &accountUUID) = 0;
 
         // Account Removing/Disabling/...
         virtual bool removeAccount(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountUUID) = 0;
