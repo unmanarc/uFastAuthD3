@@ -61,7 +61,7 @@ function handleAuthorizeResponse(response, skipStrengthValidation) {
             var username = $("#username").val();
             
             if (strengthValidator && strengthValidator.enabled && currentPassword) {
-                var strengthResult = validatePasswordAgainstStrength('', currentPassword, strengthValidator, username);
+                var strengthResult = validatePasswordAgainstStrength('', currentPassword, strengthValidator, [username]);
                 if (!allStrengthRequirementsMet(strengthResult)) {
                     // Password is weak - check actionOnFailure policy
                     var actionOnFailure = strengthValidator.actionOnFailure;
