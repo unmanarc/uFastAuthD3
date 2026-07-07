@@ -357,7 +357,9 @@ Json::Value IdentityManager_DB::Applications_DB::searchApplications(const Json::
 
     // Build the SQL query with WHERE clause for DataTables search
     std::string sqlQueryStr = R"(
-        SELECT `appName`,`f_appCreatorAccountUUID`,`appDescription` FROM iam.applications
+        SELECT `appName`, `f_appCreatorAccountUUID`, `appDescription`,
+            (SELECT COUNT(*) FROM iam.applicationAccounts WHERE `f_appName` = iam.applications.`appName`) AS `registeredUsers`
+        FROM iam.applications
         )";
 
     // Add WHERE clause for search term if provided
@@ -369,10 +371,11 @@ Json::Value IdentityManager_DB::Applications_DB::searchApplications(const Json::
 
     {
         Abstract::STRING appName, appCreatorAccountUUID, appDescription;
+        Abstract::INT32 registeredUsers;
         std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelectWithFilters(sqlQueryStr,
                                                                                whereFilters,
                                                                                {{":SEARCHWORDS", MAKE_VAR(STRING, searchValue)}},
-                                                                               {&appName, &appCreatorAccountUUID, &appDescription},
+                                                                               {&appName, &appCreatorAccountUUID, &appDescription, &registeredUsers},
                                                                                orderByStatement, // Order by
                                                                                limit,            // LIMIT
                                                                                offset            // OFFSET
@@ -388,6 +391,8 @@ Json::Value IdentityManager_DB::Applications_DB::searchApplications(const Json::
             row["DT_RowData"]["appCreatorAccountUUID"] = appCreatorAccountUUID.toString();
             // appDescription
             row["appDescription"] = appDescription.toString();
+            // registeredUsers
+            row["registeredUsers"] = registeredUsers.getValue();
 
             ret["data"].append(row);
         }
