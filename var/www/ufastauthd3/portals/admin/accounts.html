@@ -68,10 +68,16 @@
     serverSide: true,
     columns: [
       {
-        data: "accountUUID",
-        title: "Account Name",
+        data: null,
+        title: "Display Name",
         render: function (data, type, row) {
-          return '<i class="fa-regular fa-circle-user"></i> &nbsp;&nbsp;' + data;
+          var span = document.createElement('span');
+          var icon = document.createElement('i');
+          icon.className = 'fa-regular fa-circle-user';
+          span.appendChild(icon);
+          span.appendChild(document.createTextNode(' '));
+          span.appendChild(document.createTextNode(row.displayName));
+          return span.outerHTML;
         }
       },
       {

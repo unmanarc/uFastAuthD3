@@ -9,8 +9,8 @@
 
 //<%jvar/ufad3_maxAge:maxAge%>//
 //<%jvar/ufad3_user:user%>//
-//<%jvar/ufad3_domain:domain%>//
 //<%jfunc/ufad3_loginMode:GET/v1/getApplicationLoginPublicData({})%>//
+//<%jfunc/ufad3_userPublicData:GET/v1/getUserPublicData({})%>//
 
 let maxAgeVar = ufad3_maxAge;
 let sessionTimeout = null;
