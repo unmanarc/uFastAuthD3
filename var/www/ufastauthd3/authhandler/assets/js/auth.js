@@ -8,9 +8,9 @@
  */
 
 //<%jvar/ufad3_maxAge:maxAge%>//
-//<%jvar/ufad3_user:user%>//
+//<%jvar/ufad3_accountUUID:user%>//
 //<%jfunc/ufad3_loginMode:GET/v1/getApplicationLoginPublicData({})%>//
-//<%jfunc/ufad3_userPublicData:GET/v1/getUserPublicData({})%>//
+//<%jfunc/ufad3_accountPublicData:GET/v1/getUserPublicData({})%>//
 
 let maxAgeVar = ufad3_maxAge;
 let sessionTimeout = null;
@@ -80,7 +80,7 @@ function retokenizeAccessToken() {
  */
 function logout() {
   // Check if login mode is EMBEDDED
-  if (ufad3_loginMode.body && ufad3_loginMode.body.mode === "EMBEDDED") {
+  if (ufad3_loginMode && ufad3_loginMode.body.mode === "EMBEDDED") {
     fetch('/auth/api/v1/logout', {
       method: 'POST',
     })

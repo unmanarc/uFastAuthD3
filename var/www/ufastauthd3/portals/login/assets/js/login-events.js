@@ -18,20 +18,20 @@ $(document).ready(function () {
         loggedInGETParsedParam = false;
     }
 
-    if (loginMode.body.app.name === null || loginMode.body.app.name === "") {
+    if (ufad3_loginMode.body.app.name === null || ufad3_loginMode.body.app.name === "") {
         // Override appName to IAM_USRPORTAL
         window.location.href = "./?app=IAM_USRPORTAL";
     }
-    appName = loginMode.body.app.name;
+    appName = ufad3_loginMode.body.app.name;
 
     // Set default "Keep me signed in" state based on session cookie configuration
     // If session cookies are used by default, user stays logged in automatically, so unchecked
     // If session cookies are NOT used by default, check it so user can choose to stay signed in
-    const useSessionCookiesByDefault = loginMode.body.app.session.useSessionCookiesByDefault;
+    const useSessionCookiesByDefault = ufad3_loginMode.body.app.session.useSessionCookiesByDefault;
     $("#keepAuthenticated").prop("checked", !useSessionCookiesByDefault);
 
-    $("#appDescription").text(loginMode.body.app.description).css("font-weight", "bold");
-    document.title = loginMode.body.app.description + " Login";
+    $("#appDescription").text(ufad3_loginMode.body.app.description).css("font-weight", "bold");
+    document.title = ufad3_loginMode.body.app.description + " Login";
 
     // Validate if 'redirectURI' exists and is a valid base64 string
     if (!encodedRedirectURI) {
