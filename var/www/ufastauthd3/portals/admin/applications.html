@@ -22,7 +22,7 @@
       <tr>
         <th scope="col">Application Name</th>
         <th scope="col">Description</th>
-        <th scope="col">Creator</th>
+        <th scope="col" style="text-align: right;">Creator</th>
         <th scope="col" style="text-align: right;">Controls&nbsp;</th>
       </tr>
     </thead>
@@ -68,9 +68,15 @@
         searchable: false
       },
       {
+        data: "registeredUsers",
+        title: "Registered Users",
+        searchable: false
+      },
+      {
         data: null,
         title: "Created by",
         searchable: false,
+        className: "text-end",
         render: function (data, type, row) {
           var a = document.createElement('a');
           var displayName = row.DT_RowData.appCreatorDisplayName || 'SYSTEM';
@@ -111,3 +117,25 @@
 
 <!--<%include:/includes/inc.layout.leftpanel.footer.html%>-->
 <!--<%include:/includes/inc.main.footer.html%>-->
+
+
+
+<script>
+    // Check for 'edit' URL parameter on page load and open edit modal immediately
+  
+    const urlParams = new URLSearchParams(window.location.search);
+    const editUUID = urlParams.get('edit');
+    if (editUUID) 
+    {
+      // Open modal immediately, load account data in background
+      const modalElement = document.getElementById('modalEditApplication');
+      if (modalElement) 
+      {
+        const modal = new bootstrap.Modal(modalElement);
+        modal.show();
+        // Load account data in background and populate the modal when ready
+        loadAndEditApplication(editUUID);
+      }
+    }
+</script>
+
