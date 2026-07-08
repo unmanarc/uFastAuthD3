@@ -1,4 +1,33 @@
 <script>
+    function updateFieldTypeIcon() {
+        var fieldType = document.getElementById("fieldType").value;
+        var icon = document.getElementById("fieldTypeIcon");
+        icon.className = 'fa-solid';
+        switch (fieldType) {
+            case 'TEXTLINE':
+                icon.classList.add('fa-font');
+                break;
+            case 'TEXTAREA':
+                icon.classList.add('fa-align-left');
+                break;
+            case 'PASSWORD':
+                icon.classList.add('fa-key');
+                break;
+            case 'EMAIL':
+                icon.classList.add('fa-envelope');
+                break;
+            case 'NUMBER':
+                icon.classList.add('fa-hashtag');
+                break;
+            case 'CHECKBOX':
+                icon.classList.add('fa-square-check');
+                break;
+            default:
+                icon.classList.add('fa-circle-info');
+                break;
+        }
+    }
+
     function updateIsUniqueState() {
         const isLoginIdentifier = document.getElementById("isLoginIdentifier");
         const isUnique = document.getElementById("isUnique");
@@ -23,6 +52,7 @@
         document.getElementById("fieldRegexpValidator").value = "";
         // Reset select dropdown
         document.getElementById("fieldType").selectedIndex = 0;
+        updateFieldTypeIcon();
 
         // Reset checkbox states to their original defaults
         /*      
@@ -100,6 +130,7 @@
                         }
                     }
                 }
+                updateFieldTypeIcon();
 
                 // Set checkbox states
                 document.getElementById("includeInToken").checked = response.extendedAttributes.visibility.includeInToken ?? false;
@@ -200,7 +231,7 @@
     <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="modalCreateAccountFieldLabel">Create New Accounts Field</h5>
+                <h5 class="modal-title" id="modalCreateAccountFieldLabel">Create New Account Field</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
@@ -213,9 +244,9 @@
                     </tr>
 
                     <tr>
-                        <td align="right">Field Name:</td>
+                        <td align="right">Field Key Name:</td>
                         <td><input type="text" name="fieldName" id="fieldName" class="form-control"
-                                placeholder="Field Name (letters, numbers, hyphens, underscores only)" required
+                                placeholder="Field Key Name (letters, numbers, hyphens, underscores only)" required
                                 oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9_-]/g, '')">
                         </td>
                     </tr>
@@ -233,14 +264,17 @@
                     <tr>
                         <td align="right">Field Type:</td>
                         <td>
-                            <select name="fieldType" id="fieldType" class="form-control">
-                                <option value="TEXTLINE">Text Line</option>
-                                <option value="TEXTAREA">Text Area</option>
-                                <option value="PASSWORD">Password</option>
-                                <option value="EMAIL">Email</option>
-                                <option value="NUMBER">Number</option>
-                                <option value="CHECKBOX">Checkbox (Boolean)</option>
-                            </select>
+                            <div class="d-flex align-items-center gap-2">
+                                <i id="fieldTypeIcon" class="fa-solid fa-font"></i>
+                                <select name="fieldType" id="fieldType" class="form-control" onchange="updateFieldTypeIcon()">
+                                    <option value="TEXTLINE">Text Line</option>
+                                    <option value="TEXTAREA">Text Area</option>
+                                    <option value="PASSWORD">Secret</option>
+                                    <option value="EMAIL">Email</option>
+                                    <option value="NUMBER">Number</option>
+                                    <option value="CHECKBOX">Checkbox (Boolean)</option>
+                                </select>
+                            </div>
                         </td>
                     </tr>
 
