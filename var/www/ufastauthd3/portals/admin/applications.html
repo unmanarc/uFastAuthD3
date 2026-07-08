@@ -78,12 +78,12 @@
         searchable: false,
         className: "text-end",
         render: function (data, type, row) {
-          var a = document.createElement('a');
           var displayName = row.DT_RowData.appCreatorDisplayName || 'SYSTEM';
+          if (displayName === 'SYSTEM') {
+            return '<strong>SYSTEM</strong>';
+          }
           var b64Uuid = window.btoa(row.DT_RowData.appCreatorAccountUUID);
-          a.href = '/accounts?edit=' + b64Uuid;
-          a.appendChild(document.createTextNode(displayName));
-          return a.outerHTML;
+          return '<a href="/accounts?edit=' + b64Uuid + '">' + displayName + '</a>';
         }
       },
       {
