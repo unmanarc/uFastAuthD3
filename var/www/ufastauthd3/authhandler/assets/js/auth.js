@@ -9,7 +9,7 @@
 
 //<%jvar/ufad3_maxAge:maxAge%>//
 //<%jvar/ufad3_accountUUID:user%>//
-//<%jfunc/ufad3_loginMode:GET/v1/getApplicationLoginPublicData({})%>//
+//<%jfunc/ufad3_applicationPublicData:GET/v1/getApplicationPublicData({})%>//
 //<%jfunc/ufad3_accountPublicData:GET/v1/getUserPublicData({})%>//
 
 let maxAgeVar = ufad3_maxAge;
@@ -80,7 +80,7 @@ function retokenizeAccessToken() {
  */
 function logout() {
   // Check if login mode is EMBEDDED
-  if (ufad3_loginMode && ufad3_loginMode.body.mode === "EMBEDDED") {
+  if (ufad3_applicationPublicData && ufad3_applicationPublicData.body.loginMode === "EMBEDDED") {
     fetch('/auth/api/v1/logout', {
       method: 'POST',
     })
@@ -175,3 +175,291 @@ function startSessionPublicDataMonitor() {
 
 // Start the SessionPublicData cookie monitor
 startSessionPublicDataMonitor();
+
+/**
+ * Session Inactivity Timeout System
+ * Monitors user activity and shows a warning overlay when the user is inactive.
+ * If the user does not respond, they will be logged out.
+ */
+(function() {
+    // Extract session configuration from ufad3_applicationPublicData
+    const sessionConfig = ufad3_applicationPublicData && 
+                          ufad3_applicationPublicData.body && 
+                          ufad3_applicationPublicData.body.session;
+    
+    const enableInactivityTimeout = sessionConfig && sessionConfig.enableInactivityTimeout;
+    const inactivityTimeoutSeconds = (sessionConfig && sessionConfig.inactivityTimeout) ? sessionConfig.inactivityTimeout : 30;
+    const inactivityGraceTime = (sessionConfig && sessionConfig.inactivityGraceTime) ? sessionConfig.inactivityGraceTime : 10;
+    
+    let inactivityTimer = null;
+    let graceTimer = null;
+    let graceTimeRemaining = inactivityGraceTime;
+    let isOverlayVisible = false;
+    
+    // Activity events to monitor
+    const activityEvents = [
+        'mousemove',
+        'mousedown',
+        'mouseup',
+        'keydown',
+        'keypress',
+        'keyup',
+        'scroll',
+        'touchstart',
+        'touchmove',
+        'click',
+        'wheel'
+    ];
+    
+    /**
+     * Creates and shows the inactivity warning overlay.
+     */
+    function showInactivityOverlay() {
+        if (isOverlayVisible) return;
+        isOverlayVisible = true;
+        graceTimeRemaining = inactivityGraceTime;
+        
+        // Create overlay element
+        const overlay = document.createElement('div');
+        overlay.id = 'ufad3-inactivity-overlay';
+        overlay.innerHTML = `
+            <div id="ufad3-inactivity-card">
+                <div class="ufad3-inactivity-icon">⏱️</div>
+                <h2 id="ufad3-inactivity-title">Session Expiring</h2>
+                <p id="ufad3-inactivity-message">Your session is about to expire due to inactivity. Do you want to stay in session?</p>
+                <div id="ufad3-inactivity-timer">
+                    <span id="ufad3-inactivity-countdown">${graceTimeRemaining}</span> seconds remaining
+                </div>
+                <div class="ufad3-inactivity-buttons">
+                    <button id="ufad3-stay-logged-in-btn" class="ufad3-btn ufad3-btn-primary">Yes, Stay Logged In</button>
+                    <button id="ufad3-logout-btn" class="ufad3-btn ufad3-btn-secondary">No, Log Out</button>
+                </div>
+            </div>
+        `;
+        
+        // Add CSS styles
+        if (!document.getElementById('ufad3-inactivity-styles')) {
+            const style = document.createElement('style');
+            style.id = 'ufad3-inactivity-styles';
+            style.textContent = `
+                #ufad3-inactivity-overlay {
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background-color: rgba(0, 0, 0, 0.7);
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    z-index: 999999;
+                }
+                
+                #ufad3-inactivity-card {
+                    background: white;
+                    border-radius: 12px;
+                    padding: 40px;
+                    max-width: 450px;
+                    width: 90%;
+                    text-align: center;
+                    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+                }
+                
+                .ufad3-inactivity-icon {
+                    font-size: 48px;
+                    margin-bottom: 20px;
+                }
+                
+                #ufad3-inactivity-title {
+                    color: #333;
+                    font-size: 24px;
+                    margin-bottom: 15px;
+                    font-weight: 600;
+                }
+                
+                #ufad3-inactivity-message {
+                    color: #666;
+                    font-size: 16px;
+                    margin-bottom: 25px;
+                    line-height: 1.5;
+                }
+                
+                #ufad3-inactivity-timer {
+                    background: #fff3cd;
+                    border: 1px solid #ffc107;
+                    border-radius: 8px;
+                    padding: 15px;
+                    margin-bottom: 25px;
+                    font-size: 18px;
+                    color: #856404;
+                }
+                
+                #ufad3-inactivity-countdown {
+                    font-weight: bold;
+                    font-size: 24px;
+                    color: #dc3545;
+                }
+                
+                .ufad3-inactivity-buttons {
+                    display: flex;
+                    gap: 15px;
+                    justify-content: center;
+                    flex-wrap: wrap;
+                }
+                
+                .ufad3-btn {
+                    padding: 12px 24px;
+                    border: none;
+                    border-radius: 6px;
+                    font-size: 16px;
+                    cursor: pointer;
+                    transition: all 0.3s ease;
+                    font-weight: 500;
+                }
+                
+                .ufad3-btn-primary {
+                    background-color: #28a745;
+                    color: white;
+                }
+                
+                .ufad3-btn-primary:hover {
+                    background-color: #218838;
+                    transform: translateY(-2px);
+                    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
+                }
+                
+                .ufad3-btn-secondary {
+                    background-color: #dc3545;
+                    color: white;
+                }
+                
+                .ufad3-btn-secondary:hover {
+                    background-color: #c82333;
+                    transform: translateY(-2px);
+                    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4);
+                }
+            `;
+            document.head.appendChild(style);
+        }
+        
+        document.body.appendChild(overlay);
+        
+        // Bind button events
+        document.getElementById('ufad3-stay-logged-in-btn').addEventListener('click', stayLoggedIn);
+        document.getElementById('ufad3-logout-btn').addEventListener('click', handleLogout);
+        
+        // Start grace period countdown
+        startGraceCountdown();
+    }
+    
+    /**
+     * Starts the countdown during the grace period.
+     */
+    function startGraceCountdown() {
+        clearInterval(graceTimer);
+        graceTimeRemaining = inactivityGraceTime;
+        updateCountdownDisplay();
+        
+        graceTimer = setInterval(() => {
+            graceTimeRemaining--;
+            updateCountdownDisplay();
+            
+            if (graceTimeRemaining <= 0) {
+                clearInterval(graceTimer);
+                handleLogout();
+            }
+        }, 1000);
+    }
+    
+    /**
+     * Updates the countdown display in the overlay.
+     */
+    function updateCountdownDisplay() {
+        const countdownElement = document.getElementById('ufad3-inactivity-countdown');
+        if (countdownElement) {
+            countdownElement.textContent = graceTimeRemaining;
+        }
+    }
+    
+    /**
+     * Hides the inactivity overlay and resets timers.
+     */
+    function hideInactivityOverlay() {
+        clearInterval(graceTimer);
+        const overlay = document.getElementById('ufad3-inactivity-overlay');
+        if (overlay) {
+            overlay.remove();
+        }
+        isOverlayVisible = false;
+    }
+    
+    /**
+     * Called when user chooses to stay logged in.
+     */
+    function stayLoggedIn() {
+        hideInactivityOverlay();
+        resetInactivityTimer();
+    }
+    
+    /**
+     * Handles logout when user chooses to log out or grace period expires.
+     */
+    function handleLogout() {
+        hideInactivityOverlay();
+        clearTimeout(inactivityTimer);
+        // Call the existing logout function
+        if (typeof logout === 'function') {
+            logout();
+        } else {
+            window.location.href = '/login/';
+        }
+    }
+    
+    /**
+     * Resets the inactivity timer.
+     */
+    function resetInactivityTimer() {
+        clearTimeout(inactivityTimer);
+        inactivityTimer = setTimeout(() => {
+            showInactivityOverlay();
+        }, inactivityTimeoutSeconds * 1000);
+    }
+    
+    /**
+     * Handles activity events - resets timer if overlay is not visible.
+     */
+    function handleActivity() {
+        if (!isOverlayVisible) {
+            resetInactivityTimer();
+        }
+    }
+    
+    /**
+     * Initializes the inactivity monitoring system.
+     */
+    function initInactivityMonitor() {
+        if (!enableInactivityTimeout) {
+            return;
+        }
+        
+        // Attach event listeners for activity monitoring
+        activityEvents.forEach(event => {
+            document.addEventListener(event, handleActivity, { passive: true });
+        });
+        
+        // Start the initial inactivity timer
+        resetInactivityTimer();
+    }
+    
+    // Expose functions globally if needed
+    window.ufad3HideInactivityOverlay = hideInactivityOverlay;
+    window.ufad3StayLoggedIn = stayLoggedIn;
+    
+    // Initialize when DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initInactivityMonitor);
+    } else {
+        initInactivityMonitor();
+    }
+})();

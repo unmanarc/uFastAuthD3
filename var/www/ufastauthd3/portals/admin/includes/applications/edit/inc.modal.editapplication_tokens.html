@@ -7,13 +7,34 @@
                 <div class="card mb-3">
                     <div class="card-header" style="text-align: center;"><b>Session Configuration</b></div>
                     <div class="card-body">
-                        <div class="mb-3">
-                            <label for="sessionInactivityTimeout" class="form-label">Session Timeout
-                                (seconds)</label>
-                            <input type="number" class="form-control" id="sessionInactivityTimeout"
-                                oninput="displayUpdateTokensFunction(); updatePrettyTime('sessionInactivityTimeout', 'sessionInactivityTimeoutPretty')"
-                                onchange="displayUpdateTokensFunction(); updatePrettyTime('sessionInactivityTimeout', 'sessionInactivityTimeoutPretty')">
-                            <small id="sessionInactivityTimeoutPretty" class="form-text text-muted"></small>
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" id="enableInactivityTimeout"
+                                oninput="displayUpdateTokensFunction(); toggleSessionTimeoutFields()"
+                                onchange="displayUpdateTokensFunction(); toggleSessionTimeoutFields()">
+                            <label class="form-check-label" for="enableInactivityTimeout">
+                                Enable Inactivity Timeout
+                            </label>
+                        </div>
+                        <div id="sessionTimeoutFields">
+                            <div class="mb-3">
+                                <label for="sessionInactivityTimeout" class="form-label">Session Inactivity Timeout
+                                    (seconds)</label>
+                                <input type="number" class="form-control" id="sessionInactivityTimeout"
+                                    oninput="displayUpdateTokensFunction(); updatePrettyTime('sessionInactivityTimeout', 'sessionInactivityTimeoutPretty')"
+                                    onchange="displayUpdateTokensFunction(); updatePrettyTime('sessionInactivityTimeout', 'sessionInactivityTimeoutPretty')">
+                                <small id="sessionInactivityTimeoutPretty" class="form-text text-muted"></small>
+                                <small class="form-text text-muted">Seconds before showing the "continue session?"
+                                    dialog</small>
+                            </div>
+                            <div class="mb-3">
+                                <label for="sessionInactivityGraceTime" class="form-label">Session Inactivity Grace Time
+                                    (seconds)</label>
+                                <input type="number" class="form-control" id="sessionInactivityGraceTime"
+                                    oninput="displayUpdateTokensFunction(); updatePrettyTime('sessionInactivityGraceTime', 'sessionInactivityGraceTimePretty')"
+                                    onchange="displayUpdateTokensFunction(); updatePrettyTime('sessionInactivityGraceTime', 'sessionInactivityGraceTimePretty')">
+                                <small id="sessionInactivityGraceTimePretty" class="form-text text-muted"></small>
+                                <small class="form-text text-muted">Seconds from dialog shown until session closes</small>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -214,6 +235,11 @@
         document.getElementById('modifyTokenButtons').style.display = 'block';
     }
 
+    function toggleSessionTimeoutFields() {
+        const enabled = document.getElementById('enableInactivityTimeout').checked;
+        document.getElementById('sessionTimeoutFields').style.display = enabled ? 'block' : 'none';
+    }
+
     function discardApplicationTokenConfig() {
         populateApplicationTokensConfig(currentTokenConfig);
     }
@@ -230,7 +256,9 @@
 
         if (tokensConfig != null) {
             // Main configuration
-            document.getElementById('sessionInactivityTimeout').value = tokensConfig.sessionInactivityTimeout || '';
+            document.getElementById('enableInactivityTimeout').checked = tokensConfig.sessionConfiguration.enableInactivityTimeout ?? true;
+            document.getElementById('sessionInactivityTimeout').value = tokensConfig.sessionConfiguration.inactivityTimeout || 180;
+            document.getElementById('sessionInactivityGraceTime').value = tokensConfig.sessionConfiguration.inactivityGraceTime || 30;
             document.getElementById('tokenType').value = tokensConfig.tokenType || 'HS256';
             document.getElementById('allowRefreshTokenRenovation').checked = tokensConfig.allowRefreshTokenRenovation ?? false;
             document.getElementById('includeApplicationScopes').checked = tokensConfig.includeApplicationScopes ?? false;
@@ -261,8 +289,12 @@
                 }
             }
             updatePrettyTime('sessionInactivityTimeout', 'sessionInactivityTimeoutPretty');
+            updatePrettyTime('sessionInactivityGraceTime', 'sessionInactivityGraceTimePretty');
             updatePrettyTime('accessTokenTimeout', 'accessTokenTimeoutPretty');
             updatePrettyTime('refreshTokenTimeout', 'refreshTokenTimeoutPretty');
+
+            // Toggle visibility of timeout fields based on enableInactivityTimeout
+            toggleSessionTimeoutFields();
         }
 
         currentTokenConfig = tokensConfig;
@@ -270,7 +302,7 @@
 
     function modifyApplicationTokenConfig() {
         $.ajax({
-            url: '/api/v1/updateWebLoginJWTConfigForApplication',
+            url: '/api/v1/updateAuthSettingsForApplication',
             type: 'PATCH',
             contentType: 'application/json',
             data: JSON.stringify(getModifiedApplicationTokenConfig()),
@@ -285,7 +317,11 @@
     function getModifiedApplicationTokenConfig() {
         const tokensConfig = {
             appName: currentApplication,
-            sessionInactivityTimeout: parseInt(document.getElementById('sessionInactivityTimeout').value) || 0,
+            sessionConfiguration: {
+                enableInactivityTimeout: document.getElementById('enableInactivityTimeout').checked,
+                inactivityTimeout: parseInt(document.getElementById('sessionInactivityTimeout').value) || 0,
+                inactivityGraceTime: parseInt(document.getElementById('sessionInactivityGraceTime').value) || 0
+            },
             tokenType: document.getElementById('tokenType').value,
             allowRefreshTokenRenovation: document.getElementById('allowRefreshTokenRenovation').checked,
             includeApplicationScopes: document.getElementById('includeApplicationScopes').checked,
