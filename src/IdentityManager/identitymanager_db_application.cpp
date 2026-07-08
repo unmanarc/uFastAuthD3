@@ -1,3 +1,4 @@
+#include "Mantids30/Helpers/json.h"
 #include "identitymanager_db.h"
 #include <Mantids30/Helpers/encoders.h>
 
@@ -36,11 +37,11 @@ bool IdentityManager_DB::Applications_DB::createApplication(const ClientDetails 
                                                   {":apiKey", MAKE_VAR(STRING, Encoders::encodeToBase64Obf(apiKey))},
                                                   {":appAttributesJSON", MAKE_VAR(STRING, appAttributes.toJSON().toStyledString())}});
 
-        // If the insertion is successful, insert another row default values into iam.applicationsJWTTokenConfig.
+        // If the insertion is successful, insert another row default values into iam.applicationsAuthSettings.
         if (appInsertSuccess)
         {
             std::string randomSecret = Mantids30::Helpers::Random::createRandomString(64);
-            tokenInsertSuccess = _parent->m_sqlConnector->qExecuteEx("INSERT INTO iam.applicationsJWTTokenConfig (`f_appName`, `accessTokenSigningKey`, `accessTokenValidationKey`) "
+            tokenInsertSuccess = _parent->m_sqlConnector->qExecuteEx("INSERT INTO iam.applicationsAuthSettings (`f_appName`, `accessTokenSigningKey`, `accessTokenValidationKey`) "
                                                                      "VALUES (:appName, :signingKey, :validationKey);",
                                                                      {{":appName", MAKE_VAR(STRING, appName)},
                                                                       {":signingKey", MAKE_VAR(STRING, Helpers::Encoders::encodeToBase64Obf(randomSecret, 0x8A376C54D999F187))},
@@ -654,23 +655,23 @@ std::set<std::string> IdentityManager_DB::Applications_DB::listWebLoginOriginUrl
     return originUrls;
 }
 
-bool IdentityManager_DB::Applications_DB::updateWebLoginJWTConfigForApplication(const ClientDetails &clientDetails, const std::string &performedBy, const ApplicationTokenProperties &tokenInfo)
+bool IdentityManager_DB::Applications_DB::updateAuthSettingsForApplication(const ClientDetails &clientDetails, const std::string &performedBy, const ApplicationAuthSettings &tokenInfo)
 {
     std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
-    bool result = _parent->m_sqlConnector->qExecuteEx("UPDATE iam.applicationsJWTTokenConfig SET "
-                                                      "sessionInactivityTimeout=:sessionInactivityTimeout, "
+    bool result = _parent->m_sqlConnector->qExecuteEx("UPDATE iam.applicationsAuthSettings SET "
                                                       "tokenType=:tokenType, includeApplicationScopes=:includeApplicationScopes, "
                                                       "includeBasicAccountInfo=:includeBasicAccountInfo, allowRefreshTokenRenovation=:allowRefreshTokenRenovation, "
                                                       "tokensConfigJSON=:tokensConfigJSON, "
+                                                      "sessionConfigJSON=:sessionConfigJSON, "
                                                       "maintainRevocationAndLogoutInfo=:maintainRevocationAndLogoutInfo WHERE f_appName=:appName;",
                                                       {{":appName", MAKE_VAR(STRING, tokenInfo.appName)},
-                                                       {":sessionInactivityTimeout", MAKE_VAR(UINT32, tokenInfo.sessionInactivityTimeout)},
                                                        {":tokenType", MAKE_VAR(STRING, tokenInfo.signAlgorithm)},
                                                        {":includeApplicationScopes", MAKE_VAR(BOOL, tokenInfo.includeApplicationScopes)},
                                                        {":includeBasicAccountInfo", MAKE_VAR(BOOL, tokenInfo.includeBasicAccountInfo)},
                                                        {":allowRefreshTokenRenovation", MAKE_VAR(BOOL, tokenInfo.allowRefreshTokenRenovation)},
                                                        {":allowRefreshTokenRenovation", MAKE_VAR(BOOL, tokenInfo.allowRefreshTokenRenovation)},
                                                        {":tokensConfigJSON", MAKE_VAR(STRING, tokenInfo.tokensConfiguration.toStyledString())},
+                                                       {":sessionConfigJSON", MAKE_VAR(STRING, tokenInfo.sessionConfiguration.toStyledString())},
                                                        {":maintainRevocationAndLogoutInfo", MAKE_VAR(BOOL, tokenInfo.maintainRevocationAndLogoutInfo)}});
     if (result)
     {
@@ -679,34 +680,32 @@ bool IdentityManager_DB::Applications_DB::updateWebLoginJWTConfigForApplication(
     return result;
 }
 
-ApplicationTokenProperties IdentityManager_DB::Applications_DB::getWebLoginJWTConfigFromApplication(const std::string &appName)
+ApplicationAuthSettings IdentityManager_DB::Applications_DB::getAuthSettingsFromApplication(const std::string &appName)
 {
     std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
 
-    ApplicationTokenProperties tokenInfo;
+    ApplicationAuthSettings tokenInfo;
     tokenInfo.appName = appName;
 
     // Define las variables para capturar los valores de la base de datos.
-    Abstract::UINT32 sessionInactivityTimeout;
-    Abstract::STRING tokenType, tokensConfigJSON;
+    Abstract::STRING tokenType, tokensConfigJSON, sessionConfigJSON;
     Abstract::BOOL includeApplicationScopes, includeBasicAccountInfo, maintainRevocationAndLogoutInfo, allowRefreshTokenRenovation;
 
     if (_parent->m_sqlConnector->qSelectSingleRow(
-            "SELECT allowRefreshTokenRenovation,sessionInactivityTimeout, tokenType, "
-            "includeApplicationScopes, includeBasicAccountInfo, maintainRevocationAndLogoutInfo, tokensConfigJSON "
-            "FROM iam.applicationsJWTTokenConfig "
+            "SELECT allowRefreshTokenRenovation, tokenType, "
+            "includeApplicationScopes, includeBasicAccountInfo, maintainRevocationAndLogoutInfo, tokensConfigJSON, sessionConfigJSON "
+            "FROM iam.applicationsAuthSettings "
             "WHERE f_appName=:appName;",
             {{":appName", MAKE_VAR(STRING, appName)}},
-            {&allowRefreshTokenRenovation, &sessionInactivityTimeout, &tokenType, &includeApplicationScopes, &includeBasicAccountInfo, &maintainRevocationAndLogoutInfo, &tokensConfigJSON}))
+            {&allowRefreshTokenRenovation, &tokenType, &includeApplicationScopes, &includeBasicAccountInfo, &maintainRevocationAndLogoutInfo, &tokensConfigJSON, &sessionConfigJSON}))
     {
-        tokenInfo.sessionInactivityTimeout = sessionInactivityTimeout.getValue();
         tokenInfo.signAlgorithm = tokenType.getValue();
         tokenInfo.includeApplicationScopes = includeApplicationScopes.getValue();
         tokenInfo.includeBasicAccountInfo = includeBasicAccountInfo.getValue();
         tokenInfo.maintainRevocationAndLogoutInfo = maintainRevocationAndLogoutInfo.getValue();
         tokenInfo.allowRefreshTokenRenovation = allowRefreshTokenRenovation.getValue();
-        Helpers::JSON::JSONReader2 reader;
-        reader.parse(tokensConfigJSON.getValue(), tokenInfo.tokensConfiguration);
+        tokenInfo.tokensConfiguration = Helpers::JSON::parse(tokensConfigJSON.getValue().c_str());
+        tokenInfo.sessionConfiguration = Helpers::JSON::parse(sessionConfigJSON.getValue().c_str());
     }
     return tokenInfo;
 }
@@ -715,7 +714,7 @@ bool IdentityManager_DB::Applications_DB::setWebLoginJWTSigningKeyForApplication
                                                                                  const std::string &signingKey)
 {
     std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
-    return _parent->m_sqlConnector->qExecuteEx("UPDATE iam.applicationsJWTTokenConfig SET accessTokenSigningKey=:signingKey WHERE f_appName=:appName;",
+    return _parent->m_sqlConnector->qExecuteEx("UPDATE iam.applicationsAuthSettings SET accessTokenSigningKey=:signingKey WHERE f_appName=:appName;",
                                                {{":appName", MAKE_VAR(STRING, appName)}, {":signingKey", MAKE_VAR(STRING, Helpers::Encoders::encodeToBase64Obf(signingKey, 0x8A376C54D999F187))}});
 }
 
@@ -724,7 +723,7 @@ std::string IdentityManager_DB::Applications_DB::getWebLoginJWTSigningKeyForAppl
     std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
     Abstract::STRING signingKey;
 
-    if (_parent->m_sqlConnector->qSelectSingleRow("SELECT accessTokenSigningKey FROM iam.applicationsJWTTokenConfig WHERE f_appName=:appName;",
+    if (_parent->m_sqlConnector->qSelectSingleRow("SELECT accessTokenSigningKey FROM iam.applicationsAuthSettings WHERE f_appName=:appName;",
                                                   {{":appName", MAKE_VAR(STRING, appName)}},
                                                   {&signingKey}))
     {
@@ -738,7 +737,7 @@ bool IdentityManager_DB::Applications_DB::setWebLoginJWTValidationKeyForApplicat
                                                                                     const std::string &validationKey)
 {
     std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
-    return _parent->m_sqlConnector->qExecuteEx("UPDATE iam.applicationsJWTTokenConfig SET accessTokenValidationKey=:validationKey WHERE f_appName=:appName;",
+    return _parent->m_sqlConnector->qExecuteEx("UPDATE iam.applicationsAuthSettings SET accessTokenValidationKey=:validationKey WHERE f_appName=:appName;",
                                                {{":appName", MAKE_VAR(STRING, appName)}, {":validationKey", MAKE_VAR(STRING, Helpers::Encoders::encodeToBase64Obf(validationKey, 0x8A376C54D999F187))}});
 }
 
@@ -747,7 +746,7 @@ std::string IdentityManager_DB::Applications_DB::getWebLoginJWTValidationKeyForA
     std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
     Abstract::STRING validationKey;
 
-    if (_parent->m_sqlConnector->qSelectSingleRow("SELECT accessTokenValidationKey FROM iam.applicationsJWTTokenConfig WHERE f_appName=:appName;",
+    if (_parent->m_sqlConnector->qSelectSingleRow("SELECT accessTokenValidationKey FROM iam.applicationsAuthSettings WHERE f_appName=:appName;",
                                                   {{":appName", MAKE_VAR(STRING, appName)}},
                                                   {&validationKey}))
     {

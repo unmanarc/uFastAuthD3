@@ -119,13 +119,13 @@ bool IdentityManager_DB::initializeDatabase()
                                              PRIMARY KEY(`f_appName`,`originUrl`)
                                                                         );
                                         )",
-        R"(CREATE TABLE IF NOT EXISTS `iam`.`applicationsJWTTokenConfig` (
+        R"(CREATE TABLE IF NOT EXISTS `iam`.`applicationsAuthSettings` (
                                             `f_appName`                       VARCHAR(256)    NOT NULL,
-                                            `sessionInactivityTimeout`        BIGINT UNSIGNED NOT NULL DEFAULT '180',
                                             `tokenType`                       VARCHAR(20)     NOT NULL DEFAULT 'HS256',
                                             `accessTokenSigningKey`           TEXT DEFAULT NULL,
                                             `accessTokenValidationKey`        TEXT DEFAULT NULL,
                                             `tokensConfigJSON`                TEXT NOT NULL DEFAULT '{ "accessToken" : { useSessionCookiesByDefault : true, "path" : "/", "timeout" : 300},"refreshToken" : {"path" : "/auth", "timeout" : 2592000} }',
+                                            `sessionConfigJSON                TEXT NOT NULL DEFAULT '{}'`
                                             `includeApplicationScopes`        BOOLEAN NOT NULL DEFAULT TRUE,
                                             `includeBasicAccountInfo`         BOOLEAN NOT NULL DEFAULT TRUE,
                                             `maintainRevocationAndLogoutInfo` BOOLEAN NOT NULL DEFAULT FALSE,

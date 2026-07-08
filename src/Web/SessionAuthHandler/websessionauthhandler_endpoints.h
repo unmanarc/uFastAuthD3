@@ -26,7 +26,7 @@ public:
     // Remote triggered:
     static APIReturn refreshAccessToken(void *context, const RequestContext &request, ClientDetails &authClientDetails);
     static APIReturn getUserPublicData(void *context, const RequestContext &request, ClientDetails &authClientDetails);
-    static APIReturn getApplicationLoginPublicData(void *context, const RequestContext &request, ClientDetails &authClientDetails);
+    static APIReturn getApplicationPublicData(void *context, const RequestContext &request, ClientDetails &authClientDetails);
     static APIReturn appLogout(void *context, const RequestContext &request, ClientDetails &authClientDetails);
     static APIReturn callback(void *context, const RequestContext &request, ClientDetails &authClientDetails);
     static APIReturn getLogoutCallbackURL(void *context, const RequestContext &request, ClientDetails &authClientDetails);
@@ -34,9 +34,9 @@ public:
 
 private:
     static bool validateAPIKey(const std::string &app, APIReturn &response, const RequestContext &request, ClientDetails &authClientDetails);
-    static void setupAccessTokenCookies(APIReturn &response, JWT::Token accessToken, const ApplicationTokenProperties &tokenProps);
-    static void setupRefreshTokenCookies(APIReturn &response, JWT::Token refreshToken, const ApplicationTokenProperties &tokenProps);
-    //static void setupLogoutTokenCookies(APIReturn &response, JWT::Token refreshToken, const ApplicationTokenProperties &tokenProps);
+    static void setupAccessTokenCookies(APIReturn &response, JWT::Token accessToken, const ApplicationAuthSettings &tokenProps);
+    static void setupRefreshTokenCookies(APIReturn &response, JWT::Token refreshToken, const ApplicationAuthSettings &tokenProps);
+    //static void setupLogoutTokenCookies(APIReturn &response, JWT::Token refreshToken, const ApplicationAuthSettings &tokenProps);
 
     struct CookieProperties
     {
@@ -54,11 +54,11 @@ private:
         std::string user;
         std::string jwtId;
         std::set<uint32_t> slotIds;
-        ApplicationTokenProperties tokenProps;
+        ApplicationAuthSettings tokenProps;
     };
 
     static bool validateAndDecodeRefreshToken(const std::string &refreshTokenStr, RefreshTokenData &outData, std::string &outErrorMessage, std::string &outErrorType);
     static void setupCookie(APIReturn &response, const std::string &name, const std::string &value, const CookieProperties &props);
     static void setupMaxAgeCookie(APIReturn &response, const std::string &name, time_t expirationTime);
-    static std::string signApplicationToken(JWT::Token &accessToken, const ApplicationTokenProperties &tokenProperties);
+    static std::string signApplicationToken(JWT::Token &accessToken, const ApplicationAuthSettings &appAuthSettings);
 };

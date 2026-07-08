@@ -25,7 +25,7 @@ void AdminPortal_Endpoints_Applications::addEndpoints_Applications(const std::sh
     endpoints->addEndpoint(HTTP::Method::GET, "getApplicationInfo", SecurityRequirements::JWT_COOKIE_AUTH, {"APP_READ"}, nullptr, &getApplicationInfo);
     endpoints->addEndpoint(HTTP::Method::PATCH, "updateApplicationDetails", SecurityRequirements::JWT_COOKIE_AUTH, {"APP_MODIFY"}, nullptr, &updateApplicationDetails);
     endpoints->addEndpoint(HTTP::Method::PATCH, "updateApplicationAPIKey", SecurityRequirements::JWT_COOKIE_AUTH, {"APP_MODIFY"}, nullptr, &updateApplicationAPIKey);
-    endpoints->addEndpoint(HTTP::Method::PATCH, "updateWebLoginJWTConfigForApplication", SecurityRequirements::JWT_COOKIE_AUTH, {"APP_MODIFY"}, nullptr, &updateWebLoginJWTConfigForApplication);
+    endpoints->addEndpoint(HTTP::Method::PATCH, "updateAuthSettingsForApplication", SecurityRequirements::JWT_COOKIE_AUTH, {"APP_MODIFY"}, nullptr, &updateAuthSettingsForApplication);
     endpoints->addEndpoint(HTTP::Method::PATCH, "updateApplicationLoginCallbackURI", SecurityRequirements::JWT_COOKIE_AUTH, {"APP_MODIFY"}, nullptr, &updateApplicationLoginCallbackURI);
     endpoints->addEndpoint(HTTP::Method::PUT, "addApplicationLoginOrigin", SecurityRequirements::JWT_COOKIE_AUTH, {"APP_MODIFY"}, nullptr, &addApplicationLoginOrigin);
     endpoints->addEndpoint(HTTP::Method::DELETE, "removeApplicationLoginOrigin", SecurityRequirements::JWT_COOKIE_AUTH, {"APP_MODIFY"}, nullptr, &removeApplicationLoginOrigin);
@@ -172,7 +172,7 @@ API::APIReturn AdminPortal_Endpoints_Applications::getApplicationInfo(void *cont
         return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to retrieve the application attributes"};
     }
 
-    ApplicationTokenProperties appWebLoginTokenConfig = Globals::getIdentityManager()->applications->getWebLoginJWTConfigFromApplication(appName);
+    ApplicationAuthSettings appWebLoginTokenConfig = Globals::getIdentityManager()->applications->getAuthSettingsFromApplication(appName);
     payloadOut["tokenConfig"] = appWebLoginTokenConfig.toJSON();
     payloadOut["details"]["description"] = Globals::getIdentityManager()->applications->getApplicationDescription(appName);
     payloadOut["applicationAttributes"] = attribs->toJSON();
@@ -249,18 +249,18 @@ API::APIReturn AdminPortal_Endpoints_Applications::updateApplicationAPIKey(void 
     return response;
 }
 
-API::APIReturn AdminPortal_Endpoints_Applications::updateWebLoginJWTConfigForApplication(void *context, const RequestContext &request, ClientDetails &authClientDetails)
+API::APIReturn AdminPortal_Endpoints_Applications::updateAuthSettingsForApplication(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
 
-    ApplicationTokenProperties tokenInfo;
+    ApplicationAuthSettings tokenInfo;
     std::optional<AppError> err = tokenInfo.fromJSON(*request.inputJSON);
     if (err.has_value())
     {
         return {static_cast<Network::Protocol::HTTP::Status::Code>(err->http_code), err->error, err->message};
     }
 
-    if (!Globals::getIdentityManager()->applications->updateWebLoginJWTConfigForApplication(authClientDetails, request.jwtToken->getSubject(), tokenInfo))
+    if (!Globals::getIdentityManager()->applications->updateAuthSettingsForApplication(authClientDetails, request.jwtToken->getSubject(), tokenInfo))
     {
         return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to update web login JWT configuration."};
     }

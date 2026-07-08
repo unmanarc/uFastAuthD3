@@ -43,7 +43,7 @@ API::APIReturn WebSessionAuthHandler_Endpoints::refreshAccessToken(void *context
     JWT::Token newAccessToken;
     TokensManager::ApplicationTokenCommonParams params;
     params.refreshTokenId = tokenData.jwtId;
-    params.tokenProperties = tokenData.tokenProps;
+    params.appAuthSettings = tokenData.tokenProps;
     params.appName = tokenData.app;
     params.jwtAccountName = tokenData.user;
     params.slotIds = tokenData.slotIds;

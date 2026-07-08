@@ -24,7 +24,7 @@ public:
         std::string refreshTokenId;
         std::string jwtAccountName;
         std::string appName;
-        ApplicationTokenProperties tokenProperties;
+        ApplicationAuthSettings appAuthSettings;
         std::set<uint32_t> slotIds;
     };
 

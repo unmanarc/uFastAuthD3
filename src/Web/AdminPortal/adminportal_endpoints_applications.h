@@ -22,7 +22,7 @@ protected:
     static APIReturn getApplicationInfo(void *context, const RequestContext &request, ClientDetails &authClientDetails);
     static APIReturn updateApplicationDetails(void *context, const RequestContext &request, ClientDetails &authClientDetails);
     static APIReturn updateApplicationAPIKey(void *context, const RequestContext &request, ClientDetails &authClientDetails);
-    static APIReturn updateWebLoginJWTConfigForApplication(void *context, const RequestContext &request, ClientDetails &authClientDetails);
+    static APIReturn updateAuthSettingsForApplication(void *context, const RequestContext &request, ClientDetails &authClientDetails);
     static APIReturn updateApplicationLoginCallbackURI(void *context, const RequestContext &request, ClientDetails &authClientDetails);
     static APIReturn addApplicationLoginOrigin(void *context, const RequestContext &request, ClientDetails &authClientDetails);
     static APIReturn removeApplicationLoginOrigin(void *context, const RequestContext &request, ClientDetails &authClientDetails);

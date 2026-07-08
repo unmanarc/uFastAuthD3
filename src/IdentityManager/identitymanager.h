@@ -600,8 +600,8 @@ public:
         // Activities can be defined here:
 
         // Tokens:
-        virtual bool updateWebLoginJWTConfigForApplication(const ClientDetails &clientDetails, const std::string &performedBy, const ApplicationTokenProperties &tokenInfo) = 0;
-        virtual ApplicationTokenProperties getWebLoginJWTConfigFromApplication(const std::string &appName) = 0;
+        virtual bool updateAuthSettingsForApplication(const ClientDetails &clientDetails, const std::string &performedBy, const ApplicationAuthSettings &tokenInfo) = 0;
+        virtual ApplicationAuthSettings getAuthSettingsFromApplication(const std::string &appName) = 0;
         virtual bool setWebLoginJWTSigningKeyForApplication(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &signingKey) = 0;
         virtual std::string getWebLoginJWTSigningKeyForApplication(const std::string &appName) = 0;
         virtual bool setWebLoginJWTValidationKeyForApplication(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &signingKey) = 0;

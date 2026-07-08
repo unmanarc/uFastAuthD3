@@ -67,19 +67,19 @@ struct AccountApplicationInfo
     time_t enrollmentDate;
 };
 
-struct ApplicationTokenProperties
+struct ApplicationAuthSettings
 {
     [[nodiscard]] Json::Value toJSON() const
     {
         Json::Value root(Json::objectValue);
         root["appName"] = appName;
-        root["sessionInactivityTimeout"] = sessionInactivityTimeout;
         root["tokenType"] = signAlgorithm;
         root["allowRefreshTokenRenovation"] = allowRefreshTokenRenovation;
         root["includeApplicationScopes"] = includeApplicationScopes;
         root["includeBasicAccountInfo"] = includeBasicAccountInfo;
         root["maintainRevocationAndLogoutInfo"] = maintainRevocationAndLogoutInfo;
         root["tokensConfiguration"] = tokensConfiguration;
+        root["sessionConfiguration"] = sessionConfiguration;
         return root;
     }
     std::optional<AppError> fromJSON(const Json::Value &root)
@@ -94,25 +94,25 @@ struct ApplicationTokenProperties
             return error;
         }
 
-        sessionInactivityTimeout = Mantids30::Helpers::JSON::ASUINT(root, "sessionInactivityTimeout", 0);
         signAlgorithm = Mantids30::Helpers::JSON::ASSTRING(root, "tokenType", "");
         allowRefreshTokenRenovation = Mantids30::Helpers::JSON::ASBOOL(root, "allowRefreshTokenRenovation", false);
         includeApplicationScopes = Mantids30::Helpers::JSON::ASBOOL(root, "includeApplicationScopes", false);
         includeBasicAccountInfo = Mantids30::Helpers::JSON::ASBOOL(root, "includeBasicAccountInfo", false);
         maintainRevocationAndLogoutInfo = Mantids30::Helpers::JSON::ASBOOL(root, "maintainRevocationAndLogoutInfo", false);
         tokensConfiguration = root["tokensConfiguration"];
+        sessionConfiguration = root["sessionConfiguration"];
 
         return std::nullopt;
     }
 
     std::string appName;
-    uint32_t sessionInactivityTimeout;
     std::string signAlgorithm;
     bool allowRefreshTokenRenovation;
     bool includeApplicationScopes;
     bool includeBasicAccountInfo;
     bool maintainRevocationAndLogoutInfo;
     Json::Value tokensConfiguration;
+    Json::Value sessionConfiguration;
 };
 struct ApplicationScopeDetails
 {

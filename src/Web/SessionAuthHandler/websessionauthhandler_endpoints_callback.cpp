@@ -58,7 +58,7 @@ API::APIReturn WebSessionAuthHandler_Endpoints::callback(void *context, const Re
         return {HTTP::Status::Code::S_401_UNAUTHORIZED, "invalid_api_key", "The provided API key is invalid or unauthorized."};
     }
 
-    ApplicationTokenProperties tokenProps = identityManager->applications->getWebLoginJWTConfigFromApplication(appNameStr);
+    ApplicationAuthSettings tokenProps = identityManager->applications->getAuthSettingsFromApplication(appNameStr);
     std::shared_ptr<JWT> validator = identityManager->applications->getAppJWTValidator(appNameStr);
 
     JWT::Token accessToken, refreshToken;

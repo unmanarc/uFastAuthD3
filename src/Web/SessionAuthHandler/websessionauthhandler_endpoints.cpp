@@ -11,7 +11,6 @@
 
 #include <boost/algorithm/string.hpp>
 #include <json/value.h>
-#include <regex>
 #include <string>
 
 #include "IdentityManager/ds_authentication.h"
@@ -30,7 +29,7 @@ void WebSessionAuthHandler_Endpoints::addEndpoints(const std::shared_ptr<Endpoin
 
     endpoints->addEndpoint(HTTP::Method::GET, "getLogoutCallbackURL", SecurityRequirements::NONE, {}, nullptr, &getLogoutCallbackURL);
     endpoints->addEndpoint(HTTP::Method::POST, "refreshAccessToken", SecurityRequirements::NONE, {}, nullptr, &refreshAccessToken);                      // Using refresh token auth.
-    endpoints->addEndpoint(HTTP::Method::GET, "getApplicationLoginPublicData", SecurityRequirements::NONE, {}, nullptr, &getApplicationLoginPublicData); // Using refresh token auth.
+    endpoints->addEndpoint(HTTP::Method::GET, "getApplicationPublicData", SecurityRequirements::NONE, {}, nullptr, &getApplicationPublicData); // Using refresh token auth.
     endpoints->addEndpoint(HTTP::Method::GET, "getUserPublicData", SecurityRequirements::JWT_COOKIE_AUTH, {}, nullptr, &getUserPublicData);              // Using refresh token auth.
     endpoints->addEndpoint(HTTP::Method::POST, "logout", SecurityRequirements::JWT_COOKIE_AUTH, {}, nullptr, &appLogout);
     endpoints->addEndpoint(HTTP::Method::POST, "callback", SecurityRequirements::NONE, {}, nullptr, &callback);
@@ -171,7 +170,7 @@ bool WebSessionAuthHandler_Endpoints::validateAndDecodeRefreshToken(const std::s
     }
 
     // Obtener propiedades de la app
-    ApplicationTokenProperties tokenProps = Globals::getIdentityManager()->applications->getWebLoginJWTConfigFromApplication(refreshTokenApp);
+    ApplicationAuthSettings tokenProps = Globals::getIdentityManager()->applications->getAuthSettingsFromApplication(refreshTokenApp);
 
     // Validar que la configuración de la app coincida (seguridad)
     if (tokenProps.appName != refreshTokenApp)
@@ -244,7 +243,7 @@ WebSessionAuthHandler_Endpoints::APIReturn WebSessionAuthHandler_Endpoints::getU
     return r;
 }
 
-WebSessionAuthHandler_Endpoints::APIReturn WebSessionAuthHandler_Endpoints::getApplicationLoginPublicData(void *context, const RequestContext &request, ClientDetails &authClientDetails)
+WebSessionAuthHandler_Endpoints::APIReturn WebSessionAuthHandler_Endpoints::getApplicationPublicData(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
     std::string refreshTokenStr = request.clientRequest->getCookies()->getSubVar("RefreshToken");
@@ -273,9 +272,10 @@ WebSessionAuthHandler_Endpoints::APIReturn WebSessionAuthHandler_Endpoints::getA
     }
 
     Json::Value r;
-    r["mode"] = tokenData.useEmbeddedAuthentication ? "EMBEDDED" : "DOMAIN";
+    r["loginMode"] = tokenData.useEmbeddedAuthentication ? "EMBEDDED" : "DOMAIN";
     r["app"]["name"] = tokenData.app;
     r["app"]["description"] = Globals::getIdentityManager()->applications->getApplicationDescription(tokenData.app);
+    r["session"] = tokenData.tokenProps.sessionConfiguration;
     return r;
 }
 
@@ -310,7 +310,7 @@ bool WebSessionAuthHandler_Endpoints::validateAPIKey(const std::string &app, API
     return true;
 }
 
-std::string WebSessionAuthHandler_Endpoints::signApplicationToken(JWT::Token &accessToken, const ApplicationTokenProperties &tokenProperties)
+std::string WebSessionAuthHandler_Endpoints::signApplicationToken(JWT::Token &accessToken, const ApplicationAuthSettings &appAuthSettings)
 {
     std::string appName = Helpers::JSON::ASSTRING_D(accessToken.getClaim("app"), "");
     std::shared_ptr<JWT> signingJWT = Globals::getIdentityManager()->applications->getAppJWTSigner(appName);

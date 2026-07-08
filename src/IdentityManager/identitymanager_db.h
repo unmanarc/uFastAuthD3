@@ -388,8 +388,8 @@ public:
         std::set<std::string> listWebLoginOriginUrlsFromApplication(const std::string &appName) override;
 
         // JWT Token Config
-        bool updateWebLoginJWTConfigForApplication(const ClientDetails &clientDetails, const std::string &performedBy, const ApplicationTokenProperties &tokenInfo) override;
-        ApplicationTokenProperties getWebLoginJWTConfigFromApplication(const std::string &appName) override;
+        bool updateAuthSettingsForApplication(const ClientDetails &clientDetails, const std::string &performedBy, const ApplicationAuthSettings &tokenInfo) override;
+        ApplicationAuthSettings getAuthSettingsFromApplication(const std::string &appName) override;
         bool setWebLoginJWTSigningKeyForApplication(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &signingKey) override;
         std::string getWebLoginJWTSigningKeyForApplication(const std::string &appName) override;
         bool setWebLoginJWTValidationKeyForApplication(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &validationKey) override;

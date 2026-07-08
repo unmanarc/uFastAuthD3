@@ -11,7 +11,7 @@ using namespace Program;
 using namespace API::RESTful;
 using namespace Network::Protocol;
 
-void WebSessionAuthHandler_Endpoints::setupAccessTokenCookies(APIReturn &response, JWT::Token accessToken, const ApplicationTokenProperties &tokenProps)
+void WebSessionAuthHandler_Endpoints::setupAccessTokenCookies(APIReturn &response, JWT::Token accessToken, const ApplicationAuthSettings &tokenProps)
 {
     CookieProperties props;
     props.sessionCookie = true; // The access Token it's always a session cookie.
@@ -20,7 +20,7 @@ void WebSessionAuthHandler_Endpoints::setupAccessTokenCookies(APIReturn &respons
     setupCookie(response, "AccessToken", signApplicationToken(accessToken, tokenProps), props);
 }
 
-void WebSessionAuthHandler_Endpoints::setupRefreshTokenCookies(APIReturn &response, JWT::Token refreshToken, const ApplicationTokenProperties &tokenProps)
+void WebSessionAuthHandler_Endpoints::setupRefreshTokenCookies(APIReturn &response, JWT::Token refreshToken, const ApplicationAuthSettings &tokenProps)
 {
     bool keepAuthenticated = Helpers::JSON::ASBOOL_D(refreshToken.getClaim("keepAuthenticated"), false);
 

@@ -73,8 +73,7 @@ LoginPortal_Endpoints::APIReturn LoginPortal_Endpoints::getApplicationLoginPubli
     }
 
 
-    ApplicationTokenProperties tokenProps = Globals::getIdentityManager()->applications->getWebLoginJWTConfigFromApplication(appName);
-    //x.sessionInactivityTimeout
+    ApplicationAuthSettings tokenProps = Globals::getIdentityManager()->applications->getAuthSettingsFromApplication(appName);
 
     r["app"]["name"] = appName;
     r["app"]["description"] = Globals::getIdentityManager()->applications->getApplicationDescription(appName);

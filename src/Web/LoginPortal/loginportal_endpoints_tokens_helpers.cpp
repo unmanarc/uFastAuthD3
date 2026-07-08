@@ -57,9 +57,9 @@ bool LoginPortal_Endpoints::token_createAndSignApplicationRefreshAndAccessJWTs(c
                                                                                const std::string &user, const uint32_t &schemeId, const std::string &redirectURI, APIReturn &response,
                                                                                ClientDetails &authClientDetails)
 {
-    ApplicationTokenProperties tokenProperties = Globals::getIdentityManager()->applications->getWebLoginJWTConfigFromApplication(app);
+    ApplicationAuthSettings appAuthSettings = Globals::getIdentityManager()->applications->getAuthSettingsFromApplication(app);
 
-    if (tokenProperties.appName != app)
+    if (appAuthSettings.appName != app)
     {
         LOG_APP->log1(__func__, user, Logs::LogLevel::CRITICAL, "Configuration error: The application '%s' is configured with an unsupported or invalid signing algorithm.", app.c_str());
         return false;
@@ -75,7 +75,7 @@ bool LoginPortal_Endpoints::token_createAndSignApplicationRefreshAndAccessJWTs(c
     params.appName = app;
     params.jwtAccountName = user;
     params.slotIds = authenticatedSlotIdsSet;
-    params.tokenProperties = tokenProperties;
+    params.appAuthSettings = appAuthSettings;
 
     TokensManager::RefreshTokenParams refreshExtraParams;
     refreshExtraParams.keepAuthenticated = keepAuthenticated;

@@ -9,7 +9,7 @@ using namespace API::RESTful;
 
 time_t TokensManager::getExpirationTime(const ApplicationTokenCommonParams &commonParams, IdentityManager *identityManager, const std::string &tokenType, time_t defaultTimeout)
 {
-    time_t expectedExpirationTime = time(nullptr) + Helpers::JSON::ASINT64(commonParams.tokenProperties.tokensConfiguration[tokenType], "timeout", defaultTimeout);
+    time_t expectedExpirationTime = time(nullptr) + Helpers::JSON::ASINT64(commonParams.appAuthSettings.tokensConfiguration[tokenType], "timeout", defaultTimeout);
     time_t accountExpirationTime = identityManager->accounts->getAccountExpirationTime(commonParams.jwtAccountName);
 
     if (accountExpirationTime == 0 || accountExpirationTime >= expectedExpirationTime)
@@ -33,16 +33,15 @@ void TokensManager::configureApplicationAccessToken(Mantids30::DataFormat::JWT::
     accessToken.setIssuedAt(time(nullptr));
     accessToken.setExpirationTime(TokensManager::getExpirationTime(commonParams, identityManager, "accessToken", 300));
     accessToken.setNotBefore(time(nullptr) - 30);
-    accessToken.setClaim("sessionInactivityTimeout", commonParams.tokenProperties.sessionInactivityTimeout);
     accessToken.setClaim("slotIds", Helpers::JSON::fromSet(commonParams.slotIds));
     accessToken.setJwtId(tokenId);
     accessToken.setClaim("parentTokenId", commonParams.refreshTokenId);
     accessToken.setClaim("app", commonParams.appName);
     accessToken.setClaim("type", "access");
-    //accessToken.setClaim( "tokensConfig", tokenProperties.tokensConfiguration["accessToken"] );
+    //accessToken.setClaim( "tokensConfig", appAuthSettings.tokensConfiguration["accessToken"] );
 
     // Get the user scope if needed for this application...
-    if (commonParams.tokenProperties.includeApplicationScopes)
+    if (commonParams.appAuthSettings.includeApplicationScopes)
     {
         std::set<ApplicationScope> x = identityManager->applicationScopes->getAccountUsableApplicationScopes(commonParams.appName, commonParams.jwtAccountName);
         for (const ApplicationScope &appScope : x)
@@ -51,7 +50,7 @@ void TokensManager::configureApplicationAccessToken(Mantids30::DataFormat::JWT::
         }
     }
     // Get the user basic info if needed for this application...
-    if (commonParams.tokenProperties.includeBasicAccountInfo)
+    if (commonParams.appAuthSettings.includeBasicAccountInfo)
     {
         if (std::optional<AccountDetails> info = identityManager->accounts->getAccountDetails(commonParams.jwtAccountName, AccountDetailsToShow::TOKEN))
         {

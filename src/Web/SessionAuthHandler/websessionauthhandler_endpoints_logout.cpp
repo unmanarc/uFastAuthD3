@@ -18,7 +18,7 @@ using namespace API::RESTful;
 using namespace Network::Protocol;
 
 // Helper to set delete cookies for logout
-static void setLogoutCookies(API::APIReturn &response, const ApplicationTokenProperties &tokenProps)
+static void setLogoutCookies(API::APIReturn &response, const ApplicationAuthSettings &tokenProps)
 {
     // Clear AccessToken
     response.cookiesMap["AccessToken"] = HTTP::Headers::Cookie();
@@ -57,7 +57,7 @@ API::APIReturn WebSessionAuthHandler_Endpoints::appLogout(void *context, const R
     }
 
     // 4. Get Token Configuration for Cookie Paths
-    ApplicationTokenProperties tokenProps = identityManager->applications->getWebLoginJWTConfigFromApplication(appName);
+    ApplicationAuthSettings tokenProps = identityManager->applications->getAuthSettingsFromApplication(appName);
 
     // 5. Clear Cookies
     setLogoutCookies(response, tokenProps);

@@ -31,7 +31,7 @@ bool JWTDynamicTokenValidatorFunction(const std::string &accessTokenStr, const s
         return false;
     }
 
-    ApplicationTokenProperties tokenProps = identityManager->applications->getWebLoginJWTConfigFromApplication(appNameStr);
+    ApplicationAuthSettings tokenProps = identityManager->applications->getAuthSettingsFromApplication(appNameStr);
     std::shared_ptr<Mantids30::DataFormat::JWT> validator = identityManager->applications->getAppJWTValidator(appNameStr);
 
     if (!validator->verify(accessTokenStr, accessToken))

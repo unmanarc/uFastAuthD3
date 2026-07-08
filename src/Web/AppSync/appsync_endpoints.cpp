@@ -379,7 +379,7 @@ AppSync_Endpoints::APIReturn AppSync_Endpoints::getApplicationJWTConfig(void *co
         return result;
     }
 
-    return Globals::getIdentityManager()->applications->getWebLoginJWTConfigFromApplication(appName).toJSON();
+    return Globals::getIdentityManager()->applications->getAuthSettingsFromApplication(appName).toJSON();
 }
 
 /**
