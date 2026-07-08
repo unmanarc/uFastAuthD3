@@ -30,7 +30,7 @@
   <div class="d-flex justify-content-end mb-3">
 
 
-     <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalCreateAccount">
+    <button type="button" class="btn bfsuccess btn-primary" data-bs-toggle="modal" data-bs-target="#modalCreateAccount">
       Create New Account
     </button>
 
@@ -131,20 +131,18 @@
           data.forEach(function (app) {
             // Create badge element safely to prevent XSS
             const badge = document.createElement('span');
-            badge.className = 'badge bg-secondary';
+
+            if (app.isAppAdmin)
+              badge.className = 'badge bg-secondary isAppAdminBadgeText';
+            else
+              badge.className = 'badge bg-secondary';
 
             // Create text node for app name (automatically escapes content)
             const appName = document.createTextNode(app.name);
 
-            if (app.isAppAdmin) {
-              // Create <font> element with safe text assignment
-              const fontEl = document.createElement('font');
-              fontEl.color = '#ffb4b4';
-              fontEl.appendChild(appName);
-              badge.appendChild(fontEl);
-            } else {
-              badge.appendChild(appName);
-            }
+
+            badge.appendChild(appName);
+
 
             badges += badge.outerHTML + ' ';
           });
@@ -203,7 +201,7 @@
 
           // Dismiss Inactivity button (only show if inactive)
           if (row.DT_RowData.isInactive === true) {
-            buttons += `<button type="button" class="btn btn-warning btn-sm me-1" onclick="dismissInactivity('${b64AccountUUID}')" title="Dismiss Inactivity">
+            buttons += `<button type="button" class="btn btn-primary oldwarn btn-sm me-1" onclick="dismissInactivity('${b64AccountUUID}')" title="Dismiss Inactivity">
                         <i class="fas fa-check-double"></i>
                       </button>`;
           }
@@ -258,21 +256,18 @@
 
 
 <script>
-    // Check for 'edit' URL parameter on page load and open edit modal immediately
-  
-    const urlParams = new URLSearchParams(window.location.search);
-    const editUUID = urlParams.get('edit');
-    if (editUUID) 
-    {
-      // Open modal immediately, load account data in background
-      const modalElement = document.getElementById('modalEditAccount');
-      if (modalElement) 
-      {
-        const modal = new bootstrap.Modal(modalElement);
-        modal.show();
-        // Load account data in background and populate the modal when ready
-        loadAndEditAccount(editUUID);
-      }
-    }
-</script>
+  // Check for 'edit' URL parameter on page load and open edit modal immediately
 
+  const urlParams = new URLSearchParams(window.location.search);
+  const editUUID = urlParams.get('edit');
+  if (editUUID) {
+    // Open modal immediately, load account data in background
+    const modalElement = document.getElementById('modalEditAccount');
+    if (modalElement) {
+      const modal = new bootstrap.Modal(modalElement);
+      modal.show();
+      // Load account data in background and populate the modal when ready
+      loadAndEditAccount(editUUID);
+    }
+  }
+</script>

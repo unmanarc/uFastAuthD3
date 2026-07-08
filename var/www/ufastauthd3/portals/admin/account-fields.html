@@ -11,7 +11,7 @@
 
 <div class="container-fluid" style="width: 95%;">
   <div class="d-flex justify-content-end mb-3">
-    <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalCreateAccountField"
+    <button type="button" class="btn bfsuccess btn-primary" data-bs-toggle="modal" data-bs-target="#modalCreateAccountField"
       onclick="createAccountFieldClearParameters()">
       Add Field
     </button>
@@ -67,28 +67,33 @@
     ajax: {
       "url": "/api/v1/searchFields",
       "type": 'GET',
-      "data": function (d) {
-        return JSON.stringify(d);
-      }
+      "dataSrc": "data"
     },
-    processing: true,
-    serverSide: true,
+    processing: false,
+    serverSide: false,
+    paging: false,
+    searching: false,
+    order: [],
     columns: [
       {
         data: "fieldName",
-        title: "Field Name"
+        title: "Field Name",
+        orderable: false
       },
       {
         data: "fieldDescription",
-        title: "Field Description"
+        title: "Field Description",
+        orderable: false
       },
       {
         data: "fieldType",
-        title: "Field Type"
+        title: "Field Type",
+        orderable: false
       },
       {
         data: "isUnique",
         title: "Is Unique",
+        orderable: false,
         render: function (data, type, row) {
           return data ? 'Yes' : 'No';
         }
@@ -96,6 +101,7 @@
       {
         data: "isLoginIdentifier",
         title: "Is Login Identifier",
+        orderable: false,
         render: function (data, type, row) {
           return data ? 'Yes' : 'No';
         }

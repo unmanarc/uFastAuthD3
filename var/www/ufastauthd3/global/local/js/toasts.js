@@ -8,7 +8,7 @@ function showTextToast(textMessage, type) {
         .replace(/'/g, '&#x27;');
 
 
-    const toastType = type === 'error' ? '#ff2a00' : '#00ff7a';
+    const toastType = type === 'error' ? '#ff2a00' : '#20a2ff';
     const toastTitle = type === 'error' ? 'Notification Error' : 'Notification';
     const toast = $(`
           <div class="toast" role="alert" aria-live="assertive" aria-atomic="true">
@@ -51,7 +51,7 @@ function showYesNoHTMLDialog(htmlMessage, yesCallback, noCallback = null) {
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">No</button>
-                        <button type="button" class="btn btn-success" id="confirmYes">Yes</button>
+                        <button type="button" class="btn bfsuccess btn-primary" id="confirmYes">Yes</button>
                     </div>
                 </div>
             </div>

@@ -57,7 +57,7 @@
         document.getElementById("modalCreateAccountFieldLabel").innerText = "Create Accounts Field";
 
         // Change button text to "Create Field"
-        const createButton = document.querySelector('#modalCreateAccountField .btn-success');
+        const createButton = document.querySelector('#modalCreateAccountField .bfsuccess btn-primary');
         if (createButton) {
             createButton.innerText = "Create Field";
             createButton.onclick = function () {
@@ -116,7 +116,7 @@
                 document.getElementById("modalCreateAccountFieldLabel").innerText = "Edit Accounts Field";
 
                 // Change button text to "Update Field"
-                const updateButton = document.querySelector('#modalCreateAccountField .btn-success');
+                const updateButton = document.querySelector('#modalCreateAccountField .bfsuccess btn-primary');
                 if (updateButton) {
                     updateButton.innerText = "Update Field";
                     updateButton.onclick = function () {
@@ -295,7 +295,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-success" onclick="javascript:ajaxCreateAccountField()">Create
+                <button type="button" class="btn bfsuccess btn-primary" onclick="javascript:ajaxCreateAccountField()">Create
                     Field</button>
             </div>
         </div>
