@@ -342,9 +342,10 @@ All API endpoints are prefixed with `/api/v1/`. The following tables list each s
   - `parentTokenId` — Reference to the refresh token's `jti`
   - `app` — Target application name
   - `type` — `"access"`
-  - `slotIds` — Set of authenticated slot IDs
-  - `sessionInactivityTimeout` — Session timeout value
-  - `scope[]` — Application scopes (if enabled)
+   - `slotIds` — Set of authenticated slot IDs
+   - `sessionInactivityTimeout` — Seconds before showing the "continue session?" dialog
+   - `sessionInactivityGraceTime` — Seconds from dialog shown until session closes
+   - `scope[]` — Application scopes (if enabled)
   - `accountInfo` — Basic account info (if enabled)
   - `isAdmin` — `true` if user is application admin
 
