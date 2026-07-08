@@ -224,20 +224,19 @@ startSessionPublicDataMonitor();
         overlay.id = 'ufad3-inactivity-overlay';
         overlay.innerHTML = `
             <div id="ufad3-inactivity-card">
-                <div class="ufad3-inactivity-icon">⏱️</div>
                 <h2 id="ufad3-inactivity-title">Session Expiring</h2>
                 <p id="ufad3-inactivity-message">Your session is about to expire due to inactivity. Do you want to stay in session?</p>
                 <div id="ufad3-inactivity-timer">
                     <span id="ufad3-inactivity-countdown">${graceTimeRemaining}</span> seconds remaining
                 </div>
                 <div class="ufad3-inactivity-buttons">
-                    <button id="ufad3-stay-logged-in-btn" class="ufad3-btn ufad3-btn-primary">Yes, Stay Logged In</button>
-                    <button id="ufad3-logout-btn" class="ufad3-btn ufad3-btn-secondary">No, Log Out</button>
+                    <button id="ufad3-stay-logged-in-btn" type="button">Stay Logged In</button>
+                    <button id="ufad3-logout-btn" type="button">Log Out</button>
                 </div>
             </div>
         `;
         
-        // Add CSS styles
+        // Add CSS styles - modern, neutral design compatible with any portal
         if (!document.getElementById('ufad3-inactivity-styles')) {
             const style = document.createElement('style');
             style.id = 'ufad3-inactivity-styles';
@@ -248,96 +247,87 @@ startSessionPublicDataMonitor();
                     left: 0;
                     width: 100%;
                     height: 100%;
-                    background-color: rgba(0, 0, 0, 0.7);
+                    background: rgba(0, 0, 0, 0.5);
+                    backdrop-filter: blur(2px);
                     display: flex;
                     justify-content: center;
                     align-items: center;
                     z-index: 999999;
                 }
-                
+
                 #ufad3-inactivity-card {
-                    background: white;
-                    border-radius: 12px;
-                    padding: 40px;
-                    max-width: 450px;
+                    background: #ffffff;
+                    border-radius: 8px;
+                    padding: 32px 32px 24px;
+                    max-width: 420px;
                     width: 90%;
                     text-align: center;
-                    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-                }
-                
-                .ufad3-inactivity-icon {
-                    font-size: 48px;
-                    margin-bottom: 20px;
-                }
-                
-                #ufad3-inactivity-title {
-                    color: #333;
-                    font-size: 24px;
-                    margin-bottom: 15px;
-                    font-weight: 600;
-                }
-                
-                #ufad3-inactivity-message {
-                    color: #666;
-                    font-size: 16px;
-                    margin-bottom: 25px;
+                    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+                    font-size: 14px;
                     line-height: 1.5;
+                    color: #333;
+                    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
                 }
-                
+
+                #ufad3-inactivity-title {
+                    margin: 0 0 12px;
+                    font-size: 20px;
+                    font-weight: 600;
+                    color: #1a1a1a;
+                }
+
+                #ufad3-inactivity-message {
+                    margin: 0 0 20px;
+                    color: #555;
+                    font-size: 14px;
+                }
+
                 #ufad3-inactivity-timer {
-                    background: #fff3cd;
-                    border: 1px solid #ffc107;
-                    border-radius: 8px;
-                    padding: 15px;
-                    margin-bottom: 25px;
-                    font-size: 18px;
-                    color: #856404;
+                    background: #f0f2f5;
+                    border-radius: 6px;
+                    padding: 10px 16px;
+                    margin: 0 0 20px;
+                    font-size: 14px;
+                    color: #444;
                 }
-                
+
                 #ufad3-inactivity-countdown {
-                    font-weight: bold;
-                    font-size: 24px;
-                    color: #dc3545;
+                    font-weight: 600;
+                    color: #3b5998;
                 }
-                
+
                 .ufad3-inactivity-buttons {
                     display: flex;
-                    gap: 15px;
+                    gap: 10px;
                     justify-content: center;
-                    flex-wrap: wrap;
                 }
-                
-                .ufad3-btn {
-                    padding: 12px 24px;
+
+                .ufad3-inactivity-buttons button {
+                    padding: 8px 20px;
                     border: none;
-                    border-radius: 6px;
-                    font-size: 16px;
-                    cursor: pointer;
-                    transition: all 0.3s ease;
+                    border-radius: 5px;
+                    font-size: 14px;
                     font-weight: 500;
+                    cursor: pointer;
+                    transition: background 0.2s;
                 }
-                
-                .ufad3-btn-primary {
-                    background-color: #28a745;
-                    color: white;
+
+                #ufad3-stay-logged-in-btn {
+                    background: #3b5998;
+                    color: #fff;
                 }
-                
-                .ufad3-btn-primary:hover {
-                    background-color: #218838;
-                    transform: translateY(-2px);
-                    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
+
+                #ufad3-stay-logged-in-btn:hover {
+                    background: #314e80;
                 }
-                
-                .ufad3-btn-secondary {
-                    background-color: #dc3545;
-                    color: white;
+
+                #ufad3-logout-btn {
+                    background: #e4e6ea;
+                    color: #333;
                 }
-                
-                .ufad3-btn-secondary:hover {
-                    background-color: #c82333;
-                    transform: translateY(-2px);
-                    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4);
+
+                #ufad3-logout-btn:hover {
+                    background: #d8dadf;
                 }
             `;
             document.head.appendChild(style);
