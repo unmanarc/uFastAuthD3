@@ -24,6 +24,9 @@
     <!-- Font Awesome by Dave Gandy - http://fontawesome.io - https://github.com/FortAwesome/Font-Awesome -->
     <link rel="stylesheet" href="assets/css/fontawesome.min.css">
     <link rel="stylesheet" href="assets/css/solid.min.css">
+
+    <link rel="stylesheet" href="local/css/colors.css">
+    
     <script>
         //<%jfunc/ufad3_loginMode:GET/v1/getApplicationLoginPublicData({})%>//
         //<%jvar/softwareVersion:softwareVersion%>//
@@ -51,7 +54,7 @@
                         <div class="card-body">
                             <div class="brand-wrapper">
                                 <div class="d-flex justify-content-center">
-                                    <img src="assets/images/logo.jpg" alt="logo" class="logo" width="300">
+                                    <img src="local/images/logo-white-blue.png" alt="logo" class="logo">
                                 </div>
                                 <p class="login-card-header-text" id="version"></p>
                                 <div class="d-flex justify-content-center">
@@ -109,7 +112,7 @@
                                         <button type="submit" class="btn btn-dark w-100">Submit</button>
                                     </div>
                                     <div class="mb-2">
-                                        <button class="btn btn-warning w-100" onclick="logout();">Restart</button>
+                                        <button class="btn btn-secondary w-100" onclick="logout();">Restart</button>
                                     </div>
                                 </form>
 
@@ -134,7 +137,7 @@
                                         <button type="submit" class="btn btn-dark w-100">Verify</button>
                                     </div>
                                     <div class="mb-2">
-                                        <button class="btn btn-warning w-100" onclick="logout();">Restart</button>
+                                        <button class="btn btn-secondary w-100" onclick="logout();">Restart</button>
                                     </div>
                                 </form>
 
@@ -153,7 +156,7 @@
                                             to the application</button>
                                     </div>
                                     <div class="mb-2">
-                                        <button class="btn btn-warning w-100" onclick="logout();">Logout</button>
+                                        <button class="btn btn-secondary w-100" onclick="logout();">Logout</button>
                                     </div>
                                     <div>
                                     </div>
@@ -190,7 +193,7 @@
                                     </div>
                                     <hr>
                                     <div class="mb-2">
-                                        <button type="button" id="changePasswordSubmitBtn" class="btn btn-success w-100" disabled>
+                                        <button type="button" id="changePasswordSubmitBtn" class="btn bfsuccess btn-primary w-100" disabled>
                                             <i class="fa-solid fa-save"></i> Change Password
                                         </button>
                                     </div>
@@ -202,7 +205,7 @@
                                     </div>
                                     <div class="mb-2">
                                         <button type="button" id="changePasswordCancelBtn"
-                                            class="btn btn-warning w-100">Cancel</button>
+                                            class="btn btn-secondary w-100">Cancel</button>
                                     </div>
                                 </div>
 
@@ -235,7 +238,7 @@
                                     </div>
                                     <div class="mb-2">
                                         <button type="button" id="changeOtpCancelBtn"
-                                            class="btn btn-warning w-100">Cancel</button>
+                                            class="btn btn-secondary w-100">Cancel</button>
                                     </div>
                                 </div>
                             </div>

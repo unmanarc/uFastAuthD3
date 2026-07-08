@@ -129,9 +129,24 @@ body
 {
   text-align: center;
   font-size: 13px;
-  color: #ff0000;
-  margin-top: 3px; 
-  margin-left: 7px; 
+  color: #8e969f;
+  margin-top: 3px;
+  margin-left: 7px;
+}
+
+#appDescription
+{
+  text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.3);
+}
+
+.shadow-sm
+{
+  min-width: 330px;
+}
+
+/* Minimum card body width */
+.card-body {
+    min-width: 330px;
 }
 
 /* Mobile portrait: full-screen card */
@@ -161,6 +176,7 @@ body
         flex-direction: column;
         justify-content: center;
         padding: 20px;
+        min-width: 300px !important;
     }
 
     .mobile-fullscreen-card .brand-wrapper {
