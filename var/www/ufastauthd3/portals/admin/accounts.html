@@ -132,25 +132,47 @@
         searchable: false,
         title: "Applications",
         render: function (data, type, row) {
-          if (!data || data.length === 0) return '<span class="badge bg-secondary">None</span>';
+          if (!data || data.length === 0) {
+            const noneBadge = document.createElement('span');
+            noneBadge.className = 'badge bg-secondary';
+            const noneIcon = document.createElement('i');
+            noneIcon.className = 'fas fa-ban';
+            noneIcon.style.color = 'lightcoral';
+            noneIcon.style.marginRight = '4px';
+            noneBadge.appendChild(noneIcon);
+            noneBadge.appendChild(document.createTextNode('None'));
+            return noneBadge.outerHTML;
+          }
           let badges = '';
           data.forEach(function (app) {
+            // Encode app name to base64 for the link
+            const appnameb64 = window.btoa(app.name);
+
+            // Create anchor element
+            const link = document.createElement('a');
+            link.href = '/applications?edit=' + appnameb64;
+
             // Create badge element safely to prevent XSS
             const badge = document.createElement('span');
+            badge.className = 'badge bg-secondary';
 
-            if (app.isAppAdmin)
-              badge.className = 'badge bg-secondary isAppAdminBadgeText';
-            else
-              badge.className = 'badge bg-secondary';
+            // Add Font Awesome icon: star for admin, user for non-admin
+            const icon = document.createElement('i');
+            if (app.isAppAdmin) {
+              icon.className = 'fas fa-star';
+            } else {
+              icon.className = 'fas fa-user';
+            }
+            icon.style.color = 'lightblue';
+            icon.style.marginRight = '4px';
+            badge.appendChild(icon);
 
             // Create text node for app name (automatically escapes content)
             const appName = document.createTextNode(app.name);
-
-
             badge.appendChild(appName);
 
-
-            badges += badge.outerHTML + ' ';
+            link.appendChild(badge);
+            badges += link.outerHTML + ' ';
           });
           return badges;
         }
