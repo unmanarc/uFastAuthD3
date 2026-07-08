@@ -24,6 +24,7 @@ struct AccountDetailFieldValue
     std::string fieldRegexpValidator;
     std::optional<std::string> value;
     Json::Value extendedAttribs;
+    int orderPriority = 0;
 
     [[nodiscard]] Json::Value toJSON() const
     {
@@ -33,6 +34,7 @@ struct AccountDetailFieldValue
         fieldJson["description"] = description;
         fieldJson["type"] = fieldType;
         fieldJson["regexpValidator"] = fieldRegexpValidator;
+        fieldJson["orderPriority"] = orderPriority;
 
         if (value.has_value())
         {
@@ -52,6 +54,7 @@ struct AccountDetailFieldValue
         fieldType = Mantids30::Helpers::JSON::ASSTRING(json, "type", "");
         fieldRegexpValidator = Mantids30::Helpers::JSON::ASSTRING(json, "regexpValidator", "");
         extendedAttribs = json["extendedAttribs"];
+        orderPriority = Mantids30::Helpers::JSON::ASINT(json, "orderPriority", 0);
         if (json.isMember("value") && !json["value"].isNull())
         {
             value = Mantids30::Helpers::JSON::ASSTRING(json, "value", "");

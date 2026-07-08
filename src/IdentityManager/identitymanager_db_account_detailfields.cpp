@@ -39,7 +39,8 @@ std::optional<AccountDetails> IdentityManager_DB::Accounts_DB::getAccountDetails
     {
         if (_parent->m_sqlConnector->qSelectSingleRow("SELECT `isAdmin`,`creation`, `creator`, `expiration`, `isEnabled`, `isAccountConfirmed` "
                                                       "FROM iam.accounts WHERE `accountUUID`=:accountUUID LIMIT 1;",
-                                                      {{":accountUUID", MAKE_VAR(STRING, accountUUID)}}, {&isAdmin, &creation, &creator, &expiration, &isEnabled, &isAccountConfirmed}))
+                                                      {{":accountUUID", MAKE_VAR(STRING, accountUUID)}},
+                                                      {&isAdmin, &creation, &creator, &expiration, &isEnabled, &isAccountConfirmed}))
         {
             details.accountUUID = accountUUID;
             details.creator = creator.getValue();
@@ -84,8 +85,7 @@ Json::Value IdentityManager_DB::Accounts_DB::searchFields(const Json::Value &dat
         Abstract::INT32 orderPriority;
         Abstract::STRING fieldName, fieldDescription, fieldType;
         Abstract::BOOL isOptionalField, isUnique, isLoginIdentifier;
-        std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelect(sqlQueryStr, {},
-                                                                                {&fieldName, &fieldDescription, &fieldType, &isOptionalField, &isUnique, &isLoginIdentifier, &orderPriority});
+        std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelect(sqlQueryStr, {}, {&fieldName, &fieldDescription, &fieldType, &isOptionalField, &isUnique, &isLoginIdentifier, &orderPriority});
 
         if (i && i->isSuccessful())
         {
@@ -126,6 +126,19 @@ bool IdentityManager_DB::Accounts_DB::createAccountDetailField(const ClientDetai
         return false;
     }
 
+    // Get the MAX orderPriority from the database, or 0 if no fields exist
+    int32_t maxOrderPriority = 0;
+    {
+        Abstract::INT32 maxPriority;
+        if (_parent->m_sqlConnector->qSelectSingleRow("SELECT MAX(`orderPriority`) FROM iam.accountDetailFields;", {}, {&maxPriority}))
+        {
+            if (!maxPriority.isNull())
+            {
+                maxOrderPriority = maxPriority.getValue() + 1;
+            }
+        }
+    }
+
     if (_parent->m_sqlConnector
             ->qExecuteEx("INSERT INTO iam.accountDetailFields (`fieldName`, `fieldDescription`, `fieldType`, `isOptionalField`, `isUnique`,`isLoginIdentifier`, `jsonExtendedAttribs`, `orderPriority`)"
                          " VALUES (:fieldName, :fieldDescription, :fieldType, :isOptionalField, :isUnique, :isLoginIdentifier, :jsonExtendedAttribs, :orderPriority);",
@@ -136,13 +149,121 @@ bool IdentityManager_DB::Accounts_DB::createAccountDetailField(const ClientDetai
                           {":isUnique", MAKE_VAR(BOOL, details.isUnique)},
                           {":isLoginIdentifier", MAKE_VAR(BOOL, details.isLoginIdentifier)},
                           {":jsonExtendedAttribs", MAKE_VAR(STRING, details.extendedAttributes.toStyledString())},
-                          {":orderPriority", MAKE_VAR(INT32, details.orderPriority)}}))
+                          {":orderPriority", MAKE_VAR(INT32, maxOrderPriority)}}))
     {
         _parent->logSecurityEventOnAccountDetailFields(fieldName, SecurityEventAction::CREATE, "Account detail field created", performedBy, clientDetails);
         return true;
     }
 
     return false;
+}
+
+bool IdentityManager_DB::Accounts_DB::moveAccountDetailFieldUp(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &fieldName)
+{
+    std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
+
+    // Get the current orderPriority of the field
+    Abstract::INT32 currentOrderPriority;
+    bool fieldExists = _parent->m_sqlConnector->qSelectSingleRow("SELECT `orderPriority` FROM iam.accountDetailFields WHERE `fieldName` = :fieldName;",
+                                                                 {{":fieldName", MAKE_VAR(STRING, fieldName)}},
+                                                                 {&currentOrderPriority});
+
+    if (!fieldExists)
+    {
+        return false;
+    }
+
+    // Find the field with the largest orderPriority that is still less than the current field's orderPriority
+    Abstract::INT32 targetOrderPriority;
+    if (!_parent->m_sqlConnector->qSelectSingleRow("SELECT MAX(`orderPriority`) FROM iam.accountDetailFields WHERE `orderPriority` < :currentOrderPriority;",
+                                                   {{":currentOrderPriority", MAKE_VAR(INT32, currentOrderPriority.getValue())}},
+                                                   {&targetOrderPriority}))
+    {
+        return false;
+    }
+
+    // If no field exists with a lower orderPriority, already at the top
+    if (targetOrderPriority.isNull())
+    {
+        return true; // Already at the top, consider it success
+    }
+
+    // Swap the orderPriority values using a transaction
+    Transaction tg(*_parent->m_sqlConnector);
+
+    // Update the target field to have the current field's orderPriority
+    if (!_parent->m_sqlConnector->qExecuteEx("UPDATE iam.accountDetailFields SET `orderPriority` = :currentOrderPriority WHERE `orderPriority` = :targetOrderPriority;",
+                                             {{":currentOrderPriority", MAKE_VAR(INT32, currentOrderPriority.getValue())}, {":targetOrderPriority", MAKE_VAR(INT32, targetOrderPriority.getValue())}}))
+    {
+        return tg.finalize(false);
+    }
+
+    // Update the current field to have the target's orderPriority
+    if (!_parent->m_sqlConnector->qExecuteEx("UPDATE iam.accountDetailFields SET `orderPriority` = :targetOrderPriority WHERE `fieldName` = :fieldName AND `orderPriority` = :currentOrderPriority;",
+                                             {{":targetOrderPriority", MAKE_VAR(INT32, targetOrderPriority.getValue())},
+                                              {":fieldName", MAKE_VAR(STRING, fieldName)},
+                                              {":currentOrderPriority", MAKE_VAR(INT32, currentOrderPriority.getValue())}}))
+    {
+        return tg.finalize(false);
+    }
+
+    _parent->logSecurityEventOnAccountDetailFields(fieldName, SecurityEventAction::UPDATE, "Account detail field moved up", performedBy, clientDetails);
+
+    return tg.finalize(true);
+}
+
+bool IdentityManager_DB::Accounts_DB::moveAccountDetailFieldDown(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &fieldName)
+{
+    std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
+
+    // Get the current orderPriority of the field
+    Abstract::INT32 currentOrderPriority;
+    bool fieldExists = _parent->m_sqlConnector->qSelectSingleRow("SELECT `orderPriority` FROM iam.accountDetailFields WHERE `fieldName` = :fieldName;",
+                                                                 {{":fieldName", MAKE_VAR(STRING, fieldName)}},
+                                                                 {&currentOrderPriority});
+
+    if (!fieldExists)
+    {
+        return false;
+    }
+
+    // Find the field with the smallest orderPriority that is greater than the current field's orderPriority
+    Abstract::INT32 targetOrderPriority;
+    if (!_parent->m_sqlConnector->qSelectSingleRow("SELECT MIN(`orderPriority`) FROM iam.accountDetailFields WHERE `orderPriority` > :currentOrderPriority;",
+                                                   {{":currentOrderPriority", MAKE_VAR(INT32, currentOrderPriority.getValue())}},
+                                                   {&targetOrderPriority}))
+    {
+        return false;
+    }
+
+    // If no field exists with a higher orderPriority, already at the bottom
+    if (targetOrderPriority.isNull())
+    {
+        return true; // Already at the bottom, consider it success
+    }
+
+    // Swap the orderPriority values using a transaction
+    Transaction tg(*_parent->m_sqlConnector);
+
+    // Update the target field to have the current field's orderPriority
+    if (!_parent->m_sqlConnector->qExecuteEx("UPDATE iam.accountDetailFields SET `orderPriority` = :currentOrderPriority WHERE `orderPriority` = :targetOrderPriority;",
+                                             {{":currentOrderPriority", MAKE_VAR(INT32, currentOrderPriority.getValue())}, {":targetOrderPriority", MAKE_VAR(INT32, targetOrderPriority.getValue())}}))
+    {
+        return tg.finalize(false);
+    }
+
+    // Update the current field to have the target's orderPriority
+    if (!_parent->m_sqlConnector->qExecuteEx("UPDATE iam.accountDetailFields SET `orderPriority` = :targetOrderPriority WHERE `fieldName` = :fieldName AND `orderPriority` = :currentOrderPriority;",
+                                             {{":targetOrderPriority", MAKE_VAR(INT32, targetOrderPriority.getValue())},
+                                              {":fieldName", MAKE_VAR(STRING, fieldName)},
+                                              {":currentOrderPriority", MAKE_VAR(INT32, currentOrderPriority.getValue())}}))
+    {
+        return tg.finalize(false);
+    }
+
+    _parent->logSecurityEventOnAccountDetailFields(fieldName, SecurityEventAction::UPDATE, "Account detail field moved down", performedBy, clientDetails);
+
+    return tg.finalize(true);
 }
 
 IdentityManager::Accounts::UpdateAccountDetailFieldResult IdentityManager_DB::Accounts_DB::updateAccountDetailField(const ClientDetails &clientDetails, const std::string &performedBy,
@@ -160,7 +281,8 @@ IdentityManager::Accounts::UpdateAccountDetailFieldResult IdentityManager_DB::Ac
     Abstract::BOOL currentIsLoginIdentifier;
     Abstract::BOOL currentIsUnique;
     bool fieldExists = _parent->m_sqlConnector->qSelectSingleRow("SELECT `isLoginIdentifier`, `isUnique` FROM iam.accountDetailFields WHERE `fieldName` = :fieldName;",
-                                                                 {{":fieldName", MAKE_VAR(STRING, fieldName)}}, {&currentIsLoginIdentifier, &currentIsUnique});
+                                                                 {{":fieldName", MAKE_VAR(STRING, fieldName)}},
+                                                                 {&currentIsLoginIdentifier, &currentIsUnique});
 
     if (!fieldExists)
     {
@@ -195,7 +317,8 @@ IdentityManager::Accounts::UpdateAccountDetailFieldResult IdentityManager_DB::Ac
                    GROUP BY value
                    HAVING COUNT(*) > 1
                    LIMIT 1))",
-                {{":fieldName", MAKE_VAR(STRING, fieldName)}}, {&duplicateCount}))
+                {{":fieldName", MAKE_VAR(STRING, fieldName)}},
+                {&duplicateCount}))
         {
             if (duplicateCount.getValue() > 0)
             {
@@ -292,7 +415,8 @@ IdentityManager::Accounts::RemoveAccountDetailFieldResult IdentityManager_DB::Ac
     // Step 1: Check if the field exists and if it's a login identifier.
     Abstract::BOOL isLoginIdentifier;
     bool fieldExists = _parent->m_sqlConnector->qSelectSingleRow("SELECT `isLoginIdentifier` FROM iam.accountDetailFields WHERE `fieldName` = :fieldName;",
-                                                                 {{":fieldName", MAKE_VAR(STRING, fieldName)}}, {&isLoginIdentifier});
+                                                                 {{":fieldName", MAKE_VAR(STRING, fieldName)}},
+                                                                 {&isLoginIdentifier});
 
     if (!fieldExists)
     {
@@ -321,7 +445,40 @@ IdentityManager::Accounts::RemoveAccountDetailFieldResult IdentityManager_DB::Ac
 
     _parent->logSecurityEventOnAccountDetailFields(fieldName, SecurityEventAction::DELETE, "Account detail field removed", performedBy, clientDetails);
 
+    // Step 4: Reorder orderPriority to be contiguous [0, 1, 2, ...]
+    _reorderAccountDetailFields();
+
     return RemoveAccountDetailFieldResult::SUCCESS;
+}
+
+void IdentityManager_DB::Accounts_DB::_reorderAccountDetailFields()
+{
+    // Get all field names ordered by the current orderPriority
+    std::vector<std::string> fieldNames;
+    {
+        Abstract::STRING fieldName;
+        std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelect("SELECT `fieldName` FROM iam.accountDetailFields ORDER BY `orderPriority` ASC;", {}, {&fieldName});
+        if (i && i->isSuccessful())
+        {
+            while (i->step())
+            {
+                fieldNames.push_back(fieldName.getValue());
+            }
+        }
+    }
+
+    // Update each field with its new contiguous orderPriority [0, 1, 2, ...]
+    int32_t newPriority = 0;
+    for (const std::string &fieldName : fieldNames)
+    {
+        _parent->m_sqlConnector->qExecuteEx(
+            "UPDATE iam.accountDetailFields SET `orderPriority` = :newPriority WHERE `fieldName` = :fieldName;",
+            {
+                {":newPriority", MAKE_VAR(INT32, newPriority)},
+                {":fieldName", MAKE_VAR(STRING, fieldName)},
+            });
+        newPriority++;
+    }
 }
 
 std::map<std::string, AccountDetailField> IdentityManager_DB::Accounts_DB::listAccountDetailFields()
@@ -341,9 +498,10 @@ std::optional<AccountDetailField> IdentityManager_DB::Accounts_DB::getAccountDet
     Abstract::STRING jsonExtendedAttribsText;
     Abstract::INT32 orderPriority;
 
-    if (_parent->m_sqlConnector->qSelectSingleRow(
-            "SELECT `fieldDescription`,`fieldType`,`isOptionalField`, `isUnique`, `isLoginIdentifier`,`jsonExtendedAttribs`,`orderPriority` FROM `iam`.`accountDetailFields` WHERE `fieldName` = :fieldName;",
-            {{":fieldName", MAKE_VAR(STRING, fieldName)}}, {&fieldDescription, &fieldType, &isOptionalField, &isUnique, &isLoginIdentifier, &jsonExtendedAttribsText, &orderPriority}))
+    if (_parent->m_sqlConnector->qSelectSingleRow("SELECT `fieldDescription`,`fieldType`,`isOptionalField`, `isUnique`, `isLoginIdentifier`,`jsonExtendedAttribs`,`orderPriority` FROM "
+                                                  "`iam`.`accountDetailFields` WHERE `fieldName` = :fieldName;",
+                                                  {{":fieldName", MAKE_VAR(STRING, fieldName)}},
+                                                  {&fieldDescription, &fieldType, &isOptionalField, &isUnique, &isLoginIdentifier, &jsonExtendedAttribsText, &orderPriority}))
     {
         Json::Value r;
         Json::Reader().parse(jsonExtendedAttribsText.getValue(), r);
@@ -395,7 +553,8 @@ bool IdentityManager_DB::Accounts_DB::changeAccountDetails(const ClientDetails &
     {
         // Validate field value against regex from iam.accountDetailFields
         Abstract::STRING regex;
-        if (_parent->m_sqlConnector->qSelectSingleRow("SELECT `fieldRegexpValidator` FROM iam.accountDetailFields WHERE `fieldName` = :fieldName;", {{":fieldName", MAKE_VAR(STRING, field.first)}},
+        if (_parent->m_sqlConnector->qSelectSingleRow("SELECT `fieldRegexpValidator` FROM iam.accountDetailFields WHERE `fieldName` = :fieldName;",
+                                                      {{":fieldName", MAKE_VAR(STRING, field.first)}},
                                                       {&regex}))
         {
             std::regex reg(regex.getValue());
@@ -439,7 +598,7 @@ UpdateAccountDetailFieldValuesResult IdentityManager_DB::Accounts_DB::updateAcco
     std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
     Database::Transaction tg(*_parent->m_sqlConnector);
 
-    UpdateAccountDetailFieldValuesResult result = _updateAccountDetailFieldValues(clientDetails,performedBy,accountUUID,inputFieldValues,isAdmin);
+    UpdateAccountDetailFieldValuesResult result = _updateAccountDetailFieldValues(clientDetails, performedBy, accountUUID, inputFieldValues, isAdmin);
     if (result.status == UpdateAccountDetailFieldValuesResult::Status::SUCCESS)
     {
         bool finalized = tg.finalize(true);
@@ -458,7 +617,6 @@ UpdateAccountDetailFieldValuesResult IdentityManager_DB::Accounts_DB::updateAcco
 
 std::map<std::string, AccountDetailField> IdentityManager_DB::Accounts_DB::_listAccountDetailFields()
 {
-
     std::map<std::string, AccountDetailField> fieldMap;
 
     // Variables para capturar valores de la base de datos
@@ -467,9 +625,10 @@ std::map<std::string, AccountDetailField> IdentityManager_DB::Accounts_DB::_list
     Abstract::STRING jsonExtendedAttribsText;
     Abstract::INT32 orderPriority;
 
-    std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelect(
-        "SELECT `fieldName`, `fieldDescription`, `fieldType`, `isOptionalField`, `isUnique`, `isLoginIdentifier`, `jsonExtendedAttribs`, `orderPriority` FROM `iam`.`accountDetailFields` ORDER BY `orderPriority` ASC;", {},
-        {&fieldName, &fieldDescription, &fieldType, &isOptionalField, &isUnique, &isLoginIdentifier, &jsonExtendedAttribsText, &orderPriority});
+    std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelect("SELECT `fieldName`, `fieldDescription`, `fieldType`, `isOptionalField`, `isUnique`, `isLoginIdentifier`, `jsonExtendedAttribs`, "
+                                                                "`orderPriority` FROM `iam`.`accountDetailFields` ORDER BY `orderPriority` ASC;",
+                                                                {},
+                                                                {&fieldName, &fieldDescription, &fieldType, &isOptionalField, &isUnique, &isLoginIdentifier, &jsonExtendedAttribsText, &orderPriority});
 
     if (i && i->isSuccessful())
     {
@@ -494,7 +653,9 @@ std::map<std::string, AccountDetailField> IdentityManager_DB::Accounts_DB::_list
     return fieldMap;
 }
 
-UpdateAccountDetailFieldValuesResult IdentityManager_DB::Accounts_DB::_updateAccountDetailFieldValues(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountUUID, const std::map<std::string, std::string> &inputFieldValues, bool isAdmin)
+UpdateAccountDetailFieldValuesResult IdentityManager_DB::Accounts_DB::_updateAccountDetailFieldValues(const ClientDetails &clientDetails, const std::string &performedBy,
+                                                                                                      const std::string &accountUUID, const std::map<std::string, std::string> &inputFieldValues,
+                                                                                                      bool isAdmin)
 {
     UpdateAccountDetailFieldValuesResult result;
     std::map<std::string, AccountDetailField> dbFieldsScheme = _listAccountDetailFields();
@@ -539,7 +700,6 @@ UpdateAccountDetailFieldValuesResult IdentityManager_DB::Accounts_DB::_updateAcc
         return result;
     }
 
-
     // Validate that login-identifier values do not collide with values from other accounts.
     for (const auto &[fieldName, fieldValue] : inputFieldValues)
     {
@@ -552,7 +712,8 @@ UpdateAccountDetailFieldValuesResult IdentityManager_DB::Accounts_DB::_updateAcc
                        WHERE vadf.isLoginIdentifier = 1
                          AND vadv.value = :value
                          AND vadv.f_accountUUID != :accountUUID)",
-                    {{":value", MAKE_VAR(STRING, fieldValue)}, {":accountUUID", MAKE_VAR(STRING, accountUUID)}}, {&conflictCount}))
+                    {{":value", MAKE_VAR(STRING, fieldValue)}, {":accountUUID", MAKE_VAR(STRING, accountUUID)}},
+                    {&conflictCount}))
             {
                 if (conflictCount.getValue() > 0)
                 {
@@ -581,7 +742,8 @@ UpdateAccountDetailFieldValuesResult IdentityManager_DB::Accounts_DB::_updateAcc
                          AND vadf.fieldName = :fieldName
                          AND vadv.value = :value
                          AND vadv.f_accountUUID != :accountUUID)",
-                    {{":fieldName", MAKE_VAR(STRING, fieldName)}, {":value", MAKE_VAR(STRING, fieldValue)}, {":accountUUID", MAKE_VAR(STRING, accountUUID)}}, {&conflictCount}))
+                    {{":fieldName", MAKE_VAR(STRING, fieldName)}, {":value", MAKE_VAR(STRING, fieldValue)}, {":accountUUID", MAKE_VAR(STRING, accountUUID)}},
+                    {&conflictCount}))
             {
                 if (conflictCount.getValue() > 0)
                 {
@@ -596,7 +758,6 @@ UpdateAccountDetailFieldValuesResult IdentityManager_DB::Accounts_DB::_updateAcc
         result.status = UpdateAccountDetailFieldValuesResult::Status::DUPLICATE_UNIQUE_FIELD;
         return result;
     }
-
 
     // Delete all the fields that are going to be replaced.
     if (isAdmin)
@@ -653,15 +814,19 @@ std::map<std::string, AccountDetailFieldValue> IdentityManager_DB::Accounts_DB::
     std::map<std::string, AccountDetailFieldValue> detailValues;
 
     Abstract::STRING fieldName, fieldDescription, fieldType, jsonExtendedAttribsText, value;
+    Abstract::INT32 orderPriority;
 
     std::string query = R"(
-                            SELECT vadf.fieldName, vadf.fieldDescription, vadf.fieldType, vadf.jsonExtendedAttribs, vadv.value
-                            FROM iam.accountDetailFields vadf
-                            LEFT JOIN iam.accountDetailValues vadv ON vadf.fieldName = vadv.f_fieldName
-                            AND vadv.f_accountUUID = :accountUUID
-                        )";
+                             SELECT vadf.fieldName, vadf.fieldDescription, vadf.fieldType, vadf.jsonExtendedAttribs, vadf.orderPriority, vadv.value
+                             FROM iam.accountDetailFields vadf
+                             LEFT JOIN iam.accountDetailValues vadv ON vadf.fieldName = vadv.f_fieldName
+                             AND vadv.f_accountUUID = :accountUUID
+                             ORDER BY vadf.orderPriority ASC
+                         )";
 
-    std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelect(query, {{":accountUUID", MAKE_VAR(STRING, accountUUID)}}, {&fieldName, &fieldDescription, &fieldType, &jsonExtendedAttribsText, &value});
+    std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelect(query,
+                                                                {{":accountUUID", MAKE_VAR(STRING, accountUUID)}},
+                                                                {&fieldName, &fieldDescription, &fieldType, &jsonExtendedAttribsText, &orderPriority, &value});
 
     if (i && i->isSuccessful())
     {
@@ -703,6 +868,7 @@ std::map<std::string, AccountDetailFieldValue> IdentityManager_DB::Accounts_DB::
                 field.fieldType = fieldType.getValue();
                 field.fieldRegexpValidator = Helpers::JSON::ASSTRING(extendedAttributes["behavior"], "regexpValidator", ""); // TODO: remover esta linea
                 field.extendedAttribs = extendedAttributes;
+                field.orderPriority = orderPriority.getValue();
 
                 if (value.isNull())
                 {

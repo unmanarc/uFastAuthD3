@@ -151,9 +151,13 @@ public:
         virtual std::map<std::string, AccountDetailField> listAccountDetailFields() = 0;
         virtual std::optional<AccountDetailField> getAccountDetailField(const std::string &fieldName) = 0;
 
-        virtual Json::Value searchFields(const Json::Value &dataTablesFilters) = 0;
+         virtual Json::Value searchFields(const Json::Value &dataTablesFilters) = 0;
 
-        // Account Details
+         // Account Detail Fields Order Priority
+         virtual bool moveAccountDetailFieldUp(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &fieldName) = 0;
+         virtual bool moveAccountDetailFieldDown(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &fieldName) = 0;
+
+         // Account Details
         virtual bool changeAccountDetails(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountUUID, const std::map<std::string, std::string> &fieldsValues,
                                           bool resetAllValues = false)
             = 0;

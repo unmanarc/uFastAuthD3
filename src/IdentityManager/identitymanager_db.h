@@ -95,9 +95,13 @@ public:
         RemoveAccountDetailFieldResult removeAccountDetailField(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &fieldName) override;
         std::map<std::string, AccountDetailField> listAccountDetailFields() override;
         std::optional<AccountDetailField> getAccountDetailField(const std::string &fieldName) override;
-        Json::Value searchFields(const Json::Value &dataTablesFilters) override;
+         Json::Value searchFields(const Json::Value &dataTablesFilters) override;
 
-        // Account Detail Value Operations
+         // Account Detail Fields Order Priority
+         bool moveAccountDetailFieldUp(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &fieldName) override;
+         bool moveAccountDetailFieldDown(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &fieldName) override;
+
+         // Account Detail Value Operations
         bool changeAccountDetails(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountUUID, const std::map<std::string, std::string> &fieldsValues,
                                   bool resetAllValues = false) override;
         bool removeAccountDetail(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountUUID, const std::string &fieldName) override;
@@ -109,7 +113,8 @@ public:
     private:
         std::map<std::string, AccountDetailField> _listAccountDetailFields();
         UpdateAccountDetailFieldValuesResult _updateAccountDetailFieldValues(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountUUID,
-                                                                             const std::map<std::string, std::string> &inputFieldValues, bool isAdmin);
+                                                                              const std::map<std::string, std::string> &inputFieldValues, bool isAdmin);
+        void _reorderAccountDetailFields();
         bool isThereAnotherAdmin(const std::string &accountUUID);
         IdentityManager_DB *_parent;
     };
