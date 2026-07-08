@@ -30,6 +30,8 @@ protected:
     static APIReturn updateAccountDetailField(void *context, const RequestContext &request, ClientDetails &authClientDetails);
     static APIReturn removeAccountDetailField(void *context, const RequestContext &request, ClientDetails &authClientDetails);
     static APIReturn getAccountDetailField(void *context, const RequestContext &request, ClientDetails &authClientDetails);
+    static APIReturn moveAccountDetailFieldUp(void *context, const RequestContext &request, ClientDetails &authClientDetails);
+    static APIReturn moveAccountDetailFieldDown(void *context, const RequestContext &request, ClientDetails &authClientDetails);
     static APIReturn getAccountDetailFieldsValues(void *context, const RequestContext &request, ClientDetails &authClientDetails);
     static APIReturn updateAccountDetailFieldsValues(void *context, const RequestContext &request, ClientDetails &authClientDetails);
 

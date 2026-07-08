@@ -2,6 +2,7 @@
 #include "IdentityManager/ds_authentication.h"
 #include "globals.h"
 
+#include <algorithm>
 #include <boost/algorithm/string/join.hpp>
 #include <cinttypes>
 #include <ctime>
@@ -96,9 +97,15 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::createChallengeToken(void 
     AuthenticationResult authResult = Globals::getIdentityManager()->authController->authenticateCredential(clientDetails, accountUUID, verification, slotId);
 
     // Log the authentication result
-    LOG_APP->log2(__func__, accountUUID, clientDetails.ipAddress, authResult != AuthenticationResult::AUTHENTICATED ? Logs::LogLevel::SECURITY_ALERT : Logs::LogLevel::INFO,
-                  "Account Authorization Result: %" PRIu16 " - %s, for application '%s', and slotId = '%" PRIu32 "'", static_cast<uint16_t>(authResult), authResultToString(authResult),
-                  request.jwtToken->getClaim("app").asString().c_str(), slotId);
+    LOG_APP->log2(__func__,
+                  accountUUID,
+                  clientDetails.ipAddress,
+                  authResult != AuthenticationResult::AUTHENTICATED ? Logs::LogLevel::SECURITY_ALERT : Logs::LogLevel::INFO,
+                  "Account Authorization Result: %" PRIu16 " - %s, for application '%s', and slotId = '%" PRIu32 "'",
+                  static_cast<uint16_t>(authResult),
+                  authResultToString(authResult),
+                  request.jwtToken->getClaim("app").asString().c_str(),
+                  slotId);
 
     if (!IS_CREDENTIAL_AUTHENTICATED(authResult))
     {
@@ -188,23 +195,19 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::updateAccountDetailFieldsV
         return response;
 
     case UpdateAccountDetailFieldValuesResult::Status::INVALID_FIELD:
-        return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_field",
-                "One or more field names do not exist: " + boost::algorithm::join(result.duplicateFields, ", ")};
+        return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_field", "One or more field names do not exist: " + boost::algorithm::join(result.duplicateFields, ", ")};
 
     case UpdateAccountDetailFieldValuesResult::Status::PERMISSION_DENIED:
         return {HTTP::Status::Code::S_403_FORBIDDEN, "permission_denied", "User lacks permission to edit one or more fields"};
 
     case UpdateAccountDetailFieldValuesResult::Status::REGEX_VALIDATION_FAILED:
-        return {HTTP::Status::Code::S_400_BAD_REQUEST, "regex_validation_failed",
-                "One or more values failed regex validation: " + boost::algorithm::join(result.regexInvalidFields, ", ")};
+        return {HTTP::Status::Code::S_400_BAD_REQUEST, "regex_validation_failed", "One or more values failed regex validation: " + boost::algorithm::join(result.regexInvalidFields, ", ")};
 
     case UpdateAccountDetailFieldValuesResult::Status::DUPLICATE_LOGIN_IDENTIFIER:
-        return {HTTP::Status::Code::S_409_CONFLICT, "duplicate_login_identifier",
-                "Login identifier conflict for fields: " + boost::algorithm::join(result.duplicateFields, ", ")};
+        return {HTTP::Status::Code::S_409_CONFLICT, "duplicate_login_identifier", "Login identifier conflict for fields: " + boost::algorithm::join(result.duplicateFields, ", ")};
 
     case UpdateAccountDetailFieldValuesResult::Status::DUPLICATE_UNIQUE_FIELD:
-        return {HTTP::Status::Code::S_409_CONFLICT, "duplicate_unique_field",
-                "Unique field conflict for fields: " + boost::algorithm::join(result.uniqueInvalidFields, ", ")};
+        return {HTTP::Status::Code::S_409_CONFLICT, "duplicate_unique_field", "Unique field conflict for fields: " + boost::algorithm::join(result.uniqueInvalidFields, ", ")};
 
     case UpdateAccountDetailFieldValuesResult::Status::DB_ERROR:
     default:
@@ -220,8 +223,13 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::getAccountDetailFieldsValu
 
     std::map<std::string, AccountDetailFieldValue> fieldValues = Globals::getIdentityManager()->accounts->getAccountDetailFieldValues(accountUUID);
 
+    std::vector<std::pair<std::string, AccountDetailFieldValue>> sortedFieldValues(fieldValues.begin(), fieldValues.end());
+    std::sort(sortedFieldValues.begin(),
+              sortedFieldValues.end(),
+              [](const std::pair<std::string, AccountDetailFieldValue> &a, const std::pair<std::string, AccountDetailFieldValue> &b) { return a.second.orderPriority < b.second.orderPriority; });
+
     Json::Value result(Json::arrayValue);
-    for (const auto &fieldValue : fieldValues)
+    for (const auto &fieldValue : sortedFieldValues)
     {
         result.append(fieldValue.second.toJSON());
     }
@@ -363,9 +371,15 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::removeCredential(void *con
     AuthenticationResult authResult = Globals::getIdentityManager()->authController->authenticateCredential(clientDetails, accountUUID, verification, slotId);
 
     // Log the authentication result
-    LOG_APP->log2(__func__, accountUUID, clientDetails.ipAddress, authResult != AuthenticationResult::AUTHENTICATED ? Logs::LogLevel::SECURITY_ALERT : Logs::LogLevel::INFO,
-                  "Account Authorization Result: %" PRIu16 " - %s, for application '%s', and slotId = '%" PRIu32 "'", static_cast<uint16_t>(authResult), authResultToString(authResult),
-                  request.jwtToken->getClaim("app").asString().c_str(), slotId);
+    LOG_APP->log2(__func__,
+                  accountUUID,
+                  clientDetails.ipAddress,
+                  authResult != AuthenticationResult::AUTHENTICATED ? Logs::LogLevel::SECURITY_ALERT : Logs::LogLevel::INFO,
+                  "Account Authorization Result: %" PRIu16 " - %s, for application '%s', and slotId = '%" PRIu32 "'",
+                  static_cast<uint16_t>(authResult),
+                  authResultToString(authResult),
+                  request.jwtToken->getClaim("app").asString().c_str(),
+                  slotId);
 
     if (!IS_CREDENTIAL_AUTHENTICATED(authResult))
     {

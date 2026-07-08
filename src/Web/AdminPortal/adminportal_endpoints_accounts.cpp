@@ -6,6 +6,7 @@
 #include <json/value.h>
 
 #include "globals.h"
+#include <algorithm>
 #include <Mantids30/Helpers/json.h>
 #include <boost/algorithm/string/join.hpp>
 
@@ -38,6 +39,8 @@ void AdminPortal_Endpoints_Accounts::addEndpoints_Accounts(const std::shared_ptr
     endpoints->addEndpoint(HTTP::Method::PUT, "updateAccountDetailField", SecurityRequirements::JWT_COOKIE_AUTH, {"CONFIG_WRITE"}, nullptr, &updateAccountDetailField);
     endpoints->addEndpoint(HTTP::Method::DELETE, "removeAccountDetailField", SecurityRequirements::JWT_COOKIE_AUTH, {"CONFIG_WRITE"}, nullptr, &removeAccountDetailField);
     endpoints->addEndpoint(HTTP::Method::GET, "getAccountDetailField", SecurityRequirements::JWT_COOKIE_AUTH, {"CONFIG_READ"}, nullptr, &getAccountDetailField);
+    endpoints->addEndpoint(HTTP::Method::PATCH, "moveAccountDetailFieldUp", SecurityRequirements::JWT_COOKIE_AUTH, {"CONFIG_WRITE"}, nullptr, &moveAccountDetailFieldUp);
+    endpoints->addEndpoint(HTTP::Method::PATCH, "moveAccountDetailFieldDown", SecurityRequirements::JWT_COOKIE_AUTH, {"CONFIG_WRITE"}, nullptr, &moveAccountDetailFieldDown);
 
     endpoints->addEndpoint(HTTP::Method::POST, "extendAccountInactivity", SecurityRequirements::JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"}, nullptr, &extendInactivity);
 }
@@ -450,7 +453,7 @@ API::APIReturn AdminPortal_Endpoints_Accounts::createAccountDetailField(void *co
     std::string fieldName = Helpers::JSON::ASSTRING((*request.inputJSON), "fieldName", "");
     if (fieldName.empty())
     {
-        return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Field Name is Empty"};
+        return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Field Key Name is Empty"};
     }
     if (!Globals::getIdentityManager()->accounts->createAccountDetailField(authClientDetails, request.jwtToken->getSubject(), fieldName, fieldDetails))
     {
@@ -468,7 +471,7 @@ AdminPortal_Endpoints_Accounts::APIReturn AdminPortal_Endpoints_Accounts::update
     std::string fieldName = Helpers::JSON::ASSTRING((*request.inputJSON), "fieldName", "");
     if (fieldName.empty())
     {
-        return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Field Name is Empty"};
+        return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Field Key Name is Empty"};
     }
 
     auto result = Globals::getIdentityManager()->accounts->updateAccountDetailField(authClientDetails, request.jwtToken->getSubject(), fieldName, fieldDetails);
@@ -495,7 +498,7 @@ API::APIReturn AdminPortal_Endpoints_Accounts::removeAccountDetailField(void *co
     std::string fieldName = Helpers::JSON::ASSTRING((*request.inputJSON), "fieldName", "");
     if (fieldName.empty())
     {
-        return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Field Name is Empty"};
+        return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Field Key Name is Empty"};
     }
 
     auto result = Globals::getIdentityManager()->accounts->removeAccountDetailField(authClientDetails, request.jwtToken->getSubject(), fieldName);
@@ -520,7 +523,7 @@ API::APIReturn AdminPortal_Endpoints_Accounts::getAccountDetailField(void *conte
     std::string fieldName = Helpers::JSON::ASSTRING((*request.inputJSON), "fieldName", "");
     if (fieldName.empty())
     {
-        return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Field Name is Empty"};
+        return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Field Key Name is Empty"};
     }
     std::optional<AccountDetailField> field = Globals::getIdentityManager()->accounts->getAccountDetailField(fieldName);
     if (!field)
@@ -529,6 +532,38 @@ API::APIReturn AdminPortal_Endpoints_Accounts::getAccountDetailField(void *conte
     }
 
     return field.value().toJSON();
+}
+
+API::APIReturn AdminPortal_Endpoints_Accounts::moveAccountDetailFieldUp(void *context, const RequestContext &request, ClientDetails &authClientDetails)
+{
+    std::string fieldName = Helpers::JSON::ASSTRING((*request.inputJSON), "fieldName", "");
+    if (fieldName.empty())
+    {
+        return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Field Key Name is Empty"};
+    }
+
+    if (!Globals::getIdentityManager()->accounts->moveAccountDetailFieldUp(authClientDetails, request.jwtToken->getSubject(), fieldName))
+    {
+        return {HTTP::Status::Code::S_404_NOT_FOUND, "field_not_found", "Field not found"};
+    }
+
+    return {};
+}
+
+API::APIReturn AdminPortal_Endpoints_Accounts::moveAccountDetailFieldDown(void *context, const RequestContext &request, ClientDetails &authClientDetails)
+{
+    std::string fieldName = Helpers::JSON::ASSTRING((*request.inputJSON), "fieldName", "");
+    if (fieldName.empty())
+    {
+        return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Field Key Name is Empty"};
+    }
+
+    if (!Globals::getIdentityManager()->accounts->moveAccountDetailFieldDown(authClientDetails, request.jwtToken->getSubject(), fieldName))
+    {
+        return {HTTP::Status::Code::S_404_NOT_FOUND, "field_not_found", "Field not found"};
+    }
+
+    return {};
 }
 
 API::APIReturn AdminPortal_Endpoints_Accounts::getAccountDetailFieldsValues(void *context, const RequestContext &request, ClientDetails &authClientDetails)
@@ -543,8 +578,15 @@ API::APIReturn AdminPortal_Endpoints_Accounts::getAccountDetailFieldsValues(void
 
     std::map<std::string, AccountDetailFieldValue> fieldValues = Globals::getIdentityManager()->accounts->getAccountDetailFieldValues(accountUUID);
 
+    std::vector<std::pair<std::string, AccountDetailFieldValue>> sortedFieldValues(fieldValues.begin(), fieldValues.end());
+    std::sort(sortedFieldValues.begin(), sortedFieldValues.end(),
+              [](const std::pair<std::string, AccountDetailFieldValue> &a, const std::pair<std::string, AccountDetailFieldValue> &b)
+              {
+                  return a.second.orderPriority < b.second.orderPriority;
+              });
+
     Json::Value result(Json::arrayValue);
-    for (const auto &fieldValue : fieldValues)
+    for (const auto &fieldValue : sortedFieldValues)
     {
         result.append(fieldValue.second.toJSON());
     }
