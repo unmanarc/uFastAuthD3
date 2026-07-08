@@ -54,12 +54,17 @@
         data: "appName",
         title: "Application Name",
         render: function (data, type, row) {
-          var span = document.createElement('span');
+          var container = document.createElement('span');
           var icon = document.createElement('i');
           icon.className = 'fas fa-window-maximize';
-          span.appendChild(icon);
-          span.appendChild(document.createTextNode(' ' + (data || '')));
-          return span.outerHTML;
+          container.appendChild(icon);
+          container.appendChild(document.createTextNode(' '));
+          var nameSpan = document.createElement('span');
+          nameSpan.className = 'text-primary';
+          nameSpan.style.fontWeight = 'bold';
+          nameSpan.appendChild(document.createTextNode(data || ''));
+          container.appendChild(nameSpan);
+          return container.outerHTML;
         }
       },
       {
