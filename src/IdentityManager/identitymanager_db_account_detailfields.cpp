@@ -66,20 +66,7 @@ Json::Value IdentityManager_DB::Accounts_DB::searchFields(const Json::Value &dat
     Json::Value ret;
     std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
 
-    // DataTables:
-    ret["draw"] = dataTablesFilters["draw"];
-
-    uint64_t offset = Helpers::JSON::ASUINT64(dataTablesFilters, "start", 0);
-    uint64_t limit = Helpers::JSON::ASUINT64(dataTablesFilters, "length", 0);
-
-    // Manejo de ordenamiento (order);
-    std::string orderByStatement = Helpers::DataTables::getOrderByStatement(dataTablesFilters);
-
-    // Extract the search value from dataTablesFilters
-    std::string searchValue = Helpers::JSON::ASSTRING(dataTablesFilters["search"], "value", "");
-    std::string whereFilters;
-
-    // Build the SQL query with WHERE clause for DataTables search
+    // Return all account detail fields without pagination or search filtering
     std::string sqlQueryStr = R"(
     SELECT
         fieldName,
@@ -90,52 +77,39 @@ Json::Value IdentityManager_DB::Accounts_DB::searchFields(const Json::Value &dat
         isLoginIdentifier,
         orderPriority
     FROM accountDetailFields
+    ORDER BY orderPriority ASC
     )";
-
-    // Add WHERE clause for search term if provided
-    if (!searchValue.empty())
-    {
-        searchValue = "%" + searchValue + "%";
-        whereFilters += "fieldName LIKE :SEARCHWORDS OR fieldDescription LIKE :SEARCHWORDS";
-    }
 
     {
         Abstract::INT32 orderPriority;
         Abstract::STRING fieldName, fieldDescription, fieldType;
         Abstract::BOOL isOptionalField, isUnique, isLoginIdentifier;
-        std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelectWithFilters(sqlQueryStr, whereFilters, {{":SEARCHWORDS", MAKE_VAR(STRING, searchValue)}},
-                                                                               {&fieldName, &fieldDescription, &fieldType, &isOptionalField, &isUnique, &isLoginIdentifier, &orderPriority},
-                                                                               orderByStatement, // Order by
-                                                                               limit,            // LIMIT
-                                                                               offset            // OFFSET
-        );
+        std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelect(sqlQueryStr, {},
+                                                                                {&fieldName, &fieldDescription, &fieldType, &isOptionalField, &isUnique, &isLoginIdentifier, &orderPriority});
 
-        while (i && i->isSuccessful() && i->step())
+        if (i && i->isSuccessful())
         {
-            Json::Value row;
+            while (i->step())
+            {
+                Json::Value row;
 
-            // fieldName
-            row["fieldName"] = fieldName.toJSON();
-            // fieldDescription
-            row["fieldDescription"] = fieldDescription.toJSON();
-            // fieldType
-            row["fieldType"] = fieldType.toJSON();
-            // isOptionalField
-            row["isOptionalField"] = isOptionalField.getValue();
-            // isUnique
-            row["isUnique"] = isUnique.getValue();
-            // isLoginIdentifier
-            row["isLoginIdentifier"] = isLoginIdentifier.getValue();
-            // orderPriority
-            row["orderPriority"] = orderPriority.getValue();
+                // fieldName
+                row["fieldName"] = fieldName.toJSON();
+                // fieldDescription
+                row["fieldDescription"] = fieldDescription.toJSON();
+                // fieldType
+                row["fieldType"] = fieldType.toJSON();
+                // isOptionalField
+                row["isOptionalField"] = isOptionalField.getValue();
+                // isUnique
+                row["isUnique"] = isUnique.getValue();
+                // isLoginIdentifier
+                row["isLoginIdentifier"] = isLoginIdentifier.getValue();
+                // orderPriority
+                row["orderPriority"] = orderPriority.getValue();
 
-            ret["data"].append(row);
-        }
-
-        if (i)
-        {
-            ret["recordsTotal"] = i->getTotalRecordsCount();
-            ret["recordsFiltered"] = i->getFilteredRecordsCount();
+                ret["data"].append(row);
+            }
         }
     }
 
