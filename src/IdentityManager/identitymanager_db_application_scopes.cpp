@@ -1,6 +1,6 @@
 #include "identitymanager_db.h"
 #include <Mantids30/Helpers/datatables.h>
-#include <Mantids30/Threads/lock_shared.h>
+
 
 #include <Mantids30/Memory/a_string.h>
 #include <Mantids30/Memory/a_uint64.h>

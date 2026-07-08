@@ -1,8 +1,6 @@
 #include "identitymanager_db.h"
 #include <Mantids30/Helpers/encoders.h>
 
-#include <Mantids30/Threads/lock_shared.h>
-
 #include <Mantids30/Memory/a_bool.h>
 #include <Mantids30/Memory/a_datetime.h>
 #include <Mantids30/Memory/a_int32.h>

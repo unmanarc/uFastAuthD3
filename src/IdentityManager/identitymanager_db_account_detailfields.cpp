@@ -5,7 +5,7 @@
 #include <Mantids30/DB/transaction.h>
 #include <Mantids30/Helpers/datatables.h>
 #include <Mantids30/Helpers/random.h>
-#include <Mantids30/Threads/lock_shared.h>
+
 #include <boost/algorithm/string/join.hpp>
 #include <boost/regex.hpp>
 #include <json/value.h>
