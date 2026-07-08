@@ -1,0 +1,228 @@
+/*
+ * uFastAuthD3 - Colors Override
+ *
+ * This file overrides Bootstrap and default colors to match
+ * the project's color scheme.
+ *
+ * Primary color: #2891c2
+ */
+
+.isAppAdminBadgeText {
+    color: #8dd0ef;
+}
+
+.pl-0 {
+    color: #9a9a9a;
+}
+
+/* ============================================
+   Links
+   ============================================ */
+
+a {
+    color: #2891c2;
+}
+
+a:hover,
+a:focus {
+    color: #248a9e;
+}
+
+a:active {
+    color: #1c6e7f;
+}
+
+/* ============================================
+   Bootstrap Button Overrides - Success
+   ============================================ */
+
+.btn-success {
+    --bs-btn-color: #fff;
+    --bs-btn-bg: #2891c2;
+    --bs-btn-border-color: #2891c2;
+    --bs-btn-hover-color: #fff;
+    --bs-btn-hover-bg: #248a9e;
+    --bs-btn-hover-border-color: #1c6e7f;
+    --bs-btn-active-color: #fff;
+    --bs-btn-active-bg: #1c6e7f;
+    --bs-btn-active-border-color: #185f6d;
+    --bs-btn-disabled-color: #fff;
+    --bs-btn-disabled-bg: #2891c2;
+    --bs-btn-disabled-border-color: #2891c2;
+}
+
+/* ============================================
+   Bootstrap Button Overrides - Primary
+   ============================================ */
+
+.btn-primary {
+    --bs-btn-color: #fff;
+    --bs-btn-bg: #2891c2;
+    --bs-btn-border-color: #2891c2;
+    --bs-btn-hover-color: #fff;
+    --bs-btn-hover-bg: #248a9e;
+    --bs-btn-hover-border-color: #1c6e7f;
+    --bs-btn-active-color: #fff;
+    --bs-btn-active-bg: #1c6e7f;
+    --bs-btn-active-border-color: #185f6d;
+    --bs-btn-disabled-color: #fff;
+    --bs-btn-disabled-bg: #2891c2;
+    --bs-btn-disabled-border-color: #2891c2;
+}
+
+/* ============================================
+   Text Color Utilities
+   ============================================ */
+
+.text-primary {
+    color: #2891c2 !important;
+}
+
+.text-success {
+    color: #2891c2 !important;
+}
+
+/* ============================================
+   Background Color Utilities
+   ============================================ */
+
+.bg-primary {
+    background-color: #2891c2 !important;
+}
+
+.bg-success {
+    background-color: #2891c2 !important;
+}
+
+/* ============================================
+   Focus & Active States
+   ============================================ */
+
+:focus {
+    outline-color: #2891c2;
+}
+
+.form-control:focus,
+.form-select:focus,
+.form-check-input:focus {
+    border-color: #2891c2;
+    box-shadow: 0 0 0 0.25rem rgba(46, 174, 238, 0.25);
+}
+
+.form-check-input:checked {
+    background-color: #2891c2;
+    border-color: #2891c2;
+}
+
+/* ============================================
+   Navigation Links
+   ============================================ */
+
+.nav-link {
+    display: block;
+    padding: var(--bs-nav-link-padding-y) var(--bs-nav-link-padding-x);
+    font-size: var(--bs-nav-link-font-size);
+    font-weight: var(--bs-nav-link-font-weight);
+    color: var(--bs-nav-link-color, #2891c2);
+    color: #2891c2;
+    text-decoration: none;
+    background: 0 0;
+    border: 0;
+    transition: color .15s ease-in-out, background-color .15s ease-in-out, border-color .15s ease-in-out;
+}
+
+.nav-link:hover,
+.nav-link:focus {
+    color: #248a9e;
+}
+
+.nav-link:active {
+    color: #1c6e7f;
+}
+
+.nav-link.active {
+    color: #2891c2;
+}
+
+.breadcrumb-item.active {
+    color: #2891c2;
+}
+
+
+
+
+/* ============================================
+   Navigation Links - Grey Variant
+   ============================================ */
+
+.nav-link-grey {
+    display: block;
+    padding: var(--bs-nav-link-padding-y) var(--bs-nav-link-padding-x);
+    font-size: var(--bs-nav-link-font-size);
+    font-weight: var(--bs-nav-link-font-weight);
+    color: var(--bs-nav-link-color, #9a9a9a);
+    color: #b6b6b6;
+    text-decoration: none;
+    background: 0 0;
+    border: 0;
+    transition: color .15s ease-in-out, background-color .15s ease-in-out, border-color .15s ease-in-out;
+}
+
+.nav-link-grey:hover,
+.nav-link-grey:focus {
+    color: #e2e2e2;
+}
+
+.nav-link-grey:active {
+    color: #ffffff;
+}
+
+.nav-link-grey.active {
+    color: #e8e8e8;
+}
+
+
+/* ============================================
+   Progress Bars
+   ============================================ */
+
+.progress-bar {
+    background-color: #2891c2;
+}
+
+/* ============================================
+   Alerts - Success
+   ============================================ */
+
+.alert-success {
+    color: #1c6e7f;
+    background-color: #e5f6fb;
+    border-color: #2891c2;
+}
+
+/* ============================================
+   Badges - Success
+   ============================================ */
+
+.badge.bg-success,
+.badge.bg-success:hover {
+    background-color: #2891c2 !important;
+}
+
+/* ============================================
+   Tables - Active/Success States
+   ============================================ */
+
+.table-success,
+.table-success > th,
+.table-success > td {
+    background-color: #e5f6fb;
+}
+
+/* ============================================
+   Card Headers with Success Theme
+   ============================================ */
+
+.card-header.bg-success {
+    background-color: #2891c2 !important;
+}
