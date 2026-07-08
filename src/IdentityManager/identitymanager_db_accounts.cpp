@@ -6,7 +6,7 @@
 #include <Mantids30/DB/transaction.h>
 #include <Mantids30/Helpers/datatables.h>
 #include <Mantids30/Helpers/random.h>
-#include <Mantids30/Threads/lock_shared.h>
+
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/join.hpp>
 #include <boost/regex.hpp>
@@ -443,7 +443,7 @@ Json::Value IdentityManager_DB::Accounts_DB::searchAccounts(const Json::Value &d
         iam.accounts.creation as creation,
         iam.accounts.expiration as expiration,
         last_login_agg.lastLogin as lastLogin,
-        iam.accountCredentials.lastChange as lastChange,
+        iam.accountCredentials.lastChange as lastPasswordChange,
         iam.accounts.isAdmin as isAdmin,
         iam.accounts.isEnabled as isEnabled,
         iam.accounts.isBlocked as isBlocked,
@@ -479,7 +479,7 @@ Json::Value IdentityManager_DB::Accounts_DB::searchAccounts(const Json::Value &d
 
     {
         Abstract::STRING accountUUID;
-        Abstract::DATETIME creation, expiration, lastLogin, lastChange;
+        Abstract::DATETIME creation, expiration, lastLogin, lastPasswordChange;
         Abstract::BOOL isAdmin, isEnabled, isBlocked, isAccountConfirmed;
         Abstract::STRING creator;
         Abstract::BOOL hasBlockedCredential;
@@ -488,7 +488,7 @@ Json::Value IdentityManager_DB::Accounts_DB::searchAccounts(const Json::Value &d
             sqlQueryStr,
             whereFilters,
             {{":SEARCHWORDS", MAKE_VAR(STRING, searchValue)}, {":SEARCHWORDS2", MAKE_VAR(STRING, searchValue)}},
-            {&accountUUID, &creation, &expiration, &lastLogin, &lastChange, &isAdmin, &isEnabled, &isBlocked, &isAccountConfirmed, &creator, &hasBlockedCredential},
+            {&accountUUID, &creation, &expiration, &lastLogin, &lastPasswordChange, &isAdmin, &isEnabled, &isBlocked, &isAccountConfirmed, &creator, &hasBlockedCredential},
             orderByStatement, // Order by
             limit,            // LIMIT
             offset            // OFFSET
@@ -504,10 +504,10 @@ Json::Value IdentityManager_DB::Accounts_DB::searchAccounts(const Json::Value &d
             row["creation"] = creation.getValue();
             // expiration
             row["expiration"] = expiration.getValue();
-            // lastAccess
-            row["lastAccess"] = lastLogin.getValue();
-            // lastChange
-            row["lastPasswordChange"] = lastChange.getValue();
+            // lastLogin
+            row["lastLogin"] = lastLogin.getValue();
+            // lastPasswordChange
+            row["lastPasswordChange"] = lastPasswordChange.getValue();
 
             row["applications"] = Json::arrayValue;
 
