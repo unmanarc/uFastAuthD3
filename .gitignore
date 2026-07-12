@@ -3,7 +3,6 @@
 .project
 .cproject
 .settings/*
-.qtcreator/*
 .vscode/*
 
 # Autotools cache and generated files
