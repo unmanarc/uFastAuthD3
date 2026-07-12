@@ -3,6 +3,8 @@
 .project
 .cproject
 .settings/*
+.qtcreator/*
+.vscode/*
 
 # Autotools cache and generated files
 aclocal.m4
@@ -86,7 +88,6 @@ ltmain.sh
 
 # Autosave Files
 *.autosave
-.vscode/settings.json
 
 # Documentation
 TODO.md
