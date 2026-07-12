@@ -248,7 +248,7 @@
                 window.fieldRegexpMap = {};
 
 
-                // Second loop: populate values and apply regex validation
+                // Second loop: populate values and apply event handlers
                 response.forEach(function (field) {
                     const fieldName = field.name;
                     const fieldDescription = field.description || '';
@@ -261,30 +261,45 @@
                     document.getElementById(`desc-${encodedFieldName}`).textContent = fieldDescription;
                     const inputElement = $(`#${encodedFieldName}`);
 
+                    // Always attach input/change event to show the update button
+                    if (fieldType === 'TEXTLINE' || fieldType === 'TEXTAREA' || fieldType === 'EMAIL' || fieldType === 'NUMBER' || fieldType === 'PASSWORD') {
+                        inputElement.on('input', function () {
+                            displayUpdateFunction();
 
-                    // Apply oninput transformation to TEXTLINE fields
-                    if (fieldRegexp) {
-                        try {
-                            const regex = new RegExp(fieldRegexp);
-                            if (fieldType === 'TEXTLINE' || fieldType === 'TEXTAREA' || fieldType === 'EMAIL' || fieldType === 'NUMBER') {
-                                // Store the fieldRegexp associated with fieldName in a map
-                                window.fieldRegexpMap[fieldName] = fieldRegexp;
-
-                                inputElement.on('input', function () {
-                                    displayUpdateFunction();
-                                    // Apply regex validation if regexpValidator exists
+                            // Apply regex validation only if regexpValidator exists
+                            if (fieldRegexp) {
+                                try {
+                                    const regex = new RegExp(fieldRegexp);
                                     const currentValue = $(this).val();
                                     if (currentValue !== '' && !regex.test(currentValue)) {
                                         $(this).addClass('is-invalid');
                                     } else {
                                         $(this).removeClass('is-invalid');
                                     }
-                                });
+                                } catch (e) {
+                                    console.error("Invalid regex for field " + fieldName + ": ", e);
+                                }
                             }
+                        });
+                    }
+
+                    // Also handle checkbox changes
+                    if (fieldType === 'CHECKBOX') {
+                        inputElement.on('change', function () {
+                            displayUpdateFunction();
+                        });
+                    }
+
+                    // Store the fieldRegexp for validation on submit
+                    if (fieldRegexp) {
+                        try {
+                            const regex = new RegExp(fieldRegexp);
+                            window.fieldRegexpMap[fieldName] = fieldRegexp;
                         } catch (e) {
                             console.error("Invalid regex for field " + fieldName + ": ", e);
                         }
                     }
+
                     if (value === null || value === undefined) return;
 
                     if (inputElement.length > 0) {
