@@ -28,15 +28,16 @@ void WebSessionAuthHandler_Endpoints::addEndpoints(const std::shared_ptr<Endpoin
     using SecurityRequirements = API::Security::Requirements;
 
     endpoints->addEndpoint(HTTP::Method::GET, "getLogoutCallbackURL", SecurityRequirements::NONE, {}, nullptr, &getLogoutCallbackURL);
-    endpoints->addEndpoint(HTTP::Method::POST, "refreshAccessToken", SecurityRequirements::NONE, {}, nullptr, &refreshAccessToken);                      // Using refresh token auth.
+    endpoints->addEndpoint(HTTP::Method::POST, "refreshAccessToken", SecurityRequirements::NONE, {}, nullptr, &refreshAccessToken);            // Using refresh token auth.
     endpoints->addEndpoint(HTTP::Method::GET, "getApplicationPublicData", SecurityRequirements::NONE, {}, nullptr, &getApplicationPublicData); // Using refresh token auth.
-    endpoints->addEndpoint(HTTP::Method::GET, "getUserPublicData", SecurityRequirements::JWT_COOKIE_AUTH, {}, nullptr, &getUserPublicData);              // Using refresh token auth.
+    endpoints->addEndpoint(HTTP::Method::GET, "getUserPublicData", SecurityRequirements::JWT_COOKIE_AUTH, {}, nullptr, &getUserPublicData);    // Using refresh token auth.
     endpoints->addEndpoint(HTTP::Method::POST, "logout", SecurityRequirements::JWT_COOKIE_AUTH, {}, nullptr, &appLogout);
     endpoints->addEndpoint(HTTP::Method::POST, "callback", SecurityRequirements::NONE, {}, nullptr, &callback);
     endpoints->setEndpointOptions("callback", API::OptionsHandlerConfig().insertAllowedOrigin(Globals::pConfig.get<std::string>("AppVars.LoginPortalURL", "")).setAllowCredentials(true));
 }
 
-HTTP::Status::Code WebSessionAuthHandler_Endpoints::handleRetokenizeHTML(const std::string &urlPostfix, HTTPv1_Base::Request *request, HTTPv1_Base::Response *response, const std::shared_ptr<void> &)
+HTTP::Status::Code WebSessionAuthHandler_Endpoints::handleRetokenizeHTML(const std::string &urlPostfix, HTTPv1_Base::Request *request, HTTPv1_Base::Response *response, const std::shared_ptr<void> &,
+                                                                         const Sessions::SessionInfo *sessionInfo)
 {
     std::string page;
     page = R"(
@@ -292,17 +293,26 @@ bool WebSessionAuthHandler_Endpoints::validateAPIKey(const std::string &app, API
 
     if (dbApiKey.empty())
     {
-        LOG_APP->log2(__func__, request.jwtToken->getSubject(), authClientDetails.ipAddress, Logs::LogLevel::SECURITY_ALERT,
-                      "Application '%s' does not exist. Pre-Auth JWT Token signature may be compromised!! Change immediately!", app.c_str());
-        response = {HTTP::Status::Code::S_400_BAD_REQUEST, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::BAD_PARAMETERS)),
+        LOG_APP->log2(__func__,
+                      request.jwtToken->getSubject(),
+                      authClientDetails.ipAddress,
+                      Logs::LogLevel::SECURITY_ALERT,
+                      "Application '%s' does not exist. Pre-Auth JWT Token signature may be compromised!! Change immediately!",
+                      app.c_str());
+        response = {HTTP::Status::Code::S_400_BAD_REQUEST,
+                    "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::BAD_PARAMETERS)),
                     authResultToString(AuthenticationResult::BAD_PARAMETERS)};
         return false;
     }
 
     if (dbApiKey != apiKey)
     {
-        LOG_APP->log2(__func__, request.jwtToken->getSubject(), authClientDetails.ipAddress, Logs::LogLevel::SECURITY_ALERT,
-                      "Application '%s' does not match the web application API Key. Attack or misconfiguration?", app.c_str());
+        LOG_APP->log2(__func__,
+                      request.jwtToken->getSubject(),
+                      authClientDetails.ipAddress,
+                      Logs::LogLevel::SECURITY_ALERT,
+                      "Application '%s' does not match the web application API Key. Attack or misconfiguration?",
+                      app.c_str());
         response = {HTTP::Status::Code::S_404_NOT_FOUND, "not_found", "Not Found."};
         return false;
     }

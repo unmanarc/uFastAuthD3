@@ -25,7 +25,7 @@ public:
     static void addEndpoints(const std::shared_ptr<Endpoints> &endpoints);
 
     static Mantids30::Network::Protocol::HTTP::Status::Code handleLogoutDynamicRequest(const std::string &urlPostfix, HTTPv1_Base::Request *request, HTTPv1_Base::Response *response,
-                                                                                       const std::shared_ptr<void> &);
+                                                                                       const std::shared_ptr<void> &, const Sessions::SessionInfo *sessionInfo);
 
 private:
     ////////////////

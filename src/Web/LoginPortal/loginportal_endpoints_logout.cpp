@@ -42,7 +42,8 @@ bool LoginPortal_Endpoints::retrieveAndValidateAppOrigin(HTTPv1_Base::Request *r
     return origins.count(currentOrigin);
 }
 
-HTTP::Status::Code LoginPortal_Endpoints::handleLogoutDynamicRequest(const std::string &urlPostfix, HTTPv1_Base::Request *request, HTTPv1_Base::Response *response, const std::shared_ptr<void> &)
+HTTP::Status::Code LoginPortal_Endpoints::handleLogoutDynamicRequest(const std::string &urlPostfix, HTTPv1_Base::Request *request, HTTPv1_Base::Response *response, const std::shared_ptr<void> &,
+                                                                     const Sessions::SessionInfo *sessionInfo)
 {
     if (request->requestLine.getHTTPMethod() != "POST")
     {
