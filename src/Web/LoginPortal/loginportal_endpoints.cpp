@@ -22,6 +22,9 @@ void LoginPortal_Endpoints::addEndpoints(const std::shared_ptr<Endpoints> &endpo
 
     endpoints->addEndpoint(HTTP::Method::POST, "authorize", SecurityRequirements::NONE, {}, nullptr, &authorize);
 
+    // Embedded direct token endpoint (all credentials in one request, no LPToken)
+    endpoints->addEndpoint(HTTP::Method::POST, "embedToken", SecurityRequirements::NONE, {}, nullptr, &embedToken);
+
     // Transform the current authentication to the app authentication...
     endpoints->addEndpoint(HTTP::Method::POST, "token", SecurityRequirements::JWT_COOKIE_AUTH, {}, nullptr, &token);
 

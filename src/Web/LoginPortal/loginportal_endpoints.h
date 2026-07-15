@@ -33,6 +33,7 @@ private:
 
     static APIReturn preAuthorize(void *context, const RequestContext &request, ClientDetails &authClientDetails);
     static APIReturn authorize(void *context, const RequestContext &request, ClientDetails &clientDetails);
+    static APIReturn embedToken(void *context, const RequestContext &request, ClientDetails &authClientDetails);
     static APIReturn token(void *context, const RequestContext &request, ClientDetails &authClientDetails);
     static APIReturn logout(void *context, const RequestContext &request, ClientDetails &authClientDetails);
     static APIReturn changeCredential(void *context, const RequestContext &request, ClientDetails &authClientDetails);
