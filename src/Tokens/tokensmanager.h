@@ -1,7 +1,5 @@
-#ifndef TOKENSMANAGER_H
-#define TOKENSMANAGER_H
+#pragma once
 
-#include "IdentityManager/credentialvalidator.h"
 #include "IdentityManager/ds_application.h"
 #include "IdentityManager/identitymanager.h"
 
@@ -30,6 +28,7 @@ public:
 
     struct RefreshTokenParams
     {
+        std::string activity;
         bool keepAuthenticated = false;
         bool useEmbeddedAuthentication = false;
     };
@@ -48,4 +47,3 @@ private:
     static time_t getExpirationTime(const ApplicationTokenCommonParams &commonParams, IdentityManager *identityManager, const std::string &tokenType, time_t defaultTimeout);
 };
 
-#endif // TOKENSMANAGER_H
