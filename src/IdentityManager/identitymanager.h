@@ -515,7 +515,7 @@ public:
                 Json::Value root;
                 root["canAdminModifyApplicationSecurityContext"] = canAdminModifyApplicationSecurityContext;
                 root["canUserAutoRegister"] = canUserAutoRegister;
-                root["useEmbeddedAuthentication"] = useEmbeddedAuthentication;
+                root["useEmbeddedInPortalAuthentication"] = useEmbeddedInPortalAuthentication;
                 root["appSyncEnabled"] = appSyncEnabled;
                 root["appSyncCanRetrieveAppAccountsList"] = appSyncCanRetrieveAppAccountsList;
                 root["allowKeepMeSignedIn"] = allowKeepMeSignedIn;
@@ -527,7 +527,7 @@ public:
                 canAdminModifyApplicationSecurityContext = Helpers::JSON::ASBOOL(root, "canAdminModifyApplicationSecurityContext", false);
                 canUserAutoRegister = Helpers::JSON::ASBOOL(root, "canUserAutoRegister", false);
                 appSyncEnabled = Helpers::JSON::ASBOOL(root, "appSyncEnabled", false);
-                useEmbeddedAuthentication = Helpers::JSON::ASBOOL(root, "useEmbeddedAuthentication", false);
+                useEmbeddedInPortalAuthentication = Helpers::JSON::ASBOOL(root, "useEmbeddedInPortalAuthentication", false);
                 appSyncCanRetrieveAppAccountsList = Helpers::JSON::ASBOOL(root, "appSyncCanRetrieveAppAccountsList", false);
                 allowKeepMeSignedIn = Helpers::JSON::ASBOOL(root, "allowKeepMeSignedIn", false);
             }
@@ -535,12 +535,12 @@ public:
             [[nodiscard]] std::string toString() const
             {
                 return "adminModifySecurity=" + std::to_string(canAdminModifyApplicationSecurityContext) + ", autoRegister=" + std::to_string(canUserAutoRegister)
-                       + ", useEmbeddedAuth=" + std::to_string(useEmbeddedAuthentication) + ", syncEnabled=" + std::to_string(appSyncEnabled)
+                       + ", useEmbeddedInPortalAuth=" + std::to_string(useEmbeddedInPortalAuthentication) + ", syncEnabled=" + std::to_string(appSyncEnabled)
                        + ", syncCanRetrieveAccounts=" + std::to_string(appSyncCanRetrieveAppAccountsList) + ", keepMeSignedIn=" + std::to_string(allowKeepMeSignedIn);
             }
             bool canAdminModifyApplicationSecurityContext = false;
             bool canUserAutoRegister = false;
-            bool useEmbeddedAuthentication = false;
+            bool useEmbeddedInPortalAuthentication = false;
             bool appSyncEnabled = false;
             bool appSyncCanRetrieveAppAccountsList = false;
             bool allowKeepMeSignedIn = false;

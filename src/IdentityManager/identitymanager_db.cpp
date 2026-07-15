@@ -68,7 +68,7 @@ bool IdentityManager_DB::initializeDatabase()
                                               `f_appCreatorAccountUUID`                CHAR(36)  NOT NULL,
                                               `appDescription`                         VARCHAR(4096) NOT NULL,
                                               `apiKey`                                 VARCHAR(512)  NOT NULL,
-                                              `appAttributesJSON`                      TEXT NOT NULL DEFAULT '{"canAdminModifyApplicationSecurityContext":false,"canUserAutoRegister":false,"useEmbeddedAuthentication":false,"appSyncEnabled":true,"appSyncCanRetrieveAppAccountsList":true,"allowKeepMeSignedIn":false}',
+                                              `appAttributesJSON`                      TEXT NOT NULL DEFAULT '{"canAdminModifyApplicationSecurityContext":false,"canUserAutoRegister":false,"useEmbeddedInPortalAuthentication":false,"appSyncEnabled":true,"appSyncCanRetrieveAppAccountsList":true,"allowKeepMeSignedIn":false}',
                                               `appIcon`                                BLOB DEFAULT NULL,
                                               `appLogo`                                BLOB DEFAULT NULL,
                                                FOREIGN KEY(`f_appCreatorAccountUUID`) REFERENCES accounts(`accountUUID`) ON DELETE CASCADE
