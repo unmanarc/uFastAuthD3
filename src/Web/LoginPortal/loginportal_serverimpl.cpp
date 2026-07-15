@@ -38,7 +38,7 @@ bool appOriginValidatorFunction(const std::string &requestOrigin, const std::str
             return false;
         }
 
-        if (!attribs->useEmbeddedAuthentication)
+        if (!attribs->useEmbeddedInPortalAuthentication)
         {
             LOG_APP->log2(__func__, "", "", Logs::LogLevel::SECURITY_ALERT, "App '%s' lacks embedded auth.", appName.c_str());
             return false;

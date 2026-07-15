@@ -66,6 +66,32 @@ API::APIReturn LoginPortal_Endpoints::embedToken(void *context, const API::RESTf
     std::string appName = Helpers::JSON::ASSTRING(*request.inputJSON, "app", "");
     uint32_t schemeId = Helpers::JSON::ASUINT(*request.inputJSON, "schemeId", 0);
     bool keepAuthenticated = Helpers::JSON::ASBOOL(*request.inputJSON, "keepAuthenticated", false);
+    bool usingEmbeddedInPortalAuthentication = false;
+
+    const std::string apiKey = request.clientRequest->getHeaderOption("x-api-key");
+    if (!apiKey.empty())
+    {
+        appName = identityManager->applications->getApplicationNameByAPIKey(apiKey);
+        usingEmbeddedInPortalAuthentication = true;
+        if (appName.empty())
+        {
+            LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LogLevel::SECURITY_ALERT, "Invalid API key provided. Application not found.");
+            return {HTTP::Status::Code::S_401_UNAUTHORIZED, "invalid_api_key", "The provided API key is invalid or unauthorized."};
+        }
+
+        // Check if the application has embedded authentication enabled
+        std::optional<IdentityManager::Applications::ApplicationAttributes> appAttrs = identityManager->applications->getApplicationAttributes(appName);
+        if (!appAttrs.has_value())
+        {
+            LOG_APP->log2(__func__, appName, authClientDetails.ipAddress, Logs::LogLevel::SECURITY_ALERT, "Application attributes not found for app: %s", appName.c_str());
+            return {HTTP::Status::Code::S_404_NOT_FOUND, "not_found", "Application not found."};
+        }
+        if (!appAttrs.value().useEmbeddedInPortalAuthentication)
+        {
+            LOG_APP->log2(__func__, appName, authClientDetails.ipAddress, Logs::LogLevel::SECURITY_ALERT, "API key access attempted for non-embedded application. App: %s", appName.c_str());
+            return {HTTP::Status::Code::S_403_FORBIDDEN, "security_error", "Application does not support embedded authentication via API key."};
+        }
+    }
 
     const Json::Value &jCredentials = (*request.inputJSON)["credentials"];
 
@@ -292,7 +318,7 @@ API::APIReturn LoginPortal_Endpoints::embedToken(void *context, const API::RESTf
     TokensManager::RefreshTokenParams refreshExtraParams;
     refreshExtraParams.activity = "LOGIN";
     refreshExtraParams.keepAuthenticated = keepAuthenticated;
-    refreshExtraParams.useEmbeddedAuthentication = true;
+    refreshExtraParams.useEmbeddedInPortalAuthentication = usingEmbeddedInPortalAuthentication;
 
     TokensManager::configureApplicationRefreshToken(refreshToken, params, refreshExtraParams);
     TokensManager::configureApplicationAccessToken(accessToken, params);

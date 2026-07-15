@@ -53,7 +53,7 @@ std::optional<std::string> LoginPortal_Endpoints::token_signApplicationJWT(JWT::
     return signingJWT->signFromToken(accessToken, false);
 }
 
-bool LoginPortal_Endpoints::token_createAndSignApplicationRefreshAndAccessJWTs(const JWT::Token *jwtToken, const bool &useEmbeddedAuthentication, const bool &keepAuthenticated, const std::string &app,const std::string &activity,
+bool LoginPortal_Endpoints::token_createAndSignApplicationRefreshAndAccessJWTs(const JWT::Token *jwtToken, const bool &useEmbeddedInPortalAuthentication, const bool &keepAuthenticated, const std::string &app,const std::string &activity,
                                                                                const std::string &user, const uint32_t &schemeId, const std::string &redirectURI, APIReturn &response,
                                                                                ClientDetails &authClientDetails)
 {
@@ -82,7 +82,7 @@ bool LoginPortal_Endpoints::token_createAndSignApplicationRefreshAndAccessJWTs(c
         TokensManager::RefreshTokenParams refreshExtraParams;
         refreshExtraParams.activity = activity;
         refreshExtraParams.keepAuthenticated = keepAuthenticated;
-        refreshExtraParams.useEmbeddedAuthentication = useEmbeddedAuthentication;
+        refreshExtraParams.useEmbeddedInPortalAuthentication = useEmbeddedInPortalAuthentication;
 
         TokensManager::configureApplicationRefreshToken(refreshToken, params, refreshExtraParams);
         TokensManager::configureApplicationAccessToken(accessToken, params);

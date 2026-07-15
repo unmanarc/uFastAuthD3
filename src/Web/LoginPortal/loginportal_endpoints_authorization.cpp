@@ -61,7 +61,7 @@ API::APIReturn LoginPortal_Endpoints::preAuthorize(void *context, const API::RES
             LOG_APP->log2(__func__, appName, authClientDetails.ipAddress, Logs::LogLevel::SECURITY_ALERT, "Application attributes not found for app: %s", appName.c_str());
             return {HTTP::Status::Code::S_404_NOT_FOUND, "not_found", "Application not found."};
         }
-        if (!appAttrs.value().useEmbeddedAuthentication)
+        if (!appAttrs.value().useEmbeddedInPortalAuthentication)
         {
             LOG_APP->log2(__func__, appName, authClientDetails.ipAddress, Logs::LogLevel::SECURITY_ALERT, "API key access attempted for non-embedded application. App: %s", appName.c_str());
             return {HTTP::Status::Code::S_403_FORBIDDEN, "security_error", "Application does not support embedded authentication via API key."};

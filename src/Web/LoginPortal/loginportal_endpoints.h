@@ -56,7 +56,7 @@ private:
 
     // TOKEN HELPERS:
     static bool token_validateRedirectURI(const std::string &app, const std::string &user, const std::string &redirectURI, const std::string &ipAddress);
-    static bool token_createAndSignApplicationRefreshAndAccessJWTs(const JWT::Token *jwtToken, const bool &useEmbeddedAuthentication, const bool &keepAuthenticated, const std::string &app, const std::string &activity,
+    static bool token_createAndSignApplicationRefreshAndAccessJWTs(const JWT::Token *jwtToken, const bool &useEmbeddedInPortalAuthentication, const bool &keepAuthenticated, const std::string &app, const std::string &activity,
                                                                    const std::string &user, const uint32_t &schemeId, const std::string &redirectURI, APIReturn &response,
                                                                    ClientDetails &authClientDetails);
     static bool token_validateJwtClaims(const JWT::Token *jwtToken, const std::string &user, const std::string &ipAddress);

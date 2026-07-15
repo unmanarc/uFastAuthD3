@@ -25,7 +25,7 @@ API::APIReturn LoginPortal_Endpoints::token(void *context, const RequestContext 
 
     std::string authenticatedUser = request.jwtToken->getSubject();
 
-    bool isEmbeddedAuthentication = false;
+    bool isEmbeddedInPortalAuthentication = false;
     bool keepAuthenticated  = Helpers::JSON::ASBOOL_D(request.jwtToken->getClaim("keepAuthenticated"), false);
     std::string activity    = Helpers::JSON::ASSTRING(*request.inputJSON, "activity", "");       // APP ACTIVITY NAME.
     std::string redirectURI = Helpers::JSON::ASSTRING(*request.inputJSON, "redirectURI", ""); // APP REDIRECT URI.
@@ -35,9 +35,9 @@ API::APIReturn LoginPortal_Endpoints::token(void *context, const RequestContext 
 
     // Determine appName: prioritize x-api-key header, fallback to inputJSON "app" field
     std::string apiKey = request.clientRequest->getHeaderOption("x-api-key");
-    isEmbeddedAuthentication = !apiKey.empty();
+    isEmbeddedInPortalAuthentication = !apiKey.empty();
     std::string appName;
-    if (isEmbeddedAuthentication)
+    if (isEmbeddedInPortalAuthentication)
     {
         appName = identityManager->applications->getApplicationNameByAPIKey(apiKey);
         if (appName.empty())
@@ -54,7 +54,7 @@ API::APIReturn LoginPortal_Endpoints::token(void *context, const RequestContext 
             LOG_APP->log2(__func__, appName, authClientDetails.ipAddress, Logs::LogLevel::SECURITY_ALERT, "Application attributes not found for app: %s", appName.c_str());
             return {HTTP::Status::Code::S_404_NOT_FOUND, "not_found", "Application not found."};
         }
-        if (!appAttrs.value().useEmbeddedAuthentication)
+        if (!appAttrs.value().useEmbeddedInPortalAuthentication)
         {
             LOG_APP->log2(__func__, appName, authClientDetails.ipAddress, Logs::LogLevel::SECURITY_ALERT, "API key access attempted for non-embedded application. App: %s", appName.c_str());
             return {HTTP::Status::Code::S_403_FORBIDDEN, "security_error", "Application does not support embedded authentication via API key."};
@@ -136,7 +136,7 @@ API::APIReturn LoginPortal_Endpoints::token(void *context, const RequestContext 
     //////////////////////////////////////////////////////////////////////////////////////////
     // Create and sign tokens
     if (!token_createAndSignApplicationRefreshAndAccessJWTs(request.jwtToken,
-                                                            isEmbeddedAuthentication,
+                                                            isEmbeddedInPortalAuthentication,
                                                             keepAuthenticated,
                                                             appName,
                                                             activity,
@@ -155,7 +155,7 @@ API::APIReturn LoginPortal_Endpoints::token(void *context, const RequestContext 
     //////////////////////////////////////////////////////////////////////////////////////////
     //// ----------------------       KEEP AUTHENTICATION       ------------------------- ////
     //////////////////////////////////////////////////////////////////////////////////////////
-    if (!keepAuthenticated || isEmbeddedAuthentication)
+    if (!keepAuthenticated || isEmbeddedInPortalAuthentication)
     {
         // Discard access cookies upon first use. (Access tokens are short-lived, but should be discarded after the first usage)
         // Also on embedded authentication we don't need to keep the auth here.
