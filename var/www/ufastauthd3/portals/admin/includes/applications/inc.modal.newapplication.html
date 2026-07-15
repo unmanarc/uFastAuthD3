@@ -1,7 +1,7 @@
 <script>
 
     function toggleKeepMeSignedInVisibilityCreate() {
-        const embedded = document.getElementById('useEmbeddedAuthenticationCreate').checked;
+        const embedded = document.getElementById('useEmbeddedInPortalAuthenticationCreate').checked;
         const row = document.getElementById('allowKeepMeSignedInRowCreate');
         row.style.display = embedded ? 'block' : 'none';
     }
@@ -15,7 +15,7 @@
         $("#syncServiceEnabledCreate").prop("checked", true);
         $("#canUserAutoRegisterCreate").prop("checked", true);
         $("#appSyncCanRetrieveAppAccountsListCreate").prop("checked", true);
-        $("#useEmbeddedAuthenticationCreate").prop("checked", false);
+        $("#useEmbeddedInPortalAuthenticationCreate").prop("checked", false);
         $("#allowKeepMeSignedInCreate").prop("checked", false);
         toggleKeepMeSignedInVisibilityCreate();
 
@@ -71,7 +71,7 @@
                 applicationAttributes: {
                     canAdminModifyApplicationSecurityContext: $("#canAdminModifyApplicationSecurityContextCreate").is(":checked"),
                     canUserAutoRegister: $("#canUserAutoRegisterCreate").is(":checked"),
-                    useEmbeddedAuthentication: $("#useEmbeddedAuthenticationCreate").is(":checked"),
+                    useEmbeddedInPortalAuthentication: $("#useEmbeddedInPortalAuthenticationCreate").is(":checked"),
                     appSyncEnabled: $("#syncServiceEnabledCreate").is(":checked"),
                     appSyncCanRetrieveAppAccountsList: $("#appSyncCanRetrieveAppAccountsListCreate").is(":checked"),
                     allowKeepMeSignedIn: $("#allowKeepMeSignedInCreate").is(":checked")
@@ -232,8 +232,8 @@
                             <div class="row mb-2">
                                 <div class="col-auto">
                                     <div class="form-check form-switch">
-                                        <input class="form-check-input" type="checkbox" id="useEmbeddedAuthenticationCreate" onchange="toggleKeepMeSignedInVisibilityCreate()">
-                                        <label class="form-check-label" for="useEmbeddedAuthenticationCreate">
+                                        <input class="form-check-input" type="checkbox" id="useEmbeddedInPortalAuthenticationCreate" onchange="toggleKeepMeSignedInVisibilityCreate()">
+                                        <label class="form-check-label" for="useEmbeddedInPortalAuthenticationCreate">
                                             Use Embedded Authentication
                                         </label>
                                     </div>

@@ -9,8 +9,8 @@
 
     // === Embedded Authentication Helpers ===
 
-    function isEmbeddedAuthentication() {
-        const checkbox = document.getElementById('useEmbeddedAuthentication');
+    function isEmbeddedInPortalAuthentication() {
+        const checkbox = document.getElementById('useEmbeddedInPortalAuthentication');
         return checkbox && checkbox.checked;
     }
 
@@ -73,8 +73,8 @@
         }
     }
 
-    function validateLoginFlowForEmbeddedMode() {
-        const embedded = isEmbeddedAuthentication();
+    function validateLoginFlowForEmbeddedInPortalMode() {
+        const embedded = isEmbeddedInPortalAuthentication();
         let hasWarnings = false;
 
         // Validate loginCallbackURI
@@ -216,7 +216,7 @@
             }
 
             // Check if embedded auth mode (allows paths)
-            const embedded = isEmbeddedAuthentication();
+            const embedded = isEmbeddedInPortalAuthentication();
 
             // Validate format based on embedded mode
             if (embedded) {
@@ -364,7 +364,7 @@
             populateWebLoginRedirectURIs(details["redirectURIs"], details["defaultRedirectURI"]);
 
             // Validate data against current embedded mode after populating
-            validateLoginFlowForEmbeddedMode();
+            validateLoginFlowForEmbeddedInPortalMode();
         }
 
         function discardLoginCallbackURIDetails() {
@@ -376,7 +376,7 @@
             var callbackURI = document.getElementById("callbackURI").value;
 
             // Check if embedded auth mode (allows paths)
-            const embedded = isEmbeddedAuthentication();
+            const embedded = isEmbeddedInPortalAuthentication();
 
             // Validate format based on embedded mode
             if (embedded) {
