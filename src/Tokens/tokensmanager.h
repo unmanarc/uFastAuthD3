@@ -30,7 +30,7 @@ public:
     {
         std::string activity;
         bool keepAuthenticated = false;
-        bool useEmbeddedAuthentication = false;
+        bool useEmbeddedInPortalAuthentication = false;
     };
 
     static void configureApplicationAccessToken(Mantids30::DataFormat::JWT::Token &accessToken, const ApplicationTokenCommonParams &commonParams);
