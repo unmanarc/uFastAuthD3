@@ -235,6 +235,12 @@ API::APIReturn LoginPortal_Endpoints::authorize(void *context, const RequestCont
         // Use the same auth... don't go to the next.
         (*response.responseJSON())["nextSlot"] = authContext->currentSlotId.value();
 
+        // Prevent account enumeration:
+
+        if (authRetCode == AuthenticationResult::INVALID_ACCOUNT)
+        {
+            authRetCode = AuthenticationResult::AUTHENTICATION_FAILED;
+        }
         return {HTTP::Status::Code::S_401_UNAUTHORIZED, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(authRetCode)), authResultToString(authRetCode)};
     }
 
