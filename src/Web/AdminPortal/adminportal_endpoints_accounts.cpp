@@ -72,7 +72,7 @@ API::APIReturn AdminPortal_Endpoints_Accounts::createAccount(void *context, cons
 
     // Initialize account flags from request
     AccountFlags accountFlags;
-    accountFlags.fromJSON(request.inputJSON);
+    accountFlags.fromJSON((*request.inputJSON)["flags"]);
 
     // Can't create admin from non-admin account:
     if (accountFlags.admin && !request.jwtToken->isAdmin())
@@ -132,7 +132,7 @@ API::APIReturn AdminPortal_Endpoints_Accounts::createAccount(void *context, cons
     }
     if (accountFlags.admin && !applicationDefs.count(IAM_ADMPORTAL_APPNAME))
     {
-        applicationDefs[IAM_USRPORTAL_APPNAME] = {accountFlags.admin};
+        applicationDefs[IAM_ADMPORTAL_APPNAME] = {accountFlags.admin};
     }
 
     // Parse detail field values from request
@@ -152,8 +152,12 @@ API::APIReturn AdminPortal_Endpoints_Accounts::createAccount(void *context, cons
 
     // Add the new account to the system with specified expiration and flags
     int64_t expirationDate = Helpers::JSON::ASINT64(*request.inputJSON, "expirationDate", 0);
-    CreateAccountResult createResult = Globals::getIdentityManager()->accounts->createAccount(expirationDate, accountFlags, authClientDetails, request.jwtToken->getSubject(), applicationDefs,
-                                                                                                                 fieldValues);
+    CreateAccountResult createResult = Globals::getIdentityManager()->accounts->createAccount(expirationDate,
+                                                                                              accountFlags,
+                                                                                              authClientDetails,
+                                                                                              request.jwtToken->getSubject(),
+                                                                                              applicationDefs,
+                                                                                              fieldValues);
     if (!createResult.success)
     {
         // Check if the failure is due to detail field validation
@@ -225,14 +229,6 @@ API::APIReturn AdminPortal_Endpoints_Accounts::createAccount(void *context, cons
         return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to change the credential on the new user."};
     }
 
-    AccountFlags flags;
-    flags.fromJSON((*request.inputJSON)["flags"]);
-
-    // Apply the credential to the new account
-    if (!Globals::getIdentityManager()->accounts->changeAccountFlags(authClientDetails, request.jwtToken->getSubject(), accountUUID, flags))
-    {
-        return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to change the credential on the new user."};
-    }
 
     return response;
 }
