@@ -124,11 +124,15 @@ API::APIReturn AdminPortal_Endpoints_Accounts::createAccount(void *context, cons
     // Add default applications (Login Portal and User Portal) if not already provided in input
     if (!applicationDefs.count(IAM_LOGINPORTAL_APPNAME))
     {
-        applicationDefs[IAM_LOGINPORTAL_APPNAME] = {false, {"GENERIC_USER"}};
+        applicationDefs[IAM_LOGINPORTAL_APPNAME] = {accountFlags.admin};
     }
     if (!applicationDefs.count(IAM_USRPORTAL_APPNAME))
     {
-        applicationDefs[IAM_USRPORTAL_APPNAME] = {false, {"GENERIC_USER"}};
+        applicationDefs[IAM_USRPORTAL_APPNAME] = {accountFlags.admin, {"GENERIC_USER"}};
+    }
+    if (accountFlags.admin && !applicationDefs.count(IAM_ADMPORTAL_APPNAME))
+    {
+        applicationDefs[IAM_USRPORTAL_APPNAME] = {accountFlags.admin};
     }
 
     // Parse detail field values from request
