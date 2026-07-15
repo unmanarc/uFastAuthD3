@@ -50,7 +50,7 @@ private:
     };
     struct RefreshTokenData
     {
-        bool useEmbeddedAuthentication = false;
+        bool useEmbeddedInPortalAuthentication = false;
         std::string app;
         std::string user;
         std::string jwtId;

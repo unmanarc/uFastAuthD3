@@ -117,7 +117,7 @@ WebSessionAuthHandler_Endpoints::APIReturn WebSessionAuthHandler_Endpoints::getL
     //  Configuration parameters:
     boost::property_tree::ptree config = Globals::pConfig;
 
-    std::string logoutURL = attribs->useEmbeddedAuthentication ? "/login/logout/" : config.get<std::string>("AppVars.LoginPortalURL", "about:blank") + "/logout/";
+    std::string logoutURL = attribs->useEmbeddedInPortalAuthentication ? "/login/logout/" : config.get<std::string>("AppVars.LoginPortalURL", "about:blank") + "/logout/";
     payloadOut["url"] = logoutURL;
     payloadOut["appName"] = appName;
 

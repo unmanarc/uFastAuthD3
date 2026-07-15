@@ -207,7 +207,7 @@ bool WebSessionAuthHandler_Endpoints::validateAndDecodeRefreshToken(const std::s
     outData.user = refreshTokenUser;
     outData.jwtId = refreshTokenVerified.getJwtId();
     outData.slotIds = Helpers::JSON::toUInt32Set(refreshTokenVerified.getClaim("slotIds"));
-    outData.useEmbeddedAuthentication = Helpers::JSON::ASBOOL_D(refreshTokenVerified.getClaim("useEmbeddedAuthentication"), false);
+    outData.useEmbeddedInPortalAuthentication = Helpers::JSON::ASBOOL_D(refreshTokenVerified.getClaim("useEmbeddedInPortalAuthentication"), false);
     outData.tokenProps = tokenProps;
 
     return true;
@@ -273,7 +273,7 @@ WebSessionAuthHandler_Endpoints::APIReturn WebSessionAuthHandler_Endpoints::getA
     }
 
     Json::Value r;
-    r["loginMode"] = tokenData.useEmbeddedAuthentication ? "EMBEDDED" : "DOMAIN";
+    r["loginMode"] = tokenData.useEmbeddedInPortalAuthentication ? "EMBEDDED" : "DOMAIN";
     r["app"]["name"] = tokenData.app;
     r["app"]["description"] = Globals::getIdentityManager()->applications->getApplicationDescription(tokenData.app);
     r["session"] = tokenData.tokenProps.sessionConfiguration;

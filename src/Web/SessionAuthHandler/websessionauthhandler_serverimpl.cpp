@@ -86,7 +86,7 @@ bool dynCallbackOriginValidator(const std::string &requestOrigin, const std::str
         return false;
     }
 
-    if (!attribs->useEmbeddedAuthentication)
+    if (!attribs->useEmbeddedInPortalAuthentication)
     {
         // Use the original (config) permitted Callback Origins
         return permittedCallbackOrigins.count(requestOrigin);
