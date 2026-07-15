@@ -113,7 +113,7 @@ public:
      *         - `AUTH_SCHEME_EMPTY`: The authentication scheme has no associated slots.
      *         - `AUTH_SCHEME_CHANGED`: The slot scheme has changed, indicating a possible race condition.
      *         - `CREDENTIAL_INDEX_NOT_FOUND`: The specified slot ID or index is invalid.
-     *         - `BAD_ACCOUNT`: The account does not exist or is invalid.
+     *         - `INVALID_ACCOUNT`: The account does not exist or is invalid.
      *         - `UNCONFIRMED_ACCOUNT`: The account is not confirmed.
      *         - `DISABLED_ACCOUNT`: The account is disabled or blocked.
      *         - `EXPIRED_ACCOUNT`: The account has expired or is considered abandoned.

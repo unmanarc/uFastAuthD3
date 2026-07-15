@@ -226,7 +226,7 @@ enum class AuthenticationResult : uint16_t
     EXPIRED_ACCOUNT = 102,            // ACCOUNT EXPIRED. NOT USABLE
     DISABLED_ACCOUNT = 103,           // ACCOUNT DISABLED BY ADMIN.
     UNCONFIRMED_ACCOUNT = 104,        // ACCOUNT NOT CONFIRMED YET.
-    BAD_ACCOUNT = 105,                // INVALID OR NON-EXISTENT ACCOUNT
+    INVALID_ACCOUNT = 105,            // INVALID OR NON-EXISTENT ACCOUNT
     AUTHENTICATION_FAILED = 106,      // AUTHENTICATION FAILED (Bad Password).
     CREDENTIAL_INDEX_NOT_FOUND = 107, // Authentication Slot SlotId not found.
     AUTH_SCHEME_CHANGED = 108,        // Authentication scheme changed.
@@ -272,7 +272,7 @@ enum class AuthenticationResult : uint16_t
         return "Account Disabled";
     case AuthenticationResult::UNCONFIRMED_ACCOUNT:
         return "Account Unconfirmed";
-    case AuthenticationResult::BAD_ACCOUNT:
+    case AuthenticationResult::INVALID_ACCOUNT:
         return "Invalid Account";
     case AuthenticationResult::AUTHENTICATION_FAILED:
         return "Authentication Failed";

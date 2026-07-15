@@ -40,8 +40,8 @@ struct TransientAuthenticationContext
             if (lpToken.getSubject() != accountUUID)
             {
                 // This Token is not for this cookie... (other username... logout first please!)
-                response.setError(Network::Protocol::HTTP::Status::Code::S_401_UNAUTHORIZED, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::BAD_ACCOUNT)),
-                                  authResultToString(AuthenticationResult::BAD_ACCOUNT));
+                response.setError(Network::Protocol::HTTP::Status::Code::S_401_UNAUTHORIZED, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::INVALID_ACCOUNT)),
+                                  authResultToString(AuthenticationResult::INVALID_ACCOUNT));
                 return false;
             }
 

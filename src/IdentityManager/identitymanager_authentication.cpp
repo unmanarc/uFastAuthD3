@@ -87,7 +87,7 @@ AuthenticationResult IdentityManager::AuthController::authenticateCredential(con
                                                                              // Extras...
                                                                              std::shared_ptr<TransientAuthenticationContext> authContext)
 {
-    AuthenticationResult authResult = AuthenticationResult::BAD_ACCOUNT;
+    AuthenticationResult authResult = AuthenticationResult::INVALID_ACCOUNT;
     bool accountFound = false, authSlotFound = false;
     Credential pStoredCredentialData;
 
@@ -134,7 +134,7 @@ AuthenticationResult IdentityManager::AuthController::authenticateCredential(con
 
         if (!accountFound)
         {
-            authResult = AuthenticationResult::BAD_ACCOUNT;
+            authResult = AuthenticationResult::INVALID_ACCOUNT;
         }
         else if (!authSlotFound)
         {
