@@ -5,6 +5,7 @@
 #include <Mantids30/Program_Logs/applog.h>
 #include <json/value.h>
 
+#include "defs.h"
 #include "globals.h"
 #include <algorithm>
 #include <Mantids30/Helpers/json.h>
@@ -118,6 +119,16 @@ API::APIReturn AdminPortal_Endpoints_Accounts::createAccount(void *context, cons
                 applicationDefs[appName]= appDef;
             }
         }
+    }
+
+    // Add default applications (Login Portal and User Portal) if not already provided in input
+    if (!applicationDefs.count(IAM_LOGINPORTAL_APPNAME))
+    {
+        applicationDefs[IAM_LOGINPORTAL_APPNAME] = {false, {"GENERIC_USER"}};
+    }
+    if (!applicationDefs.count(IAM_USRPORTAL_APPNAME))
+    {
+        applicationDefs[IAM_USRPORTAL_APPNAME] = {false, {"GENERIC_USER"}};
     }
 
     // Parse detail field values from request
