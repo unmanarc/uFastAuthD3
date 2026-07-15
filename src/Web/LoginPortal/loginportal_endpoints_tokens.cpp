@@ -147,7 +147,8 @@ API::APIReturn LoginPortal_Endpoints::token(void *context, const RequestContext 
                                                             authClientDetails))
     {
         // Failed to create the token...
-        return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::INTERNAL_ERROR)),
+        return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR,
+                "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::INTERNAL_ERROR)),
                 authResultToString(AuthenticationResult::INTERNAL_ERROR)};
     }
 

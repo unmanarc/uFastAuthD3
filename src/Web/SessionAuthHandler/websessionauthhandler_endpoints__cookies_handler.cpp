@@ -57,8 +57,6 @@ void WebSessionAuthHandler_Endpoints::setupRefreshTokenCookies(APIReturn &respon
     setupCookie(response, "SessionPublicData",
         Mantids30::Helpers::Encoders::encodeToBase64(sessionPublicData.toStyledString()),
         propsForLocalModeRead);
-
-    //setupCookie(response, "KeepAuthentication", keepAuthenticated ? "true" : "false", propsForLocalModeRead);
 }
 
 void WebSessionAuthHandler_Endpoints::setupCookie(APIReturn &response, const std::string &name, const std::string &value, const CookieProperties &props)
