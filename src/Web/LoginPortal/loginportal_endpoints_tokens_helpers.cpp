@@ -53,7 +53,7 @@ std::optional<std::string> LoginPortal_Endpoints::token_signApplicationJWT(JWT::
     return signingJWT->signFromToken(accessToken, false);
 }
 
-bool LoginPortal_Endpoints::token_createAndSignApplicationRefreshAndAccessJWTs(const JWT::Token *jwtToken, const bool &useEmbeddedAuthentication, const bool &keepAuthenticated, const std::string &app,
+bool LoginPortal_Endpoints::token_createAndSignApplicationRefreshAndAccessJWTs(const JWT::Token *jwtToken, const bool &useEmbeddedAuthentication, const bool &keepAuthenticated, const std::string &app,const std::string &activity,
                                                                                const std::string &user, const uint32_t &schemeId, const std::string &redirectURI, APIReturn &response,
                                                                                ClientDetails &authClientDetails)
 {
@@ -65,47 +65,57 @@ bool LoginPortal_Endpoints::token_createAndSignApplicationRefreshAndAccessJWTs(c
         return false;
     }
 
-    std::set<uint32_t> authenticatedSlotIdsSet = Helpers::JSON::toUInt32Set(jwtToken->getClaim("slotIds"));
-    std::string refreshTokenId = Mantids30::Helpers::Random::createRandomString(16);
-
-    JWT::Token accessToken, refreshToken; //, logoutToken;
-
-    TokensManager::ApplicationTokenCommonParams params;
-    params.refreshTokenId = refreshTokenId;
-    params.appName = app;
-    params.jwtAccountName = user;
-    params.slotIds = authenticatedSlotIdsSet;
-    params.appAuthSettings = appAuthSettings;
-
-    TokensManager::RefreshTokenParams refreshExtraParams;
-    refreshExtraParams.keepAuthenticated = keepAuthenticated;
-    refreshExtraParams.useEmbeddedAuthentication = useEmbeddedAuthentication;
-
-    TokensManager::configureApplicationRefreshToken(refreshToken, params, refreshExtraParams);
-    TokensManager::configureApplicationAccessToken(accessToken, params);
-
-    // Sign access token
-    std::optional<std::string> accessTokenStr = token_signApplicationJWT(accessToken);
-    if (!accessTokenStr.has_value())
+    if (activity == "LOGIN")
     {
-        LOG_APP->log1(__func__, user, Logs::LogLevel::CRITICAL, "Failed to sign access token for application '%s'.", app.c_str());
-        return false;
+        std::set<uint32_t> authenticatedSlotIdsSet = Helpers::JSON::toUInt32Set(jwtToken->getClaim("slotIds"));
+        std::string refreshTokenId = Mantids30::Helpers::Random::createRandomString(16);
+
+        JWT::Token accessToken, refreshToken; //, logoutToken;
+
+        TokensManager::ApplicationTokenCommonParams params;
+        params.refreshTokenId = refreshTokenId;
+        params.appName = app;
+        params.jwtAccountName = user;
+        params.slotIds = authenticatedSlotIdsSet;
+        params.appAuthSettings = appAuthSettings;
+
+        TokensManager::RefreshTokenParams refreshExtraParams;
+        refreshExtraParams.activity = activity;
+        refreshExtraParams.keepAuthenticated = keepAuthenticated;
+        refreshExtraParams.useEmbeddedAuthentication = useEmbeddedAuthentication;
+
+        TokensManager::configureApplicationRefreshToken(refreshToken, params, refreshExtraParams);
+        TokensManager::configureApplicationAccessToken(accessToken, params);
+
+        // Sign access token
+        std::optional<std::string> accessTokenStr = token_signApplicationJWT(accessToken);
+        if (!accessTokenStr.has_value())
+        {
+            LOG_APP->log1(__func__, user, Logs::LogLevel::CRITICAL, "Failed to sign access token for application '%s'.", app.c_str());
+            return false;
+        }
+
+        // Sign refresh token
+        std::optional<std::string> refreshTokenStr = token_signApplicationJWT(refreshToken);
+        if (!refreshTokenStr.has_value())
+        {
+            LOG_APP->log1(__func__, user, Logs::LogLevel::CRITICAL, "Failed to sign refresh token for application '%s'.", app.c_str());
+            return false;
+        }
+
+        Globals::getIdentityManager()->authController->insertApplicationAccountAccessAuthLog(user, app, schemeId, authClientDetails, refreshTokenId, accessToken.getJwtId(),
+                                                                                             accessToken.getExpirationTime(), refreshToken.getExpirationTime());
+
+        // Here is the effective logging in the app.
+        (*response.responseJSON())["accessToken"] = accessTokenStr.value();
+        (*response.responseJSON())["refreshToken"] = refreshTokenStr.value();
+    }
+    else
+    {
+        // TODO: create an activity token instead
     }
 
-    // Sign refresh token
-    std::optional<std::string> refreshTokenStr = token_signApplicationJWT(refreshToken);
-    if (!refreshTokenStr.has_value())
-    {
-        LOG_APP->log1(__func__, user, Logs::LogLevel::CRITICAL, "Failed to sign refresh token for application '%s'.", app.c_str());
-        return false;
-    }
 
-    Globals::getIdentityManager()->authController->insertApplicationAccountAccessAuthLog(user, app, schemeId, authClientDetails, refreshTokenId, accessToken.getJwtId(),
-                                                                                         accessToken.getExpirationTime(), refreshToken.getExpirationTime());
-
-    // Here is the effective logging in the app.
-    (*response.responseJSON())["accessToken"] = accessTokenStr.value();
-    (*response.responseJSON())["refreshToken"] = refreshTokenStr.value();
     (*response.responseJSON())["redirectURI"] = redirectURI;
     (*response.responseJSON())["callbackURI"] = Globals::getIdentityManager()->applications->getApplicationCallbackURI(app);
 

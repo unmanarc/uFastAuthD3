@@ -24,13 +24,11 @@ API::APIReturn WebSessionAuthHandler_Endpoints::callback(void *context, const Re
 
     // HTTP CLIENT VARS:
     std::string modeStr = request.clientRequest->getVarsBySource(Source::POST)->getStringValue("mode");
-    std::string accessTokenStr = request.clientRequest->getVarsBySource(Source::POST)->getStringValue("accessToken");
-    std::string refreshTokenStr = request.clientRequest->getVarsBySource(Source::POST)->getStringValue("refreshToken");
-    std::string redirectURIStr = request.clientRequest->getVarsBySource(Source::POST)->getStringValue("redirectURI");
-    std::string xAPIKeyStr = request.clientRequest->getHeaderOption("x-api-key");
 
     if (modeStr == "logout")
     {
+        // Receive the signal for logout
+        // Logout is allowed from the LoginPortalURL (using origin validation)
         std::string allowedOrigin;
         allowedOrigin = Globals::pConfig.get<std::string>("AppVars.LoginPortalURL", "");
         if (request.clientRequest->getOrigin() != allowedOrigin)
@@ -39,6 +37,7 @@ API::APIReturn WebSessionAuthHandler_Endpoints::callback(void *context, const Re
             return {HTTP::Status::Code::S_403_FORBIDDEN, "invalid_origin", "Invalid Origin."};
         }
 
+        // We clear the logout cookies here and we proceed to reg the logout in the database.
         APIReturn r = appLogout(context, request, authClientDetails);
         API::OptionsHandlerConfig options;
         options.insertAllowedOrigin(allowedOrigin);
@@ -46,6 +45,11 @@ API::APIReturn WebSessionAuthHandler_Endpoints::callback(void *context, const Re
         options.configureAPIReturnOptionsHeaders(r, request.clientRequest->getOrigin());
         return r;
     }
+
+    std::string accessTokenStr = request.clientRequest->getVarsBySource(Source::POST)->getStringValue("accessToken");
+    std::string refreshTokenStr = request.clientRequest->getVarsBySource(Source::POST)->getStringValue("refreshToken");
+    std::string redirectURIStr = request.clientRequest->getVarsBySource(Source::POST)->getStringValue("redirectURI");
+    std::string xAPIKeyStr = request.clientRequest->getHeaderOption("x-api-key");
 
     // VARS:
     std::string appNameStr = identityManager->applications->getApplicationNameByAPIKey(xAPIKeyStr);
@@ -92,8 +96,15 @@ API::APIReturn WebSessionAuthHandler_Endpoints::callback(void *context, const Re
         return {HTTP::Status::Code::S_403_FORBIDDEN, "invalid_redirect_uri", "The requested redirect URI is not authorized."};
     }
 
-    setupAccessTokenCookies(response, accessToken, tokenProps);
-    setupRefreshTokenCookies(response, refreshToken, tokenProps);
+    if (refreshToken.getClaim("activity") == "LOGIN")
+    {
+        setupAccessTokenCookies(response, accessToken, tokenProps);
+        setupRefreshTokenCookies(response, refreshToken, tokenProps);
+    }
+    else
+    {
+        // TODO: setup an activity cookie
+    }
 
     // Redirect:
     response.redirectURL = redirectURIStr;

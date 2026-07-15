@@ -135,7 +135,15 @@ API::APIReturn LoginPortal_Endpoints::token(void *context, const RequestContext 
     //// -------------------------       TOKEN CREATION       --------------------------- ////
     //////////////////////////////////////////////////////////////////////////////////////////
     // Create and sign tokens
-    if (!token_createAndSignApplicationRefreshAndAccessJWTs(request.jwtToken, isEmbeddedAuthentication, keepAuthenticated, appName, authenticatedUser, schemeId, redirectURI, response,
+    if (!token_createAndSignApplicationRefreshAndAccessJWTs(request.jwtToken,
+                                                            isEmbeddedAuthentication,
+                                                            keepAuthenticated,
+                                                            appName,
+                                                            activity,
+                                                            authenticatedUser,
+                                                            schemeId,
+                                                            redirectURI,
+                                                            response,
                                                             authClientDetails))
     {
         // Failed to create the token...

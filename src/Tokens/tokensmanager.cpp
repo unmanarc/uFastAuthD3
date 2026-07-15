@@ -76,6 +76,7 @@ void TokensManager::configureApplicationRefreshToken(Mantids30::DataFormat::JWT:
     refreshToken.setClaim("slotIds", Helpers::JSON::fromSet(commonParams.slotIds));
     refreshToken.setJwtId(commonParams.refreshTokenId);
     refreshToken.setClaim("app", commonParams.appName);
+    refreshToken.setClaim("activity", refreshParams.activity);
     refreshToken.setClaim("keepAuthenticated", refreshParams.keepAuthenticated);
     refreshToken.setClaim("useEmbeddedAuthentication", refreshParams.useEmbeddedAuthentication);
     refreshToken.setClaim("type", "refresher");
