@@ -235,6 +235,7 @@ enum class AuthenticationResult : uint16_t
     INACTIVE_ACCOUNT = 111,           // ACCOUNT INACTIVE. NOT USABLE
     LOCKED_CREDENTIAL = 112,          // AUTHENTICATION FAILED (LOCKED CREDENTIAL).
     MUST_CHANGE_CREDENTIAL = 113,     // AUTHENTICATION OK, but CREDENTIAL NEED TO BE CHANGED NOW TO UNLOCK.
+    INVALID_SCHEME_FOR_ACTIVITY = 114,
 
     BAD_PARAMETERS = 993, // BAD PARAMETERS.
     INVALID_DOMAIN = 994, // AUTHENTICATION FAILED.
@@ -254,6 +255,7 @@ enum class AuthenticationResult : uint16_t
 {
     switch (result)
     {
+
     case AuthenticationResult::AUTHENTICATED:
         return "Authenticated";
     case AuthenticationResult::INTERNAL_ERROR:
@@ -302,6 +304,8 @@ enum class AuthenticationResult : uint16_t
         return "Not authenticated yet";
     case AuthenticationResult::MUST_CHANGE_CREDENTIAL:
         return "Credential Authenticated and must be changed.";
+    case AuthenticationResult::INVALID_SCHEME_FOR_ACTIVITY:
+        return "Invalid Scheme for Activity.";
     default:
         return "Unknown authentication result";
     }

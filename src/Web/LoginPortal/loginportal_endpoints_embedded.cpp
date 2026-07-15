@@ -104,7 +104,7 @@ API::APIReturn LoginPortal_Endpoints::embedToken(void *context, const API::RESTf
     {
         return {HTTP::Status::Code::S_400_BAD_REQUEST, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::BAD_PARAMETERS)), "Missing required field: app"};
     }
-    if (schemeId==0)
+    if (schemeId == 0)
     {
         return {HTTP::Status::Code::S_400_BAD_REQUEST, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::BAD_PARAMETERS)), "Missing required field: schemeId"};
     }
@@ -128,31 +128,29 @@ API::APIReturn LoginPortal_Endpoints::embedToken(void *context, const API::RESTf
     // 3. Resolve accountName to accountUUID
     // -----------------------------------------------------------------
     std::optional<std::string> _accountUUID = identityManager->accounts->getAccountUUIDByAccountName(accountName);
+    std::string accountUUID;
     if (!_accountUUID.has_value())
-    {
-        LOG_APP->log2(__func__, accountName, authClientDetails.ipAddress, Logs::LogLevel::SECURITY_ALERT, "Embedded token request denied: Account '%s' not found.", accountName.c_str());
-
-        return {HTTP::Status::Code::S_401_UNAUTHORIZED,
-                "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::AUTHENTICATION_FAILED)),
-                authResultToString(AuthenticationResult::AUTHENTICATION_FAILED)};
-    }
-    const std::string &accountUUID = _accountUUID.value();
-
-    // -----------------------------------------------------------------
-    // 3b. Validate that the requested scheme is applicable for LOGIN
-    // -----------------------------------------------------------------
-    if (!token_validateAuthenticationScheme(request.jwtToken, IAM_LOGINPORTAL_APPNAME, "LOGIN", schemeId, accountName, authClientDetails.ipAddress))
     {
         LOG_APP->log2(__func__,
                       accountName,
                       authClientDetails.ipAddress,
                       Logs::LogLevel::SECURITY_ALERT,
-                      "Embedded token request denied: Authentication scheme %" PRIu32 " is not usable from the LOGIN activity (in %s).",
-                      schemeId, IAM_LOGINPORTAL_APPNAME);
+                      "Embedded token request denied: Account '%s' not found, continuing without UUID to prevent user enumeration.",
+                      accountName.c_str());
+    }
+    else
+        accountUUID = _accountUUID.value();
 
+    // -----------------------------------------------------------------
+    // 3b. Validate that the requested scheme is applicable for LOGIN
+    // -----------------------------------------------------------------
+    std::set<uint32_t> schemesInActivity = identityManager->applicationActivities->listAuthenticationSchemesForApplicationActivity(IAM_LOGINPORTAL_APPNAME, "LOGIN");
+    if (schemesInActivity.find(schemeId) == schemesInActivity.end())
+    {
+        LOG_APP->log2(__func__, accountName, authClientDetails.ipAddress, Logs::LogLevel::SECURITY_ALERT, "Token request denied: The user is requesting a scheme that is not in that activity.");
         return {HTTP::Status::Code::S_401_UNAUTHORIZED,
-                "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::UNAUTHENTICATED)),
-                authResultToString(AuthenticationResult::UNAUTHENTICATED)};
+                "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::INVALID_SCHEME_FOR_ACTIVITY)),
+                authResultToString(AuthenticationResult::INVALID_SCHEME_FOR_ACTIVITY)};
     }
 
     // -----------------------------------------------------------------
@@ -269,6 +267,12 @@ API::APIReturn LoginPortal_Endpoints::embedToken(void *context, const API::RESTf
                           "Embedded token request denied: Slot %" PRIu32 " authentication failed: %s",
                           slotId,
                           authResultToString(authResult));
+
+            if (authResult == AuthenticationResult::INVALID_ACCOUNT)
+            {
+                authResult = AuthenticationResult::AUTHENTICATION_FAILED;
+            }
+
             return {HTTP::Status::Code::S_401_UNAUTHORIZED, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(authResult)), authResultToString(authResult)};
         }
 
