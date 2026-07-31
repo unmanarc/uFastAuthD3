@@ -94,6 +94,8 @@ set(Mantids30_LIBRARIES
     Mantids30_Program_Service
     Mantids30_Program_Logs
     Mantids30_Helpers
+    Mantids30_Scripts_JSONExprEval
+    Mantids30_Scripts_MantidsLang
     Mantids30_DataFormat_JWT
     Mantids30_Config_REST
     Mantids30_Config_JWT
