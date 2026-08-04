@@ -46,9 +46,9 @@
                     <div class="card-body">
 
                         <div class="mb-3">
-                            <label for="tokenType" class="form-label">Token Type</label>
-                            <select class="form-select" id="tokenType" oninput="tokenTypeChanged()"
-                                onchange="tokenTypeChanged()">
+                            <label for="signAlgorithm" class="form-label">Token Type</label>
+                            <select class="form-select" id="signAlgorithm" oninput="signAlgorithmChanged()"
+                                onchange="signAlgorithmChanged()">
                                 <option value="HS256">HS256 (HMAC-SHA256: Symmetric algorithm using SHA-256)</option>
                                 <option value="HS384">HS384 (HMAC-SHA384: Symmetric algorithm using SHA-384)</option>
                                 <option value="HS512">HS512 (HMAC-SHA512: Symmetric algorithm using SHA-512)</option>
@@ -216,7 +216,7 @@
 
     let currentTokenConfig;
 
-    function tokenTypeChanged() {
+    function signAlgorithmChanged() {
         document.getElementById('modifyRSKey').style.display = 'none';
         document.getElementById('modifyHSKey').style.display = 'none';
 
@@ -262,13 +262,13 @@
             if (tokensConfig.tokensConfiguration) {
                 const tokens = tokensConfig;
 
-                document.getElementById('tokenType').value = tokensConfig.tokensConfiguration.tokenType || 'HS256';
+                document.getElementById('signAlgorithm').value = tokensConfig.tokensConfiguration.signAlgorithm || 'HS256';
                 document.getElementById('allowRefreshTokenRenovation').checked = tokensConfig.tokensConfiguration.allowRefreshTokenRenovation ?? false;
                 document.getElementById('includeApplicationScopes').checked = tokensConfig.tokensConfiguration.includeApplicationScopes ?? true;
                 document.getElementById('includeApplicationRoles').checked = tokensConfig.tokensConfiguration.includeApplicationRoles ?? true;
                 document.getElementById('includeBasicAccountInfo').checked = tokensConfig.tokensConfiguration.includeBasicAccountInfo ?? true;
 
-                if (tokensConfig.tokensConfiguration.tokenType.startsWith('HS')) {
+                if (tokensConfig.tokensConfiguration.signAlgorithm.startsWith('HS')) {
                     document.getElementById('modifyRSKey').style.display = 'none';
                     document.getElementById('modifyHSKey').style.display = 'block';
                 } else {
@@ -322,7 +322,7 @@
                 inactivityGraceTime: parseInt(document.getElementById('sessionInactivityGraceTime').value) || 0
             },
             tokensConfiguration: {
-                tokenType: document.getElementById('tokenType').value,
+                signAlgorithm: document.getElementById('signAlgorithm').value,
                 allowRefreshTokenRenovation: document.getElementById('allowRefreshTokenRenovation').checked,
                 includeApplicationScopes: document.getElementById('includeApplicationScopes').checked,
                 includeApplicationRoles: document.getElementById('includeApplicationRoles').checked,

@@ -123,7 +123,7 @@ bool IdentityManager_DB::initializeDatabase()
                                              `f_appName`                       VARCHAR(256)    NOT NULL,
                                              `accessTokenSigningKey`           TEXT DEFAULT NULL,
                                              `accessTokenValidationKey`        TEXT DEFAULT NULL,
-                                             `tokensConfigJSON`                TEXT NOT NULL DEFAULT '{ "tokenType" : "HS256", "includeApplicationScopes" : true, "includeBasicAccountInfo" : true, "allowRefreshTokenRenovation" : true, "accessToken" : { "useSessionCookiesByDefault" : true, "path" : "/", "timeout" : 300 }, "refreshToken" : { "path" : "/auth", "timeout" : 2592000 } }',
+                                             `tokensConfigJSON`                TEXT NOT NULL DEFAULT '{ "signAlgorithm" : "HS256", "includeApplicationScopes" : true, "includeBasicAccountInfo" : true, "allowRefreshTokenRenovation" : true, "accessToken" : { "useSessionCookiesByDefault" : true, "path" : "/", "timeout" : 300 }, "refreshToken" : { "path" : "/auth", "timeout" : 2592000 } }',
                                              `sessionConfigJSON`               TEXT NOT NULL DEFAULT '{}',
                                              FOREIGN KEY (`f_appName`) REFERENCES applications(`appName`) ON DELETE CASCADE,
                                              PRIMARY KEY (`f_appName`)

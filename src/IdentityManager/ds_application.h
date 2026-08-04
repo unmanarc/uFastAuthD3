@@ -72,7 +72,7 @@ struct ApplicationAuthSettings
     // Getters that read from tokensConfiguration (no data duplication)
     [[nodiscard]] std::string getSignAlgorithm() const
     {
-        return Mantids30::Helpers::JSON::ASSTRING(tokensConfiguration,"tokenType","HS256");
+        return Mantids30::Helpers::JSON::ASSTRING(tokensConfiguration,"signAlgorithm","HS256");
     }
 
     [[nodiscard]] bool getAllowRefreshTokenRenovation() const
