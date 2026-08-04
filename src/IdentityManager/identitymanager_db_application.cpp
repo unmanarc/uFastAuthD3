@@ -658,21 +658,16 @@ std::set<std::string> IdentityManager_DB::Applications_DB::listWebLoginOriginUrl
 bool IdentityManager_DB::Applications_DB::updateAuthSettingsForApplication(const ClientDetails &clientDetails, const std::string &performedBy, const ApplicationAuthSettings &tokenInfo)
 {
     std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
+
+    // tokensConfiguration already contains all properties via setters
+    Json::Value tokensConfig = tokenInfo.tokensConfiguration;
+
     bool result = _parent->m_sqlConnector->qExecuteEx("UPDATE iam.applicationsAuthSettings SET "
-                                                      "tokenType=:tokenType, includeApplicationScopes=:includeApplicationScopes, "
-                                                      "includeBasicAccountInfo=:includeBasicAccountInfo, allowRefreshTokenRenovation=:allowRefreshTokenRenovation, "
-                                                      "tokensConfigJSON=:tokensConfigJSON, "
-                                                      "sessionConfigJSON=:sessionConfigJSON, "
-                                                      "maintainRevocationAndLogoutInfo=:maintainRevocationAndLogoutInfo WHERE f_appName=:appName;",
-                                                      {{":appName", MAKE_VAR(STRING, tokenInfo.appName)},
-                                                       {":tokenType", MAKE_VAR(STRING, tokenInfo.signAlgorithm)},
-                                                       {":includeApplicationScopes", MAKE_VAR(BOOL, tokenInfo.includeApplicationScopes)},
-                                                       {":includeBasicAccountInfo", MAKE_VAR(BOOL, tokenInfo.includeBasicAccountInfo)},
-                                                       {":allowRefreshTokenRenovation", MAKE_VAR(BOOL, tokenInfo.allowRefreshTokenRenovation)},
-                                                       {":allowRefreshTokenRenovation", MAKE_VAR(BOOL, tokenInfo.allowRefreshTokenRenovation)},
-                                                       {":tokensConfigJSON", MAKE_VAR(STRING, tokenInfo.tokensConfiguration.toStyledString())},
-                                                       {":sessionConfigJSON", MAKE_VAR(STRING, tokenInfo.sessionConfiguration.toStyledString())},
-                                                       {":maintainRevocationAndLogoutInfo", MAKE_VAR(BOOL, tokenInfo.maintainRevocationAndLogoutInfo)}});
+                                                       "tokensConfigJSON=:tokensConfigJSON, "
+                                                       "sessionConfigJSON=:sessionConfigJSON WHERE f_appName=:appName;",
+                                                       {{":appName", MAKE_VAR(STRING, tokenInfo.appName)},
+                                                        {":tokensConfigJSON", MAKE_VAR(STRING, tokensConfig.toStyledString())},
+                                                        {":sessionConfigJSON", MAKE_VAR(STRING, tokenInfo.sessionConfiguration.toStyledString())}});
     if (result)
     {
         _parent->logSecurityEventOnApplications(tokenInfo.appName, SecurityEventAction::UPDATE, "Updated JWT token config", performedBy, clientDetails);
@@ -688,22 +683,15 @@ ApplicationAuthSettings IdentityManager_DB::Applications_DB::getAuthSettingsFrom
     tokenInfo.appName = appName;
 
     // Define las variables para capturar los valores de la base de datos.
-    Abstract::STRING tokenType, tokensConfigJSON, sessionConfigJSON;
-    Abstract::BOOL includeApplicationScopes, includeBasicAccountInfo, maintainRevocationAndLogoutInfo, allowRefreshTokenRenovation;
+    Abstract::STRING tokensConfigJSON, sessionConfigJSON;
 
     if (_parent->m_sqlConnector->qSelectSingleRow(
-            "SELECT allowRefreshTokenRenovation, tokenType, "
-            "includeApplicationScopes, includeBasicAccountInfo, maintainRevocationAndLogoutInfo, tokensConfigJSON, sessionConfigJSON "
+            "SELECT tokensConfigJSON, sessionConfigJSON "
             "FROM iam.applicationsAuthSettings "
             "WHERE f_appName=:appName;",
             {{":appName", MAKE_VAR(STRING, appName)}},
-            {&allowRefreshTokenRenovation, &tokenType, &includeApplicationScopes, &includeBasicAccountInfo, &maintainRevocationAndLogoutInfo, &tokensConfigJSON, &sessionConfigJSON}))
+            {&tokensConfigJSON, &sessionConfigJSON}))
     {
-        tokenInfo.signAlgorithm = tokenType.getValue();
-        tokenInfo.includeApplicationScopes = includeApplicationScopes.getValue();
-        tokenInfo.includeBasicAccountInfo = includeBasicAccountInfo.getValue();
-        tokenInfo.maintainRevocationAndLogoutInfo = maintainRevocationAndLogoutInfo.getValue();
-        tokenInfo.allowRefreshTokenRenovation = allowRefreshTokenRenovation.getValue();
         tokenInfo.tokensConfiguration = Helpers::JSON::parse(tokensConfigJSON.getValue().c_str());
         tokenInfo.sessionConfiguration = Helpers::JSON::parse(sessionConfigJSON.getValue().c_str());
     }

@@ -214,14 +214,14 @@ std::shared_ptr<JWT> IdentityManager::Applications::getAppJWTValidator(const std
     }
 
     // Validate the JWT Algorithm....
-    if (!JWT::isAlgorithmSupported(appAuthSettings.signAlgorithm))
+    if (!JWT::isAlgorithmSupported(appAuthSettings.getSignAlgorithm()))
     {
         // Failed to validate the algorithm type.
         return nullptr;
     }
 
     // Setup the JWT validator:
-    JWT::AlgorithmDetails algorithmDetails = JWT::AlgorithmDetails(appAuthSettings.signAlgorithm.c_str());
+    JWT::AlgorithmDetails algorithmDetails = JWT::AlgorithmDetails(appAuthSettings.getSignAlgorithm().c_str());
     std::shared_ptr<JWT> jwtValidator = std::make_shared<JWT>(algorithmDetails.algorithm);
 
     if (algorithmDetails.isUsingHMAC)
@@ -246,7 +246,7 @@ std::shared_ptr<JWT> IdentityManager::Applications::getAppJWTSigner(const std::s
     if (appAuthSettings.appName == appName && !validationKey.empty() && !signingKey.empty())
     {
         // Validate the JWT....
-        JWT::AlgorithmDetails algorithmDetails = JWT::AlgorithmDetails(appAuthSettings.signAlgorithm.c_str());
+        JWT::AlgorithmDetails algorithmDetails = JWT::AlgorithmDetails(appAuthSettings.getSignAlgorithm().c_str());
         std::shared_ptr<JWT> jwtSigner = std::make_shared<JWT>(algorithmDetails.algorithm);
 
         if (algorithmDetails.isUsingHMAC)

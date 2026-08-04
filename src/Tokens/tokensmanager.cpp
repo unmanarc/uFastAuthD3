@@ -41,7 +41,7 @@ void TokensManager::configureApplicationAccessToken(Mantids30::DataFormat::JWT::
     //accessToken.setClaim( "tokensConfig", appAuthSettings.tokensConfiguration["accessToken"] );
 
     // Get the user scope if needed for this application...
-    if (commonParams.appAuthSettings.includeApplicationScopes)
+    if (commonParams.appAuthSettings.getIncludeApplicationScopes())
     {
         std::set<ApplicationScope> x = identityManager->applicationScopes->getAccountUsableApplicationScopes(commonParams.appName, commonParams.jwtAccountName);
         for (const ApplicationScope &appScope : x)
@@ -50,7 +50,7 @@ void TokensManager::configureApplicationAccessToken(Mantids30::DataFormat::JWT::
         }
     }
     // Get the user basic info if needed for this application...
-    if (commonParams.appAuthSettings.includeBasicAccountInfo)
+    if (commonParams.appAuthSettings.getIncludeBasicAccountInfo())
     {
         if (std::optional<AccountDetails> info = identityManager->accounts->getAccountDetails(commonParams.jwtAccountName, AccountDetailsToShow::TOKEN))
         {

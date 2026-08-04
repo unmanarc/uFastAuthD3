@@ -33,7 +33,8 @@
                                     oninput="displayUpdateTokensFunction(); updatePrettyTime('sessionInactivityGraceTime', 'sessionInactivityGraceTimePretty')"
                                     onchange="displayUpdateTokensFunction(); updatePrettyTime('sessionInactivityGraceTime', 'sessionInactivityGraceTimePretty')">
                                 <small id="sessionInactivityGraceTimePretty" class="form-text text-muted"></small>
-                                <small class="form-text text-muted">Seconds from dialog shown until session closes</small>
+                                <small class="form-text text-muted">Seconds from dialog shown until session
+                                    closes</small>
                             </div>
                         </div>
                     </div>
@@ -74,17 +75,17 @@
                             </label>
                         </div>
                         <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" id="includeApplicationRoles"
+                                oninput="displayUpdateTokensFunction()" onchange="displayUpdateTokensFunction()">
+                            <label class="form-check-label" for="includeApplicationRoles">
+                                Include Application Roles
+                            </label>
+                        </div>
+                        <div class="form-check form-switch mb-3">
                             <input class="form-check-input" type="checkbox" id="includeBasicAccountInfo"
                                 oninput="displayUpdateTokensFunction()" onchange="displayUpdateTokensFunction()">
                             <label class="form-check-label" for="includeBasicAccountInfo">
                                 Include Basic Account Info
-                            </label>
-                        </div>
-                        <div class="form-check form-switch mb-3">
-                            <input class="form-check-input" type="checkbox" id="maintainRevocationAndLogoutInfo"
-                                oninput="displayUpdateTokensFunction()" onchange="displayUpdateTokensFunction()">
-                            <label class="form-check-label" for="maintainRevocationAndLogoutInfo">
-                                Maintain Revocation and Logout Info
                             </label>
                         </div>
                     </div>
@@ -247,35 +248,33 @@
     function populateApplicationTokensConfig(tokensConfig) {
         document.getElementById('modifyTokenButtons').style.display = 'none';
 
-
         document.getElementById('newHSKey').value = '';
         document.getElementById('validationKeyFile').value = '';
         document.getElementById('signingKeyFile').value = '';
-
-
 
         if (tokensConfig != null) {
             // Main configuration
             document.getElementById('enableInactivityTimeout').checked = tokensConfig.sessionConfiguration.enableInactivityTimeout ?? true;
             document.getElementById('sessionInactivityTimeout').value = tokensConfig.sessionConfiguration.inactivityTimeout || 180;
             document.getElementById('sessionInactivityGraceTime').value = tokensConfig.sessionConfiguration.inactivityGraceTime || 30;
-            document.getElementById('tokenType').value = tokensConfig.tokenType || 'HS256';
-            document.getElementById('allowRefreshTokenRenovation').checked = tokensConfig.allowRefreshTokenRenovation ?? false;
-            document.getElementById('includeApplicationScopes').checked = tokensConfig.includeApplicationScopes ?? false;
-            document.getElementById('includeBasicAccountInfo').checked = tokensConfig.includeBasicAccountInfo ?? false;
-            document.getElementById('maintainRevocationAndLogoutInfo').checked = tokensConfig.maintainRevocationAndLogoutInfo ?? false;
-
-            if (tokensConfig.tokenType.startsWith('HS')) {
-                document.getElementById('modifyRSKey').style.display = 'none';
-                document.getElementById('modifyHSKey').style.display = 'block';
-            } else {
-                document.getElementById('modifyRSKey').style.display = 'block';
-                document.getElementById('modifyHSKey').style.display = 'none';
-            }
 
             // Token configuration
             if (tokensConfig.tokensConfiguration) {
-                const tokens = tokensConfig.tokensConfiguration;
+                const tokens = tokensConfig;
+
+                document.getElementById('tokenType').value = tokensConfig.tokensConfiguration.tokenType || 'HS256';
+                document.getElementById('allowRefreshTokenRenovation').checked = tokensConfig.tokensConfiguration.allowRefreshTokenRenovation ?? false;
+                document.getElementById('includeApplicationScopes').checked = tokensConfig.tokensConfiguration.includeApplicationScopes ?? true;
+                document.getElementById('includeApplicationRoles').checked = tokensConfig.tokensConfiguration.includeApplicationRoles ?? true;
+                document.getElementById('includeBasicAccountInfo').checked = tokensConfig.tokensConfiguration.includeBasicAccountInfo ?? true;
+
+                if (tokensConfig.tokensConfiguration.tokenType.startsWith('HS')) {
+                    document.getElementById('modifyRSKey').style.display = 'none';
+                    document.getElementById('modifyHSKey').style.display = 'block';
+                } else {
+                    document.getElementById('modifyRSKey').style.display = 'block';
+                    document.getElementById('modifyHSKey').style.display = 'none';
+                }
 
                 if (tokens.accessToken) {
                     document.getElementById('accessTokenPath').value = tokens.accessToken.path || '/';
@@ -322,12 +321,12 @@
                 inactivityTimeout: parseInt(document.getElementById('sessionInactivityTimeout').value) || 0,
                 inactivityGraceTime: parseInt(document.getElementById('sessionInactivityGraceTime').value) || 0
             },
-            tokenType: document.getElementById('tokenType').value,
-            allowRefreshTokenRenovation: document.getElementById('allowRefreshTokenRenovation').checked,
-            includeApplicationScopes: document.getElementById('includeApplicationScopes').checked,
-            includeBasicAccountInfo: document.getElementById('includeBasicAccountInfo').checked,
-            maintainRevocationAndLogoutInfo: document.getElementById('maintainRevocationAndLogoutInfo').checked,
             tokensConfiguration: {
+                tokenType: document.getElementById('tokenType').value,
+                allowRefreshTokenRenovation: document.getElementById('allowRefreshTokenRenovation').checked,
+                includeApplicationScopes: document.getElementById('includeApplicationScopes').checked,
+                includeApplicationRoles: document.getElementById('includeApplicationRoles').checked,
+                includeBasicAccountInfo: document.getElementById('includeBasicAccountInfo').checked,
                 accessToken: {
                     useSessionCookiesByDefault: document.getElementById('useSessionCookiesByDefault').checked,
                     path: document.getElementById('accessTokenPath').value || '/',

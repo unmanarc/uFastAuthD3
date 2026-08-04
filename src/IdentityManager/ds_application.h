@@ -69,19 +69,36 @@ struct AccountApplicationInfo
 
 struct ApplicationAuthSettings
 {
+    // Getters that read from tokensConfiguration (no data duplication)
+    [[nodiscard]] std::string getSignAlgorithm() const
+    {
+        return Mantids30::Helpers::JSON::ASSTRING(tokensConfiguration,"tokenType","HS256");
+    }
+
+    [[nodiscard]] bool getAllowRefreshTokenRenovation() const
+    {
+        return Mantids30::Helpers::JSON::ASBOOL(tokensConfiguration,"allowRefreshTokenRenovation",false);
+    }
+
+    [[nodiscard]] bool getIncludeApplicationScopes() const
+    {
+        return Mantids30::Helpers::JSON::ASBOOL(tokensConfiguration,"includeApplicationScopes",true);
+    }
+
+    [[nodiscard]] bool getIncludeBasicAccountInfo() const
+    {
+        return Mantids30::Helpers::JSON::ASBOOL(tokensConfiguration,"includeBasicAccountInfo",true);
+    }
+
     [[nodiscard]] Json::Value toJSON() const
     {
         Json::Value root(Json::objectValue);
         root["appName"] = appName;
-        root["tokenType"] = signAlgorithm;
-        root["allowRefreshTokenRenovation"] = allowRefreshTokenRenovation;
-        root["includeApplicationScopes"] = includeApplicationScopes;
-        root["includeBasicAccountInfo"] = includeBasicAccountInfo;
-        root["maintainRevocationAndLogoutInfo"] = maintainRevocationAndLogoutInfo;
         root["tokensConfiguration"] = tokensConfiguration;
         root["sessionConfiguration"] = sessionConfiguration;
         return root;
     }
+
     std::optional<AppError> fromJSON(const Json::Value &root)
     {
         appName = Mantids30::Helpers::JSON::ASSTRING(root, "appName", "");
@@ -94,23 +111,12 @@ struct ApplicationAuthSettings
             return error;
         }
 
-        signAlgorithm = Mantids30::Helpers::JSON::ASSTRING(root, "tokenType", "");
-        allowRefreshTokenRenovation = Mantids30::Helpers::JSON::ASBOOL(root, "allowRefreshTokenRenovation", false);
-        includeApplicationScopes = Mantids30::Helpers::JSON::ASBOOL(root, "includeApplicationScopes", false);
-        includeBasicAccountInfo = Mantids30::Helpers::JSON::ASBOOL(root, "includeBasicAccountInfo", false);
-        maintainRevocationAndLogoutInfo = Mantids30::Helpers::JSON::ASBOOL(root, "maintainRevocationAndLogoutInfo", false);
         tokensConfiguration = root["tokensConfiguration"];
         sessionConfiguration = root["sessionConfiguration"];
-
         return std::nullopt;
     }
 
     std::string appName;
-    std::string signAlgorithm;
-    bool allowRefreshTokenRenovation;
-    bool includeApplicationScopes;
-    bool includeBasicAccountInfo;
-    bool maintainRevocationAndLogoutInfo;
     Json::Value tokensConfiguration;
     Json::Value sessionConfiguration;
 };

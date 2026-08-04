@@ -120,20 +120,15 @@ bool IdentityManager_DB::initializeDatabase()
                                                                         );
                                         )",
         R"(CREATE TABLE IF NOT EXISTS `iam`.`applicationsAuthSettings` (
-                                            `f_appName`                       VARCHAR(256)    NOT NULL,
-                                            `tokenType`                       VARCHAR(20)     NOT NULL DEFAULT 'HS256',
-                                            `accessTokenSigningKey`           TEXT DEFAULT NULL,
-                                            `accessTokenValidationKey`        TEXT DEFAULT NULL,
-                                            `tokensConfigJSON`                TEXT NOT NULL DEFAULT '{ "accessToken" : { useSessionCookiesByDefault : true, "path" : "/", "timeout" : 300},"refreshToken" : {"path" : "/auth", "timeout" : 2592000} }',
-                                            `sessionConfigJSON`               TEXT NOT NULL DEFAULT '{}',
-                                            `includeApplicationScopes`        BOOLEAN NOT NULL DEFAULT TRUE,
-                                            `includeBasicAccountInfo`         BOOLEAN NOT NULL DEFAULT TRUE,
-                                            `maintainRevocationAndLogoutInfo` BOOLEAN NOT NULL DEFAULT FALSE,
-                                            `allowRefreshTokenRenovation`     BOOLEAN NOT NULL DEFAULT TRUE,
-                                            FOREIGN KEY (`f_appName`) REFERENCES applications(`appName`) ON DELETE CASCADE,
-                                            PRIMARY KEY (`f_appName`)
-                                                                        );
-                                    )",
+                                             `f_appName`                       VARCHAR(256)    NOT NULL,
+                                             `accessTokenSigningKey`           TEXT DEFAULT NULL,
+                                             `accessTokenValidationKey`        TEXT DEFAULT NULL,
+                                             `tokensConfigJSON`                TEXT NOT NULL DEFAULT '{ "tokenType" : "HS256", "includeApplicationScopes" : true, "includeBasicAccountInfo" : true, "allowRefreshTokenRenovation" : true, "accessToken" : { "useSessionCookiesByDefault" : true, "path" : "/", "timeout" : 300 }, "refreshToken" : { "path" : "/auth", "timeout" : 2592000 } }',
+                                             `sessionConfigJSON`               TEXT NOT NULL DEFAULT '{}',
+                                             FOREIGN KEY (`f_appName`) REFERENCES applications(`appName`) ON DELETE CASCADE,
+                                             PRIMARY KEY (`f_appName`)
+                                                                         );
+                                     )",
         R"(CREATE TABLE IF NOT EXISTS `iam`.`applicationScopes` (
                                              `f_appName`               VARCHAR(256) NOT NULL,
                                              `scopeId`                 VARCHAR(256) NOT NULL,
