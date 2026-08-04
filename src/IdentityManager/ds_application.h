@@ -85,6 +85,11 @@ struct ApplicationAuthSettings
         return Mantids30::Helpers::JSON::ASBOOL(tokensConfiguration,"includeApplicationScopes",true);
     }
 
+    [[nodiscard]] bool getIncludeApplicationRoles() const
+    {
+        return Mantids30::Helpers::JSON::ASBOOL(tokensConfiguration,"includeApplicationRoles",true);
+    }
+
     [[nodiscard]] bool getIncludeBasicAccountInfo() const
     {
         return Mantids30::Helpers::JSON::ASBOOL(tokensConfiguration,"includeBasicAccountInfo",true);
