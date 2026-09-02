@@ -168,7 +168,7 @@ startAccessRetokenizerTimer();
 function startSessionPublicDataMonitor() {
   setInterval(function () {
     if (!getCookie('SessionPublicData')) {
-      window.location.href = '/login';
+      window.location.href = '/login/';
     }
   }, 1000);
 }
