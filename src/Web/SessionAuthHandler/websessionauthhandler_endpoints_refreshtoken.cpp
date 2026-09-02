@@ -19,11 +19,11 @@ API::APIReturn WebSessionAuthHandler_Endpoints::refreshAccessToken(void *context
 {
     API::APIReturn response;
     std::string refreshTokenStr = request.clientRequest->getCookies()->getSubVar("RefreshToken");
-    RefreshTokenData tokenData;
+    RefreshTokenData refreshTokenData;
     std::string errorMsg;
     std::string errorType;
 
-    if (!validateAndDecodeRefreshToken(refreshTokenStr, tokenData, errorMsg, errorType))
+    if (!validateAndDecodeRefreshToken(refreshTokenStr, refreshTokenData, errorMsg, errorType))
     {
         HTTP::Status::Code status = HTTP::Status::Code::S_401_UNAUTHORIZED;
         if (errorType == "internal_error")
@@ -35,23 +35,23 @@ API::APIReturn WebSessionAuthHandler_Endpoints::refreshAccessToken(void *context
         return {status, errorType, errorMsg};
     }
 
-    if (!validateAPIKey(tokenData.app, response, request, authClientDetails))
+    if (!validateAPIKey(refreshTokenData.app, response, request, authClientDetails))
     {
         return response;
     }
 
     JWT::Token newAccessToken;
     TokensManager::ApplicationTokenCommonParams params;
-    params.refreshTokenId = tokenData.jwtId;
-    params.appAuthSettings = tokenData.tokenProps;
-    params.appName = tokenData.app;
-    params.jwtAccountName = tokenData.user;
-    params.slotIds = tokenData.slotIds;
+    params.refreshTokenId = refreshTokenData.jwtId;
+    params.appAuthSettings = refreshTokenData.tokenProps;
+    params.appName = refreshTokenData.app;
+    params.jwtAccountName = refreshTokenData.user;
+    params.slotIds = refreshTokenData.slotIds;
 
     TokensManager::configureApplicationAccessToken(newAccessToken, params);
-    setupAccessTokenCookies(response, newAccessToken, tokenData.tokenProps);
+    setupAccessTokenCookies(response, newAccessToken, refreshTokenData.tokenProps);
 
-    Globals::getIdentityManager()->authController->updateApplicationAuthLogAccessTokenId(tokenData.user, tokenData.app, tokenData.jwtId, newAccessToken.getJwtId(), newAccessToken.getExpirationTime());
+    Globals::getIdentityManager()->authController->updateApplicationAuthLogAccessTokenId(refreshTokenData.user, refreshTokenData.app, refreshTokenData.jwtId, newAccessToken.getJwtId(), newAccessToken.getExpirationTime());
 
     (*response.responseJSON())["maxAge"] = (newAccessToken.getExpirationTime() - time(nullptr));
 
