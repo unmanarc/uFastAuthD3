@@ -64,15 +64,17 @@ bool IdentityManager_DB::AuthController_DB::updateApplicationAuthLogAccessTokenI
 {
     std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
 
-    // Update the log entry identified by the refresher token id
+    // Update the log entry identified by the refresher token id (use subquery to find the most recent matching row)
     return _parent->m_sqlConnector->qExecuteEx("UPDATE logs.applicationAccess_accountSessions "
-                                               "SET `accessTokenId` = :accessTokenId, "
-                                               "`accessTokenExpiration` = :accessTokenExpiration "
-                                               "WHERE `f_accountUUID` = :accountUUID "
-                                               "  AND `f_appName` = :appName "
-                                               "  AND `refresherTokenId` = :refresherTokenId "
-                                               "ORDER BY `loginDateTime` DESC "
-                                               "LIMIT 1;",
+                                                "SET `accessTokenId` = :accessTokenId, "
+                                                "`accessTokenExpiration` = :accessTokenExpiration "
+                                                "WHERE id = ("
+                                                "    SELECT id FROM logs.applicationAccess_accountSessions "
+                                                "    WHERE `f_accountUUID` = :accountUUID "
+                                                "      AND `f_appName` = :appName "
+                                                "      AND `refresherTokenId` = :refresherTokenId "
+                                                "    ORDER BY `loginDateTime` DESC LIMIT 1"
+                                                ");",
                                                {{":accessTokenId", MAKE_VAR(STRING, accessTokenId)},
                                                 {":accessTokenExpiration", MAKE_VAR(DATETIME, accessTokenExpiration)},
                                                 {":accountUUID", MAKE_VAR(STRING, accountUUID)},
@@ -84,14 +86,16 @@ bool IdentityManager_DB::AuthController_DB::logoutApplicationAuthLog(const std::
 {
     std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
     return _parent->m_sqlConnector->qExecuteEx("UPDATE logs.applicationAccess_accountSessions "
-                                               "SET `logoutDateTime` = CURRENT_TIMESTAMP, "
-                                               "    `logoutReason` = :reason "
-                                               "WHERE `f_accountUUID` = :accountUUID "
-                                               "  AND `f_appName` = :appName "
-                                               "  AND `refresherTokenId` = :refresherTokenId "
-                                               "  AND `logoutDateTime` IS NULL "
-                                               "ORDER BY `loginDateTime` DESC "
-                                               "LIMIT 1;",
+                                                "SET `logoutDateTime` = CURRENT_TIMESTAMP, "
+                                                "    `logoutReason` = :reason "
+                                                "WHERE id = ("
+                                                "    SELECT id FROM logs.applicationAccess_accountSessions "
+                                                "    WHERE `f_accountUUID` = :accountUUID "
+                                                "      AND `f_appName` = :appName "
+                                                "      AND `refresherTokenId` = :refresherTokenId "
+                                                "      AND `logoutDateTime` IS NULL "
+                                                "    ORDER BY `loginDateTime` DESC LIMIT 1"
+                                                ");",
                                                {{":accountUUID", MAKE_VAR(STRING, accountUUID)},
                                                 {":appName", MAKE_VAR(STRING, appName)},
                                                 {":refresherTokenId", MAKE_VAR(STRING, refresherTokenId)},
