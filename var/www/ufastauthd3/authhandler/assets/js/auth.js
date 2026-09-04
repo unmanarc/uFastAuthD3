@@ -164,11 +164,17 @@ startAccessRetokenizerTimer();
  * Monitors the SessionPublicData cookie.
  * If the cookie is missing, redirects the user to /login.
  * Checks every 1 second.
+ * Includes safeguards to prevent infinite redirect loops.
  */
 function startSessionPublicDataMonitor() {
+  let redirecting = false;
   setInterval(function () {
-    if (!getCookie('SessionPublicData')) {
-      window.location.href = '/login/';
+    if (!getCookie('SessionPublicData') && !redirecting) {
+      // Avoid infinite loop: do not redirect if already on the login page
+      if (!window.location.pathname.startsWith('/login')) {
+        redirecting = true;
+        window.location.href = '/login/';
+      }
     }
   }, 1000);
 }
