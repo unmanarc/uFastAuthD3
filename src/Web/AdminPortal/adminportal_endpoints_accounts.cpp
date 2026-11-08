@@ -432,6 +432,7 @@ API::APIReturn AdminPortal_Endpoints_Accounts::removeAccountFromApplication(void
     return response;
 }
 
+// This is used for new accounts...
 API::APIReturn AdminPortal_Endpoints_Accounts::listDetailFields(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
