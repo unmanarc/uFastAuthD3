@@ -65,7 +65,7 @@ void TokensManager::configureApplicationAccessToken(Mantids30::DataFormat::JWT::
     {
         if (std::optional<AccountDetails> info = identityManager->accounts->getAccountDetails(commonParams.jwtAccountName, AccountDetailsToShow::TOKEN))
         {
-            accessToken.setClaim("accountInfo", info->toJSON());
+            accessToken.setClaim("accountInfo", info->tokenInfoToJSON());
         }
     }
 

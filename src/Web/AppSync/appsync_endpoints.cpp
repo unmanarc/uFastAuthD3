@@ -343,7 +343,7 @@ AppSync_Endpoints::APIReturn AppSync_Endpoints::getApplicationAccountsList(void 
     {
         if (std::optional<AccountDetails> x = Globals::getIdentityManager()->accounts->getAccountDetails(accountUUID, AccountDetailsToShow::APISYNC))
         {
-            response.emplace_back(x->toJSON());
+            response.emplace_back(x->fullInfoToJSON());
         }
     }
 

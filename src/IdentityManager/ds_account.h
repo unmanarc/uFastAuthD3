@@ -42,6 +42,15 @@ struct AccountDetailFieldValue
         };
     }
 
+
+    [[nodiscard]] boost::json::object tokenInfoToJSON() const
+    {
+        boost::json::value fieldValue = value.has_value() ? boost::json::value(value.value()) : boost::json::value{};
+        return boost::json::object{
+                                   {"value",             fieldValue}
+                                   };
+    }
+
     void fromJSON(const boost::json::value &json)
     {
         name = Mantids30::Helpers::JSON::ASSTRING(json, "name", "");
@@ -168,7 +177,7 @@ struct AccountDetails
     time_t expirationDate = 0, creationDate = 0;
     bool expired = true;
 
-    [[nodiscard]] boost::json::object toJSON() const
+    [[nodiscard]] boost::json::object fullInfoToJSON() const
     {
         boost::json::object fieldsObj;
         for (const auto &i : fields)
@@ -183,6 +192,20 @@ struct AccountDetails
             {"expirationDate", expirationDate},
             {"creationDate",   creationDate},
         };
+    }
+
+    [[nodiscard]] boost::json::object tokenInfoToJSON() const
+    {
+        boost::json::object fieldsObj;
+        for (const auto &i : fields)
+        {
+            fieldsObj[i.first] = i.second.tokenInfoToJSON();
+        }
+        return boost::json::object{
+                                   {"fields",         fieldsObj},
+                                   {"expirationDate", expirationDate},
+                                   {"creationDate",   creationDate},
+                                   };
     }
 
     void fromJSON(const boost::json::value &r)
