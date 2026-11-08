@@ -70,7 +70,7 @@ else()
 endif()
 target_include_directories(${APP_NAME} PUBLIC ${OPENSSL_INCLUDE_DIRS})
 target_compile_options(${APP_NAME} PUBLIC ${OPENSSL_CFLAGS_OTHER})
-target_link_libraries(${APP_NAME} ${OPENSSL_STATIC_LDFLAGS})
+target_link_libraries(${APP_NAME} ${OPENSSL_LDFLAGS})
 
 ################################################################################
 # List of Mantids30 libraries to link against
