@@ -1,16 +1,17 @@
 #include "IdentityManager/ds_authentication.h"
+#include "Mantids30/DataFormat_JSON/json_detail.h"
 #include "Tokens/tokensmanager.h"
 #include "loginportal_endpoints.h"
 #include <Mantids30/Helpers/json.h>
 #include <Mantids30/Program_Logs/loglevels.h>
 #include <Mantids30/Protocol_HTTP/api_return.h>
-#include <json/value.h>
+#include <Mantids30/DataFormat_JSON/json.h>
 
 #include "globals.h"
 
+#include <boost/json/value.hpp>
 #include <cinttypes>
 #include <cstdint>
-#include <json/config.h>
 #include <map>
 #include <memory>
 #include <optional>
@@ -56,14 +57,13 @@ using namespace Mantids30::DataFormat;
  */
 API::APIReturn LoginPortal_Endpoints::embedToken(void *context, const API::RESTful::RequestContext &request, ClientDetails &authClientDetails)
 {
-    API::APIReturn response;
     IdentityManager *identityManager = Globals::getIdentityManager();
 
     // -----------------------------------------------------------------
     // 1. Parse input JSON
     // -----------------------------------------------------------------
-    std::string accountName = Helpers::JSON::ASSTRING(*request.inputJSON, "accountName", "");
-    std::string appName = Helpers::JSON::ASSTRING(*request.inputJSON, "app", "");
+    std::string accountName (Helpers::JSON::ASSTRING(*request.inputJSON, "accountName", ""));
+    std::string appName (Helpers::JSON::ASSTRING(*request.inputJSON, "app", ""));
     uint32_t schemeId = Helpers::JSON::ASUINT(*request.inputJSON, "schemeId", 0);
     bool keepAuthenticated = Helpers::JSON::ASBOOL(*request.inputJSON, "keepAuthenticated", false);
     bool usingEmbeddedInPortalAuthentication = false;
@@ -93,7 +93,7 @@ API::APIReturn LoginPortal_Endpoints::embedToken(void *context, const API::RESTf
         }
     }
 
-    const Json::Value &jCredentials = (*request.inputJSON)["credentials"];
+    const boost::json::value &jCredentials = Helpers::JSON::MEMBER_OR_NULL(*request.inputJSON,"credentials");
 
     // Validate required fields
     if (accountName.empty())
@@ -108,7 +108,7 @@ API::APIReturn LoginPortal_Endpoints::embedToken(void *context, const API::RESTf
     {
         return {HTTP::Status::Code::S_400_BAD_REQUEST, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::BAD_PARAMETERS)), "Missing required field: schemeId"};
     }
-    if (!jCredentials.isArray() || jCredentials.empty())
+    if (!jCredentials.is_array() || jCredentials.as_array().empty())
     {
         return {HTTP::Status::Code::S_400_BAD_REQUEST,
                 "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::BAD_PARAMETERS)),
@@ -157,10 +157,10 @@ API::APIReturn LoginPortal_Endpoints::embedToken(void *context, const API::RESTf
     // 4. Build a map: slotId -> credential value from input
     // -----------------------------------------------------------------
     std::map<uint32_t, std::string> credentialsMap;
-    for (const auto &cred : jCredentials)
+    for (const auto &cred : jCredentials.as_array())
     {
         uint32_t slotId = Helpers::JSON::ASUINT(cred, "slotId", 0);
-        std::string value = Helpers::JSON::ASSTRING(cred, "value", "");
+        std::string value (Helpers::JSON::ASSTRING(cred, "value", ""));
         if (slotId > 0 && !value.empty())
         {
             credentialsMap[slotId] = value;
@@ -361,9 +361,9 @@ API::APIReturn LoginPortal_Endpoints::embedToken(void *context, const API::RESTf
     // -----------------------------------------------------------------
     // 11. Build success response
     // -----------------------------------------------------------------
-    (*response.responseJSON())["accessToken"] = accessTokenStr.value();
-    (*response.responseJSON())["refreshToken"] = refreshTokenStr.value();
-    (*response.responseJSON())["tokenType"] = "Bearer";
-
-    return response;
+    return boost::json::value{
+        {"accessToken",  accessTokenStr.value()},
+        {"refreshToken", refreshTokenStr.value()},
+        {"tokenType",    "Bearer"},
+    };
 }

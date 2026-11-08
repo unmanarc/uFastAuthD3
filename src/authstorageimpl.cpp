@@ -45,24 +45,25 @@ bool AuthStorageImpl::createAuth()
             return false;
         }
 
-        std::function<bool(const std::string &)> createFileIfNotExists = [](const std::string &path) -> bool
+        std::function<bool(std::string_view)> createFileIfNotExists = [](std::string_view path) -> bool
         {
+            std::string pathStr(path);
             struct stat buffer{};
-            if (stat(path.c_str(), &buffer) == 0)
+            if (stat(pathStr.c_str(), &buffer) == 0)
             {
                 return true;
             }
-            std::ofstream file(path);
+            std::ofstream file(pathStr);
             if (!file.is_open())
             {
-                LOG_APP->log0(__func__, Logs::LogLevel::CRITICAL, "Failed to create database file: '%s'", path.c_str());
+                LOG_APP->log0(__func__, Logs::LogLevel::CRITICAL, "Failed to create database file: '%s'", pathStr.c_str());
                 return false;
             }
             file.close();
 #ifdef WIN32
-            _chmod(path.c_str(), _S_IREAD | _S_IWRITE);
+            _chmod(pathStr.c_str(), _S_IREAD | _S_IWRITE);
 #else
-            chmod(path.c_str(), 0600);
+            chmod(pathStr.c_str(), 0600);
 #endif
             return true;
         };
@@ -340,7 +341,7 @@ bool AuthStorageImpl::setupAdminPortalScopesAndRoles()
                 "description": "Clean/remove audit logs"
             }
         ]
-    )"));
+    )").as_array());
 
 
     return true;
@@ -394,7 +395,7 @@ bool AuthStorageImpl::setupUserPortalScopesAndRoles()
         "description": "Inspect IP addresses recorded for my activity"
       }
     ]
-    )"));
+    )").as_array());
 
     AppSync_Endpoints::updateAppRoles(IAM_USRPORTAL_APPNAME, "127.0.0.1", Helpers::JSON::parse(R"(
     [
@@ -414,7 +415,7 @@ bool AuthStorageImpl::setupUserPortalScopesAndRoles()
         ]
       }
     ]
-    )"));
+    )").as_array());
 
 
     return true;

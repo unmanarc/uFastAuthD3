@@ -10,7 +10,7 @@
 #include <Mantids30/Protocol_HTTP/rsp_status.h>
 
 #include <boost/algorithm/string.hpp>
-#include <json/value.h>
+#include <Mantids30/DataFormat_JSON/json.h>
 #include <string>
 
 #include "IdentityManager/ds_authentication.h"
@@ -151,8 +151,8 @@ bool WebSessionAuthHandler_Endpoints::validateAndDecodeRefreshToken(const std::s
     }
 
     // 2. Extraer Claims básicos
-    const std::string &refreshTokenApp = Helpers::JSON::ASSTRING_D(refreshTokenNoVerified.getClaim("app"), "");
-    const std::string &tokenType = Helpers::JSON::ASSTRING_D(refreshTokenNoVerified.getClaim("type"), "");
+    std::string refreshTokenApp (Helpers::JSON::ASSTRING_D(refreshTokenNoVerified.getClaim("app"), ""));
+    std::string tokenType (Helpers::JSON::ASSTRING_D(refreshTokenNoVerified.getClaim("type"), ""));
 
     // Validar tipo de token
     if (tokenType != "refresher")
@@ -200,7 +200,7 @@ bool WebSessionAuthHandler_Endpoints::validateAndDecodeRefreshToken(const std::s
     }
 
     // 4. Extraer datos finales para el nuevo token
-    const std::string &refreshTokenUser = refreshTokenVerified.getSubject();
+    const std::string_view refreshTokenUser = refreshTokenVerified.getSubject();
 
     // 5. Llenar la estructura de salida
     outData.app = refreshTokenApp;
@@ -215,33 +215,27 @@ bool WebSessionAuthHandler_Endpoints::validateAndDecodeRefreshToken(const std::s
 
 WebSessionAuthHandler_Endpoints::APIReturn WebSessionAuthHandler_Endpoints::getUserPublicData(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
-    Json::Value r;
-
-    std::string userUUID = request.jwtToken->getSubject();
+    std::string_view userUUID = request.jwtToken->getSubject();
 
     IdentityManager *identityManager = Globals::getIdentityManager();
 
     // 1. Get all login identifiers (account names) for this user
     std::set<std::string> accountNames = identityManager->accounts->getAccountNamesByAccountUUID(userUUID);
-    Json::Value loginsArray(Json::arrayValue);
+    boost::json::array loginsArray{};
     for (const auto &name : accountNames)
     {
-        loginsArray.append(name);
+        loginsArray.push_back(boost::json::string_view(name));
     }
-    r["logins"] = loginsArray;
 
-    // 2-4. Get the display name from the identity manager
-    r["displayName"] = identityManager->accounts->getAccountDisplayName(userUUID);
-
-    // 5. Account expiration information
-    time_t expirationTime = identityManager->accounts->getAccountExpirationTime(userUUID);
-    r["accountExpiration"] = expirationTime;
-
-    // 6. Account creation time
-    time_t creationTime = identityManager->accounts->getAccountCreationTime(userUUID);
-    r["accountCreation"] = creationTime;
-
-    return r;
+    return boost::json::value{
+        {"logins",            loginsArray},
+        // 2-4. Get the display name from the identity manager
+        {"displayName",       identityManager->accounts->getAccountDisplayName(userUUID)},
+        // 5. Account expiration information
+        {"accountExpiration", identityManager->accounts->getAccountExpirationTime(userUUID)},
+        // 6. Account creation time
+        {"accountCreation",   identityManager->accounts->getAccountCreationTime(userUUID)},
+    };
 }
 
 WebSessionAuthHandler_Endpoints::APIReturn WebSessionAuthHandler_Endpoints::getApplicationPublicData(void *context, const RequestContext &request, ClientDetails &authClientDetails)
@@ -272,12 +266,15 @@ WebSessionAuthHandler_Endpoints::APIReturn WebSessionAuthHandler_Endpoints::getA
         return response;
     }
 
-    Json::Value r;
-    r["loginMode"] = tokenData.useEmbeddedInPortalAuthentication ? "EMBEDDED" : "DOMAIN";
-    r["app"]["name"] = tokenData.app;
-    r["app"]["description"] = Globals::getIdentityManager()->applications->getApplicationDescription(tokenData.app);
-    r["session"] = tokenData.tokenProps.sessionConfiguration;
-    return r;
+    boost::json::object appObj{
+        {"name",        tokenData.app},
+        {"description", Globals::getIdentityManager()->applications->getApplicationDescription(tokenData.app)},
+    };
+    return boost::json::value{
+        {"loginMode", tokenData.useEmbeddedInPortalAuthentication ? "EMBEDDED" : "DOMAIN"},
+        {"app",       std::move(appObj)},
+        {"session",   tokenData.tokenProps.sessionConfiguration},
+    };
 }
 
 // TODO: manage errors?
@@ -299,9 +296,9 @@ bool WebSessionAuthHandler_Endpoints::validateAPIKey(const std::string &app, API
                       Logs::LogLevel::SECURITY_ALERT,
                       "Application '%s' does not exist. Pre-Auth JWT Token signature may be compromised!! Change immediately!",
                       app.c_str());
-        response = {HTTP::Status::Code::S_400_BAD_REQUEST,
-                    "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::BAD_PARAMETERS)),
-                    authResultToString(AuthenticationResult::BAD_PARAMETERS)};
+        response.setError(HTTP::Status::Code::S_400_BAD_REQUEST,
+                          "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::BAD_PARAMETERS)),
+                          authResultToString(AuthenticationResult::BAD_PARAMETERS));
         return false;
     }
 
@@ -313,7 +310,7 @@ bool WebSessionAuthHandler_Endpoints::validateAPIKey(const std::string &app, API
                       Logs::LogLevel::SECURITY_ALERT,
                       "Application '%s' does not match the web application API Key. Attack or misconfiguration?",
                       app.c_str());
-        response = {HTTP::Status::Code::S_404_NOT_FOUND, "not_found", "Not Found."};
+        response.setError(HTTP::Status::Code::S_404_NOT_FOUND, "not_found", "Not Found.");
         return false;
     }
 
@@ -322,7 +319,7 @@ bool WebSessionAuthHandler_Endpoints::validateAPIKey(const std::string &app, API
 
 std::string WebSessionAuthHandler_Endpoints::signApplicationToken(JWT::Token &accessToken, const ApplicationAuthSettings &appAuthSettings)
 {
-    std::string appName = Helpers::JSON::ASSTRING_D(accessToken.getClaim("app"), "");
+    std::string appName (Helpers::JSON::ASSTRING_D(accessToken.getClaim("app"), ""));
     std::shared_ptr<JWT> signingJWT = Globals::getIdentityManager()->applications->getAppJWTSigner(appName);
     if (!signingJWT)
     {

@@ -8,8 +8,8 @@ using namespace Mantids30::Memory;
 using namespace Mantids30::Database;
 using namespace Mantids30;
 
-bool IdentityManager_DB::ApplicationRoles_DB::createRole(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &roleName,
-                                                      const std::string &roleDescription)
+bool IdentityManager_DB::ApplicationRoles_DB::createRole(const ClientDetails &clientDetails, std::string_view performedBy, std::string_view appName, std::string_view roleName,
+                                                      std::string_view roleDescription)
 {
     std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
     bool success = _parent->m_sqlConnector->qExecuteEx("INSERT INTO iam.applicationRoles (`f_appName`,`roleName`,`roleDescription`) VALUES(:appName,:roleName,:roleDescription);",
@@ -23,7 +23,7 @@ bool IdentityManager_DB::ApplicationRoles_DB::createRole(const ClientDetails &cl
     return success;
 }
 
-bool IdentityManager_DB::ApplicationRoles_DB::removeRole(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &roleName)
+bool IdentityManager_DB::ApplicationRoles_DB::removeRole(const ClientDetails &clientDetails, std::string_view performedBy, std::string_view appName, std::string_view roleName)
 {
     std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
     bool success = _parent->m_sqlConnector->qExecuteEx("DELETE FROM iam.applicationRoles WHERE `roleName`=:roleName AND `f_appName`=:appName;",
@@ -37,14 +37,14 @@ bool IdentityManager_DB::ApplicationRoles_DB::removeRole(const ClientDetails &cl
     return success;
 }
 
-bool IdentityManager_DB::ApplicationRoles_DB::doesRoleExist(const std::string &appName, const std::string &roleName)
+bool IdentityManager_DB::ApplicationRoles_DB::doesRoleExist(std::string_view appName, std::string_view roleName)
 {
     std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
     return _parent->m_sqlConnector->qSelectSingleRow("SELECT `roleName` FROM iam.applicationRoles WHERE `roleName`=:roleName AND `f_appName`=:appName;",
                                                      {{":roleName", MAKE_VAR(STRING, roleName)}, {":appName", MAKE_VAR(STRING, appName)}}, {});
 }
 
-bool IdentityManager_DB::ApplicationRoles_DB::_addAccountToRole(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &roleName, const std::string &accountUUID)
+bool IdentityManager_DB::ApplicationRoles_DB::_addAccountToRole(const ClientDetails &clientDetails, std::string_view performedBy, std::string_view appName, std::string_view roleName, std::string_view accountUUID)
 {
     bool success = _parent->m_sqlConnector->qExecuteEx("INSERT INTO iam.applicationRolesAccounts (`f_roleName`,`f_accountUUID`,`f_appName`) VALUES(:roleName,:accountUUID,:appName);",
                                                        {{":roleName", MAKE_VAR(STRING, roleName)}, {":appName", MAKE_VAR(STRING, appName)}, {":accountUUID", MAKE_VAR(STRING, accountUUID)}});
@@ -58,15 +58,15 @@ bool IdentityManager_DB::ApplicationRoles_DB::_addAccountToRole(const ClientDeta
 }
 
 
-bool IdentityManager_DB::ApplicationRoles_DB::addAccountToRole(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &roleName,
-                                                               const std::string &accountUUID)
+bool IdentityManager_DB::ApplicationRoles_DB::addAccountToRole(const ClientDetails &clientDetails, std::string_view performedBy, std::string_view appName, std::string_view roleName,
+                                                               std::string_view accountUUID)
 {
     std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
     return _addAccountToRole(clientDetails,performedBy,appName,roleName,accountUUID);
 }
 
-bool IdentityManager_DB::ApplicationRoles_DB::removeAccountFromRole(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &roleName,
-                                                                    const std::string &accountUUID, bool lock)
+bool IdentityManager_DB::ApplicationRoles_DB::removeAccountFromRole(const ClientDetails &clientDetails, std::string_view performedBy, std::string_view appName, std::string_view roleName,
+                                                                    std::string_view accountUUID, bool lock)
 {
     bool ret = false;
 
@@ -90,8 +90,8 @@ bool IdentityManager_DB::ApplicationRoles_DB::removeAccountFromRole(const Client
     return ret;
 }
 
-bool IdentityManager_DB::ApplicationRoles_DB::updateRoleDescription(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &roleName,
-                                                                    const std::string &roleDescription)
+bool IdentityManager_DB::ApplicationRoles_DB::updateRoleDescription(const ClientDetails &clientDetails, std::string_view performedBy, std::string_view appName, std::string_view roleName,
+                                                                    std::string_view roleDescription)
 {
     std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
     bool success = _parent->m_sqlConnector->qExecuteEx("UPDATE iam.applicationRoles SET `roleDescription`=:roleDescription WHERE `roleName`=:roleName AND `f_appName`=:appName;",
@@ -105,7 +105,7 @@ bool IdentityManager_DB::ApplicationRoles_DB::updateRoleDescription(const Client
     return success;
 }
 
-std::set<std::string> IdentityManager_DB::ApplicationRoles_DB::listApplicationScopesOnApplicationRole(const std::string &appName, const std::string &roleName)
+std::set<std::string> IdentityManager_DB::ApplicationRoles_DB::listApplicationScopesOnApplicationRole(std::string_view appName, std::string_view roleName)
 {
     std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
     std::set<std::string> scopes;
@@ -122,7 +122,7 @@ std::set<std::string> IdentityManager_DB::ApplicationRoles_DB::listApplicationSc
     return scopes;
 }
 
-std::string IdentityManager_DB::ApplicationRoles_DB::getApplicationRoleDescription(const std::string &appName, const std::string &roleName)
+std::string IdentityManager_DB::ApplicationRoles_DB::getApplicationRoleDescription(std::string_view appName, std::string_view roleName)
 {
     std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
     Abstract::STRING roleDescription;
@@ -134,7 +134,7 @@ std::string IdentityManager_DB::ApplicationRoles_DB::getApplicationRoleDescripti
     return "";
 }
 
-std::set<ApplicationRole> IdentityManager_DB::ApplicationRoles_DB::getApplicationRolesList(const std::string &appName)
+std::set<ApplicationRole> IdentityManager_DB::ApplicationRoles_DB::getApplicationRolesList(std::string_view appName)
 {
     std::set<ApplicationRole> ret;
     std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
@@ -155,7 +155,7 @@ std::set<ApplicationRole> IdentityManager_DB::ApplicationRoles_DB::getApplicatio
     return ret;
 }
 
-std::set<std::string> IdentityManager_DB::ApplicationRoles_DB::getApplicationRoleAccounts(const std::string &appName, const std::string &roleName, bool lock)
+std::set<std::string> IdentityManager_DB::ApplicationRoles_DB::getApplicationRoleAccounts(std::string_view appName, std::string_view roleName, bool lock)
 {
     std::set<std::string> ret;
     if (lock)
@@ -178,15 +178,16 @@ std::set<std::string> IdentityManager_DB::ApplicationRoles_DB::getApplicationRol
     return ret;
 }
 
-Json::Value IdentityManager_DB::ApplicationRoles_DB::searchApplicationRoles(const Json::Value &dataTablesFilters)
+boost::json::value IdentityManager_DB::ApplicationRoles_DB::searchApplicationRoles(const boost::json::value &dataTablesFilters)
 {
-    Json::Value ret;
+    boost::json::object ret{
+        {"data", boost::json::array{}},
+        // DataTables:
+        {"draw", Mantids30::Helpers::JSON::MEMBER_OR_NULL(dataTablesFilters, "draw")},
+    };
     std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
 
-    // DataTables:
-    ret["draw"] = dataTablesFilters["draw"];
-
-    std::string appName = Helpers::JSON::ASSTRING(dataTablesFilters, "appName", "");
+    std::string appName (Helpers::JSON::ASSTRING(dataTablesFilters, "appName", ""));
 
     uint64_t offset = Helpers::JSON::ASUINT64(dataTablesFilters, "start", 0);
     uint64_t limit = Helpers::JSON::ASUINT64(dataTablesFilters, "length", 0);
@@ -195,7 +196,8 @@ Json::Value IdentityManager_DB::ApplicationRoles_DB::searchApplicationRoles(cons
     std::string orderByStatement = Helpers::DataTables::getOrderByStatement(dataTablesFilters);
 
     // Extract the search value from dataTablesFilters
-    std::string searchValue = Helpers::JSON::ASSTRING(dataTablesFilters["search"], "value", "");
+    const boost::json::value &searchFilter = Mantids30::Helpers::JSON::MEMBER_OR_NULL(dataTablesFilters, "search");
+    std::string searchValue (Helpers::JSON::ASSTRING(searchFilter, "value", ""));
     std::string whereFilters;
 
     // Build the SQL query with WHERE clause for DataTables search
@@ -221,14 +223,12 @@ Json::Value IdentityManager_DB::ApplicationRoles_DB::searchApplicationRoles(cons
 
         while (i && i->isSuccessful() && i->step())
         {
-            Json::Value row;
+            boost::json::object row{
+                {"roleName",        roleName.getValue()},
+                {"roleDescription", roleDescription.getValue()},
+            };
 
-            // roleName
-            row["roleName"] = roleName.getValue();
-            // roleDescription
-            row["roleDescription"] = roleDescription.getValue();
-
-            ret["data"].append(row);
+            ret["data"].as_array().push_back(row);
         }
 
         if (i)

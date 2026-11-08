@@ -5,7 +5,7 @@
 
 
 
-bool IdentityManager::Accounts::isAccountExpired(const std::string &accountUUID)
+bool IdentityManager::Accounts::isAccountExpired(std::string_view accountUUID)
 {
     time_t tAccountExpirationTime = getAccountExpirationTime(accountUUID);
     if (!tAccountExpirationTime)

@@ -8,7 +8,7 @@
 
 #include <boost/algorithm/string/join.hpp>
 #include <boost/regex.hpp>
-#include <json/value.h>
+#include <Mantids30/DataFormat_JSON/json.h>
 #include <optional>
 #include <regex>
 
@@ -24,7 +24,7 @@ using namespace Mantids30;
 using namespace Mantids30::Memory;
 using namespace Mantids30::Database;
 
-std::optional<AccountDetails> IdentityManager_DB::Accounts_DB::getAccountDetails(const std::string &accountUUID, const AccountDetailsToShow &detailsToShow)
+std::optional<AccountDetails> IdentityManager_DB::Accounts_DB::getAccountDetails(std::string_view accountUUID, const AccountDetailsToShow &detailsToShow)
 {
     std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
 
@@ -62,9 +62,11 @@ std::optional<AccountDetails> IdentityManager_DB::Accounts_DB::getAccountDetails
     return details;
 }
 
-Json::Value IdentityManager_DB::Accounts_DB::searchFields(const Json::Value &dataTablesFilters)
+boost::json::value IdentityManager_DB::Accounts_DB::searchFields(const boost::json::value &dataTablesFilters)
 {
-    Json::Value ret;
+    boost::json::object ret{
+        {"data", boost::json::array{}},
+    };
     std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
 
     // Return all account detail fields without pagination or search filtering
@@ -91,24 +93,17 @@ Json::Value IdentityManager_DB::Accounts_DB::searchFields(const Json::Value &dat
         {
             while (i->step())
             {
-                Json::Value row;
+                boost::json::object row{
+                    {"fieldName",         fieldName.toJSON()},
+                    {"fieldDescription",  fieldDescription.toJSON()},
+                    {"fieldType",         fieldType.toJSON()},
+                    {"isOptionalField",   isOptionalField.getValue()},
+                    {"isUnique",          isUnique.getValue()},
+                    {"isLoginIdentifier", isLoginIdentifier.getValue()},
+                    {"orderPriority",     orderPriority.getValue()},
+                };
 
-                // fieldName
-                row["fieldName"] = fieldName.toJSON();
-                // fieldDescription
-                row["fieldDescription"] = fieldDescription.toJSON();
-                // fieldType
-                row["fieldType"] = fieldType.toJSON();
-                // isOptionalField
-                row["isOptionalField"] = isOptionalField.getValue();
-                // isUnique
-                row["isUnique"] = isUnique.getValue();
-                // isLoginIdentifier
-                row["isLoginIdentifier"] = isLoginIdentifier.getValue();
-                // orderPriority
-                row["orderPriority"] = orderPriority.getValue();
-
-                ret["data"].append(row);
+                ret["data"].as_array().push_back(row);
             }
         }
     }
@@ -116,7 +111,7 @@ Json::Value IdentityManager_DB::Accounts_DB::searchFields(const Json::Value &dat
     return ret;
 }
 
-bool IdentityManager_DB::Accounts_DB::createAccountDetailField(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &fieldName, const AccountDetailField &details)
+bool IdentityManager_DB::Accounts_DB::createAccountDetailField(const ClientDetails &clientDetails, std::string_view performedBy, std::string_view fieldName, const AccountDetailField &details)
 {
     std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
 
@@ -148,7 +143,7 @@ bool IdentityManager_DB::Accounts_DB::createAccountDetailField(const ClientDetai
                           {":isOptionalField", MAKE_VAR(BOOL, details.isOptionalField)},
                           {":isUnique", MAKE_VAR(BOOL, details.isUnique)},
                           {":isLoginIdentifier", MAKE_VAR(BOOL, details.isLoginIdentifier)},
-                          {":jsonExtendedAttribs", MAKE_VAR(STRING, details.extendedAttributes.toStyledString())},
+                          {":jsonExtendedAttribs", MAKE_VAR(STRING, Helpers::JSON::toString(details.extendedAttributes))},
                           {":orderPriority", MAKE_VAR(INT32, maxOrderPriority)}}))
     {
         _parent->logSecurityEventOnAccountDetailFields(fieldName, SecurityEventAction::CREATE, "Account detail field created", performedBy, clientDetails);
@@ -158,7 +153,7 @@ bool IdentityManager_DB::Accounts_DB::createAccountDetailField(const ClientDetai
     return false;
 }
 
-bool IdentityManager_DB::Accounts_DB::moveAccountDetailFieldUp(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &fieldName)
+bool IdentityManager_DB::Accounts_DB::moveAccountDetailFieldUp(const ClientDetails &clientDetails, std::string_view performedBy, std::string_view fieldName)
 {
     std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
 
@@ -212,7 +207,7 @@ bool IdentityManager_DB::Accounts_DB::moveAccountDetailFieldUp(const ClientDetai
     return tg.finalize(true);
 }
 
-bool IdentityManager_DB::Accounts_DB::moveAccountDetailFieldDown(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &fieldName)
+bool IdentityManager_DB::Accounts_DB::moveAccountDetailFieldDown(const ClientDetails &clientDetails, std::string_view performedBy, std::string_view fieldName)
 {
     std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
 
@@ -266,8 +261,8 @@ bool IdentityManager_DB::Accounts_DB::moveAccountDetailFieldDown(const ClientDet
     return tg.finalize(true);
 }
 
-IdentityManager::Accounts::UpdateAccountDetailFieldResult IdentityManager_DB::Accounts_DB::updateAccountDetailField(const ClientDetails &clientDetails, const std::string &performedBy,
-                                                                                                                    const std::string &fieldName, const AccountDetailField &details)
+IdentityManager::Accounts::UpdateAccountDetailFieldResult IdentityManager_DB::Accounts_DB::updateAccountDetailField(const ClientDetails &clientDetails, std::string_view performedBy,
+                                                                                                                    std::string_view fieldName, const AccountDetailField &details)
 {
     std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
 
@@ -347,7 +342,7 @@ IdentityManager::Accounts::UpdateAccountDetailFieldResult IdentityManager_DB::Ac
         }
 
         // Add the new field to the list.
-        loginIdentifierFields.push_back(fieldName);
+        loginIdentifierFields.push_back(std::string(fieldName));
 
         // Build a dynamic SQL query that checks for duplicate values across all these fields.
         if (!loginIdentifierFields.empty())
@@ -397,7 +392,7 @@ IdentityManager::Accounts::UpdateAccountDetailFieldResult IdentityManager_DB::Ac
                                               {":isOptionalField", MAKE_VAR(BOOL, details.isOptionalField)},
                                               {":isUnique", MAKE_VAR(BOOL, details.isUnique)},
                                               {":isLoginIdentifier", MAKE_VAR(BOOL, details.isLoginIdentifier)},
-                                              {":jsonExtendedAttribs", MAKE_VAR(STRING, details.extendedAttributes.toStyledString())}}))
+                                              {":jsonExtendedAttribs", MAKE_VAR(STRING, Helpers::JSON::toString(details.extendedAttributes))}}))
     {
         return UpdateAccountDetailFieldResult::DB_ERROR;
     }
@@ -407,8 +402,8 @@ IdentityManager::Accounts::UpdateAccountDetailFieldResult IdentityManager_DB::Ac
     return UpdateAccountDetailFieldResult::SUCCESS;
 }
 
-IdentityManager::Accounts::RemoveAccountDetailFieldResult IdentityManager_DB::Accounts_DB::removeAccountDetailField(const ClientDetails &clientDetails, const std::string &performedBy,
-                                                                                                                    const std::string &fieldName)
+IdentityManager::Accounts::RemoveAccountDetailFieldResult IdentityManager_DB::Accounts_DB::removeAccountDetailField(const ClientDetails &clientDetails, std::string_view performedBy,
+                                                                                                                    std::string_view fieldName)
 {
     std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
 
@@ -486,7 +481,7 @@ std::map<std::string, AccountDetailField> IdentityManager_DB::Accounts_DB::listA
     std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
     return _listAccountDetailFields();
 }
-std::optional<AccountDetailField> IdentityManager_DB::Accounts_DB::getAccountDetailField(const std::string &fieldName)
+std::optional<AccountDetailField> IdentityManager_DB::Accounts_DB::getAccountDetailField(std::string_view fieldName)
 {
     std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
 
@@ -503,8 +498,8 @@ std::optional<AccountDetailField> IdentityManager_DB::Accounts_DB::getAccountDet
                                                   {{":fieldName", MAKE_VAR(STRING, fieldName)}},
                                                   {&fieldDescription, &fieldType, &isOptionalField, &isUnique, &isLoginIdentifier, &jsonExtendedAttribsText, &orderPriority}))
     {
-        Json::Value r;
-        Json::Reader().parse(jsonExtendedAttribsText.getValue(), r);
+        boost::json::value r;
+        Helpers::JSON::parse(jsonExtendedAttribsText.getValue(), r);
 
         field.description = fieldDescription.getValue();
         field.fieldType = fieldType.getValue();
@@ -521,7 +516,7 @@ std::optional<AccountDetailField> IdentityManager_DB::Accounts_DB::getAccountDet
     return std::nullopt;
 }
 
-bool IdentityManager_DB::Accounts_DB::changeAccountDetails(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountUUID,
+bool IdentityManager_DB::Accounts_DB::changeAccountDetails(const ClientDetails &clientDetails, std::string_view performedBy, std::string_view accountUUID,
                                                            const std::map<std::string, std::string> &fieldsValues, bool resetAllValues)
 {
     std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
@@ -579,7 +574,7 @@ bool IdentityManager_DB::Accounts_DB::changeAccountDetails(const ClientDetails &
     return tg.finalize();
 }
 
-bool IdentityManager_DB::Accounts_DB::removeAccountDetail(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountUUID, const std::string &fieldName)
+bool IdentityManager_DB::Accounts_DB::removeAccountDetail(const ClientDetails &clientDetails, std::string_view performedBy, std::string_view accountUUID, std::string_view fieldName)
 {
     std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
 
@@ -592,7 +587,7 @@ bool IdentityManager_DB::Accounts_DB::removeAccountDetail(const ClientDetails &c
     return result;
 }
 
-UpdateAccountDetailFieldValuesResult IdentityManager_DB::Accounts_DB::updateAccountDetailFieldValues(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountUUID,
+UpdateAccountDetailFieldValuesResult IdentityManager_DB::Accounts_DB::updateAccountDetailFieldValues(const ClientDetails &clientDetails, std::string_view performedBy, std::string_view accountUUID,
                                                                                                      const std::map<std::string, std::string> &inputFieldValues, bool isAdmin)
 {
     std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
@@ -634,8 +629,8 @@ std::map<std::string, AccountDetailField> IdentityManager_DB::Accounts_DB::_list
     {
         while (i->step())
         {
-            Json::Value r;
-            Json::Reader().parse(jsonExtendedAttribsText.getValue(), r);
+            boost::json::value r;
+            Helpers::JSON::parse(jsonExtendedAttribsText.getValue(), r);
 
             AccountDetailField field;
             field.description = fieldDescription.getValue();
@@ -653,8 +648,8 @@ std::map<std::string, AccountDetailField> IdentityManager_DB::Accounts_DB::_list
     return fieldMap;
 }
 
-UpdateAccountDetailFieldValuesResult IdentityManager_DB::Accounts_DB::_updateAccountDetailFieldValues(const ClientDetails &clientDetails, const std::string &performedBy,
-                                                                                                      const std::string &accountUUID, const std::map<std::string, std::string> &inputFieldValues,
+UpdateAccountDetailFieldValuesResult IdentityManager_DB::Accounts_DB::_updateAccountDetailFieldValues(const ClientDetails &clientDetails, std::string_view performedBy,
+                                                                                                      std::string_view accountUUID, const std::map<std::string, std::string> &inputFieldValues,
                                                                                                       bool isAdmin)
 {
     UpdateAccountDetailFieldValuesResult result;
@@ -676,7 +671,7 @@ UpdateAccountDetailFieldValuesResult IdentityManager_DB::Accounts_DB::_updateAcc
             return result;
         }
 
-        std::string regexpValidator = dbFieldsScheme[fieldName].getRegexpValidatorText();
+        std::string regexpValidator = std::string(dbFieldsScheme[fieldName].getRegexpValidatorText());
         if (!regexpValidator.empty())
         {
             try
@@ -807,7 +802,7 @@ UpdateAccountDetailFieldValuesResult IdentityManager_DB::Accounts_DB::_updateAcc
     return result;
 }
 
-std::map<std::string, AccountDetailFieldValue> IdentityManager_DB::Accounts_DB::getAccountDetailFieldValues(const std::string &accountUUID, const AccountDetailsToShow &detailsToShow)
+std::map<std::string, AccountDetailFieldValue> IdentityManager_DB::Accounts_DB::getAccountDetailFieldValues(std::string_view accountUUID, const AccountDetailsToShow &detailsToShow)
 {
     std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
 
@@ -832,24 +827,24 @@ std::map<std::string, AccountDetailFieldValue> IdentityManager_DB::Accounts_DB::
     {
         while (i->step())
         {
-            Json::Value extendedAttributes;
-            Json::Reader().parse(jsonExtendedAttribsText.getValue(), extendedAttributes);
+            boost::json::value extendedAttributes;
+            Helpers::JSON::parse(jsonExtendedAttribsText.getValue(), extendedAttributes);
 
             bool visible = false;
 
             switch (detailsToShow)
             {
             case AccountDetailsToShow::SEARCH:
-                visible = Helpers::JSON::ASBOOL(extendedAttributes["visibility"], "includeInSearch", false);
+                visible = Helpers::JSON::ASBOOL(Helpers::JSON::MEMBER_OR_NULL(extendedAttributes, "visibility"), "includeInSearch", false);
                 break;
             case AccountDetailsToShow::COLUMNVIEW:
-                visible = Helpers::JSON::ASBOOL(extendedAttributes["visibility"], "includeInColumnView", false);
+                visible = Helpers::JSON::ASBOOL(Helpers::JSON::MEMBER_OR_NULL(extendedAttributes, "visibility"), "includeInColumnView", false);
                 break;
             case AccountDetailsToShow::TOKEN:
-                visible = Helpers::JSON::ASBOOL(extendedAttributes["visibility"], "includeInToken", false);
+                visible = Helpers::JSON::ASBOOL(Helpers::JSON::MEMBER_OR_NULL(extendedAttributes, "visibility"), "includeInToken", false);
                 break;
             case AccountDetailsToShow::APISYNC:
-                visible = Helpers::JSON::ASBOOL(extendedAttributes["visibility"], "includeInAPISync", false);
+                visible = Helpers::JSON::ASBOOL(Helpers::JSON::MEMBER_OR_NULL(extendedAttributes, "visibility"), "includeInAPISync", false);
                 break;
             case AccountDetailsToShow::ALL:
             default:
@@ -858,7 +853,7 @@ std::map<std::string, AccountDetailFieldValue> IdentityManager_DB::Accounts_DB::
                 break;
             }
 
-            visible &= Helpers::JSON::ASBOOL(extendedAttributes["security"], "canUserView", false);
+            visible &= Helpers::JSON::ASBOOL(Helpers::JSON::MEMBER_OR_NULL(extendedAttributes, "security"), "canUserView", false);
 
             if (visible)
             {
@@ -866,7 +861,7 @@ std::map<std::string, AccountDetailFieldValue> IdentityManager_DB::Accounts_DB::
                 field.name = fieldName.getValue();
                 field.description = fieldDescription.getValue();
                 field.fieldType = fieldType.getValue();
-                field.fieldRegexpValidator = Helpers::JSON::ASSTRING(extendedAttributes["behavior"], "regexpValidator", ""); // TODO: remover esta linea
+                field.fieldRegexpValidator = Helpers::JSON::ASSTRING(Helpers::JSON::MEMBER_OR_NULL(extendedAttributes, "behavior"), "regexpValidator", ""); // TODO: remover esta linea
                 field.extendedAttribs = extendedAttributes;
                 field.orderPriority = orderPriority.getValue();
 

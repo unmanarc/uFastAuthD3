@@ -1,6 +1,6 @@
 #pragma once
 
-#include <json/value.h>
+#include <Mantids30/DataFormat_JSON/json.h>
 #include <Mantids30/DataFormat_JWT/jwt.h>
 #include <Mantids30/Helpers/json.h>
 #include <Mantids30/Helpers/random.h>
@@ -8,6 +8,7 @@
 #include <Mantids30/Protocol_HTTP/rsp_status.h>
 #include "IdentityManager/ds_authentication.h"
 
+#include "Mantids30/DataFormat_JSON/json_accessors_array.h"
 #include "defs.h"
 
 #include <optional>
@@ -16,7 +17,7 @@ using namespace Mantids30;
 
 struct TransientAuthenticationContext
 {
-    bool validateAndMerge_LPTokenIfExist(const std::string &cookieLPTokenStr, API::APIReturn &response, const std::shared_ptr<DataFormat::JWT> &jwtValidator)
+    bool validateAndMerge_LPTokenIfExist(std::string_view cookieLPTokenStr, API::APIReturn &response, const std::shared_ptr<DataFormat::JWT> &jwtValidator)
     {
         DataFormat::JWT::Token lpToken;
         //std::string cookieAccessTokenStr = request.clientRequest->getCookie("AccessToken");
@@ -53,14 +54,14 @@ struct TransientAuthenticationContext
                 authenticatedSlots.insert(i);
             }
             // Merge schemes and apps also...
-            jAuthenticatedSchemes = lpToken.getClaim("authenticatedSchemes");
-            jAuthenticatedAppsCallbackURLs = lpToken.getClaim("authenticatedAppsCallbackURLs");
+            jAuthenticatedSchemes = Helpers::JSON::ASARRAY_OR_EMPTY(lpToken.getClaim("authenticatedSchemes"));
+            jAuthenticatedAppsCallbackURLs = Helpers::JSON::ASARRAY_OR_EMPTY(lpToken.getClaim("authenticatedAppsCallbackURLs"));
         }
 
         return true;
     }
 
-    bool validateAndMerge_TransientAuthTokenIfExist(const std::string &transientAuthTokenStr, const Json::Value *inputJSON, const std::shared_ptr<DataFormat::JWT>& jwtValidator)
+    bool validateAndMerge_TransientAuthTokenIfExist(std::string_view transientAuthTokenStr, const boost::json::value *inputJSON, const std::shared_ptr<DataFormat::JWT>& jwtValidator)
     {
         // Validate the token
         if (!transientAuthTokenStr.empty() && transientAuthTokenStr != "null")
@@ -100,9 +101,9 @@ struct TransientAuthenticationContext
 
         newTransientAuthToken.setIssuedAt(time(nullptr));
         newTransientAuthToken.setNotBefore(time(nullptr) - 30);
-        newTransientAuthToken.setClaim("app", appName);
-        newTransientAuthToken.setClaim("accountName", accountName);
-        newTransientAuthToken.setClaim("slotSchemeHash", slotSchemeHash);
+        newTransientAuthToken.setClaim("app", boost::json::value(appName));
+        newTransientAuthToken.setClaim("accountName", boost::json::value(accountName));
+        newTransientAuthToken.setClaim("slotSchemeHash", boost::json::value(slotSchemeHash));
         newTransientAuthToken.setClaim("schemeId", schemeId);
         newTransientAuthToken.setClaim("keepAuthenticated", keepAuthenticated);
         newTransientAuthToken.setClaim("type", "transient");
@@ -126,7 +127,7 @@ struct TransientAuthenticationContext
 
     void fillVars_FromTransientTokenClaims()
     {
-        Json::Value claims = transientAuthToken.getAllClaimsAsJSON();
+        boost::json::value claims = transientAuthToken.getAllClaimsAsJSON();
 
         accountName = Helpers::JSON::ASSTRING(claims, "accountName", "");
         appName = Helpers::JSON::ASSTRING(claims, "app", "");
@@ -135,13 +136,13 @@ struct TransientAuthenticationContext
         keepAuthenticated = Helpers::JSON::ASBOOL(claims, "keepAuthenticated", false);
         currentSlotId = Helpers::JSON::ASUINT(claims, "currentSlotId", 0);
         authenticatedSlots = Helpers::JSON::toUInt32Set(claims, "authenticatedSlots");
-        jAuthenticatedSchemes = transientAuthToken.getClaim("authenticatedSchemes");
-        jAuthenticatedAppsCallbackURLs = transientAuthToken.getClaim("authenticatedAppsCallbackURLs");
+        jAuthenticatedSchemes = Helpers::JSON::ASARRAY_OR_EMPTY(transientAuthToken.getClaim("authenticatedSchemes"));
+        jAuthenticatedAppsCallbackURLs = Helpers::JSON::ASARRAY_OR_EMPTY(transientAuthToken.getClaim("authenticatedAppsCallbackURLs"));
 
         loadUUIDFromAccountName();
     }
 
-    void fillVars_FromInitialJSONPOST(const Json::Value &inputJSON)
+    void fillVars_FromInitialJSONPOST(const boost::json::value &inputJSON)
     {
         accountName = Helpers::JSON::ASSTRING(inputJSON, "accountName", "");
         keepAuthenticated = Helpers::JSON::ASBOOL(inputJSON, "keepAuthenticated", false);
@@ -153,7 +154,7 @@ struct TransientAuthenticationContext
         loadUUIDFromAccountName();
     }
 
-    [[nodiscard]] Json::Value getAllAuthenticatedSlotsIds() const
+    [[nodiscard]] boost::json::value getAllAuthenticatedSlotsIds() const
     {
         std::set<uint32_t> r = authenticatedSlots;
         if (currentSlotId.has_value())
@@ -163,20 +164,20 @@ struct TransientAuthenticationContext
         return Helpers::JSON::fromSet(r);
     }
 
-    [[nodiscard]] Json::Value getAllAuthenticatedSchemes() const
+    [[nodiscard]] boost::json::array getAllAuthenticatedSchemes() const
     {
-        Json::Value r_jAuthenticatedSchemes = jAuthenticatedSchemes;
+        boost::json::array r_jAuthenticatedSchemes = jAuthenticatedSchemes;
         if (schemeId != UINT32_MAX)
         {
-            r_jAuthenticatedSchemes.append(schemeId);
+            r_jAuthenticatedSchemes.push_back(boost::json::value(schemeId));
         }
         return r_jAuthenticatedSchemes;
     }
 
-    [[nodiscard]] Json::Value getAllAuthenticatedAppsCallbackURLs() const
+    [[nodiscard]] boost::json::array getAllAuthenticatedAppsCallbackURLs() const
     {
-        Json::Value r_jAuthenticatedAppsCallbackURLs = jAuthenticatedAppsCallbackURLs;
-        r_jAuthenticatedAppsCallbackURLs.append(appCallbackURL);
+        boost::json::array r_jAuthenticatedAppsCallbackURLs = jAuthenticatedAppsCallbackURLs;
+        r_jAuthenticatedAppsCallbackURLs.push_back(boost::json::value(appCallbackURL));
         return r_jAuthenticatedAppsCallbackURLs;
     }
 
@@ -197,8 +198,8 @@ struct TransientAuthenticationContext
     std::string slotSchemeHash;
     std::set<uint32_t> authenticatedSlots;
 
-    Json::Value jAuthenticatedSchemes = Json::arrayValue;
-    Json::Value jAuthenticatedAppsCallbackURLs = Json::arrayValue;
+    boost::json::array jAuthenticatedSchemes;
+    boost::json::array jAuthenticatedAppsCallbackURLs;
 
     DataFormat::JWT::Token transientAuthToken;
 };

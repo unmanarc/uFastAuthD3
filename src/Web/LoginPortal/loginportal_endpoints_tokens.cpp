@@ -2,10 +2,10 @@
 #include "defs.h"
 #include "loginportal_endpoints.h"
 #include <Mantids30/Helpers/json.h>
-#include <json/value.h>
+#include <Mantids30/DataFormat_JSON/json.h>
 
 #include <boost/algorithm/string/join.hpp>
-#include <json/config.h>
+#include <Mantids30/DataFormat_JSON/json.h>
 
 #include "globals.h"
 
@@ -23,12 +23,12 @@ API::APIReturn LoginPortal_Endpoints::token(void *context, const RequestContext 
 
     IdentityManager *identityManager = Globals::getIdentityManager();
 
-    std::string authenticatedUser = request.jwtToken->getSubject();
+    std::string_view authenticatedUser = request.jwtToken->getSubject();
 
     bool isEmbeddedInPortalAuthentication = false;
     bool keepAuthenticated  = Helpers::JSON::ASBOOL_D(request.jwtToken->getClaim("keepAuthenticated"), false);
-    std::string activity    = Helpers::JSON::ASSTRING(*request.inputJSON, "activity", "");       // APP ACTIVITY NAME.
-    std::string redirectURI = Helpers::JSON::ASSTRING(*request.inputJSON, "redirectURI", ""); // APP REDIRECT URI.
+    std::string activity    (Helpers::JSON::ASSTRING(*request.inputJSON, "activity", ""));       // APP ACTIVITY NAME.
+    std::string redirectURI (Helpers::JSON::ASSTRING(*request.inputJSON, "redirectURI", "")); // APP REDIRECT URI.
     uint32_t schemeId       = Helpers::JSON::ASUINT(*request.inputJSON, "schemeId", 0);             // APP SCHEME ID.
     bool mock               = Helpers::JSON::ASBOOL(*request.inputJSON, "mock", false);                     // MOCK
 
@@ -106,7 +106,7 @@ API::APIReturn LoginPortal_Endpoints::token(void *context, const RequestContext 
         const char *reasonText = authResultToString(r);
         LOG_APP->log2(__func__, authenticatedUser, authClientDetails.ipAddress, Logs::LogLevel::SECURITY_ALERT,
                       "Token request denied: User '%s' attempted to obtain an access token for app '%s', but the account is not valid or authorized for this application. Reason: %s.",
-                      authenticatedUser.c_str(), appName.c_str(), reasonText);
+                      std::string(authenticatedUser).c_str(), appName.c_str(), reasonText);
         return {HTTP::Status::Code::S_401_UNAUTHORIZED, "AUTH_ERR_INVALID_ACCT", authResultToString(r)};
     }
 
@@ -119,7 +119,7 @@ API::APIReturn LoginPortal_Endpoints::token(void *context, const RequestContext 
         redirectURI = identityManager->applications->getWebLoginDefaultRedirectURIForApplication(appName);
     }
 
-    if (!token_validateRedirectURI(appName, redirectURI, authenticatedUser, authClientDetails.ipAddress))
+    if (!token_validateRedirectURI(appName, redirectURI, std::string(authenticatedUser), authClientDetails.ipAddress))
     {
         return {HTTP::Status::Code::S_406_NOT_ACCEPTABLE, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::BAD_PARAMETERS)), "Invalid Redirect URI"};
     }
@@ -140,7 +140,7 @@ API::APIReturn LoginPortal_Endpoints::token(void *context, const RequestContext 
                                                             keepAuthenticated,
                                                             appName,
                                                             activity,
-                                                            authenticatedUser,
+                                                             std::string(authenticatedUser),
                                                             schemeId,
                                                             redirectURI,
                                                             response,

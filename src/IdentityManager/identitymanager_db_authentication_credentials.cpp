@@ -18,7 +18,7 @@ using namespace Mantids30::Memory;
 using namespace Mantids30::Database;
 using namespace Mantids30;
 
-bool IdentityManager::AuthController::recoverAccountMasterCredential(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountUUID, std::string *sInitPW)
+bool IdentityManager::AuthController::recoverAccountMasterCredential(const ClientDetails &clientDetails, std::string_view performedBy, std::string_view accountUUID, std::string *sInitPW)
 {
     *sInitPW = "";
     std::map<uint32_t, AuthenticationSlotDetails> authSlots;
@@ -54,7 +54,7 @@ bool IdentityManager::AuthController::recoverAccountMasterCredential(const Clien
     return r;
 }
 
-Credential IdentityManager_DB::AuthController_DB::retrieveAccountCredential(const std::string &accountUUID, const uint32_t &slotId, bool *accountFound, bool *authSlotFound)
+Credential IdentityManager_DB::AuthController_DB::retrieveAccountCredential(std::string_view accountUUID, const uint32_t &slotId, bool *accountFound, bool *authSlotFound)
 {
     Credential ret;
     *authSlotFound = false;
@@ -105,16 +105,19 @@ Credential IdentityManager_DB::AuthController_DB::retrieveAccountCredential(cons
     return ret;
 }
 
-Json::Value IdentityManager_DB::AuthController_DB::searchAccountCredentialsActivity(const std::string &accountUUID, const Json::Value &dataTablesFilters)
+boost::json::value IdentityManager_DB::AuthController_DB::searchAccountCredentialsActivity(std::string_view accountUUID, const boost::json::value &dataTablesFilters)
 {
-    Json::Value ret;
+    boost::json::object ret{
+        {"data", boost::json::array{}},
+        {"draw", Mantids30::Helpers::JSON::MEMBER_OR_NULL(dataTablesFilters, "draw")},
+    };
     std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
 
-    ret["draw"] = dataTablesFilters["draw"];
     uint64_t offset = Helpers::JSON::ASUINT64(dataTablesFilters, "start", 0);
     uint64_t limit = Helpers::JSON::ASUINT64(dataTablesFilters, "length", 0);
     std::string orderByStatement = Helpers::DataTables::getOrderByStatement(dataTablesFilters);
-    std::string searchValue = Helpers::JSON::ASSTRING(dataTablesFilters["search"], "value", "");
+    const boost::json::value &searchFilter = Mantids30::Helpers::JSON::MEMBER_OR_NULL(dataTablesFilters, "search");
+    std::string searchValue (Helpers::JSON::ASSTRING(searchFilter, "value", ""));
     std::string whereFilters = "`f_accountUUID` = :ACCOUNTNAME";
     std::string sqlQueryStr = R"(
         SELECT `f_accountUUID`, `f_slotId`, `logDateTime`, `logIP`, `logTLSCN`,
@@ -144,17 +147,18 @@ Json::Value IdentityManager_DB::AuthController_DB::searchAccountCredentialsActiv
 
         while (i && i->isSuccessful() && i->step())
         {
-            Json::Value row;
-            row["f_accountUUID"] = f_accountUUID.getValue();
-            row["f_slotId"] = f_slotId.getValue();
-            row["logDateTime"] = logDateTime.getValue();
-            row["logIP"] = logIP.getValue();
-            row["logTLSCN"] = logTLSCN.getValue();
-            row["logUserAgent"] = logUserAgent.getValue();
-            row["logExtraData"] = logExtraData.getValue();
-            row["logStatus"] = logStatus.getValue();
+            boost::json::object row{
+                {"f_accountUUID", f_accountUUID.getValue()},
+                {"f_slotId",      f_slotId.getValue()},
+                {"logDateTime",   logDateTime.getValue()},
+                {"logIP",         logIP.getValue()},
+                {"logTLSCN",      logTLSCN.getValue()},
+                {"logUserAgent",  logUserAgent.getValue()},
+                {"logExtraData",  logExtraData.getValue()},
+                {"logStatus",     logStatus.getValue()},
+            };
 
-            ret["data"].append(row);
+            ret["data"].as_array().push_back(row);
         }
 
         if (i)
@@ -166,7 +170,7 @@ Json::Value IdentityManager_DB::AuthController_DB::searchAccountCredentialsActiv
     return ret;
 }
 
-std::pair<uint32_t, uint32_t> IdentityManager_DB::AuthController_DB::getAccountActiveCredentialsCount(const std::string &accountUUID)
+std::pair<uint32_t, uint32_t> IdentityManager_DB::AuthController_DB::getAccountActiveCredentialsCount(std::string_view accountUUID)
 {
     std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
 
@@ -189,7 +193,7 @@ std::pair<uint32_t, uint32_t> IdentityManager_DB::AuthController_DB::getAccountA
     return {totalSlots, accountSlots};
 }
 
-std::set<uint32_t> IdentityManager_DB::AuthController_DB::listUsedAuthenticationSlotsOnAccount(const std::string &accountUUID)
+std::set<uint32_t> IdentityManager_DB::AuthController_DB::listUsedAuthenticationSlotsOnAccount(std::string_view accountUUID)
 {
     std::set<uint32_t> r;
     std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
@@ -206,7 +210,7 @@ std::set<uint32_t> IdentityManager_DB::AuthController_DB::listUsedAuthentication
     return r;
 }
 
-std::map<uint32_t, std::pair<bool, Credential>> IdentityManager_DB::AuthController_DB::listAllAuthCredentialSlotsPublicDataForAccount(const std::string &accountUUID)
+std::map<uint32_t, std::pair<bool, Credential>> IdentityManager_DB::AuthController_DB::listAllAuthCredentialSlotsPublicDataForAccount(std::string_view accountUUID)
 {
     std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
     std::map<uint32_t, std::pair<bool, Credential>> r;
@@ -246,7 +250,7 @@ std::map<uint32_t, std::pair<bool, Credential>> IdentityManager_DB::AuthControll
     return r;
 }
 
-bool IdentityManager_DB::AuthController_DB::doesCredentialSlotExistOnAccount(const std::string &accountUUID, uint32_t slotId)
+bool IdentityManager_DB::AuthController_DB::doesCredentialSlotExistOnAccount(std::string_view accountUUID, uint32_t slotId)
 {
     std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
 
@@ -260,7 +264,7 @@ bool IdentityManager_DB::AuthController_DB::doesCredentialSlotExistOnAccount(con
     return false;
 }
 
-bool IdentityManager_DB::AuthController_DB::changeAccountCredential(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountUUID, Credential passwordData,
+bool IdentityManager_DB::AuthController_DB::changeAccountCredential(const ClientDetails &clientDetails, std::string_view performedBy, std::string_view accountUUID, Credential passwordData,
                                                                     uint32_t slotId)
 {
     std::map<uint32_t, AuthenticationSlotDetails> authSlots = listAllAuthenticationSlots();
@@ -310,8 +314,8 @@ bool IdentityManager_DB::AuthController_DB::changeAccountCredential(const Client
     return success;
 }
 
-bool IdentityManager_DB::AuthController_DB::activateAccountCredential(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountUUID, uint32_t slotId,
-                                                                      const std::string &hash, const std::string &ssalt)
+bool IdentityManager_DB::AuthController_DB::activateAccountCredential(const ClientDetails &clientDetails, std::string_view performedBy, std::string_view accountUUID, uint32_t slotId,
+                                                                      std::string_view hash, std::string_view ssalt)
 {
     std::map<uint32_t, AuthenticationSlotDetails> authSlots = listAllAuthenticationSlots();
     // Validate slot exists
@@ -363,7 +367,7 @@ bool IdentityManager_DB::AuthController_DB::activateAccountCredential(const Clie
     return success;
 }
 
-bool IdentityManager_DB::AuthController_DB::removeAccountCredential(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountUUID, uint32_t slotId)
+bool IdentityManager_DB::AuthController_DB::removeAccountCredential(const ClientDetails &clientDetails, std::string_view performedBy, std::string_view accountUUID, uint32_t slotId)
 {
     bool success = _parent->m_sqlConnector->qExecuteEx("DELETE FROM iam.accountCredentials WHERE `f_accountUUID` = :accountUUID and `f_AuthSlotId` = :slotId",
                                                        {{":accountUUID", MAKE_VAR(STRING, accountUUID)}, {":slotId", MAKE_VAR(UINT32, slotId)}});
@@ -376,7 +380,7 @@ bool IdentityManager_DB::AuthController_DB::removeAccountCredential(const Client
     return success;
 }
 
-bool IdentityManager_DB::AuthController_DB::setAccountCredentialMustChange(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountUUID, uint32_t slotId, bool mustChange)
+bool IdentityManager_DB::AuthController_DB::setAccountCredentialMustChange(const ClientDetails &clientDetails, std::string_view performedBy, std::string_view accountUUID, uint32_t slotId, bool mustChange)
 {
     std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
 
@@ -393,7 +397,7 @@ bool IdentityManager_DB::AuthController_DB::setAccountCredentialMustChange(const
     return success;
 }
 
-bool IdentityManager_DB::AuthController_DB::setAccountCredentialLockedStatus(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountUUID, uint32_t slotId, bool isLocked)
+bool IdentityManager_DB::AuthController_DB::setAccountCredentialLockedStatus(const ClientDetails &clientDetails, std::string_view performedBy, std::string_view accountUUID, uint32_t slotId, bool isLocked)
 {
     std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
 
@@ -418,21 +422,21 @@ bool IdentityManager_DB::AuthController_DB::setAccountCredentialLockedStatus(con
     return success;
 }
 
-void IdentityManager_DB::AuthController_DB::resetBadAttemptsOnAccountCredential(const std::string &accountUUID, const uint32_t &slotId)
+void IdentityManager_DB::AuthController_DB::resetBadAttemptsOnAccountCredential(std::string_view accountUUID, const uint32_t &slotId)
 {
     std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
     _parent->m_sqlConnector->qExecuteEx("UPDATE iam.accountCredentials SET `badAttempts`='0' WHERE `f_accountUUID`=:accountUUID and `f_AuthSlotId`=:slotId;",
                                         {{":accountUUID", MAKE_VAR(STRING, accountUUID)}, {":slotId", MAKE_VAR(UINT32, slotId)}});
 }
 
-void IdentityManager_DB::AuthController_DB::incrementBadAttemptsOnAccountCredential(const std::string &accountUUID, const uint32_t &slotId)
+void IdentityManager_DB::AuthController_DB::incrementBadAttemptsOnAccountCredential(std::string_view accountUUID, const uint32_t &slotId)
 {
     std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
     _parent->m_sqlConnector->qExecuteEx("UPDATE iam.accountCredentials SET `badAttempts`=`badAttempts`+1  WHERE `f_accountUUID`=:accountUUID and `f_AuthSlotId`=:slotId;",
                                         {{":accountUUID", MAKE_VAR(STRING, accountUUID)}, {":slotId", MAKE_VAR(UINT32, slotId)}});
 }
 
-void IdentityManager_DB::AuthController_DB::insertAccountAuthCredentialSlotLog(const std::string &accountUUID, uint32_t slotId, const ClientDetails &clientDetails, int logStatus)
+void IdentityManager_DB::AuthController_DB::insertAccountAuthCredentialSlotLog(std::string_view accountUUID, uint32_t slotId, const ClientDetails &clientDetails, int logStatus)
 {
     std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
 

@@ -17,7 +17,7 @@ using namespace Network::Sockets;
 using namespace Network::Servers;
 using namespace Program;
 
-bool JWTDynamicTokenValidatorFunction(const std::string &accessTokenStr, const std::string &xAPIKeyStr, Mantids30::DataFormat::JWT::Token *accessToken)
+bool JWTDynamicTokenValidatorFunction(const std::string &accessTokenStr, std::string_view xAPIKeyStr, Mantids30::DataFormat::JWT::Token *accessToken)
 {
     IdentityManager *identityManager = Globals::getIdentityManager();
 

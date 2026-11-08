@@ -1,6 +1,6 @@
 #pragma once
 
-#include <json/json.h>
+#include <Mantids30/DataFormat_JSON/json.h>
 
 #include <Mantids30/API_EndpointsAndSessions/api_restful_endpoints.h>
 #include <Mantids30/Helpers/json.h>

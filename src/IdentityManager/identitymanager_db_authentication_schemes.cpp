@@ -16,7 +16,7 @@ using namespace Mantids30::Memory;
 using namespace Mantids30::Database;
 using namespace Mantids30;
 
-bool IdentityManager_DB::AuthController_DB::updateDefaultAuthScheme(const ClientDetails &clientDetails, const std::string &performedBy, const uint32_t &schemeId)
+bool IdentityManager_DB::AuthController_DB::updateDefaultAuthScheme(const ClientDetails &clientDetails, std::string_view performedBy, const uint32_t &schemeId)
 {
     std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
 
@@ -45,7 +45,7 @@ std::optional<uint32_t> IdentityManager_DB::AuthController_DB::getDefaultAuthSch
     return schemeId.getValue();
 }
 
-std::optional<uint32_t> IdentityManager_DB::AuthController_DB::createAuthenticationScheme(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &description)
+std::optional<uint32_t> IdentityManager_DB::AuthController_DB::createAuthenticationScheme(const ClientDetails &clientDetails, std::string_view performedBy, std::string_view description)
 {
     std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
 
@@ -66,7 +66,7 @@ std::optional<uint32_t> IdentityManager_DB::AuthController_DB::createAuthenticat
     return newSchemeId;
 }
 
-bool IdentityManager_DB::AuthController_DB::updateAuthenticationScheme(const ClientDetails &clientDetails, const std::string &performedBy, const uint32_t &schemeId, const std::string &description)
+bool IdentityManager_DB::AuthController_DB::updateAuthenticationScheme(const ClientDetails &clientDetails, std::string_view performedBy, const uint32_t &schemeId, std::string_view description)
 {
     std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
 
@@ -84,7 +84,7 @@ bool IdentityManager_DB::AuthController_DB::updateAuthenticationScheme(const Cli
     return success;
 }
 
-bool IdentityManager_DB::AuthController_DB::removeAuthenticationScheme(const ClientDetails &clientDetails, const std::string &performedBy, const uint32_t &schemeId)
+bool IdentityManager_DB::AuthController_DB::removeAuthenticationScheme(const ClientDetails &clientDetails, std::string_view performedBy, const uint32_t &schemeId)
 {
     std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
 
@@ -157,7 +157,7 @@ std::vector<AuthenticationSchemeUsedSlot> IdentityManager_DB::AuthController_DB:
     return slotsList;
 }
 
-bool IdentityManager_DB::AuthController_DB::updateAuthenticationSlotUsedByScheme(const ClientDetails &clientDetails, const std::string &performedBy, const uint32_t &schemeId,
+bool IdentityManager_DB::AuthController_DB::updateAuthenticationSlotUsedByScheme(const ClientDetails &clientDetails, std::string_view performedBy, const uint32_t &schemeId,
                                                                                  const std::list<AuthenticationSchemeUsedSlot> &slotsUsedByScheme)
 {
     // Acquire a write lock for thread-safe database modification

@@ -1,10 +1,9 @@
 #include <Mantids30/Program_Logs/loglevels.h>
 #include "loginportal_endpoints.h"
 #include <Mantids30/Helpers/json.h>
-#include <json/value.h>
+#include <Mantids30/DataFormat_JSON/json.h>
 
 #include <boost/algorithm/string/join.hpp>
-#include <json/config.h>
 #include <optional>
 
 #include "globals.h"
@@ -44,7 +43,7 @@ bool LoginPortal_Endpoints::token_validateRedirectURI(const std::string &app, co
 
 std::optional<std::string> LoginPortal_Endpoints::token_signApplicationJWT(JWT::Token &accessToken)
 {
-    std::string appName = Helpers::JSON::ASSTRING_D(accessToken.getClaim("app"), "");
+    std::string appName (Helpers::JSON::ASSTRING_D(accessToken.getClaim("app"), ""));
     std::shared_ptr<JWT> signingJWT = Globals::getIdentityManager()->applications->getAppJWTSigner(appName);
     if (!signingJWT)
     {
@@ -58,6 +57,9 @@ bool LoginPortal_Endpoints::token_createAndSignApplicationRefreshAndAccessJWTs(c
                                                                                ClientDetails &authClientDetails)
 {
     ApplicationAuthSettings appAuthSettings = Globals::getIdentityManager()->applications->getAuthSettingsFromApplication(app);
+
+    boost::json::value & responseJSON = *response.responseJSON();
+    boost::json::object & responseJSONObj = responseJSON.as_object();
 
     if (appAuthSettings.appName != app)
     {
@@ -107,22 +109,21 @@ bool LoginPortal_Endpoints::token_createAndSignApplicationRefreshAndAccessJWTs(c
                                                                                              accessToken.getExpirationTime(), refreshToken.getExpirationTime());
 
         // Here is the effective logging in the app.
-        (*response.responseJSON())["accessToken"] = accessTokenStr.value();
-        (*response.responseJSON())["refreshToken"] = refreshTokenStr.value();
+        responseJSONObj["accessToken"] = accessTokenStr.value();
+        responseJSONObj["refreshToken"] = refreshTokenStr.value();
     }
     else
     {
         // TODO: create an activity token instead
     }
 
-
-    (*response.responseJSON())["redirectURI"] = redirectURI;
-    (*response.responseJSON())["callbackURI"] = Globals::getIdentityManager()->applications->getApplicationCallbackURI(app);
+    responseJSONObj["redirectURI"] = redirectURI;
+    responseJSONObj["callbackURI"] = Globals::getIdentityManager()->applications->getApplicationCallbackURI(app);
 
     return true;
 }
 
-bool LoginPortal_Endpoints::token_validateJwtClaims(const JWT::Token *jwtToken, const std::string &user, const std::string &ipAddress)
+bool LoginPortal_Endpoints::token_validateJwtClaims(const JWT::Token *jwtToken, std::string_view user, std::string_view ipAddress)
 {
     if (jwtToken->getClaim("app") != IAM_LOGINPORTAL_APPNAME || jwtToken->getClaim("type") != "access")
     {
@@ -133,7 +134,7 @@ bool LoginPortal_Endpoints::token_validateJwtClaims(const JWT::Token *jwtToken, 
 }
 
 bool LoginPortal_Endpoints::token_validateAuthenticationScheme(const JWT::Token *jwtToken, const std::string &requestedApp, const std::string &requestedActivity, uint32_t &requestedSchemeId,
-                                                               const std::string &authenticatedUser, const std::string &ipAddress)
+    std::string_view authenticatedUser, std::string_view ipAddress)
 {
     IdentityManager *identityManager = Globals::getIdentityManager();
 
@@ -216,12 +217,12 @@ bool LoginPortal_Endpoints::token_validateAuthenticationScheme(const JWT::Token 
     return true;
 }
 
-bool LoginPortal_Endpoints::token_validateAppAuthorization(const JWT::Token *jwtToken, const std::string &app, const std::string &user, const std::string &ipAddress)
+bool LoginPortal_Endpoints::token_validateAppAuthorization(const JWT::Token *jwtToken, const std::string_view &app, const std::string_view &user, const std::string_view &ipAddress)
 {
     std::set<std::string> authenticatedAppsSet = Helpers::JSON::toStringSet(jwtToken->getClaim("apps"));
-    if (authenticatedAppsSet.find(app) == authenticatedAppsSet.end())
+    if (authenticatedAppsSet.find(std::string(app)) == authenticatedAppsSet.end())
     {
-        LOG_APP->log2(__func__, user, ipAddress, Logs::LogLevel::SECURITY_ALERT, "Token request denied: Unauthorized application '%s' access.", app.c_str());
+        LOG_APP->log2(__func__, user, ipAddress, Logs::LogLevel::SECURITY_ALERT, "Token request denied: Unauthorized application '%s' access.", std::string(app).c_str());
         return false;
     }
     return true;

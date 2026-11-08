@@ -3,21 +3,15 @@
 #include <Mantids30/Helpers/encoders.h>
 #include <Mantids30/Helpers/json.h>
 #include <boost/algorithm/string/replace.hpp>
-#include <json/value.h>
-#include <json/writer.h>
+#include <Mantids30/DataFormat_JSON/json.h>
 
-using namespace Mantids30;
-using namespace API::RESTful;
-using namespace Network::Protocol;
-
-// Get the application token...
-
-std::regex LoginPortal_Endpoints::originPattern = std::regex("^(https?://[^/]+)");
 using namespace Mantids30;
 using namespace Mantids30::Program;
 using namespace Mantids30::API::RESTful;
 using namespace Mantids30::Network::Protocol;
 using namespace Mantids30::DataFormat;
+
+std::regex LoginPortal_Endpoints::originPattern = std::regex("^(https?://[^/]+)");
 
 bool LoginPortal_Endpoints::retrieveAndValidateAppOrigin(HTTPv1_Base::Request *request, const std::string &appName, const OriginSource &originSource)
 {
@@ -34,7 +28,7 @@ bool LoginPortal_Endpoints::retrieveAndValidateAppOrigin(HTTPv1_Base::Request *r
         std::smatch matches;
         if (std::regex_search(referer, matches, originPattern) && matches.size() > 1)
         {
-            currentOrigin = matches[1].str(); // Extrae solo la parte del dominio y el esquema.
+            currentOrigin = matches[1].str(); // Extract only the scheme and domain part.
         }
     }
 
@@ -60,7 +54,6 @@ HTTP::Status::Code LoginPortal_Endpoints::handleLogoutDynamicRequest(const std::
         if (appName.empty())
         {
             LOG_APP->log2(__func__, "", request->networkClientInfo.REMOTE_ADDR, Logs::LogLevel::SECURITY_ALERT, "Invalid API key provided. Application not found.");
-            API::APIReturn response;
             return HTTP::Status::Code::S_401_UNAUTHORIZED;
         }
         dontUseOriginValidation = true;
@@ -73,24 +66,16 @@ HTTP::Status::Code LoginPortal_Endpoints::handleLogoutDynamicRequest(const std::
 
     std::string sessionPublicData = request->getVarsBySource(HTTP::Source::POST)->getStringValue("sessionPublicData");
 
-    Json::Value jSessionPublicData;
+    boost::json::value jSessionPublicData;
     if (!sessionPublicData.empty())
     {
         std::string decoded = Mantids30::Helpers::Encoders::decodeFromBase64(sessionPublicData);
-        Json::CharReaderBuilder readerBuilder;
-        std::string errors;
 
-        // 3. Create the CharReader via CharReaderBuilder
-        Json::CharReaderBuilder builder;
-        const std::unique_ptr<Json::CharReader> reader(builder.newCharReader());
-
-        // 4. Parse the string
-        bool parsingSuccessful = reader->parse(decoded.c_str(), decoded.c_str() + decoded.length(), &jSessionPublicData, &errors);
-
-        // 5. Check for errors and extract data
-        if (!parsingSuccessful)
+        Mantids30::Helpers::JSON::Reader reader;
+        if (!reader.parse(decoded, jSessionPublicData))
         {
-            LOG_APP->log2(__func__, "", request->networkClientInfo.REMOTE_ADDR, Logs::LogLevel::SECURITY_ALERT, "Failed to parse sessionPublicData: %s", errors.c_str());
+            LOG_APP->log2(__func__, "", request->networkClientInfo.REMOTE_ADDR, Logs::LogLevel::SECURITY_ALERT, "Failed to parse sessionPublicData: %s",
+                           reader.getFormattedErrorMessages().c_str());
             return HTTP::Status::Code::S_400_BAD_REQUEST;
         }
     }
@@ -98,14 +83,13 @@ HTTP::Status::Code LoginPortal_Endpoints::handleLogoutDynamicRequest(const std::
     // if the cookie does not exist, it's a non-persistent login session.
     std::string defaultAPPCallback = Globals::getIdentityManager()->applications->getApplicationCallbackURI(appName);
 
-    Json::Value v;
-    v["appName"] = appName;
-    v["sessionPublicData"] = jSessionPublicData;
-    v["defaultCallbackURL"] = defaultAPPCallback;
+    boost::json::object v{
+        {"appName",              appName},
+        {"sessionPublicData",    jSessionPublicData},
+        {"defaultCallbackURL",   defaultAPPCallback},
+    };
 
-    Json::StreamWriterBuilder builder;
-    builder.settings_["indentation"] = "";
-    std::string xstrValue = Json::writeString(builder, v);
+    std::string xstrValue = Mantids30::Helpers::JSON::toString(boost::json::value(v));
 
     std::regex appRegex("^[a-zA-Z0-9\\_]+$");
 

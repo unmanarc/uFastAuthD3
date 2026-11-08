@@ -32,6 +32,6 @@ protected:
     static APIReturn setAccountAsApplicationAdmin(void *context, const RequestContext &request, ClientDetails &authClientDetails);
 
 private:
-    static Json::Value getLoginFlowDetails(const std::string &appName);
-    static Json::Value getApplicationAccountDetails(const std::string &appName);
+    static boost::json::value getLoginFlowDetails(const std::string &appName);
+    static boost::json::value getApplicationAccountDetails(const std::string &appName);
 };

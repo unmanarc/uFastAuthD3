@@ -3,7 +3,6 @@
 
 #include <Mantids30/Helpers/datatables.h>
 
-
 #include <Mantids30/Memory/a_bool.h>
 #include <Mantids30/Memory/a_datetime.h>
 #include <Mantids30/Memory/a_int32.h>
@@ -16,7 +15,7 @@ using namespace Mantids30::Memory;
 using namespace Mantids30::Database;
 using namespace Mantids30;
 
-std::optional<uint32_t> IdentityManager_DB::AuthController_DB::createAuthenticationSlot(const ClientDetails &clientDetails, const std::string &performedBy, const AuthenticationSlotDetails &details)
+std::optional<uint32_t> IdentityManager_DB::AuthController_DB::createAuthenticationSlot(const ClientDetails &clientDetails, std::string_view performedBy, const AuthenticationSlotDetails &details)
 {
     std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
 
@@ -27,10 +26,10 @@ std::optional<uint32_t> IdentityManager_DB::AuthController_DB::createAuthenticat
             "VALUES(:description,:function,:defaultExpirationSeconds,:strengthJSONValidator,:totp2FAStepsToleranceWindow,:canSkipWhenExpired);",
             {
                 {":description", MAKE_VAR(STRING, details.description)},
-                {":function", MAKE_VAR(UINT32,  details.passwordFunction.has_value()? static_cast<uint8_t>(details.passwordFunction.value()) : 500 )},
+                {":function", MAKE_VAR(UINT32, details.passwordFunction.has_value() ? static_cast<uint8_t>(details.passwordFunction.value()) : 500)},
                 {":defaultExpirationSeconds", MAKE_VAR(UINT32, details.defaultExpirationSeconds)},
                 {":totp2FAStepsToleranceWindow", MAKE_VAR(UINT32, details.totp2FAStepsToleranceWindow)},
-                {":strengthJSONValidator", MAKE_VAR(STRING, details.strengthJSONValidator.toStyledString())},
+                {":strengthJSONValidator", MAKE_VAR(STRING, Helpers::JSON::toString(details.strengthJSONValidator))},
                 {":canSkipWhenExpired", MAKE_VAR(BOOL, details.canSkipWhenExpired)},
             });
         if (!i || !i->isSuccessful())
@@ -46,7 +45,7 @@ std::optional<uint32_t> IdentityManager_DB::AuthController_DB::createAuthenticat
     return newSlotId;
 }
 
-bool IdentityManager_DB::AuthController_DB::removeAuthenticationSlot(const ClientDetails &clientDetails, const std::string &performedBy, const uint32_t &slotId)
+bool IdentityManager_DB::AuthController_DB::removeAuthenticationSlot(const ClientDetails &clientDetails, std::string_view performedBy, const uint32_t &slotId)
 {
     std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
 
@@ -60,7 +59,7 @@ bool IdentityManager_DB::AuthController_DB::removeAuthenticationSlot(const Clien
     return success;
 }
 
-bool IdentityManager_DB::AuthController_DB::updateAuthenticationSlotDetails(const ClientDetails &clientDetails, const std::string &performedBy, const uint32_t &slotId,
+bool IdentityManager_DB::AuthController_DB::updateAuthenticationSlotDetails(const ClientDetails &clientDetails, std::string_view performedBy, const uint32_t &slotId,
                                                                             const AuthenticationSlotDetails &details)
 {
     std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
@@ -78,7 +77,7 @@ bool IdentityManager_DB::AuthController_DB::updateAuthenticationSlotDetails(cons
                                                         {":defaultExpirationSeconds", MAKE_VAR(UINT32, details.defaultExpirationSeconds)},
                                                         {":canSkipWhenExpired", MAKE_VAR(BOOL, details.canSkipWhenExpired)},
                                                         {":totp2FAStepsToleranceWindow", MAKE_VAR(UINT32, details.totp2FAStepsToleranceWindow)},
-                                                        {":strengthJSONValidator", MAKE_VAR(STRING, details.strengthJSONValidator.toStyledString())}});
+                                                        {":strengthJSONValidator", MAKE_VAR(STRING, Helpers::JSON::toString(details.strengthJSONValidator))}});
 
     if (success)
     {
@@ -106,14 +105,20 @@ std::map<uint32_t, AuthenticationSlotDetails> IdentityManager_DB::AuthController
     std::shared_ptr<Query> i = _parent->m_sqlConnector
                                    ->qSelect("SELECT `slotId`, `description`, `function`, `defaultExpirationSeconds`, `strengthJSONValidator`,`totp2FAStepsToleranceWindow`,`canSkipWhenExpired` "
                                              "FROM iam.authenticationSlots;",
-                                             {}, {&uSlotId, &sDescription, &uFunction, &uDefaultExpirationSeconds, &sStrengthJSONValidator, &uTotp2FAStepsToleranceWindow, &canSkipWhenExpired});
+                                             {},
+                                             {&uSlotId, &sDescription, &uFunction, &uDefaultExpirationSeconds, &sStrengthJSONValidator, &uTotp2FAStepsToleranceWindow, &canSkipWhenExpired});
 
     // Iterate:
     while (i && i->isSuccessful() && i->step())
     {
         // Build AuthenticationSlotDetails and insert it to the maps
-        ret.insert({uSlotId.getValue(), AuthenticationSlotDetails(sDescription.getValue(), static_cast<HashFunction>(uFunction.getValue()), Mantids30::Helpers::JSON::parse(sStrengthJSONValidator.getValue().c_str()),
-                                                                  uDefaultExpirationSeconds.getValue(), uTotp2FAStepsToleranceWindow.getValue(), canSkipWhenExpired.getValue())});
+        ret.insert({uSlotId.getValue(),
+                    AuthenticationSlotDetails(sDescription.getValue(),
+                                              static_cast<HashFunction>(uFunction.getValue()),
+                                              Mantids30::Helpers::JSON::parse(sStrengthJSONValidator.getValue().c_str()),
+                                              uDefaultExpirationSeconds.getValue(),
+                                              uTotp2FAStepsToleranceWindow.getValue(),
+                                              canSkipWhenExpired.getValue())});
     }
 
     return ret;

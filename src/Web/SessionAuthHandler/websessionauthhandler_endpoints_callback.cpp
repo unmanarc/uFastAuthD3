@@ -2,10 +2,10 @@
 #include <Mantids30/Protocol_HTTP/httpv1_base.h>
 #include "websessionauthhandler_endpoints.h"
 #include <Mantids30/Helpers/json.h>
-#include <json/value.h>
+#include <Mantids30/DataFormat_JSON/json.h>
 
 #include <boost/algorithm/string/join.hpp>
-#include <json/config.h>
+#include <Mantids30/DataFormat_JSON/json.h>
 
 #include "globals.h"
 

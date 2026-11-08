@@ -1,11 +1,11 @@
 #pragma once
 
 #include <Mantids30/Helpers/json.h>
+#include <boost/json/value.hpp>
 #include <cstdint>
 #include <optional>
 #include <set>
 #include <string>
-
 struct AppError
 {
     uint16_t http_code = 999;
@@ -22,40 +22,39 @@ struct ApplicationDef
 
 struct AccountApplicationInfo
 {
-    [[nodiscard]] Json::Value toJSON() const
+    [[nodiscard]] boost::json::object toJSON() const
     {
-        Json::Value app;
-        app["name"] = appName;
-        app["description"] = appDescription;
-        app["isAppAdmin"] = isAppAdmin;
-        app["enrollmentDate"] = static_cast<Json::Int64>(enrollmentDate);
-        app["defaultReturnURL"] = defaultReturnURL;
-
         // Roles as array
-        Json::Value rolesArray(Json::arrayValue);
+        boost::json::array rolesArray;
         for (const std::string &role : roles)
         {
-            rolesArray.append(role);
+            rolesArray.push_back(boost::json::value(role));
         }
-        app["roles"] = rolesArray;
 
         // Direct scopes as array
-        Json::Value directScopesArray(Json::arrayValue);
+        boost::json::array directScopesArray;
         for (const std::string &scope : directScopes)
         {
-            directScopesArray.append(scope);
+            directScopesArray.push_back(boost::json::value(scope));
         }
-        app["directScopes"] = directScopesArray;
 
         // All scopes (union) as array
-        Json::Value allScopesArray(Json::arrayValue);
+        boost::json::array allScopesArray;
         for (const std::string &scope : allScopes)
         {
-            allScopesArray.append(scope);
+            allScopesArray.push_back(boost::json::value(scope));
         }
-        app["allScopes"] = allScopesArray;
 
-        return app;
+        return boost::json::object{
+            {"name",           appName},
+            {"description",    appDescription},
+            {"isAppAdmin",     isAppAdmin},
+            {"enrollmentDate", static_cast<int64_t>(enrollmentDate)},
+            {"defaultReturnURL", defaultReturnURL},
+            {"roles",          std::move(rolesArray)},
+            {"directScopes",   std::move(directScopesArray)},
+            {"allScopes",      std::move(allScopesArray)},
+        };
     }
     std::string appName;
     std::string appDescription;
@@ -72,7 +71,7 @@ struct ApplicationAuthSettings
     // Getters that read from tokensConfiguration (no data duplication)
     [[nodiscard]] std::string getSignAlgorithm() const
     {
-        return Mantids30::Helpers::JSON::ASSTRING(tokensConfiguration,"signAlgorithm","HS256");
+        return std::string(Mantids30::Helpers::JSON::ASSTRING(tokensConfiguration,"signAlgorithm","HS256"));
     }
 
     [[nodiscard]] bool getAllowRefreshTokenRenovation() const
@@ -95,16 +94,16 @@ struct ApplicationAuthSettings
         return Mantids30::Helpers::JSON::ASBOOL(tokensConfiguration,"includeBasicAccountInfo",true);
     }
 
-    [[nodiscard]] Json::Value toJSON() const
+    [[nodiscard]] boost::json::object toJSON() const
     {
-        Json::Value root(Json::objectValue);
-        root["appName"] = appName;
-        root["tokensConfiguration"] = tokensConfiguration;
-        root["sessionConfiguration"] = sessionConfiguration;
-        return root;
+        return boost::json::object{
+            {"appName",              appName},
+            {"tokensConfiguration",  tokensConfiguration},
+            {"sessionConfiguration", sessionConfiguration},
+        };
     }
 
-    std::optional<AppError> fromJSON(const Json::Value &root)
+    std::optional<AppError> fromJSON(const boost::json::value &root)
     {
         appName = Mantids30::Helpers::JSON::ASSTRING(root, "appName", "");
         if (appName.empty())
@@ -116,25 +115,25 @@ struct ApplicationAuthSettings
             return error;
         }
 
-        tokensConfiguration = root["tokensConfiguration"];
-        sessionConfiguration = root["sessionConfiguration"];
+        tokensConfiguration = Mantids30::Helpers::JSON::MEMBER_OR_NULL(root, "tokensConfiguration");
+        sessionConfiguration = Mantids30::Helpers::JSON::MEMBER_OR_NULL(root, "sessionConfiguration");
         return std::nullopt;
     }
 
     std::string appName;
-    Json::Value tokensConfiguration;
-    Json::Value sessionConfiguration;
+    boost::json::value tokensConfiguration;
+    boost::json::value sessionConfiguration;
 };
 struct ApplicationScopeDetails
 {
     ApplicationScopeDetails() = default;
 
-    [[nodiscard]] Json::Value toJSON() const
+    [[nodiscard]] boost::json::object toJSON() const
     {
-        Json::Value r;
-        r["id"] = id;
-        r["description"] = description;
-        return r;
+        return boost::json::object{
+            {"id",          id},
+            {"description", description},
+        };
     }
 
     std::string id;

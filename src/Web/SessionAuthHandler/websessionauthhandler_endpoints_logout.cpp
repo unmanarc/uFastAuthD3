@@ -4,10 +4,10 @@
 #include <Mantids30/Protocol_HTTP/httpv1_base.h>
 #include <Mantids30/Helpers/json.h>
 #include <Mantids30/Helpers/encoders.h>
-#include <json/value.h>
+#include <Mantids30/DataFormat_JSON/json.h>
 
 #include <boost/algorithm/string/join.hpp>
-#include <json/config.h>
+#include <Mantids30/DataFormat_JSON/json.h>
 
 #include "globals.h"
 
@@ -23,17 +23,17 @@ static void setLogoutCookies(API::APIReturn &response, const ApplicationAuthSett
     // Clear AccessToken
     response.cookiesMap["AccessToken"] = HTTP::Headers::Cookie();
     response.cookiesMap["AccessToken"].deleteCookie();
-    response.cookiesMap["AccessToken"].path = Helpers::JSON::ASSTRING(tokenProps.tokensConfiguration["accessToken"], "path", "/");
+    response.cookiesMap["AccessToken"].path = Helpers::JSON::ASSTRING(Helpers::JSON::MEMBER_OR_NULL(tokenProps.tokensConfiguration, "accessToken"), "path", "/");
 
     // Clear RefreshToken
     response.cookiesMap["RefreshToken"] = HTTP::Headers::Cookie();
     response.cookiesMap["RefreshToken"].deleteCookie();
-    response.cookiesMap["RefreshToken"].path = Helpers::JSON::ASSTRING(tokenProps.tokensConfiguration["refreshToken"], "path", "/auth");
+    response.cookiesMap["RefreshToken"].path = Helpers::JSON::ASSTRING(Helpers::JSON::MEMBER_OR_NULL(tokenProps.tokensConfiguration, "refreshToken"), "path", "/auth");
 
     // Clear RefreshTokenId
     response.cookiesMap["RefreshTokenId"] = HTTP::Headers::Cookie();
     response.cookiesMap["RefreshTokenId"].deleteCookie();
-    response.cookiesMap["RefreshTokenId"].path = Helpers::JSON::ASSTRING(tokenProps.tokensConfiguration["refreshToken"], "path", "/auth");
+    response.cookiesMap["RefreshTokenId"].path = Helpers::JSON::ASSTRING(Helpers::JSON::MEMBER_OR_NULL(tokenProps.tokensConfiguration, "refreshToken"), "path", "/auth");
 
     // Clear SessionPublicData
     response.cookiesMap["SessionPublicData"] = HTTP::Headers::Cookie();
@@ -67,13 +67,11 @@ API::APIReturn WebSessionAuthHandler_Endpoints::appLogout(void *context, const R
     if (!sessionPublicData.empty())
     {
         std::string decoded = Mantids30::Helpers::Encoders::decodeFromBase64(sessionPublicData);
-        Json::Value jSessionPublicData;
-        Json::CharReaderBuilder builder;
-        const std::unique_ptr<Json::CharReader> reader(builder.newCharReader());
+        boost::json::value jSessionPublicData;
         std::string errors;
-        if (reader->parse(decoded.c_str(), decoded.c_str() + decoded.length(), &jSessionPublicData, &errors))
+        if (Mantids30::Helpers::JSON::parse(decoded, jSessionPublicData, &errors))
         {
-            user = jSessionPublicData.get("user", "").asString();
+            user = Mantids30::Helpers::JSON::ASSTRING(jSessionPublicData, "user", "");
         }
     }
     std::string jwtId = request.clientRequest->getCookie("RefreshTokenId");
@@ -112,14 +110,12 @@ WebSessionAuthHandler_Endpoints::APIReturn WebSessionAuthHandler_Endpoints::getL
         return {HTTP::Status::Code::S_401_UNAUTHORIZED, "invalid_app", "Internal Error While reading the APP Attributes."};
     }
 
-    Json::Value payloadOut;
-
     //  Configuration parameters:
     boost::property_tree::ptree config = Globals::pConfig;
-
     std::string logoutURL = attribs->useEmbeddedInPortalAuthentication ? "/login/logout/" : config.get<std::string>("AppVars.LoginPortalURL", "about:blank") + "/logout/";
-    payloadOut["url"] = logoutURL;
-    payloadOut["appName"] = appName;
 
-    return payloadOut;
+    return boost::json::value(boost::json::object{
+        {"url",     logoutURL},
+        {"appName", appName},
+    });
 }

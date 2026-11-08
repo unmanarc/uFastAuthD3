@@ -1,6 +1,9 @@
 #pragma once
 
-#include <json/value.h>
+#include "Mantids30/DataFormat_JSON/json_accessors.h"
+#include "Mantids30/DataFormat_JSON/json_detail.h"
+#include <Mantids30/DataFormat_JSON/json.h>
+#include <boost/json/value.hpp>
 #include <cstdint>
 #include <optional>
 #include <string>
@@ -49,7 +52,7 @@ enum class Mode : uint8_t
     CHALLENGE
 };
 
-static inline Mode getAuthModeFromString(const std::string &mode)
+static inline Mode getAuthModeFromString(std::string_view mode)
 {
     if (mode == "CHALLENGE")
     {
@@ -75,13 +78,13 @@ static inline std::string getStringFromAuthMode(const Mode &mode)
 
 struct AuthenticationPolicy
 {
-    [[nodiscard]] Json::Value toJSON() const
+    [[nodiscard]] boost::json::object toJSON() const
     {
-        Json::Value root;
-        root["maxTries"] = maxTries;
-        root["abandonedAccountExpirationSeconds"] = abandonedAccountExpirationSeconds;
-        root["blockTokenTimeout"] = blockTokenTimeout;
-        return root;
+        return boost::json::object{
+            {"maxTries",                          maxTries},
+            {"abandonedAccountExpirationSeconds", abandonedAccountExpirationSeconds},
+            {"blockTokenTimeout",                 blockTokenTimeout},
+        };
     }
 
     uint32_t maxTries = 4;
@@ -93,40 +96,34 @@ struct AuthenticationPolicy
 
 struct AuthenticationSlotDetails
 {
-    void fromJSON(const Json::Value &j)
+    void fromJSON(const boost::json::value &j)
     {
         passwordFunction = toHashFunction(Mantids30::Helpers::JSON::ASUINT(j, "passwordFunction", 500));
         description = Mantids30::Helpers::JSON::ASSTRING(j, "description", "");
         defaultExpirationSeconds = Mantids30::Helpers::JSON::ASUINT(j, "defaultExpirationSeconds", 0);
-        strengthJSONValidator = j.isMember("strengthJSONValidator") ? j["strengthJSONValidator"] : Json::nullValue;
+        strengthJSONValidator = Mantids30::Helpers::JSON::MEMBER_OR_NULL(j, "strengthJSONValidator");
         totp2FAStepsToleranceWindow = Mantids30::Helpers::JSON::ASUINT(j, "totp2FAStepsToleranceWindow", 0);
         canSkipWhenExpired = Mantids30::Helpers::JSON::ASBOOL(j, "canSkipWhenExpired", false);
     }
 
-    [[nodiscard]] Json::Value toJSON() const
+    [[nodiscard]] boost::json::object toJSON() const
     {
-        Json::Value jRet;
-        jRet["description"] = description;
-        jRet["defaultExpirationSeconds"] = defaultExpirationSeconds;
-        jRet["strengthJSONValidator"] = strengthJSONValidator;
-        jRet["totp2FAStepsToleranceWindow"] = totp2FAStepsToleranceWindow;
-        jRet["canSkipWhenExpired"] = canSkipWhenExpired;
-        if (!passwordFunction.has_value())
-        {
-            jRet["passwordFunction"] = 500;
-        }
-        else
-        {
-            jRet["passwordFunction"] = static_cast<uint16_t>(passwordFunction.value());
-        }
-        return jRet;
+        boost::json::value passwordFunctionValue = passwordFunction.has_value() ? boost::json::value(static_cast<uint16_t>(passwordFunction.value())) : boost::json::value(500);
+        return boost::json::object{
+            {"description",                description},
+            {"defaultExpirationSeconds",   defaultExpirationSeconds},
+            {"strengthJSONValidator",      strengthJSONValidator},
+            {"totp2FAStepsToleranceWindow", totp2FAStepsToleranceWindow},
+            {"canSkipWhenExpired",         canSkipWhenExpired},
+            {"passwordFunction",           passwordFunctionValue},
+        };
     }
 
     [[nodiscard]] bool isCompatible(const AuthenticationSlotDetails &x) const { return x.passwordFunction == passwordFunction; }
 
     [[nodiscard]] bool isTextPasswordFunction() const { return passwordFunction.has_value() && passwordFunction != HashFunction::GAUTHTIME; }
 
-    AuthenticationSlotDetails(const std::string &desc, HashFunction pwdFunction, const Json::Value &strengthValidator, uint32_t defaultExpSecs, uint32_t totpToleranceWindow, bool bCanSkipWhenExpired)
+    AuthenticationSlotDetails(const std::string &desc, HashFunction pwdFunction, const boost::json::value &strengthValidator, uint32_t defaultExpSecs, uint32_t totpToleranceWindow, bool bCanSkipWhenExpired)
         : description(desc)
         , passwordFunction(pwdFunction)
         , strengthJSONValidator(strengthValidator)
@@ -140,7 +137,7 @@ struct AuthenticationSlotDetails
     std::string description;
 
     std::optional<HashFunction> passwordFunction = std::nullopt;
-    Json::Value strengthJSONValidator;
+    boost::json::value strengthJSONValidator;
     uint32_t defaultExpirationSeconds = 0;
     uint32_t totp2FAStepsToleranceWindow = 0;
     bool canSkipWhenExpired = false;
@@ -148,16 +145,16 @@ struct AuthenticationSlotDetails
 
 struct Credential
 {
-    static Credential createFromJSON(const Json::Value &j)
+    static Credential createFromJSON(const boost::json::value &j)
     {
         Credential c;
         c.fromJSON(j);
         return c;
     }
 
-    void fromJSON(const Json::Value &j)
+    void fromJSON(const boost::json::value &j)
     {
-        slotDetails.fromJSON(j["slotDetails"]);
+        slotDetails.fromJSON( Mantids30::Helpers::JSON::MEMBER_OR_NULL(j, "slotDetails"));
         mustChange = Mantids30::Helpers::JSON::ASBOOL(j, "mustChange", true);
         badAttempts = Mantids30::Helpers::JSON::ASUINT(j, "badAttempts", 0);
         lastChange = static_cast<time_t>(Mantids30::Helpers::JSON::ASINT64(j, "lastChange", 0));
@@ -166,24 +163,23 @@ struct Credential
         Mantids30::Helpers::Encoders::fromHex(Mantids30::Helpers::JSON::ASSTRING(j, "ssalt", "FFFFFFFF"), ssalt, 4);
     }
 
-    [[nodiscard]] Json::Value toJSON(const AuthenticationPolicy &authPolicy) const
+    [[nodiscard]] boost::json::object toJSON(const AuthenticationPolicy &authPolicy) const
     {
-        Json::Value jRet;
-        jRet["hash"] = hash;
-        jRet["isLocked"] = isLocked;
-        jRet["mustChange"] = mustChange;
-        jRet["badAttempts"] = badAttempts;
-        jRet["lastChange"] = lastChange;
-        jRet["isExpired"] = isExpired();
-        jRet["slotDetails"] = slotDetails.toJSON();
-        jRet["expirationTimestamp"] = expirationTimestamp;
-        jRet["ssalt"] = Mantids30::Helpers::Encoders::toHex(ssalt, 4);
-        jRet["hasExceededMaxAttempts"] = hasExceededMaxAttempts(authPolicy);
-
-        return jRet;
+        return boost::json::object{
+            {"hash",                    hash},
+            {"isLocked",                isLocked},
+            {"mustChange",              mustChange},
+            {"badAttempts",             badAttempts},
+            {"lastChange",              lastChange},
+            {"isExpired",               isExpired()},
+            {"slotDetails",             slotDetails.toJSON()},
+            {"expirationTimestamp",     expirationTimestamp},
+            {"ssalt",                   Mantids30::Helpers::Encoders::toHex(ssalt, 4)},
+            {"hasExceededMaxAttempts",  hasExceededMaxAttempts(authPolicy)},
+        };
     }
 
-    static Credential createSHA256TemporalCredential(const std::string &password)
+    static Credential createSHA256TemporalCredential(std::string_view password)
     {
         Credential cred;
         cred.slotDetails = AuthenticationSlotDetails("SHA256 Temporal", HashFunction::SHA256, "", 0, 0, false);
@@ -328,16 +324,16 @@ struct AuthenticationSchemeUsedSlot
 
     /**
      * @brief Converts the object to a JSON representation.
-     * @return Json::Value The JSON object representing this structure.
+     * @return boost::json::value The JSON object representing this structure.
      */
-    [[nodiscard]] Json::Value toJSON() const
+    [[nodiscard]] boost::json::object toJSON() const
     {
-        Json::Value r;
-        r["slotId"] = slotId;
-        r["orderPriority"] = orderPriority;
-        r["optional"] = optional;
-        r["details"] = details.toJSON();
-        return r;
+        return boost::json::object{
+            {"slotId",       slotId},
+            {"orderPriority", orderPriority},
+            {"optional",     optional},
+            {"details",      details.toJSON()},
+        };
     }
 
     /**
@@ -345,12 +341,13 @@ struct AuthenticationSchemeUsedSlot
      * @param j The JSON object to populate the data from.
      * @return AuthenticationSchemeUsedSlot The populated object.
      */
-    void fromJSON(const Json::Value &j)
+    void fromJSON(const boost::json::value &j)
     {
         slotId = Mantids30::Helpers::JSON::ASUINT(j, "slotId", 0);
         orderPriority = Mantids30::Helpers::JSON::ASUINT(j, "orderPriority", 0);
         optional = Mantids30::Helpers::JSON::ASBOOL(j, "optional", false);
-        details.fromJSON(j["details"]);
+        details.fromJSON( Mantids30::Helpers::JSON::MEMBER_OR_NULL(j, "details"));
+
     }
 
     uint32_t slotId;

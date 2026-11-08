@@ -15,8 +15,8 @@ using namespace Mantids30::Database;
 using namespace Mantids30::Helpers;
 using namespace Mantids30;
 
-bool IdentityManager_DB::ApplicationActivities_DB::createApplicationActivity(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName,
-                                                                          const std::string &activityName, const std::string &activityDescription)
+bool IdentityManager_DB::ApplicationActivities_DB::createApplicationActivity(const ClientDetails &clientDetails, std::string_view performedBy, std::string_view appName,
+                                                                          std::string_view activityName, std::string_view activityDescription)
 {
     std::optional<uint32_t> defaultAuthScheme = _parent->authController->getDefaultAuthScheme();
 
@@ -55,8 +55,8 @@ bool IdentityManager_DB::ApplicationActivities_DB::createApplicationActivity(con
     return true;
 }
 
-bool IdentityManager_DB::ApplicationActivities_DB::removeApplicationActivity(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName,
-                                                                             const std::string &activityName)
+bool IdentityManager_DB::ApplicationActivities_DB::removeApplicationActivity(const ClientDetails &clientDetails, std::string_view performedBy, std::string_view appName,
+                                                                             std::string_view activityName)
 {
     std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
 
@@ -71,7 +71,7 @@ bool IdentityManager_DB::ApplicationActivities_DB::removeApplicationActivity(con
     return success;
 }
 
-bool IdentityManager_DB::ApplicationActivities_DB::setApplicationActivities(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName,
+bool IdentityManager_DB::ApplicationActivities_DB::setApplicationActivities(const ClientDetails &clientDetails, std::string_view performedBy, std::string_view appName,
                                                                             const std::map<std::string, ActivityData> &activities)
 {
     std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
@@ -145,7 +145,7 @@ bool IdentityManager_DB::ApplicationActivities_DB::setApplicationActivities(cons
     return true;
 }
 
-bool IdentityManager_DB::ApplicationActivities_DB::removeAllApplicationActivities(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName)
+bool IdentityManager_DB::ApplicationActivities_DB::removeAllApplicationActivities(const ClientDetails &clientDetails, std::string_view performedBy, std::string_view appName)
 {
     std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
 
@@ -160,8 +160,8 @@ bool IdentityManager_DB::ApplicationActivities_DB::removeAllApplicationActivitie
     return success;
 }
 
-bool IdentityManager_DB::ApplicationActivities_DB::setApplicationActivityParentActivity(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName,
-                                                                                        const std::string &activityName, const std::string &parentActivityName)
+bool IdentityManager_DB::ApplicationActivities_DB::setApplicationActivityParentActivity(const ClientDetails &clientDetails, std::string_view performedBy, std::string_view appName,
+                                                                                        std::string_view activityName, std::string_view parentActivityName)
 {
     std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
 
@@ -184,15 +184,15 @@ bool IdentityManager_DB::ApplicationActivities_DB::setApplicationActivityParentA
 
     if (success)
     {
-        std::string desc = parentActivityName.empty() ? "Parent activity cleared" : ("Parent activity set to: " + parentActivityName);
+        std::string desc = parentActivityName.empty() ? "Parent activity cleared" : ("Parent activity set to: " + std::string(parentActivityName));
         _parent->logSecurityEventOnApplicationActivities(appName, activityName, std::nullopt, SecurityEventAction::UPDATE, desc, performedBy, clientDetails);
     }
 
     return success;
 }
 
-bool IdentityManager_DB::ApplicationActivities_DB::setApplicationActivityDescription(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName,
-                                                                                     const std::string &activityName, const std::string &description)
+bool IdentityManager_DB::ApplicationActivities_DB::setApplicationActivityDescription(const ClientDetails &clientDetails, std::string_view performedBy, std::string_view appName,
+                                                                                     std::string_view activityName, std::string_view description)
 {
     std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
 
@@ -208,7 +208,7 @@ bool IdentityManager_DB::ApplicationActivities_DB::setApplicationActivityDescrip
     return success;
 }
 
-std::optional<IdentityManager::ApplicationActivities::ActivityData> IdentityManager_DB::ApplicationActivities_DB::getApplicationActivityInfo(const std::string &appName, const std::string &activityName)
+std::optional<IdentityManager::ApplicationActivities::ActivityData> IdentityManager_DB::ApplicationActivities_DB::getApplicationActivityInfo(std::string_view appName, std::string_view activityName)
 {
     std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
 
@@ -239,7 +239,7 @@ std::optional<IdentityManager::ApplicationActivities::ActivityData> IdentityMana
     return std::nullopt;
 }
 
-std::map<std::string, IdentityManager::ApplicationActivities::ActivityData> IdentityManager_DB::ApplicationActivities_DB::listApplicationActivities(const std::string &appName)
+std::map<std::string, IdentityManager::ApplicationActivities::ActivityData> IdentityManager_DB::ApplicationActivities_DB::listApplicationActivities(std::string_view appName)
 {
     std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
 
@@ -268,7 +268,7 @@ std::map<std::string, IdentityManager::ApplicationActivities::ActivityData> Iden
     return activities;
 }
 
-std::optional<uint32_t> IdentityManager_DB::ApplicationActivities_DB::getApplicationActivityDefaultScheme(const std::string &appName, const std::string &activityName)
+std::optional<uint32_t> IdentityManager_DB::ApplicationActivities_DB::getApplicationActivityDefaultScheme(std::string_view appName, std::string_view activityName)
 {
     std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
 
@@ -293,8 +293,8 @@ std::optional<uint32_t> IdentityManager_DB::ApplicationActivities_DB::getApplica
     return std::nullopt;
 }
 
-bool IdentityManager_DB::ApplicationActivities_DB::setApplicationActivityDefaultScheme(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName,
-                                                                                       const std::string &activityName, const uint32_t &schemeId)
+bool IdentityManager_DB::ApplicationActivities_DB::setApplicationActivityDefaultScheme(const ClientDetails &clientDetails, std::string_view performedBy, std::string_view appName,
+                                                                                       std::string_view activityName, const uint32_t &schemeId)
 {
     std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
 
@@ -311,7 +311,7 @@ bool IdentityManager_DB::ApplicationActivities_DB::setApplicationActivityDefault
     return success;
 }
 
-std::set<uint32_t> IdentityManager_DB::ApplicationActivities_DB::listAuthenticationSchemesForApplicationActivity(const std::string &appName, const std::string &activityName)
+std::set<uint32_t> IdentityManager_DB::ApplicationActivities_DB::listAuthenticationSchemesForApplicationActivity(std::string_view appName, std::string_view activityName)
 {
     std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
 
@@ -332,8 +332,8 @@ std::set<uint32_t> IdentityManager_DB::ApplicationActivities_DB::listAuthenticat
     return ret;
 }
 
-bool IdentityManager_DB::ApplicationActivities_DB::addAuthenticationSchemeToApplicationActivity(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName,
-                                                                                                const std::string &activityName, const uint32_t &schemeId, bool lock)
+bool IdentityManager_DB::ApplicationActivities_DB::addAuthenticationSchemeToApplicationActivity(const ClientDetails &clientDetails, std::string_view performedBy, std::string_view appName,
+                                                                                                std::string_view activityName, const uint32_t &schemeId, bool lock)
 {
     // Acquire a write lock since we are modifying the database
     if (lock)
@@ -359,8 +359,8 @@ bool IdentityManager_DB::ApplicationActivities_DB::addAuthenticationSchemeToAppl
     return r;
 }
 
-bool IdentityManager_DB::ApplicationActivities_DB::removeAuthenticationSchemeFromApplicationActivity(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName,
-                                                                                                     const std::string &activityName, const uint32_t &schemeId)
+bool IdentityManager_DB::ApplicationActivities_DB::removeAuthenticationSchemeFromApplicationActivity(const ClientDetails &clientDetails, std::string_view performedBy, std::string_view appName,
+                                                                                                     std::string_view activityName, const uint32_t &schemeId)
 {
     // Acquire a write lock since we are modifying the database
     std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);

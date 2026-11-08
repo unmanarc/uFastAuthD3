@@ -9,11 +9,12 @@
 #include <Mantids30/Protocol_HTTP/httpv1_base.h>
 #include <Mantids30/Protocol_HTTP/rsp_status.h>
 
+#include <Mantids30/DataFormat_JSON/json.h>
 #include <boost/algorithm/string.hpp>
-#include <json/value.h>
 #include <string>
 
 #include "IdentityManager/ds_account.h"
+#include "Mantids30/DataFormat_JSON/json_accessors_array.h"
 #include "globals.h"
 
 using namespace Mantids30;
@@ -37,7 +38,7 @@ void AppSync_Endpoints::addAPIEndpoints(const std::shared_ptr<Endpoints> &endpoi
     //    endpoints->addEndpoint(HTTP::Method::POST, "getApplicationJWTSigningKey", SecurityRequirements::NONE, {}, nullptr, &getApplicationJWTSigningKey);
 }
 
-void AppSync_Endpoints::updateAppScopes(const std::string &appName, const std::string &ipAddress, const Json::Value &proposedScopes)
+void AppSync_Endpoints::updateAppScopes(const std::string &appName, const std::string &ipAddress, const boost::json::array &proposedScopes)
 {
     ClientDetails clientDetails;
     clientDetails.ipAddress = ipAddress;
@@ -45,53 +46,50 @@ void AppSync_Endpoints::updateAppScopes(const std::string &appName, const std::s
 
     // Current elements...
     std::set<ApplicationScope> currentScopes = Globals::getIdentityManager()->applicationScopes->listApplicationScopes(appName);
-    if (proposedScopes.isArray())
+    std::set<std::string> proposedScopeIds;
+    for (const boost::json::value &scope : proposedScopes)
     {
-        std::set<std::string> proposedScopeIds;
-        for (const Json::Value &scope : proposedScopes)
+        std::string id(Helpers::JSON::ASSTRING(scope, "id", ""));
+        if (!id.empty())
         {
-            std::string id = Helpers::JSON::ASSTRING(scope, "id", "");
-            if (!id.empty())
-            {
-                proposedScopeIds.insert(id);
-                ApplicationScope newScope;
-                newScope.appName = appName;
-                newScope.id = id;
-                newScope.description = Helpers::JSON::ASSTRING(scope, "description", "");
+            proposedScopeIds.insert(id);
+            ApplicationScope newScope;
+            newScope.appName = appName;
+            newScope.id = id;
+            newScope.description = Helpers::JSON::ASSTRING(scope, "description", "");
 
-                // Check if scope exists
-                std::set<ApplicationScope>::iterator existingScope = currentScopes.find(newScope);
-                if (existingScope != currentScopes.end())
+            // Check if scope exists
+            std::set<ApplicationScope>::iterator existingScope = currentScopes.find(newScope);
+            if (existingScope != currentScopes.end())
+            {
+                // If description changed, update it
+                if (existingScope->description != newScope.description)
                 {
-                    // If description changed, update it
-                    if (existingScope->description != newScope.description)
-                    {
-                        LOG_APP->log2(__func__, "", ipAddress, Logs::LogLevel::INFO, "Updating description for scope '%s' in application '%s'.", id.c_str(), appName.c_str());
-                        Globals::getIdentityManager()->applicationScopes->updateApplicationScopeDescription(clientDetails, performedBy, newScope);
-                    }
+                    LOG_APP->log2(__func__, "", ipAddress, Logs::LogLevel::INFO, "Updating description for scope '%s' in application '%s'.", id.c_str(), appName.c_str());
+                    Globals::getIdentityManager()->applicationScopes->updateApplicationScopeDescription(clientDetails, performedBy, newScope);
                 }
-                else
-                {
-                    // Add new scope
-                    LOG_APP->log2(__func__, "", ipAddress, Logs::LogLevel::INFO, "Adding new scope '%s' to application '%s'.", id.c_str(), appName.c_str());
-                    Globals::getIdentityManager()->applicationScopes->createApplicationScope(clientDetails, performedBy, newScope);
-                }
+            }
+            else
+            {
+                // Add new scope
+                LOG_APP->log2(__func__, "", ipAddress, Logs::LogLevel::INFO, "Adding new scope '%s' to application '%s'.", id.c_str(), appName.c_str());
+                Globals::getIdentityManager()->applicationScopes->createApplicationScope(clientDetails, performedBy, newScope);
             }
         }
+    }
 
-        // Remove scopes that are not in proposed list
-        for (const ApplicationScope &currentScope : currentScopes)
+    // Remove scopes that are not in proposed list
+    for (const ApplicationScope &currentScope : currentScopes)
+    {
+        if (proposedScopeIds.find(currentScope.id) == proposedScopeIds.end())
         {
-            if (proposedScopeIds.find(currentScope.id) == proposedScopeIds.end())
-            {
-                LOG_APP->log2(__func__, "", ipAddress, Logs::LogLevel::INFO, "Removing scope '%s' from application '%s'.", currentScope.id.c_str(), appName.c_str());
-                Globals::getIdentityManager()->applicationScopes->removeApplicationScope(clientDetails, performedBy, currentScope);
-            }
+            LOG_APP->log2(__func__, "", ipAddress, Logs::LogLevel::INFO, "Removing scope '%s' from application '%s'.", currentScope.id.c_str(), appName.c_str());
+            Globals::getIdentityManager()->applicationScopes->removeApplicationScope(clientDetails, performedBy, currentScope);
         }
     }
 }
 
-void AppSync_Endpoints::updateAppRoles(const std::string &appName, const std::string &ipAddress, const Json::Value &proposedRoles)
+void AppSync_Endpoints::updateAppRoles(const std::string &appName, const std::string &ipAddress, const boost::json::array &proposedRoles)
 {
     ClientDetails clientDetails;
     clientDetails.ipAddress = ipAddress;
@@ -100,52 +98,49 @@ void AppSync_Endpoints::updateAppRoles(const std::string &appName, const std::st
     std::set<ApplicationRole> currentRoles = Globals::getIdentityManager()->applicationRoles->getApplicationRolesList(appName);
 
     // Store proposed role data for scope processing later
-    std::map<std::string, Json::Value> proposedRoleData;
+    std::map<std::string, boost::json::value> proposedRoleData;
 
-    if (proposedRoles.isArray())
+    std::set<std::string> proposedRoleNames;
+    for (const boost::json::value &role : proposedRoles)
     {
-        std::set<std::string> proposedRoleNames;
-        for (const Json::Value &role : proposedRoles)
+        std::string id(Helpers::JSON::ASSTRING(role, "id", ""));
+        if (id.empty())
         {
-            std::string id = Helpers::JSON::ASSTRING(role, "id", "");
-            if (id.empty())
-            {
-                continue; // skip invalid entries
-            }
-            proposedRoleNames.insert(id);
-            proposedRoleData[id] = role; // Store for scope processing
+            continue; // skip invalid entries
+        }
+        proposedRoleNames.insert(id);
+        proposedRoleData[id] = role; // Store for scope processing
 
-            std::string description = Helpers::JSON::ASSTRING(role, "description", "");
-            ApplicationRole newRole;
-            newRole.appName = appName;
-            newRole.id = id;
-            newRole.description = description;
-            // Check if role exists
-            std::set<ApplicationRole>::iterator existingRole = currentRoles.find(newRole);
-            if (existingRole != currentRoles.end())
+        std::string description(Helpers::JSON::ASSTRING(role, "description", ""));
+        ApplicationRole newRole;
+        newRole.appName = appName;
+        newRole.id = id;
+        newRole.description = description;
+        // Check if role exists
+        std::set<ApplicationRole>::iterator existingRole = currentRoles.find(newRole);
+        if (existingRole != currentRoles.end())
+        {
+            // If description changed, update it
+            if (existingRole->description != newRole.description)
             {
-                // If description changed, update it
-                if (existingRole->description != newRole.description)
-                {
-                    LOG_APP->log2(__func__, "", ipAddress, Logs::LogLevel::INFO, "Updating description for role '%s' in application '%s'.", id.c_str(), appName.c_str());
-                    Globals::getIdentityManager()->applicationRoles->updateRoleDescription(clientDetails, performedBy, appName, id, description);
-                }
-            }
-            else
-            {
-                // Add new role
-                LOG_APP->log2(__func__, "", ipAddress, Logs::LogLevel::INFO, "Adding new role '%s' to application '%s'.", id.c_str(), appName.c_str());
-                Globals::getIdentityManager()->applicationRoles->createRole(clientDetails, performedBy, appName, id, description);
+                LOG_APP->log2(__func__, "", ipAddress, Logs::LogLevel::INFO, "Updating description for role '%s' in application '%s'.", id.c_str(), appName.c_str());
+                Globals::getIdentityManager()->applicationRoles->updateRoleDescription(clientDetails, performedBy, appName, id, description);
             }
         }
-        // Remove roles that are not in proposed list
-        for (const ApplicationRole &currentRole : currentRoles)
+        else
         {
-            if (proposedRoleNames.find(currentRole.id) == proposedRoleNames.end())
-            {
-                LOG_APP->log2(__func__, "", ipAddress, Logs::LogLevel::INFO, "Removing role '%s' from application '%s'.", currentRole.id.c_str(), appName.c_str());
-                Globals::getIdentityManager()->applicationRoles->removeRole(clientDetails, performedBy, appName, currentRole.id);
-            }
+            // Add new role
+            LOG_APP->log2(__func__, "", ipAddress, Logs::LogLevel::INFO, "Adding new role '%s' to application '%s'.", id.c_str(), appName.c_str());
+            Globals::getIdentityManager()->applicationRoles->createRole(clientDetails, performedBy, appName, id, description);
+        }
+    }
+    // Remove roles that are not in proposed list
+    for (const ApplicationRole &currentRole : currentRoles)
+    {
+        if (proposedRoleNames.find(currentRole.id) == proposedRoleNames.end())
+        {
+            LOG_APP->log2(__func__, "", ipAddress, Logs::LogLevel::INFO, "Removing role '%s' from application '%s'.", currentRole.id.c_str(), appName.c_str());
+            Globals::getIdentityManager()->applicationRoles->removeRole(clientDetails, performedBy, appName, currentRole.id);
         }
     }
 
@@ -153,53 +148,50 @@ void AppSync_Endpoints::updateAppRoles(const std::string &appName, const std::st
     for (const auto &pair : proposedRoleData)
     {
         const std::string &roleName = pair.first;
-        const Json::Value &roleData = pair.second;
+        const boost::json::value &roleData = pair.second;
 
-        Json::Value roleScopes = roleData["scopes"];
-        if (roleScopes.isArray())
+        boost::json::array roleScopes = Helpers::JSON::ASARRAY_OR_EMPTY(roleData, "scopes");
+        // Get current scopes assigned to this role
+        std::set<std::string> currentScopeIdsForRole = Globals::getIdentityManager()
+                                                           ->applicationRoles->listApplicationScopesOnApplicationRole(appName, roleName); // This won't work correctly, need different approach
+
+        // Collect proposed scope IDs
+        std::set<std::string> proposedScopeIds;
+        for (const boost::json::value &scope : roleScopes)
         {
-            // Get current scopes assigned to this role
-            std::set<std::string> currentScopeIdsForRole = Globals::getIdentityManager()
-                                                               ->applicationRoles->listApplicationScopesOnApplicationRole(appName, roleName); // This won't work correctly, need different approach
-
-            // Collect proposed scope IDs
-            std::set<std::string> proposedScopeIds;
-            for (const Json::Value &scope : roleScopes)
+            std::string scopeId(Mantids30::Helpers::JSON::ASSTRING(scope, "id", ""));
+            if (!scopeId.empty())
             {
-                std::string scopeId = scope.asString();
-                if (!scopeId.empty())
-                {
-                    proposedScopeIds.insert(scopeId);
+                proposedScopeIds.insert(scopeId);
 
-                    // Add scope to role if not already there
-                    if (currentScopeIdsForRole.find(scopeId) == currentScopeIdsForRole.end())
-                    {
-                        ApplicationScope appScope;
-                        appScope.appName = appName;
-                        appScope.id = scopeId;
-                        LOG_APP->log2(__func__, "", ipAddress, Logs::LogLevel::INFO, "Adding scope '%s' to role '%s' in application '%s'.", scopeId.c_str(), roleName.c_str(), appName.c_str());
-                        Globals::getIdentityManager()->applicationScopes->addApplicationScopeToRole(clientDetails, performedBy, appScope, roleName);
-                    }
-                }
-            }
-
-            // Remove scopes that should no longer be assigned to this role
-            for (const std::string &currentScopeId : currentScopeIdsForRole)
-            {
-                if (proposedScopeIds.find(currentScopeId) == proposedScopeIds.end())
+                // Add scope to role if not already there
+                if (currentScopeIdsForRole.find(scopeId) == currentScopeIdsForRole.end())
                 {
                     ApplicationScope appScope;
                     appScope.appName = appName;
-                    appScope.id = currentScopeId;
-                    LOG_APP->log2(__func__, "", ipAddress, Logs::LogLevel::INFO, "Removing scope '%s' from role '%s' in application '%s'.", currentScopeId.c_str(), roleName.c_str(), appName.c_str());
-                    Globals::getIdentityManager()->applicationScopes->removeApplicationScopeFromRole(clientDetails, performedBy, appScope, roleName);
+                    appScope.id = scopeId;
+                    LOG_APP->log2(__func__, "", ipAddress, Logs::LogLevel::INFO, "Adding scope '%s' to role '%s' in application '%s'.", scopeId.c_str(), roleName.c_str(), appName.c_str());
+                    Globals::getIdentityManager()->applicationScopes->addApplicationScopeToRole(clientDetails, performedBy, appScope, roleName);
                 }
+            }
+        }
+
+        // Remove scopes that should no longer be assigned to this role
+        for (const std::string &currentScopeId : currentScopeIdsForRole)
+        {
+            if (proposedScopeIds.find(currentScopeId) == proposedScopeIds.end())
+            {
+                ApplicationScope appScope;
+                appScope.appName = appName;
+                appScope.id = currentScopeId;
+                LOG_APP->log2(__func__, "", ipAddress, Logs::LogLevel::INFO, "Removing scope '%s' from role '%s' in application '%s'.", currentScopeId.c_str(), roleName.c_str(), appName.c_str());
+                Globals::getIdentityManager()->applicationScopes->removeApplicationScopeFromRole(clientDetails, performedBy, appScope, roleName);
             }
         }
     }
 }
 
-void AppSync_Endpoints::updateAppActivities(const std::string &appName, const std::string &ipAddress, const Json::Value &proposedActivities)
+void AppSync_Endpoints::updateAppActivities(const std::string &appName, const std::string &ipAddress, const boost::json::array &proposedActivities)
 {
     ClientDetails clientDetails;
     clientDetails.ipAddress = ipAddress;
@@ -207,66 +199,63 @@ void AppSync_Endpoints::updateAppActivities(const std::string &appName, const st
 
     std::map<std::string, IdentityManager::ApplicationActivities::ActivityData> currentActivities = Globals::getIdentityManager()->applicationActivities->listApplicationActivities(appName);
 
-    if (proposedActivities.isArray())
+    std::set<std::string> proposedActivityNames;
+
+    for (const boost::json::value &act : proposedActivities)
     {
-        std::set<std::string> proposedActivityNames;
-
-        for (const Json::Value &act : proposedActivities)
+        std::string name(Helpers::JSON::ASSTRING(act, "id", ""));
+        if (name.empty())
         {
-            std::string name = Helpers::JSON::ASSTRING(act, "id", "");
-            if (name.empty())
-            {
-                continue; // skip invalid entries
-            }
-
-            proposedActivityNames.insert(name);
-
-            IdentityManager::ApplicationActivities::ActivityData activityData;
-            activityData.fromJSON(act); // populate description, parentActivity, etc.
-
-            std::map<std::string, IdentityManager::ApplicationActivities::ActivityData>::iterator currentIt = currentActivities.find(name);
-            if (currentIt != currentActivities.end())
-            {
-                // Existing activity: check for changes
-                const IdentityManager::ApplicationActivities::ActivityData &currentData = currentIt->second;
-
-                if (currentData.description != activityData.description)
-                {
-                    LOG_APP->log2(__func__, "", ipAddress, Logs::LogLevel::INFO, "Updating description for activity '%s' in application '%s'.", name.c_str(), appName.c_str());
-                    Globals::getIdentityManager()->applicationActivities->setApplicationActivityDescription(clientDetails, performedBy, appName, name, activityData.description);
-                }
-
-                if (currentData.parentActivity != activityData.parentActivity)
-                {
-                    LOG_APP->log2(__func__, "", ipAddress, Logs::LogLevel::INFO, "Setting parent activity for activity '%s' in application '%s'.", name.c_str(), appName.c_str());
-                    Globals::getIdentityManager()->applicationActivities->setApplicationActivityParentActivity(clientDetails, performedBy, appName, name, activityData.parentActivity);
-                }
-            }
-            else
-            {
-                // New activity
-                LOG_APP->log2(__func__, "", ipAddress, Logs::LogLevel::INFO, "Adding new activity '%s' to application '%s'.", name.c_str(), appName.c_str());
-
-                // First register basic activity data
-                Globals::getIdentityManager()->applicationActivities->createApplicationActivity(clientDetails, performedBy, appName, name, activityData.description);
-
-                // Then apply remaining metadata
-                if (!activityData.parentActivity.empty())
-                {
-                    Globals::getIdentityManager()->applicationActivities->setApplicationActivityParentActivity(clientDetails, performedBy, appName, name, activityData.parentActivity);
-                }
-            }
+            continue; // skip invalid entries
         }
 
-        // Remove obsolete activities not listed in request
-        for (const auto &pair : currentActivities)
+        proposedActivityNames.insert(name);
+
+        IdentityManager::ApplicationActivities::ActivityData activityData;
+        activityData.fromJSON(act); // populate description, parentActivity, etc.
+
+        std::map<std::string, IdentityManager::ApplicationActivities::ActivityData>::iterator currentIt = currentActivities.find(name);
+        if (currentIt != currentActivities.end())
         {
-            const std::string &existingActivityName = pair.first;
-            if (proposedActivityNames.find(existingActivityName) == proposedActivityNames.end())
+            // Existing activity: check for changes
+            const IdentityManager::ApplicationActivities::ActivityData &currentData = currentIt->second;
+
+            if (currentData.description != activityData.description)
             {
-                LOG_APP->log2(__func__, "", ipAddress, Logs::LogLevel::INFO, "Removing obsolete activity '%s' from application '%s'.", existingActivityName.c_str(), appName.c_str());
-                Globals::getIdentityManager()->applicationActivities->removeApplicationActivity(clientDetails, performedBy, appName, existingActivityName);
+                LOG_APP->log2(__func__, "", ipAddress, Logs::LogLevel::INFO, "Updating description for activity '%s' in application '%s'.", name.c_str(), appName.c_str());
+                Globals::getIdentityManager()->applicationActivities->setApplicationActivityDescription(clientDetails, performedBy, appName, name, activityData.description);
             }
+
+            if (currentData.parentActivity != activityData.parentActivity)
+            {
+                LOG_APP->log2(__func__, "", ipAddress, Logs::LogLevel::INFO, "Setting parent activity for activity '%s' in application '%s'.", name.c_str(), appName.c_str());
+                Globals::getIdentityManager()->applicationActivities->setApplicationActivityParentActivity(clientDetails, performedBy, appName, name, activityData.parentActivity);
+            }
+        }
+        else
+        {
+            // New activity
+            LOG_APP->log2(__func__, "", ipAddress, Logs::LogLevel::INFO, "Adding new activity '%s' to application '%s'.", name.c_str(), appName.c_str());
+
+            // First register basic activity data
+            Globals::getIdentityManager()->applicationActivities->createApplicationActivity(clientDetails, performedBy, appName, name, activityData.description);
+
+            // Then apply remaining metadata
+            if (!activityData.parentActivity.empty())
+            {
+                Globals::getIdentityManager()->applicationActivities->setApplicationActivityParentActivity(clientDetails, performedBy, appName, name, activityData.parentActivity);
+            }
+        }
+    }
+
+    // Remove obsolete activities not listed in request
+    for (const auto &pair : currentActivities)
+    {
+        const std::string &existingActivityName = pair.first;
+        if (proposedActivityNames.find(existingActivityName) == proposedActivityNames.end())
+        {
+            LOG_APP->log2(__func__, "", ipAddress, Logs::LogLevel::INFO, "Removing obsolete activity '%s' from application '%s'.", existingActivityName.c_str(), appName.c_str());
+            Globals::getIdentityManager()->applicationActivities->removeApplicationActivity(clientDetails, performedBy, appName, existingActivityName);
         }
     }
 }
@@ -293,7 +282,7 @@ AppSync_Endpoints::APIReturn AppSync_Endpoints::validateAndFetchApplicationAttri
         return {HTTP::Status::Code::S_400_BAD_REQUEST, "sync_not_enabled", "Application sync is not enabled."};
     }
 
-    std::string apiKey = Helpers::JSON::ASSTRING(*request.inputJSON, "APIKEY", "");
+    std::string apiKey(Helpers::JSON::ASSTRING(*request.inputJSON, "APIKEY", ""));
     if (apiKey.empty())
     {
         LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LogLevel::WARNING, "Missing API key in request for application '%s'.", appName.c_str());
@@ -323,9 +312,9 @@ AppSync_Endpoints::APIReturn AppSync_Endpoints::updateAccessControlContext(void 
     // Scopes, Roles, and Activities...
     // ------------------------------------------------------
 
-    updateAppScopes(appName, authClientDetails.ipAddress, (*request.inputJSON)["scopes"]);
-    updateAppRoles(appName, authClientDetails.ipAddress, (*request.inputJSON)["roles"]);
-    updateAppActivities(appName, authClientDetails.ipAddress, (*request.inputJSON)["activities"]);
+    updateAppScopes(appName, authClientDetails.ipAddress, Helpers::JSON::ASARRAY_OR_EMPTY(*request.inputJSON, "scopes"));
+    updateAppRoles(appName, authClientDetails.ipAddress, Helpers::JSON::ASARRAY_OR_EMPTY(*request.inputJSON, "roles"));
+    updateAppActivities(appName, authClientDetails.ipAddress, Helpers::JSON::ASARRAY_OR_EMPTY(*request.inputJSON, "activities"));
 
     return {}; // Success
 }
@@ -349,12 +338,12 @@ AppSync_Endpoints::APIReturn AppSync_Endpoints::getApplicationAccountsList(void 
 
     // Retrieve and return the list of users
     std::set<std::string> accountList = Globals::getIdentityManager()->applications->listApplicationAccounts(appName);
-    Json::Value response = Json::arrayValue;
+    boost::json::array response{};
     for (const std::string &accountUUID : accountList)
     {
         if (std::optional<AccountDetails> x = Globals::getIdentityManager()->accounts->getAccountDetails(accountUUID, AccountDetailsToShow::APISYNC))
         {
-            response.append(x->toJSON());
+            response.emplace_back(x->toJSON());
         }
     }
 
@@ -398,7 +387,7 @@ AppSync_Endpoints::APIReturn AppSync_Endpoints::getApplicationJWTSigningKey(void
     if (result.getHTTPResponseCode() != HTTP::Status::Code::S_200_OK)
         return result;
 
-    return (Json::Value) Globals::getIdentityManager()->applications->getWebLoginJWTSigningKeyForApplication(appName);
+    return (boost::json::value) Globals::getIdentityManager()->applications->getWebLoginJWTSigningKeyForApplication(appName);
 }
 */
 /**
@@ -419,5 +408,5 @@ AppSync_Endpoints::APIReturn AppSync_Endpoints::getApplicationJWTValidationKey(v
         return result;
     }
 
-    return Json::Value(Globals::getIdentityManager()->applications->getWebLoginJWTValidationKeyForApplication(appName));
+    return boost::json::value(Globals::getIdentityManager()->applications->getWebLoginJWTValidationKeyForApplication(appName));
 }

@@ -59,12 +59,12 @@ private:
     static bool token_createAndSignApplicationRefreshAndAccessJWTs(const JWT::Token *jwtToken, const bool &useEmbeddedInPortalAuthentication, const bool &keepAuthenticated, const std::string &app, const std::string &activity,
                                                                    const std::string &user, const uint32_t &schemeId, const std::string &redirectURI, APIReturn &response,
                                                                    ClientDetails &authClientDetails);
-    static bool token_validateJwtClaims(const JWT::Token *jwtToken, const std::string &user, const std::string &ipAddress);
+    static bool token_validateJwtClaims(const JWT::Token *jwtToken, std::string_view user, std::string_view ipAddress);
 
     static bool token_validateAuthenticationScheme(const JWT::Token *jwtToken, const std::string &requestedApp, const std::string &requestedActivity, uint32_t &requestedSchemeId,
-                                                   const std::string &authenticatedUser, const std::string &ipAddress);
+                                                   std::string_view authenticatedUser, std::string_view ipAddress);
     static std::optional<std::string> token_signApplicationJWT(JWT::Token &accessToken);
-    static bool token_validateAppAuthorization(const JWT::Token *jwtToken, const std::string &app, const std::string &user, const std::string &ipAddress);
+    static bool token_validateAppAuthorization(const JWT::Token *jwtToken, const std::string_view &app, const std::string_view &user, const std::string_view &ipAddress);
 
     static std::vector<AuthenticationSchemeUsedSlot> calculateRequiredAuthSlotsLeftForTheNewTransientAuthToken(const std::shared_ptr<TransientAuthenticationContext> &authContext,
                                                                                                                Mantids30::API::APIReturn *response);

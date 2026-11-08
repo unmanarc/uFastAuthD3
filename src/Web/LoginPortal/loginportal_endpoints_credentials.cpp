@@ -1,6 +1,6 @@
 #include <Mantids30/Protocol_HTTP/api_return.h>
+#include "Mantids30/DataFormat_JSON/json_detail.h"
 #include "loginportal_endpoints.h"
-//#include "Tokens/tokensmanager.h"
 
 #include "globals.h"
 
@@ -11,14 +11,12 @@ using namespace Network::Protocol;
 
 API::APIReturn LoginPortal_Endpoints::changeCredential(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
-    API::APIReturn response;
-
     // Get the identity manager from global settings to handle authentication.
     IdentityManager *identityManager = Globals::getIdentityManager();
 
     // INPUTS:
     uint32_t slotId = Helpers::JSON::ASUINT(*request.inputJSON, "slotId", 0);
-    Credential newCredential = Credential::createFromJSON((*request.inputJSON)["newCredential"]);
+    Credential newCredential = Credential::createFromJSON( Helpers::JSON::MEMBER_OR_NULL(*request.inputJSON,"newCredential") );
 
     // Set the expiration timestamp automatically on authController->changeAccountCredential
     newCredential.setExpirationTimeAutomatically();
@@ -26,7 +24,7 @@ API::APIReturn LoginPortal_Endpoints::changeCredential(void *context, const Requ
     // LOCAL CONTEXT:
     std::shared_ptr<TransientAuthenticationContext> authContext = std::make_shared<TransientAuthenticationContext>();
     std::string transientAuthTokenStr = request.clientRequest->getAuthorizationBearer();
-    //  Json::Value *jResponse = response.responseJSON();
+    //  boost::json::value *jResponse = response.responseJSON();
 
     // Decode the bearer transient token... (and get the Account Name)
     if (!authContext->validateAndMerge_TransientAuthTokenIfExist(transientAuthTokenStr, request.inputJSON, request.jwtValidator))
@@ -48,5 +46,5 @@ API::APIReturn LoginPortal_Endpoints::changeCredential(void *context, const Requ
         return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Internal Error: Failed to change the credential."};
     }
 
-    return response;
+    return {};
 }

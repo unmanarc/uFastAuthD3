@@ -1,4 +1,6 @@
 #include "IdentityManager/identitymanager.h"
+#include "Mantids30/DataFormat_JSON/json_accessors.h"
+#include "Mantids30/DataFormat_JSON/json_accessors_array.h"
 #include "identitymanager_db.h"
 #include "globals.h"
 #include <Mantids30/Helpers/json.h>
@@ -9,9 +11,10 @@
 
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/join.hpp>
+#include <boost/json/value.hpp>
 #include <boost/regex.hpp>
 #include <regex>
-#include <json/value.h>
+#include <Mantids30/DataFormat_JSON/json.h>
 #include <optional>
 
 #include <Mantids30/Memory/a_bool.h>
@@ -26,7 +29,7 @@ using namespace Mantids30;
 using namespace Mantids30::Memory;
 using namespace Mantids30::Database;
 
-bool IdentityManager_DB::Accounts_DB::extendInactivity(const std::string &accountUUID, const time_t &validUntil)
+bool IdentityManager_DB::Accounts_DB::extendInactivity(std::string_view accountUUID, const time_t &validUntil)
 {
     std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
     Database::Transaction tg(*_parent->m_sqlConnector);
@@ -65,7 +68,7 @@ bool IdentityManager_DB::Accounts_DB::extendInactivity(const std::string &accoun
     return tg.finalize();
 }
 
-CreateAccountResult IdentityManager_DB::Accounts_DB::createAccount(time_t expirationDate, const AccountFlags &accountFlags, const ClientDetails &clientDetails, const std::string &performedBy,
+CreateAccountResult IdentityManager_DB::Accounts_DB::createAccount(time_t expirationDate, const AccountFlags &accountFlags, const ClientDetails &clientDetails, std::string_view performedBy,
                                                                    const std::map<std::string, ApplicationDef> &appDefs, const std::map<std::string, std::string> &detailFieldsValues)
 {
     std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
@@ -177,7 +180,7 @@ CreateAccountResult IdentityManager_DB::Accounts_DB::createAccount(time_t expira
     }
 }
 
-bool IdentityManager_DB::Accounts_DB::removeAccount(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountUUID)
+bool IdentityManager_DB::Accounts_DB::removeAccount(const ClientDetails &clientDetails, std::string_view performedBy, std::string_view accountUUID)
 {
     std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
 
@@ -193,7 +196,7 @@ bool IdentityManager_DB::Accounts_DB::removeAccount(const ClientDetails &clientD
     return false;
 }
 
-bool IdentityManager_DB::Accounts_DB::doesAccountExist(const std::string &accountUUID)
+bool IdentityManager_DB::Accounts_DB::doesAccountExist(std::string_view accountUUID)
 {
     bool ret = false;
     std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
@@ -201,7 +204,7 @@ bool IdentityManager_DB::Accounts_DB::doesAccountExist(const std::string &accoun
     return ret;
 }
 
-bool IdentityManager_DB::Accounts_DB::disableAccount(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountUUID, bool disabled)
+bool IdentityManager_DB::Accounts_DB::disableAccount(const ClientDetails &clientDetails, std::string_view performedBy, std::string_view accountUUID, bool disabled)
 {
     std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
 
@@ -223,7 +226,7 @@ bool IdentityManager_DB::Accounts_DB::disableAccount(const ClientDetails &client
     return result;
 }
 
-std::string IdentityManager_DB::Accounts_DB::getAccountDisplayName(const std::string &accountUUID)
+std::string IdentityManager_DB::Accounts_DB::getAccountDisplayName(std::string_view accountUUID)
 {
     std::string userDisplayFormat = Globals::pConfig.get<std::string>("UserInfo.DisplayFormat", "{{USERNAME}}");
 
@@ -284,7 +287,7 @@ std::string IdentityManager_DB::Accounts_DB::getAccountDisplayName(const std::st
     return result;
 }
 
-bool IdentityManager_DB::Accounts_DB::confirmAccount(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountUUID, const std::string &confirmationToken)
+bool IdentityManager_DB::Accounts_DB::confirmAccount(const ClientDetails &clientDetails, std::string_view performedBy, std::string_view accountUUID, std::string_view confirmationToken)
 {
     std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
 
@@ -307,7 +310,7 @@ bool IdentityManager_DB::Accounts_DB::confirmAccount(const ClientDetails &client
     return false;
 }
 
-bool IdentityManager_DB::Accounts_DB::changeAccountExpiration(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountUUID, time_t expiration)
+bool IdentityManager_DB::Accounts_DB::changeAccountExpiration(const ClientDetails &clientDetails, std::string_view performedBy, std::string_view accountUUID, time_t expiration)
 {
     std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
 
@@ -320,7 +323,7 @@ bool IdentityManager_DB::Accounts_DB::changeAccountExpiration(const ClientDetail
     return result;
 }
 
-AccountFlags IdentityManager_DB::Accounts_DB::getAccountFlags(const std::string &accountUUID)
+AccountFlags IdentityManager_DB::Accounts_DB::getAccountFlags(std::string_view accountUUID)
 {
     AccountFlags r;
 
@@ -339,7 +342,7 @@ AccountFlags IdentityManager_DB::Accounts_DB::getAccountFlags(const std::string 
     return r;
 }
 
-bool IdentityManager_DB::Accounts_DB::updateAccountApplicationRoles(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &appName, const std::string &accountUUID,
+bool IdentityManager_DB::Accounts_DB::updateAccountApplicationRoles(const ClientDetails &clientDetails, std::string_view performedBy, std::string_view appName, std::string_view accountUUID,
                                                                     const std::set<std::string> &roleSet)
 {
     std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
@@ -367,7 +370,7 @@ bool IdentityManager_DB::Accounts_DB::updateAccountApplicationRoles(const Client
     return true;
 }
 
-bool IdentityManager_DB::Accounts_DB::changeAccountFlags(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountUUID, const AccountFlags &accountFlags)
+bool IdentityManager_DB::Accounts_DB::changeAccountFlags(const ClientDetails &clientDetails, std::string_view performedBy, std::string_view accountUUID, const AccountFlags &accountFlags)
 {
     std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
 
@@ -390,7 +393,7 @@ bool IdentityManager_DB::Accounts_DB::changeAccountFlags(const ClientDetails &cl
     return result;
 }
 
-time_t IdentityManager_DB::Accounts_DB::getAccountExpirationTime(const std::string &accountUUID)
+time_t IdentityManager_DB::Accounts_DB::getAccountExpirationTime(std::string_view accountUUID)
 {
     std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
 
@@ -403,7 +406,7 @@ time_t IdentityManager_DB::Accounts_DB::getAccountExpirationTime(const std::stri
     return 1;
 }
 
-time_t IdentityManager_DB::Accounts_DB::getAccountCreationTime(const std::string &accountUUID)
+time_t IdentityManager_DB::Accounts_DB::getAccountCreationTime(std::string_view accountUUID)
 {
     std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
 
@@ -417,13 +420,15 @@ time_t IdentityManager_DB::Accounts_DB::getAccountCreationTime(const std::string
     return std::numeric_limits<time_t>::max();
 }
 
-Json::Value IdentityManager_DB::Accounts_DB::searchAccounts(const Json::Value &dataTablesFilters)
+boost::json::value IdentityManager_DB::Accounts_DB::searchAccounts(const boost::json::value &dataTablesFilters)
 {
-    Json::Value ret;
-    std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
+    boost::json::object ret{
+        {"data", boost::json::array{}},
+        // DataTables:
+        {"draw", Helpers::JSON::MEMBER_OR_NULL(dataTablesFilters,"draw")},
+    };
 
-    // DataTables:
-    ret["draw"] = dataTablesFilters["draw"];
+    std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
 
     uint64_t offset = Helpers::JSON::ASUINT64(dataTablesFilters, "start", 0);
     uint64_t limit = Helpers::JSON::ASUINT64(dataTablesFilters, "length", 0);
@@ -432,7 +437,7 @@ Json::Value IdentityManager_DB::Accounts_DB::searchAccounts(const Json::Value &d
     std::string orderByStatement = Helpers::DataTables::getOrderByStatement(dataTablesFilters);
 
     // Extract the search value from dataTablesFilters
-    std::string searchValue = Helpers::JSON::ASSTRING(dataTablesFilters["search"], "value", "");
+    std::string searchValue (Helpers::JSON::ASSTRING(Helpers::JSON::MEMBER_OR_NULL(dataTablesFilters,"search"), "value", ""));
     std::string whereFilters;
 
     // Build the SQL query with WHERE clause for DataTables search
@@ -496,29 +501,25 @@ Json::Value IdentityManager_DB::Accounts_DB::searchAccounts(const Json::Value &d
 
         while (i && i->isSuccessful() && i->step())
         {
-            Json::Value row;
+            boost::json::object rowData{
+                {"isAdmin",              isAdmin.getValue()},
+                {"isEnabled",            isEnabled.getValue()},
+                {"isBlocked",            isBlocked.getValue()},
+                {"isAccountConfirmed",   isAccountConfirmed.getValue()},
+                {"creator",              creator.getValue()},
+                {"hasBlockedCredential", hasBlockedCredential.getValue()},
+            };
+            boost::json::object row{
+                {"accountUUID",         accountUUID.getValue()},
+                {"creation",            creation.getValue()},
+                {"expiration",          expiration.getValue()},
+                {"lastLogin",           lastLogin.getValue()},
+                {"lastPasswordChange",  lastPasswordChange.getValue()},
+                {"applications",        boost::json::array{}},
+                {"DT_RowData",          rowData},
+            };
 
-            // accountUUID
-            row["accountUUID"] = accountUUID.getValue();
-            // creation
-            row["creation"] = creation.getValue();
-            // expiration
-            row["expiration"] = expiration.getValue();
-            // lastLogin
-            row["lastLogin"] = lastLogin.getValue();
-            // lastPasswordChange
-            row["lastPasswordChange"] = lastPasswordChange.getValue();
-
-            row["applications"] = Json::arrayValue;
-
-            row["DT_RowData"]["isAdmin"] = isAdmin.getValue();
-            row["DT_RowData"]["isEnabled"] = isEnabled.getValue();
-            row["DT_RowData"]["isBlocked"] = isBlocked.getValue();
-            row["DT_RowData"]["isAccountConfirmed"] = isAccountConfirmed.getValue();
-            row["DT_RowData"]["creator"] = creator.getValue();
-            row["DT_RowData"]["hasBlockedCredential"] = hasBlockedCredential.getValue();
-
-            ret["data"].append(row);
+            ret["data"].as_array().push_back(row);
         }
 
         if (i)
@@ -529,15 +530,19 @@ Json::Value IdentityManager_DB::Accounts_DB::searchAccounts(const Json::Value &d
     }
 
     // Now fill applications for each account (after the query scope ended to avoid DB blocking)
-    for (Json::Value &row : ret["data"])
+    // Iterate the non-const array so we can mutate each row (ASARRAY_OR_EMPTY returns a const array).
+    for (boost::json::value &row : ret["data"].as_array())
     {
-        std::string accountUUID = row["accountUUID"].asString();
-        Json::Value appsArray = Json::arrayValue;
+        std::string_view accountUUID = Helpers::JSON::ASSTRING(row,"accountUUID","");
+        boost::json::object &rowObj = row.as_object();
+        boost::json::array appsArray{};
         for (const std::string &appName : _parent->applications->listAccountApplications(accountUUID))
         {
-            Json::Value appObj = Json::objectValue;
-            appObj["name"] = appName;
-            appObj["isAppAdmin"] = _parent->applications->isApplicationAdmin(appName, accountUUID);
+            boost::json::object appObj{
+                {"name",       appName},
+                {"isAppAdmin", _parent->applications->isApplicationAdmin(appName, accountUUID)},
+                {"lastLogin",  boost::json::value{}},
+            };
             // Get last login per app from logs.applicationAccess_accountLastLogin
             {
                 Abstract::DATETIME appLastLogin;
@@ -547,16 +552,14 @@ Json::Value IdentityManager_DB::Accounts_DB::searchAccounts(const Json::Value &d
                 {
                     appObj["lastLogin"] = appLastLogin.toJSON();
                 }
-                else
-                {
-                    appObj["lastLogin"] = Json::nullValue;
-                }
             }
-            appsArray.append(appObj);
+            appsArray.emplace_back(appObj);
         }
-        row["displayName"] = getAccountDisplayName(accountUUID);
-        row["applications"] = appsArray;
-        row["DT_RowData"]["isInactive"] = _parent->authController->isAccountInactive(_parent->authController->getAccountLastAccess(accountUUID), row["DT_RowData"]["isAdmin"].asBool());
+        rowObj["displayName"] = getAccountDisplayName(accountUUID);
+        rowObj["applications"] = appsArray;
+        // DT_RowData is a boost::json::object, so access it via as_object()
+        boost::json::object &rowData = rowObj["DT_RowData"].as_object();
+        rowData["isInactive"] = _parent->authController->isAccountInactive(_parent->authController->getAccountLastAccess(accountUUID), rowData["isAdmin"].as_bool());
     }
 
     return ret;
@@ -592,7 +595,7 @@ std::set<std::string> IdentityManager_DB::Accounts_DB::listAdminAccounts()
     return ret;
 }
 
-std::set<ApplicationRole> IdentityManager_DB::Accounts_DB::getAccountApplicationRoles(const std::string &appName, const std::string &accountUUID, bool lock)
+std::set<ApplicationRole> IdentityManager_DB::Accounts_DB::getAccountApplicationRoles(std::string_view appName, std::string_view accountUUID, bool lock)
 {
     std::set<ApplicationRole> ret;
     if (lock)
@@ -632,7 +635,7 @@ bool IdentityManager_DB::Accounts_DB::hasValidAdminAccount()
     return _parent->m_sqlConnector->qSelectSingleRow("SELECT `isAdmin` FROM iam.accounts WHERE `isAdmin`=:admin LIMIT 1;", {{":admin", MAKE_VAR(BOOL, true)}}, {});
 }
 
-bool IdentityManager_DB::Accounts_DB::isThereAnotherAdmin(const std::string &accountUUID)
+bool IdentityManager_DB::Accounts_DB::isThereAnotherAdmin(std::string_view accountUUID)
 {
     // Check if there is any admin acount beside this "to be deleted" account...
     return _parent->m_sqlConnector
@@ -642,7 +645,7 @@ bool IdentityManager_DB::Accounts_DB::isThereAnotherAdmin(const std::string &acc
                            {});
 }
 
-int32_t IdentityManager_DB::Accounts_DB::getAccountBlockTokenNoRenew(const std::string &accountUUID, std::string &token)
+int32_t IdentityManager_DB::Accounts_DB::getAccountBlockTokenNoRenew(std::string_view accountUUID, std::string &token)
 {
     AuthenticationPolicy authenticationPolicy = _parent->authController->getGlobalAuthenticationPolicy();
     std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
@@ -664,13 +667,13 @@ int32_t IdentityManager_DB::Accounts_DB::getAccountBlockTokenNoRenew(const std::
     return -2;
 }
 
-void IdentityManager_DB::Accounts_DB::removeBlockToken(const std::string &accountUUID)
+void IdentityManager_DB::Accounts_DB::removeBlockToken(std::string_view accountUUID)
 {
     std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
     _parent->m_sqlConnector->qExecuteEx("DELETE FROM iam.accountsBlockToken WHERE `f_accountUUID`=:accountUUID;", {{":accountUUID", MAKE_VAR(STRING, accountUUID)}});
 }
 
-void IdentityManager_DB::Accounts_DB::updateOrCreateBlockToken(const std::string &accountUUID)
+void IdentityManager_DB::Accounts_DB::updateOrCreateBlockToken(std::string_view accountUUID)
 {
     std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
     if (!_parent->m_sqlConnector->qExecuteEx("UPDATE iam.accountsBlockToken SET `lastAccess`=CURRENT_TIMESTAMP WHERE `f_accountUUID`=:accountUUID;", {{":accountUUID", MAKE_VAR(STRING, accountUUID)}}))
@@ -680,7 +683,7 @@ void IdentityManager_DB::Accounts_DB::updateOrCreateBlockToken(const std::string
     }
 }
 
-std::string IdentityManager_DB::Accounts_DB::getAccountBlockToken(const std::string &accountUUID)
+std::string IdentityManager_DB::Accounts_DB::getAccountBlockToken(std::string_view accountUUID)
 {
     std::string token;
     int32_t i = getAccountBlockTokenNoRenew(accountUUID, token);
@@ -710,7 +713,7 @@ std::string IdentityManager_DB::Accounts_DB::getAccountBlockToken(const std::str
     return "";
 }
 
-bool IdentityManager_DB::Accounts_DB::blockAccountUsingToken(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountUUID, const std::string &blockToken)
+bool IdentityManager_DB::Accounts_DB::blockAccountUsingToken(const ClientDetails &clientDetails, std::string_view performedBy, std::string_view accountUUID, std::string_view blockToken)
 {
     std::string dbBlockToken;
     if (getAccountBlockTokenNoRenew(accountUUID, dbBlockToken) == 0)
@@ -729,7 +732,7 @@ bool IdentityManager_DB::Accounts_DB::blockAccountUsingToken(const ClientDetails
     return false;
 }
 
-std::optional<std::string> IdentityManager_DB::Accounts_DB::getAccountUUIDByAccountName(const std::string &accountName)
+std::optional<std::string> IdentityManager_DB::Accounts_DB::getAccountUUIDByAccountName(std::string_view accountName)
 {
     std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
 
@@ -762,7 +765,7 @@ std::optional<std::string> IdentityManager_DB::Accounts_DB::getAccountUUIDByAcco
     return std::nullopt;
 }
 
-std::set<std::string> IdentityManager_DB::Accounts_DB::getAccountNamesByAccountUUID(const std::string &accountUUID)
+std::set<std::string> IdentityManager_DB::Accounts_DB::getAccountNamesByAccountUUID(std::string_view accountUUID)
 {
     std::set<std::string> result;
     std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);

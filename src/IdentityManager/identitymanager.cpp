@@ -26,7 +26,7 @@ IdentityManager::~IdentityManager()
     delete applicationActivities;
 }
 
-bool IdentityManager::isAccountActiveAndValidForApp(const std::string &accountUUID, const std::string &appName, AuthenticationResult &reason, bool checkValidAppAccount) const
+bool IdentityManager::isAccountActiveAndValidForApp(std::string_view accountUUID, std::string_view appName, AuthenticationResult &reason, bool checkValidAppAccount) const
 {
     // First, check if the account is disabled, unconfirmed, or expired.
     AccountFlags accountFlags = accounts->getAccountFlags(accountUUID);
@@ -58,7 +58,7 @@ bool IdentityManager::isAccountActiveAndValidForApp(const std::string &accountUU
     return true;
 }
 
-bool createPassFile(const std::string &sInitPW)
+bool createPassFile(std::string_view sInitPW)
 {
 #ifndef WIN32
     std::string initPassOutFile = "/tmp/syspwd-" + Mantids30::Helpers::Random::createRandomString(8);
@@ -134,7 +134,7 @@ bool IdentityManager::initializeAdminAccountWithPasswordIfNotExist(const uint32_
     return false;
 }
 
-bool IdentityManager::initializeApplicationWithScheme(const std::string &appName, const std::string &appDescription, const std::string &appURL, const uint32_t &schemeId, bool *alreadyExist) const
+bool IdentityManager::initializeApplicationWithScheme(std::string_view appName, std::string_view appDescription, std::string_view appURL, const uint32_t &schemeId, bool *alreadyExist) const
 {
     bool r = true;
     ClientDetails clientDetails;
@@ -155,7 +155,7 @@ bool IdentityManager::initializeApplicationWithScheme(const std::string &appName
     return r;
 }
 
-std::optional<std::string> IdentityManager::Accounts::createAdminAccount(const ClientDetails &clientDetails, const std::string &accountName, const std::string &performedByUUID)
+std::optional<std::string> IdentityManager::Accounts::createAdminAccount(const ClientDetails &clientDetails, std::string_view accountName, std::string_view performedByUUID)
 {
     // si no hay username... crear campo username.
     std::map<std::string, AccountDetailField> detailFields = listAccountDetailFields();
@@ -167,9 +167,19 @@ std::optional<std::string> IdentityManager::Accounts::createAdminAccount(const C
         field.isLoginIdentifier = true;
         field.isOptionalField = false;
         field.isUnique = true;
-        field.extendedAttributes["security"]["canUserEdit"] = true;
-        field.extendedAttributes["security"]["canUserView"] = true;
-        field.extendedAttributes["behavior"]["regexpValidator"] = "^[a-zA-Z0-9_]+$";
+        // extendedAttributes is a boost::json::value: it must first be an object,
+        // and each sub-object ("security"/"behavior") created explicitly. Chained
+        // indexing on a null value is UB in boost::json.
+        boost::json::object extAttrs{
+            {"security", boost::json::object{
+                {"canUserEdit", true},
+                {"canUserView", true},
+            }},
+            {"behavior", boost::json::object{
+                {"regexpValidator", "^[a-zA-Z0-9_]+$"},
+            }},
+        };
+        field.extendedAttributes = extAttrs;
         if (!createAccountDetailField(clientDetails, performedByUUID, "USERNAME", field))
         {
             LOG_APP->log0(__func__, LogLevel::CRITICAL, "Error creating admin account (CREATE_USERNAME_DETAIL_FIELD).");
@@ -186,7 +196,7 @@ std::optional<std::string> IdentityManager::Accounts::createAdminAccount(const C
     ApplicationDef x;
 
     CreateAccountResult result = createAccount(0, accountFlags, {}, performedByUUID, {{IAM_LOGINPORTAL_APPNAME, {true}}, {IAM_ADMPORTAL_APPNAME, {true}}, {IAM_USRPORTAL_APPNAME, {true}}},
-                                               {{"USERNAME", accountName}});
+                                               {{"USERNAME", std::string(accountName)}});
     if (result.success)
     {
         return result.accountUUID;
@@ -195,7 +205,7 @@ std::optional<std::string> IdentityManager::Accounts::createAdminAccount(const C
     return std::nullopt;
 }
 
-std::shared_ptr<JWT> IdentityManager::Applications::getAppJWTValidator(const std::string &appName)
+std::shared_ptr<JWT> IdentityManager::Applications::getAppJWTValidator(std::string_view appName)
 {
     // Obtain data from the DB:
     ApplicationAuthSettings appAuthSettings = getAuthSettingsFromApplication(appName);
@@ -236,7 +246,7 @@ std::shared_ptr<JWT> IdentityManager::Applications::getAppJWTValidator(const std
     return jwtValidator;
 }
 
-std::shared_ptr<JWT> IdentityManager::Applications::getAppJWTSigner(const std::string &appName)
+std::shared_ptr<JWT> IdentityManager::Applications::getAppJWTSigner(std::string_view appName)
 {
     // Obtain data from the DB:
     ApplicationAuthSettings appAuthSettings = getAuthSettingsFromApplication(appName);

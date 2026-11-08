@@ -16,7 +16,7 @@ using namespace Mantids30::Memory;
 using namespace Mantids30::Database;
 using namespace Mantids30;
 
-uint32_t IdentityManager_DB::AuthController_DB::getAccountActiveSessionsCount(const std::string &accountUUID)
+uint32_t IdentityManager_DB::AuthController_DB::getAccountActiveSessionsCount(std::string_view accountUUID)
 {
     std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
 
@@ -34,18 +34,20 @@ uint32_t IdentityManager_DB::AuthController_DB::getAccountActiveSessionsCount(co
     return 0;
 }
 
-Json::Value IdentityManager_DB::AuthController_DB::searchAccountSessions(const std::string &accountUUID, const Json::Value &dataTablesFilters)
+boost::json::value IdentityManager_DB::AuthController_DB::searchAccountSessions(std::string_view accountUUID, const boost::json::value &dataTablesFilters)
 {
-    Json::Value ret;
+    boost::json::object ret{
+        {"data", boost::json::array{}},
+        {"draw", Mantids30::Helpers::JSON::MEMBER_OR_NULL(dataTablesFilters, "draw")},
+    };
     std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
-
-    ret["draw"] = dataTablesFilters["draw"];
 
     uint64_t offset = Helpers::JSON::ASUINT64(dataTablesFilters, "start", 0);
     uint64_t limit = Helpers::JSON::ASUINT64(dataTablesFilters, "length", 0);
 
     std::string orderByStatement = Helpers::DataTables::getOrderByStatement(dataTablesFilters);
-    std::string searchValue = Helpers::JSON::ASSTRING(dataTablesFilters["search"], "value", "");
+    const boost::json::value &searchFilter = Mantids30::Helpers::JSON::MEMBER_OR_NULL(dataTablesFilters, "search");
+    std::string searchValue (Helpers::JSON::ASSTRING(searchFilter, "value", ""));
     std::string whereFilters = "`f_accountUUID` = :ACCOUNTNAME";
 
     std::string sqlQueryStr = R"(
@@ -81,25 +83,25 @@ Json::Value IdentityManager_DB::AuthController_DB::searchAccountSessions(const s
 
         while (i && i->isSuccessful() && i->step())
         {
-            Json::Value row;
-            row["f_accountUUID"] = f_accountUUID.getValue();
-            row["f_schemeId"] = f_schemeId.getValue();
-            row["f_appName"] = f_appName.getValue();
-            row["loginDateTime"] = loginDateTime.getValue();
-            row["loginIP"] = loginIP.getValue();
-            row["loginTLSCN"] = loginTLSCN.getValue();
-            row["loginUserAgent"] = loginUserAgent.getValue();
-            row["refresherTokenId"] = refresherTokenId.getValue();
-            row["accessTokenId"] = accessTokenId.getValue();
-            row["accessTokenExpiration"] = accessTokenExpiration.getValue();
-            row["refreshTokenExpiration"] = refreshTokenExpiration.getValue();
-            row["logoutDateTime"] = logoutDateTime.getValue();
-            row["logoutReason"] = logoutReason.getValue();
+            boost::json::object row{
+                {"f_accountUUID",          f_accountUUID.getValue()},
+                {"f_schemeId",             f_schemeId.getValue()},
+                {"f_appName",              f_appName.getValue()},
+                {"loginDateTime",          loginDateTime.getValue()},
+                {"loginIP",                loginIP.getValue()},
+                {"loginTLSCN",             loginTLSCN.getValue()},
+                {"loginUserAgent",         loginUserAgent.getValue()},
+                {"refresherTokenId",       refresherTokenId.getValue()},
+                {"accessTokenId",          accessTokenId.getValue()},
+                {"accessTokenExpiration",  accessTokenExpiration.getValue()},
+                {"refreshTokenExpiration", refreshTokenExpiration.getValue()},
+                {"logoutDateTime",         logoutDateTime.getValue()},
+                {"logoutReason",           logoutReason.getValue()},
+                // Flag: session is still active?
+                {"isActive",               (logoutDateTime.isNull() && accessTokenExpiration.isInFuture() && refreshTokenExpiration.isInFuture())},
+            };
 
-            // Flag: session is still active?
-            row["isActive"] = (logoutDateTime.isNull() && accessTokenExpiration.isInFuture() && refreshTokenExpiration.isInFuture());
-
-            ret["data"].append(row);
+            ret["data"].as_array().push_back(row);
         }
 
         if (i)

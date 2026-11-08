@@ -9,7 +9,7 @@ using namespace API::RESTful;
 
 time_t TokensManager::getExpirationTime(const ApplicationTokenCommonParams &commonParams, IdentityManager *identityManager, const std::string &tokenType, time_t defaultTimeout)
 {
-    time_t expectedExpirationTime = time(nullptr) + Helpers::JSON::ASINT64(commonParams.appAuthSettings.tokensConfiguration[tokenType], "timeout", defaultTimeout);
+    time_t expectedExpirationTime = time(nullptr) + Helpers::JSON::ASINT64(Helpers::JSON::MEMBER_OR_NULL(commonParams.appAuthSettings.tokensConfiguration, tokenType), "timeout", defaultTimeout);
     time_t accountExpirationTime = identityManager->accounts->getAccountExpirationTime(commonParams.jwtAccountName);
 
     if (accountExpirationTime == 0 || accountExpirationTime >= expectedExpirationTime)
@@ -137,13 +137,15 @@ void TokensManager::issueLPTokenCookie(APIReturn &response, const RequestContext
     response.cookiesMap["LPToken"].httpOnly = true;
     response.cookiesMap["LPToken"].value = sAuthToken;
 
-    Json::Value authenticationPublicData;
-    authenticationPublicData["exp"] = std::to_string(lpToken.getExpirationTime());
-    authenticationPublicData["subject"] = authContext->accountUUID;
-    authenticationPublicData["displayName"] =  identityManager->accounts->getAccountDisplayName(authContext->accountUUID);
-    authenticationPublicData["slotIds"] = Helpers::JSON::fromSet(authContext->authenticatedSlots);
-    authenticationPublicData["authenticatedSchemes"] = authContext->getAllAuthenticatedSchemes();
-    authenticationPublicData["authenticatedAppsCallbackURLs"] = authContext->getAllAuthenticatedAppsCallbackURLs();
+    boost::json::object authenticationPublicData
+    {
+        {"exp", std::to_string(lpToken.getExpirationTime())},
+        {"subject", authContext->accountUUID},
+        {"displayName", identityManager->accounts->getAccountDisplayName(authContext->accountUUID)},
+        {"slotIds", Helpers::JSON::fromSet(authContext->authenticatedSlots)},
+        {"authenticatedSchemes", authContext->getAllAuthenticatedSchemes()},
+        {"authenticatedAppsCallbackURLs", authContext->getAllAuthenticatedAppsCallbackURLs()}
+    };
 
     // TODO: account data?
     if (authContext->keepAuthenticated)
@@ -153,6 +155,6 @@ void TokensManager::issueLPTokenCookie(APIReturn &response, const RequestContext
         response.cookiesMap["loggedIn"].secure = true;
         response.cookiesMap["loggedIn"].httpOnly = false;
         response.cookiesMap["loggedIn"].path = "/";
-        response.cookiesMap["loggedIn"].value = Helpers::Encoders::encodeToBase64(authenticationPublicData.toStyledString());
+        response.cookiesMap["loggedIn"].value = Helpers::Encoders::encodeToBase64(Helpers::JSON::toString(authenticationPublicData));
     }
 }

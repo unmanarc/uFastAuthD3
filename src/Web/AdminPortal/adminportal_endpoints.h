@@ -10,7 +10,7 @@
 #include "Web/AdminPortal/adminportal_endpoints_applications.h"
 #include "Web/AdminPortal/adminportal_endpoints_authcontroller.h"
 
-#include <json/json.h>
+#include <Mantids30/DataFormat_JSON/json.h>
 
 #include <Mantids30/API_EndpointsAndSessions/api_restful_endpoints.h>
 #include <Mantids30/Helpers/json.h>
@@ -36,6 +36,6 @@ public:
     static void addEndpoints(const std::shared_ptr<Endpoints> &endpoints);
 
     // Helpers:
-    static Json::Value scopeListToJSON(const std::set<ApplicationScope> &scopes);
+    static boost::json::array scopeListtoJSON(const std::set<ApplicationScope> &scopes);
     static std::set<ApplicationScope> iScopesLeftListForRole(const std::string &appName, const std::string &roleName);
 };

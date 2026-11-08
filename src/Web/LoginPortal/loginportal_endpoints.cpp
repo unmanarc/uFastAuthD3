@@ -2,7 +2,8 @@
 
 #include <Mantids30/Protocol_HTTP/httpv1_base.h>
 #include "globals.h"
-#include <json/value.h>
+#include <Mantids30/DataFormat_JSON/json.h>
+#include <boost/json/value.hpp>
 
 using namespace Mantids30;
 using namespace Mantids30::Program;
@@ -53,7 +54,7 @@ void LoginPortal_Endpoints::addEndpoints(const std::shared_ptr<Endpoints> &endpo
 
 LoginPortal_Endpoints::APIReturn LoginPortal_Endpoints::getApplicationLoginPublicData(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
-    Json::Value r;
+    boost::json::object r;
     // Get the identity manager from global settings to handle authentication.
 
     // Determine appName: prioritize x-api-key header, fallback to inputJSON "app" field
@@ -78,9 +79,16 @@ LoginPortal_Endpoints::APIReturn LoginPortal_Endpoints::getApplicationLoginPubli
 
     ApplicationAuthSettings tokenProps = Globals::getIdentityManager()->applications->getAuthSettingsFromApplication(appName);
 
-    r["app"]["name"] = appName;
-    r["app"]["description"] = Globals::getIdentityManager()->applications->getApplicationDescription(appName);
-    r["app"]["session"]["useSessionCookiesByDefault"] = Helpers::JSON::ASBOOL(tokenProps.tokensConfiguration["accessToken"], "useSessionCookiesByDefault", true);
+    boost::json::object session{
+        {"useSessionCookiesByDefault", Helpers::JSON::ASBOOL(Helpers::JSON::MEMBER_OR_NULL(tokenProps.tokensConfiguration, "accessToken"), "useSessionCookiesByDefault", true)},
+    };
+    boost::json::object app{
+        {"name",        appName},
+        {"description", Globals::getIdentityManager()->applications->getApplicationDescription(appName)},
+        {"session",     session},
+    };
 
-    return r;
+    r["app"] = std::move(app);
+
+    return boost::json::value(std::move(r));
 }

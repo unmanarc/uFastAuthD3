@@ -1,16 +1,16 @@
 #include "IdentityManager/ds_authentication.h"
-#include <Mantids30/Program_Logs/loglevels.h>
-#include <Mantids30/Protocol_HTTP/api_return.h>
 #include "Tokens/tokensmanager.h"
 #include "loginportal_endpoints.h"
-#include <json/value.h>
+#include <Mantids30/DataFormat_JSON/json.h>
 #include <Mantids30/Helpers/json.h>
+#include <Mantids30/Program_Logs/loglevels.h>
+#include <Mantids30/Protocol_HTTP/api_return.h>
 
 #include "globals.h"
 
+#include <Mantids30/DataFormat_JSON/json.h>
 #include <cinttypes>
 #include <cstdint>
-#include <json/config.h>
 #include <memory>
 #include <optional>
 #include <string>
@@ -24,8 +24,8 @@ using namespace Mantids30::DataFormat;
 // Validate user and get authorization flow:
 API::APIReturn LoginPortal_Endpoints::preAuthorize(void *context, const API::RESTful::RequestContext &request, ClientDetails &authClientDetails)
 {
-    Json::Value r;
     API::APIReturn response;
+    boost::json::value r;
     // Environment:
     IdentityManager *identityManager = Globals::getIdentityManager();
     std::shared_ptr<TransientAuthenticationContext> authContext = std::make_shared<TransientAuthenticationContext>();
@@ -35,12 +35,12 @@ API::APIReturn LoginPortal_Endpoints::preAuthorize(void *context, const API::RES
 
     // Input parameters:
     authContext->accountName = Helpers::JSON::ASSTRING(*request.inputJSON, "accountName", ""); // ACCOUNT ID.
-    std::string activityName = Helpers::JSON::ASSTRING(*request.inputJSON, "activity", "");    // APP ACTIVITY NAME.
+    std::string activityName(Helpers::JSON::ASSTRING(*request.inputJSON, "activity", ""));     // APP ACTIVITY NAME.
     authContext->loadUUIDFromAccountName();
 
     // Account UUID
     std::optional<std::string> _accountUUID = Globals::getIdentityManager()->accounts->getAccountUUIDByAccountName(authContext->accountName);
-    std::string accountUUID = _accountUUID.has_value()? _accountUUID.value() : "745bedd8-dfb5-439d-811b-1ad0a8d14a32";
+    std::string accountUUID = _accountUUID.has_value() ? _accountUUID.value() : "745bedd8-dfb5-439d-811b-1ad0a8d14a32";
 
     // Determine appName: prioritize x-api-key header, fallback to inputJSON "app" field
     std::string apiKey = request.clientRequest->getHeaderOption("x-api-key");
@@ -92,17 +92,16 @@ API::APIReturn LoginPortal_Endpoints::preAuthorize(void *context, const API::RES
         r = identityManager->authController->getApplicableAuthenticationSchemesForAccount(appName, activityName, accountUUID, authContext->authenticatedSlots);
     }
 
-    if (r["defaultScheme"] == Json::nullValue)
+    if (r.as_object()["defaultScheme"] == boost::json::value{})
     {
         // Member not found.
         return {HTTP::Status::Code::S_404_NOT_FOUND, "not_found", "There is no Authentication Scheme Available."};
     }
 
-    r["loginAuthenticationTimeout"] = loginAuthenticationTimeout;
+    r.as_object()["loginAuthenticationTimeout"] = loginAuthenticationTimeout;
 
-    *(response.responseJSON()) = r;
+    response = API::APIReturn(r);
     response.cookiesMap["LPToken"].deleteCookie();
-
     return response;
 }
 
@@ -112,7 +111,8 @@ void LoginPortal_Endpoints::issueTransientAuthTokenResponse(const RequestContext
     // Retrieve configuration parameters from global settings.
     IdentityManager *identityManager = Globals::getIdentityManager();
     uint32_t loginAuthenticationTimeout = Globals::pConfig.get<uint32_t>("LoginPortal.AuthenticationTimeout", 300);
-    Json::Value *jResponse = response.responseJSON();
+    boost::json::value &jResponse = *response.responseJSON();
+    boost::json::object &jResponseObj = jResponse.as_object();
 
     // There is a new authenticated current slot:
     if (authContext->currentSlotId.has_value())
@@ -130,9 +130,9 @@ void LoginPortal_Endpoints::issueTransientAuthTokenResponse(const RequestContext
         nextSlotId = requiredAuthSlots.begin()->slotId;
     }
 
-    (*jResponse)["canSkipPasswordChange"] = canSkipPasswordChange;
-    (*jResponse)["mustChangeCredential"] = mustChangeCredential;
-    (*jResponse)["transientToken"] = authContext->issueSignedTransientTokenFromValues(loginAuthenticationTimeout, nextSlotId, request.jwtSigner);
+    jResponseObj["canSkipPasswordChange"] = canSkipPasswordChange;
+    jResponseObj["mustChangeCredential"] = mustChangeCredential;
+    jResponseObj["transientToken"] = authContext->issueSignedTransientTokenFromValues(loginAuthenticationTimeout, nextSlotId, request.jwtSigner);
 
     if (requiredAuthSlots.empty())
     {
@@ -141,22 +141,21 @@ void LoginPortal_Endpoints::issueTransientAuthTokenResponse(const RequestContext
         // Set the IAM Access Token into the Cookie ONLY if mustchangeslots is empty (to avoid login if not changed)...
         TokensManager::issueLPTokenCookie(response, request, authContext);
         //}
-        (*jResponse)["nextSlot"] = Json::nullValue; // No new slots to be tested.
+        jResponseObj["nextSlot"] = boost::json::value{}; // No new slots to be tested.
     }
     else
     {
-
-
         // We can give the credential public data for the next credential:
         Credential credentialPublicData = identityManager->authController->getAccountCredentialPublicData(authContext->accountUUID, nextSlotId.value());
 
-        Json::Value nextSlot;
-        nextSlot["slotId"] = nextSlotId.value();
-        nextSlot["details"] = credentialPublicData.slotDetails.toJSON();
+        boost::json::object nextSlot{
+            {"slotId",  nextSlotId.value()},
+            {"details", credentialPublicData.slotDetails.toJSON()},
+        };
 
-        (*jResponse)["nextSlot"] = nextSlot;
-        (*jResponse)["publicData"] = credentialPublicData.toJSON(identityManager->authController->getGlobalAuthenticationPolicy());
-        (*jResponse)["publicData"].removeMember("slotDetails");
+        jResponseObj["nextSlot"] = nextSlot;
+        jResponseObj["publicData"] = credentialPublicData.toJSON(identityManager->authController->getGlobalAuthenticationPolicy());
+        jResponseObj["publicData"].as_object().erase("slotDetails");
     }
 }
 
@@ -173,7 +172,8 @@ API::APIReturn LoginPortal_Endpoints::authorize(void *context, const RequestCont
     // If the token does not exist, it will get the data from the USER INPUT JSON
     if (!authContext->validateAndMerge_TransientAuthTokenIfExist(request.clientRequest->getAuthorizationBearer(), request.inputJSON, request.jwtValidator))
     {
-        return {HTTP::Status::Code::S_403_FORBIDDEN, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::UNAUTHENTICATED)),
+        return {HTTP::Status::Code::S_403_FORBIDDEN,
+                "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::UNAUTHENTICATED)),
                 authResultToString(AuthenticationResult::UNAUTHENTICATED)};
     }
 
@@ -181,20 +181,30 @@ API::APIReturn LoginPortal_Endpoints::authorize(void *context, const RequestCont
     {
         // You don´t need to authorize anything else! it's already authenticated.
         // code warning: this nullopt check prevent usage of .value() after.
-        return {HTTP::Status::Code::S_401_UNAUTHORIZED, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::AUTHENTICATION_FAILED)),
+        return {HTTP::Status::Code::S_401_UNAUTHORIZED,
+                "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::AUTHENTICATION_FAILED)),
                 authResultToString(AuthenticationResult::AUTHENTICATION_FAILED)};
     }
 
     std::map<uint32_t, AuthenticationSlotDetails> authSlots = identityManager->authController->listAllAuthenticationSlots();
 
     // TODO implement other authentication modes (Eg. CRAM)
-    AuthenticationResult authRetCode = identityManager->authController->authenticateCredential(clientDetails, authContext->accountUUID, Helpers::JSON::ASSTRING(*request.inputJSON, "password", ""),
+    AuthenticationResult authRetCode = identityManager->authController->authenticateCredential(clientDetails,
+                                                                                               authContext->accountUUID,
+                                                                                               Helpers::JSON::ASSTRING(*request.inputJSON, "password", ""),
                                                                                                authContext->currentSlotId.value(),
                                                                                                getAuthModeFromString(Helpers::JSON::ASSTRING(*request.inputJSON, "authMode", "MODE_PLAIN")),
-                                                                                               Helpers::JSON::ASSTRING(*request.inputJSON, "challengeSalt", ""), authContext);
+                                                                                               Helpers::JSON::ASSTRING(*request.inputJSON, "challengeSalt", ""),
+                                                                                               authContext);
 
-    LOG_APP->log2(__func__, authContext->accountUUID, clientDetails.ipAddress, !IS_CREDENTIAL_AUTHENTICATED(authRetCode) ? Logs::LogLevel::SECURITY_ALERT : Logs::LogLevel::INFO,
-                  "Account Authorization Result: %" PRIu32 " - %s, scheme '%" PRIu32 "' and slotId = %'" PRIu32 "'", authRetCode, authResultToString(authRetCode), authContext->schemeId,
+    LOG_APP->log2(__func__,
+                  authContext->accountUUID,
+                  clientDetails.ipAddress,
+                  !IS_CREDENTIAL_AUTHENTICATED(authRetCode) ? Logs::LogLevel::SECURITY_ALERT : Logs::LogLevel::INFO,
+                  "Account Authorization Result: %" PRIu32 " - %s, scheme '%" PRIu32 "' and slotId = %'" PRIu32 "'",
+                  authRetCode,
+                  authResultToString(authRetCode),
+                  authContext->schemeId,
                   authContext->currentSlotId.value());
 
     if (IS_CREDENTIAL_AUTHENTICATED(authRetCode))
@@ -212,28 +222,33 @@ API::APIReturn LoginPortal_Endpoints::authorize(void *context, const RequestCont
         if (requiredAuthSlots.empty())
         {
             // Why...? at least should exist 1 left.
-            return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::INTERNAL_ERROR)),
+            return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR,
+                    "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::INTERNAL_ERROR)),
                     authResultToString(AuthenticationResult::INTERNAL_ERROR)};
         }
 
         // The current slot should be the first to avoid order change (eg. trying to try the OTP before the pass)...
         if (requiredAuthSlots.begin()->slotId != authContext->currentSlotId.value())
         {
-            return {HTTP::Status::Code::S_400_BAD_REQUEST, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::BAD_PARAMETERS)),
+            return {HTTP::Status::Code::S_400_BAD_REQUEST,
+                    "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(AuthenticationResult::BAD_PARAMETERS)),
                     authResultToString(AuthenticationResult::BAD_PARAMETERS)};
         }
 
         // Remove the first element from requiredAuthSlots (which is the authenticated credential)
         requiredAuthSlots.erase(requiredAuthSlots.begin());
 
-        issueTransientAuthTokenResponse(request, response, authContext, requiredAuthSlots,
+        issueTransientAuthTokenResponse(request,
+                                        response,
+                                        authContext,
+                                        requiredAuthSlots,
                                         authRetCode == AuthenticationResult::MUST_CHANGE_CREDENTIAL || authRetCode == AuthenticationResult::EXPIRED_CREDENTIAL,
                                         authRetCode == AuthenticationResult::EXPIRED_CREDENTIAL && authSlots[authContext->currentSlotId.value()].canSkipWhenExpired);
     }
     else
     {
         // Use the same auth... don't go to the next.
-        (*response.responseJSON())["nextSlot"] = authContext->currentSlotId.value();
+        (*response.responseJSON()).as_object()["nextSlot"] = authContext->currentSlotId.value();
 
         // Prevent account enumeration:
 
@@ -244,8 +259,13 @@ API::APIReturn LoginPortal_Endpoints::authorize(void *context, const RequestCont
         return {HTTP::Status::Code::S_401_UNAUTHORIZED, "AUTH_ERR_" + std::to_string(static_cast<uint16_t>(authRetCode)), authResultToString(authRetCode)};
     }
 
-    LOG_APP->log2(__func__, authContext->accountUUID, clientDetails.ipAddress, response.getHTTPResponseCode() != HTTP::Status::Code::S_200_OK ? Logs::LogLevel::SECURITY_ALERT : Logs::LogLevel::INFO,
-                  "R/%03" PRIu16 ": %s", static_cast<uint16_t>(response.getHTTPResponseCode()), request.clientRequest->getURI().c_str());
+    LOG_APP->log2(__func__,
+                  authContext->accountUUID,
+                  clientDetails.ipAddress,
+                  response.getHTTPResponseCode() != HTTP::Status::Code::S_200_OK ? Logs::LogLevel::SECURITY_ALERT : Logs::LogLevel::INFO,
+                  "R/%03" PRIu16 ": %s",
+                  static_cast<uint16_t>(response.getHTTPResponseCode()),
+                  request.clientRequest->getURI().c_str());
 
     return response;
 }

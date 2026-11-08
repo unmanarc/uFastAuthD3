@@ -27,9 +27,9 @@ API::APIReturn AdminPortal_Endpoints_ApplicationsScopes::addApplicationScopeToAc
     API::APIReturn response;
 
     // Extract and validate input values
-    std::string appName = Helpers::JSON::ASSTRING(*request.inputJSON, "appName", "");
-    std::string scopeId = Helpers::JSON::ASSTRING(*request.inputJSON, "scopeId", "");
-    std::string accountUUID = Helpers::JSON::ASSTRING(*request.inputJSON, "accountUUID", "");
+    std::string appName(Helpers::JSON::ASSTRING(*request.inputJSON, "appName", ""));
+    std::string scopeId (Helpers::JSON::ASSTRING(*request.inputJSON, "scopeId", ""));
+    std::string accountUUID (Helpers::JSON::ASSTRING(*request.inputJSON, "accountUUID", ""));
 
     if (appName.empty() || scopeId.empty() || accountUUID.empty())
     {
@@ -37,7 +37,7 @@ API::APIReturn AdminPortal_Endpoints_ApplicationsScopes::addApplicationScopeToAc
     }
 
     // Perform the operation
-    if (!Globals::getIdentityManager()->applicationScopes->addApplicationScopeToAccount(authClientDetails, request.jwtToken->getSubject(), {appName, scopeId}, accountUUID))
+    if (!Globals::getIdentityManager()->applicationScopes->addApplicationScopeToAccount(authClientDetails,request.jwtToken->getSubject() ,{appName, scopeId}, accountUUID))
     {
         return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Internal Error"};
     }
@@ -49,9 +49,9 @@ API::APIReturn AdminPortal_Endpoints_ApplicationsScopes::removeApplicationScopeF
     API::APIReturn response;
 
     // Extract and validate input values
-    std::string appName = Helpers::JSON::ASSTRING(*request.inputJSON, "appName", "");
-    std::string scopeId = Helpers::JSON::ASSTRING(*request.inputJSON, "scopeId", "");
-    std::string accountUUID = Helpers::JSON::ASSTRING(*request.inputJSON, "accountUUID", "");
+    std::string appName(Helpers::JSON::ASSTRING(*request.inputJSON, "appName", ""));
+    std::string scopeId (Helpers::JSON::ASSTRING(*request.inputJSON, "scopeId", ""));
+    std::string accountUUID (Helpers::JSON::ASSTRING(*request.inputJSON, "accountUUID", ""));
 
     if (appName.empty() || scopeId.empty() || accountUUID.empty())
     {
@@ -59,7 +59,7 @@ API::APIReturn AdminPortal_Endpoints_ApplicationsScopes::removeApplicationScopeF
     }
 
     // Perform the operation
-    if (!Globals::getIdentityManager()->applicationScopes->removeApplicationScopeFromAccount(authClientDetails, request.jwtToken->getSubject(), {appName, scopeId}, accountUUID))
+    if (!Globals::getIdentityManager()->applicationScopes->removeApplicationScopeFromAccount(authClientDetails,request.jwtToken->getSubject() ,{appName, scopeId}, accountUUID))
     {
         return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Internal Error"};
     }
@@ -69,9 +69,9 @@ API::APIReturn AdminPortal_Endpoints_ApplicationsScopes::createApplicationScope(
 {
     API::APIReturn response;
 
-    std::string appName = Helpers::JSON::ASSTRING(*request.inputJSON, "appName", "");
-    std::string scopeId = Helpers::JSON::ASSTRING(*request.inputJSON, "scopeId", "");
-    std::string scopeDescription = Helpers::JSON::ASSTRING(*request.inputJSON, "scopeDescription", "");
+    std::string appName(Helpers::JSON::ASSTRING(*request.inputJSON, "appName", ""));
+    std::string scopeId (Helpers::JSON::ASSTRING(*request.inputJSON, "scopeId", ""));
+    std::string scopeDescription (Helpers::JSON::ASSTRING(*request.inputJSON, "scopeDescription", ""));
 
     // Validate input parameters
     if (appName.empty())
@@ -97,7 +97,7 @@ API::APIReturn AdminPortal_Endpoints_ApplicationsScopes::createApplicationScope(
         return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Can't add application scope to the IAM"};
     }
 
-    if (!Globals::getIdentityManager()->applicationScopes->createApplicationScope(authClientDetails, request.jwtToken->getSubject(), {appName, scopeId, scopeDescription}))
+    if (!Globals::getIdentityManager()->applicationScopes->createApplicationScope(authClientDetails,request.jwtToken->getSubject() ,{appName, scopeId, scopeDescription}))
     {
         return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "The application scope may already exist."};
     }
@@ -109,8 +109,8 @@ API::APIReturn AdminPortal_Endpoints_ApplicationsScopes::removeApplicationScope(
 {
     API::APIReturn response;
 
-    std::string appName = Helpers::JSON::ASSTRING(*request.inputJSON, "appName", "");
-    std::string scopeId = Helpers::JSON::ASSTRING(*request.inputJSON, "scopeId", "");
+    std::string appName(Helpers::JSON::ASSTRING(*request.inputJSON, "appName", ""));
+    std::string scopeId (Helpers::JSON::ASSTRING(*request.inputJSON, "scopeId", ""));
 
     // Validate input parameters
     if (appName.empty())
@@ -129,7 +129,7 @@ API::APIReturn AdminPortal_Endpoints_ApplicationsScopes::removeApplicationScope(
         return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Can't remove application scope to the IAM"};
     }
 
-    if (!Globals::getIdentityManager()->applicationScopes->removeApplicationScope(authClientDetails, request.jwtToken->getSubject(), {appName, scopeId}))
+    if (!Globals::getIdentityManager()->applicationScopes->removeApplicationScope(authClientDetails,request.jwtToken->getSubject() ,{appName, scopeId}))
     {
         return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Internal Error"};
     }
@@ -141,9 +141,10 @@ API::APIReturn AdminPortal_Endpoints_ApplicationsScopes::addApplicationScopeToRo
 {
     API::APIReturn response;
 
-    if (!Globals::getIdentityManager()->applicationScopes->addApplicationScopeToRole(authClientDetails, request.jwtToken->getSubject(),
-                                                                                  {Helpers::JSON::ASSTRING(*request.inputJSON, "appName", ""), Helpers::JSON::ASSTRING(*request.inputJSON, "scopeId", "")},
-                                                                                  Helpers::JSON::ASSTRING(*request.inputJSON, "roleName", "")))
+    if (!Globals::getIdentityManager()->applicationScopes->addApplicationScopeToRole(authClientDetails,request.jwtToken->getSubject(),
+                                                                                    {std::string(Helpers::JSON::ASSTRING(*request.inputJSON, "appName", "")),
+                                                                                     std::string(Helpers::JSON::ASSTRING(*request.inputJSON, "scopeId", ""))},
+                                                                                    Helpers::JSON::ASSTRING(*request.inputJSON, "roleName", "")))
     {
         return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to add the application scope to the role."};
     }
@@ -154,9 +155,10 @@ API::APIReturn AdminPortal_Endpoints_ApplicationsScopes::removeApplicationScopeF
 {
     API::APIReturn response;
 
-    if (!Globals::getIdentityManager()->applicationScopes->removeApplicationScopeFromRole(authClientDetails, request.jwtToken->getSubject(),
-                                                                                       {Helpers::JSON::ASSTRING(*request.inputJSON, "appName", ""), Helpers::JSON::ASSTRING(*request.inputJSON, "scopeId", "")},
-                                                                                       Helpers::JSON::ASSTRING(*request.inputJSON, "roleName", "")))
+    if (!Globals::getIdentityManager()->applicationScopes->removeApplicationScopeFromRole(authClientDetails,request.jwtToken->getSubject(),
+                                                                                        {std::string(Helpers::JSON::ASSTRING(*request.inputJSON, "appName", "")),
+                                                                                         std::string(Helpers::JSON::ASSTRING(*request.inputJSON, "scopeId", ""))},
+                                                                                        Helpers::JSON::ASSTRING(*request.inputJSON, "roleName", "")))
     {
         return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Internal Error"};
     }

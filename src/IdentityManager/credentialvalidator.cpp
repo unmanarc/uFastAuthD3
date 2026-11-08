@@ -32,8 +32,8 @@ void CredentialValidator::cleanupExpiredTokens(void *asv)
     _asv->cleanupExpiredTokens();
 }
 
-AuthenticationResult CredentialValidator::validateStoredCredential(const std::string &accountUUID, const Credential &storedCredential, const std::string &passwordInput,
-                                                                   const std::string &challengeSalt, Mode authMode)
+AuthenticationResult CredentialValidator::validateStoredCredential(std::string_view accountUUID, const Credential &storedCredential, std::string_view passwordInput, std::string_view challengeSalt,
+                                                                   Mode authMode)
 {
     AuthenticationResult r = AuthenticationResult::NOT_IMPLEMENTED;
     //  bool saltedHash = false;
@@ -74,7 +74,7 @@ AuthenticationResult CredentialValidator::validateStoredCredential(const std::st
     }
     break;
     case HashFunction::GAUTHTIME:
-        r = validateGAuth(accountUUID, storedCredential.hash, passwordInput); // GAuth Time Based Token comparisson (seed,token)
+        r = validateGAuth(std::string(accountUUID), storedCredential.hash, std::string(passwordInput)); // GAuth Time Based Token comparisson (seed,token)
         goto skipAuthMode;
     }
 
@@ -103,9 +103,9 @@ skipAuthMode:;
     return r;
 }
 
-AuthenticationResult CredentialValidator::validateChallenge(const std::string &passwordFromDB, const std::string &challengeInput, const std::string &challengeSalt)
+AuthenticationResult CredentialValidator::validateChallenge(std::string_view passwordFromDB, std::string_view challengeInput, std::string_view challengeSalt)
 {
-    return challengeInput == Mantids30::Helpers::Crypto::calcSHA256(passwordFromDB + challengeSalt) ? AuthenticationResult::AUTHENTICATED : AuthenticationResult::AUTHENTICATION_FAILED;
+    return challengeInput == Mantids30::Helpers::Crypto::calcSHA256(std::string(passwordFromDB) + std::string(challengeSalt)) ? AuthenticationResult::AUTHENTICATED : AuthenticationResult::AUTHENTICATION_FAILED;
 }
 
 AuthenticationResult CredentialValidator::validateGAuth(const std::string &accountUUID, const std::string &seed, const std::string &tokenInput)

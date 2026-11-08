@@ -17,7 +17,7 @@ using namespace Mantids30::Database;
 using namespace Mantids30;
 
 
-std::string IdentityManager_DB::AuthController_DB::getAccountConfirmationToken(const std::string &accountUUID)
+std::string IdentityManager_DB::AuthController_DB::getAccountConfirmationToken(std::string_view accountUUID)
 {
     std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
 
@@ -29,7 +29,7 @@ std::string IdentityManager_DB::AuthController_DB::getAccountConfirmationToken(c
     }
     return "";
 }
-IdentityManager::LastAccountAccessResult IdentityManager_DB::AuthController_DB::getAccountLastAccess(const std::string &accountUUID)
+IdentityManager::LastAccountAccessResult IdentityManager_DB::AuthController_DB::getAccountLastAccess(std::string_view accountUUID)
 {
     std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
 
@@ -59,8 +59,8 @@ IdentityManager::LastAccountAccessResult IdentityManager_DB::AuthController_DB::
 // ------------------------------------------------------------------------
 // Application Auth Log - Logout and Token tracking
 // ------------------------------------------------------------------------
-bool IdentityManager_DB::AuthController_DB::updateApplicationAuthLogAccessTokenId(const std::string &accountUUID, const std::string &appName, const std::string &refresherTokenId,
-                                                                                  const std::string &accessTokenId, const time_t &accessTokenExpiration)
+bool IdentityManager_DB::AuthController_DB::updateApplicationAuthLogAccessTokenId(std::string_view accountUUID, std::string_view appName, std::string_view refresherTokenId,
+                                                                                  std::string_view accessTokenId, const time_t &accessTokenExpiration)
 {
     std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
 
@@ -82,7 +82,7 @@ bool IdentityManager_DB::AuthController_DB::updateApplicationAuthLogAccessTokenI
                                                 {":refresherTokenId", MAKE_VAR(STRING, refresherTokenId)}});
 }
 
-bool IdentityManager_DB::AuthController_DB::logoutApplicationAuthLog(const std::string &accountUUID, const std::string &appName, const std::string &refresherTokenId, LogoutReason reason)
+bool IdentityManager_DB::AuthController_DB::logoutApplicationAuthLog(std::string_view accountUUID, std::string_view appName, std::string_view refresherTokenId, LogoutReason reason)
 {
     std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
     return _parent->m_sqlConnector->qExecuteEx("UPDATE logs.applicationAccess_accountSessions "
@@ -102,8 +102,8 @@ bool IdentityManager_DB::AuthController_DB::logoutApplicationAuthLog(const std::
                                                 {":reason", MAKE_VAR(INT32, static_cast<int>(reason))}});
 }
 
-void IdentityManager_DB::AuthController_DB::insertApplicationAccountAccessAuthLog(const std::string &accountUUID, const std::string &appName, const uint32_t &schemeId,
-                                                                                  const ClientDetails &clientDetails, const std::string &refresherTokenId, const std::string &accessTokenId,
+void IdentityManager_DB::AuthController_DB::insertApplicationAccountAccessAuthLog(std::string_view accountUUID, std::string_view appName, const uint32_t &schemeId,
+                                                                                  const ClientDetails &clientDetails, std::string_view refresherTokenId, std::string_view accessTokenId,
                                                                                   const time_t &accessTokenExpiration, const time_t &refreshTokenExpiration)
 {
     std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);

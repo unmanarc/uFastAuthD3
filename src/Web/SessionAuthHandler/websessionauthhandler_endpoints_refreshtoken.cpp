@@ -2,8 +2,8 @@
 #include <Mantids30/Program_Logs/loglevels.h>
 #include <Mantids30/Protocol_HTTP/httpv1_base.h>
 #include <boost/algorithm/string/join.hpp>
-#include <json/config.h>
-#include <json/value.h>
+#include <Mantids30/DataFormat_JSON/json.h>
+#include <Mantids30/DataFormat_JSON/json.h>
 
 #include "Tokens/tokensmanager.h"
 #include "globals.h"
@@ -53,7 +53,7 @@ API::APIReturn WebSessionAuthHandler_Endpoints::refreshAccessToken(void *context
 
     Globals::getIdentityManager()->authController->updateApplicationAuthLogAccessTokenId(refreshTokenData.user, refreshTokenData.app, refreshTokenData.jwtId, newAccessToken.getJwtId(), newAccessToken.getExpirationTime());
 
-    (*response.responseJSON())["maxAge"] = (newAccessToken.getExpirationTime() - time(nullptr));
-
-    return response;
+    return API::APIReturn(boost::json::object{
+        {"maxAge", (newAccessToken.getExpirationTime() - time(nullptr))},
+    });
 }

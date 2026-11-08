@@ -14,15 +14,17 @@ void AdminPortal_Endpoints::addEndpoints(const std::shared_ptr<Endpoints> &endpo
     addEndpoints_Activities(endpoints);
 }
 
-Json::Value AdminPortal_Endpoints::scopeListToJSON(const std::set<ApplicationScope> &scopes)
+boost::json::array AdminPortal_Endpoints::scopeListtoJSON(const std::set<ApplicationScope> &scopes)
 {
-    Json::Value x;
-    int i = 0;
+    boost::json::array x{};
     for (const ApplicationScope &scope : scopes)
     {
-        x[i]["appName"] = scope.appName;
-        x[i]["id"] = scope.id;
-        x[i++]["description"] = Globals::getIdentityManager()->applicationScopes->getApplicationScopeDescription(scope);
+        boost::json::object entry{
+            {"appName",     scope.appName},
+            {"id",          scope.id},
+            {"description", Globals::getIdentityManager()->applicationScopes->getApplicationScopeDescription(scope)},
+        };
+        x.push_back(entry);
     }
     return x;
 }

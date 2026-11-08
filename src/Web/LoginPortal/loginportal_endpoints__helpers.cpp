@@ -6,7 +6,7 @@
 #include "globals.h"
 
 #include <cstdint>
-#include <json/config.h>
+#include <Mantids30/DataFormat_JSON/json.h>
 #include <memory>
 #include <string>
 

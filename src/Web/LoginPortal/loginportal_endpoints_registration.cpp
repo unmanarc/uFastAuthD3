@@ -1,7 +1,5 @@
 #include "loginportal_endpoints.h"
 
-#include "globals.h"
-#include <optional>
 
 using namespace Mantids30;
 using namespace Program;
@@ -60,7 +58,7 @@ API::APIReturn LoginPortal_Endpoints::registerAccount(void *context, const Reque
         }
     }
 
-    std::string accountToCreate = Helpers::JSON::ASSTRING((*request.inputJSON)["accountDetails"], "accountUUID", "");
+    std::string accountToCreate (Helpers::JSON::ASSTRING((*request.inputJSON)["accountDetails"], "accountUUID", ""));
 
     if (create)
     {
@@ -76,7 +74,7 @@ API::APIReturn LoginPortal_Endpoints::registerAccount(void *context, const Reque
                   !success ? "Failed to create account '%s'" : "Account '%s' created.", accountToCreate.c_str());
 
     // Set the credential:
-    std::string newPass = Helpers::JSON::ASSTRING(*request.inputJSON, "newPass", "");
+    std::string newPass (Helpers::JSON::ASSTRING(*request.inputJSON, "newPass", ""));
 
     // TODO: mejorar el nivel de log...
 

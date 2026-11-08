@@ -1,25 +1,25 @@
 #include "IdentityManager/ds_authentication.h"
 #include "identitymanager.h"
 
-#include <json/value.h>
+#include <Mantids30/DataFormat_JSON/json.h>
 #include <Mantids30/Helpers/random.h>
 
+#include <boost/json/object.hpp>
 #include <optional>
 #include <string>
 
 using namespace Mantids30;
 
-Json::Value IdentityManager::AuthController::authSlotsToJSON(const std::vector<AuthenticationSchemeUsedSlot> &authSlots)
+boost::json::array IdentityManager::AuthController::authSlotsToJSON(const std::vector<AuthenticationSchemeUsedSlot> &authSlots)
 {
-    Json::Value r;
-    int i = 0;
+    boost::json::array r;
     for (const AuthenticationSchemeUsedSlot &slot : authSlots)
     {
-        r[i] = slot.toJSON();
+        r.push_back(slot.toJSON());
     }
     return r;
 }
-void IdentityManager::AuthController::updateCredentialAuthStatus(const AuthenticationResult &authResult, const std::string &accountUUID, const Credential &storedCredentialData, const uint32_t &slotId,
+void IdentityManager::AuthController::updateCredentialAuthStatus(const AuthenticationResult &authResult, std::string_view accountUUID, const Credential &storedCredentialData, const uint32_t &slotId,
                                                                  const ClientDetails &clientDetails)
 {
     // Register the change for max attempts...
@@ -82,8 +82,8 @@ bool IdentityManager::AuthController::isAccountInactive(const LastAccountAccessR
     return (currentLastLogin + m_authenticationPolicy.abandonedAccountExpirationSeconds < now);
 }
 
-AuthenticationResult IdentityManager::AuthController::authenticateCredential(const ClientDetails &clientDetails, const std::string &accountUUID, const std::string &incomingPassword,
-                                                                             const uint32_t &slotId, const Mode &authMode, const std::string &challengeSalt,
+AuthenticationResult IdentityManager::AuthController::authenticateCredential(const ClientDetails &clientDetails, std::string_view accountUUID, std::string_view incomingPassword,
+                                                                             const uint32_t &slotId, const Mode &authMode, std::string_view challengeSalt,
                                                                              // Extras...
                                                                              std::shared_ptr<TransientAuthenticationContext> authContext)
 {
@@ -116,13 +116,13 @@ AuthenticationResult IdentityManager::AuthController::authenticateCredential(con
             // Slots in position 0:
             if (authContext->doesTransientTokenNotExist)
             {
-                //Calc the slot scheme hash
-                authContext->slotSchemeHash = Helpers::Crypto::calcSHA256(authSlotsToJSON(authSlotsUsedByScheme).toStyledString());
+                //CHelpers::JSON::toString(alc the) s
+                authContext->slotSchemeHash = Helpers::Crypto::calcSHA256(Helpers::JSON::toString(authSlotsToJSON(authSlotsUsedByScheme)));
             }
             else
             {
                 // hash is not compatible (slots changed, prevent race condition)
-                if (authContext->slotSchemeHash != Helpers::Crypto::calcSHA256(authSlotsToJSON(authSlotsUsedByScheme).toStyledString()))
+                if (authContext->slotSchemeHash != Helpers::Crypto::calcSHA256(Helpers::JSON::toString(authSlotsToJSON(authSlotsUsedByScheme))))
                 {
                     return AuthenticationResult::AUTH_SCHEME_CHANGED;
                 }
@@ -195,7 +195,7 @@ void IdentityManager::AuthController::setAuthenticationPolicy(const Authenticati
     m_authenticationPolicy = newAuthenticationPolicy;
 }
 
-Credential IdentityManager::AuthController::getAccountCredentialPublicData(const std::string &accountUUID, uint32_t slotId)
+Credential IdentityManager::AuthController::getAccountCredentialPublicData(std::string_view accountUUID, uint32_t slotId)
 {
     // protective-limited method.
     bool bAccountFound = false;
@@ -204,7 +204,7 @@ Credential IdentityManager::AuthController::getAccountCredentialPublicData(const
     return credential.getPublicData(m_authenticationPolicy);
 }
 
-std::map<uint32_t, Credential> IdentityManager::AuthController::getAccountAllCredentialsPublicData(const std::string &accountUUID)
+std::map<uint32_t, Credential> IdentityManager::AuthController::getAccountAllCredentialsPublicData(std::string_view accountUUID)
 {
     // TODO: this function can only be accessed if the user has been authenticated...
     std::shared_lock<std::shared_mutex> lock(m_parent->m_mutex);
@@ -223,8 +223,8 @@ std::map<uint32_t, Credential> IdentityManager::AuthController::getAccountAllCre
 }
 
 // TODO: this can only be called when authenticated.
-bool IdentityManager::AuthController::changeAccountAuthenticatedCredential(const ClientDetails &clientInfo, const std::string &performedBy, const std::string &accountUUID, uint32_t slotId,
-                                                                           const std::string &sCurrentPassword, const Credential &passwordData, Mode authMode, const std::string &challengeSalt)
+bool IdentityManager::AuthController::changeAccountAuthenticatedCredential(const ClientDetails &clientInfo, std::string_view performedBy, std::string_view accountUUID, uint32_t slotId,
+                                                                           std::string_view sCurrentPassword, const Credential &passwordData, Mode authMode, std::string_view challengeSalt)
 {
     {
         std::shared_lock<std::shared_mutex> lock(m_parent->m_mutex);
@@ -271,7 +271,7 @@ bool IdentityManager::AuthController::changeAccountAuthenticatedCredential(const
 }
 
 
-std::set<ApplicationScope> IdentityManager::ApplicationScopes::getAccountUsableApplicationScopes(const std::string &appName, const std::string &accountUUID)
+std::set<ApplicationScope> IdentityManager::ApplicationScopes::getAccountUsableApplicationScopes(std::string_view appName, std::string_view accountUUID)
 {
     std::set<ApplicationScope> x;
     std::shared_lock<std::shared_mutex> lock(m_parent->m_mutex);
@@ -292,7 +292,7 @@ std::set<ApplicationScope> IdentityManager::ApplicationScopes::getAccountUsableA
     return x;
 }
 
-bool IdentityManager::ApplicationScopes::validateAccountApplicationScope(const std::string &accountUUID, const ApplicationScope &applicationScope)
+bool IdentityManager::ApplicationScopes::validateAccountApplicationScope(std::string_view accountUUID, const ApplicationScope &applicationScope)
 {
     std::shared_lock<std::shared_mutex> lock(m_parent->m_mutex);
     if (validateAccountDirectApplicationScope(accountUUID, applicationScope))
@@ -309,7 +309,7 @@ bool IdentityManager::ApplicationScopes::validateAccountApplicationScope(const s
     return false;
 }
 
-bool IdentityManager::AuthController::setAccountPasswordOnScheme(const ClientDetails &clientDetails, const std::string &performedBy, const std::string &accountUUID, std::string *sInitPW,
+bool IdentityManager::AuthController::setAccountPasswordOnScheme(const ClientDetails &clientDetails, std::string_view performedBy, std::string_view accountUUID, std::string *sInitPW,
                                                                  const uint32_t &schemeId)
 {
     *sInitPW = "";
@@ -365,7 +365,7 @@ bool IdentityManager::AuthController::setAccountPasswordOnScheme(const ClientDet
     //`totp2FAStepsToleranceWindow`,`function`
 }
 
-Credential IdentityManager::AuthController::createNewCredential(const uint32_t &slotId, const std::string &passwordInput, bool mustChange)
+Credential IdentityManager::AuthController::createNewCredential(const uint32_t &slotId, std::string_view passwordInput, bool mustChange)
 {
     Credential r;
 
@@ -419,15 +419,16 @@ Credential IdentityManager::AuthController::createNewCredential(const uint32_t &
     return r;
 }
 
-Json::Value IdentityManager::AuthController::getApplicableAuthenticationSchemesForAccount(const std::string &app, const std::string &activity, const std::string &accountUUID,
+boost::json::value IdentityManager::AuthController::getApplicableAuthenticationSchemesForAccount(std::string_view app, std::string_view activity, std::string_view accountUUID,
                                                                                    const std::set<uint32_t> &alreadyAuthenticatedSlots)
 {
     std::shared_lock<std::shared_mutex> lock(m_parent->m_mutex);
 
     // Initialize the result JSON
-    Json::Value r;
-    r["defaultScheme"] = Json::nullValue;
-    r["availableSchemes"] = Json::objectValue;
+    boost::json::object r{
+        {"defaultScheme",    boost::json::value{}},
+        {"availableSchemes", boost::json::object{}},
+    };
 
     std::map<uint32_t, std::string> allSchemes = listAuthenticationSchemes();
 
@@ -444,8 +445,9 @@ Json::Value IdentityManager::AuthController::getApplicableAuthenticationSchemesF
             r["defaultScheme"] = std::to_string(*defaultSchemeId);
 
             // Create the scheme as a properly structured object
-            Json::Value currentScheme;
-            currentScheme["description"] = allSchemes[*defaultSchemeId];
+            boost::json::object currentScheme{
+                {"description", allSchemes[*defaultSchemeId]},
+            };
 
             // Find the first available slot for this scheme
             if (!slots.empty())
@@ -453,7 +455,7 @@ Json::Value IdentityManager::AuthController::getApplicableAuthenticationSchemesF
                 currentScheme["firstSlot"] = slots.begin()->toJSON();
             }
 
-            r["availableSchemes"][std::to_string(*defaultSchemeId)] = currentScheme;
+            r["availableSchemes"].as_object()[std::to_string(*defaultSchemeId)] = currentScheme;
         }
         return r;
     }
@@ -487,12 +489,8 @@ Json::Value IdentityManager::AuthController::getApplicableAuthenticationSchemesF
 
         if (allSlotsAvailable)
         {
-            int i = 0;
-            Json::Value currentScheme;
-            currentScheme["description"] = allSchemes[schemeId];
-
             // Find the first available slot for this scheme
-            Json::Value firstSlot = Json::nullValue;
+            boost::json::value firstSlot = boost::json::value{};
             for (const AuthenticationSchemeUsedSlot &slot : slots)
             {
                 if (accountUsedAuthSlots.find(slot.slotId) != accountUsedAuthSlots.end() &&        // found in accountUsedAuthSlots
@@ -504,12 +502,15 @@ Json::Value IdentityManager::AuthController::getApplicableAuthenticationSchemesF
                 }
             }
 
-            currentScheme["firstSlot"] = firstSlot;
+            boost::json::object currentScheme{
+                {"description", allSchemes[schemeId]},
+                {"firstSlot",   firstSlot},
+            };
 
-            r["availableSchemes"][std::to_string(schemeId)] = currentScheme;
+            r["availableSchemes"].as_object()[std::to_string(schemeId)] = currentScheme;
 
             // Put the default scheme OR if you found something without slot ids (already authenticated), go with it.
-            if ((defaultScheme.has_value() && schemeId == *defaultScheme && r["defaultScheme"] == Json::nullValue) || firstSlot == Json::nullValue)
+            if ((defaultScheme.has_value() && schemeId == *defaultScheme && r["defaultScheme"] == boost::json::value{}) || firstSlot == boost::json::value{})
             {
                 r["defaultScheme"] = std::to_string(schemeId);
             }

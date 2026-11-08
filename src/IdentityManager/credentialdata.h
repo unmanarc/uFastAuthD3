@@ -29,20 +29,20 @@ public:
      * @param serializedData The string containing the serialized authentication data.
      * @return true if the deserialization was successful, false otherwise.
      */
-    bool parse(const std::string &sAuth);
+    bool parse(std::string_view sAuth);
 
     /**
      * @brief Deserializes authentication data from a JSON object.
      * @param jsonObject The JSON object containing the authentication data.
      * @return true if the deserialization was successful, false otherwise.
      */
-    bool setJSON(const Json::Value &jsonObject);
+    bool setJSON(const boost::json::value &jsonObject);
 
     /**
      * @brief Serializes authentication data to a JSON object.
      * @return A JSON object containing the authentication data.
      */
-    [[nodiscard]] Json::Value toJSON() const;
+    [[nodiscard]] boost::json::object toJSON() const;
 
 public:
     std::string m_password;

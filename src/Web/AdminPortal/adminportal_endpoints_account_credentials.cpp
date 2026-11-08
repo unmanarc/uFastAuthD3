@@ -2,7 +2,7 @@
 
 #include "globals.h"
 #include <Mantids30/Program_Logs/applog.h>
-#include <json/value.h>
+#include <Mantids30/DataFormat_JSON/json.h>
 #include <utility>
 
 using namespace Mantids30::Program;
@@ -24,10 +24,9 @@ void AdminPortal_Endpoints_AccountCredentials::addEndpoints_AccountCredentials(c
 API::APIReturn AdminPortal_Endpoints_AccountCredentials::getAccountCredentialSlots(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
-    Json::Value jResponse;
 
     // Extract and validate input
-    std::string accountUUID = Helpers::JSON::ASSTRING(*request.inputJSON, "accountUUID", "");
+    std::string accountUUID (Helpers::JSON::ASSTRING(*request.inputJSON, "accountUUID", ""));
 
     if (accountUUID.empty())
     {
@@ -40,23 +39,26 @@ API::APIReturn AdminPortal_Endpoints_AccountCredentials::getAccountCredentialSlo
     // Get account credential data
     std::map<uint32_t, Credential> accountCredentialsPublicData = Globals::getIdentityManager()->authController->getAccountAllCredentialsPublicData(accountUUID);
 
-    jResponse["slots"] = Json::arrayValue;
-    jResponse["currentAuthPolicy"] = Json::nullValue;
+    boost::json::object jResponse{
+        {"slots",             boost::json::array{}},
+        {"currentAuthPolicy", boost::json::value{}},
+    };
 
     for (const auto &slot : allSlots)
     {
-        Json::Value rSlot;
-        rSlot["slotId"] = slot.first;
-        rSlot["slotInfo"] = slot.second.toJSON();
-        rSlot["slotData"] = Json::nullValue;
-        if (accountCredentialsPublicData.find(slot.first) != accountCredentialsPublicData.end())
+        boost::json::object rSlot{
+            {"slotId",   slot.first},
+            {"slotInfo", slot.second.toJSON()},
+            {"slotData", boost::json::value{}},
+        };
+        if (auto it = accountCredentialsPublicData.find(slot.first); it != accountCredentialsPublicData.end())
         {
-            Credential slotData = accountCredentialsPublicData[slot.first];
+            Credential slotData = it->second;
             rSlot["slotData"] = slotData.toJSON(slotData.currentAuthPolicy);
             jResponse["currentAuthPolicy"] = slotData.currentAuthPolicy.toJSON();
         }
 
-        jResponse["slots"].append(rSlot);
+        Helpers::JSON::ARRAY_APPEND(jResponse["slots"].as_array(), rSlot);
     }
 
     return jResponse;
@@ -67,7 +69,7 @@ API::APIReturn AdminPortal_Endpoints_AccountCredentials::removeAccountCredential
     API::APIReturn response;
 
     // Extract and validate input
-    std::string accountUUID = Helpers::JSON::ASSTRING(*request.inputJSON, "accountUUID", "");
+    std::string accountUUID (Helpers::JSON::ASSTRING(*request.inputJSON, "accountUUID", ""));
     uint32_t slotId = Helpers::JSON::ASUINT(*request.inputJSON, "slotId", 0);
 
     if (accountUUID.empty())
@@ -86,7 +88,7 @@ API::APIReturn AdminPortal_Endpoints_AccountCredentials::removeAccountCredential
     }
 
     // Delete the credential slot for the account
-    if (!Globals::getIdentityManager()->authController->removeAccountCredential(authClientDetails, request.jwtToken->getSubject(), accountUUID, slotId))
+    if (!Globals::getIdentityManager()->authController->removeAccountCredential(authClientDetails,request.jwtToken->getSubject(), accountUUID, slotId))
     {
         return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to delete the credential slot"};
     }
@@ -99,7 +101,7 @@ API::APIReturn AdminPortal_Endpoints_AccountCredentials::setAccountCredentialLoc
     API::APIReturn response;
 
     // Extract and validate input
-    std::string accountUUID = Helpers::JSON::ASSTRING(*request.inputJSON, "accountUUID", "");
+    std::string accountUUID (Helpers::JSON::ASSTRING(*request.inputJSON, "accountUUID", ""));
     uint32_t slotId = Helpers::JSON::ASUINT(*request.inputJSON, "slotId", 0);
     bool lockedStatus = Helpers::JSON::ASBOOL(*request.inputJSON, "lockedStatus", false);
 
@@ -114,7 +116,7 @@ API::APIReturn AdminPortal_Endpoints_AccountCredentials::setAccountCredentialLoc
     }
 
     // Block the credential slot for the account
-    if (!Globals::getIdentityManager()->authController->setAccountCredentialLockedStatus(authClientDetails, request.jwtToken->getSubject(), accountUUID, slotId, lockedStatus))
+    if (!Globals::getIdentityManager()->authController->setAccountCredentialLockedStatus(authClientDetails,request.jwtToken->getSubject(), accountUUID, slotId, lockedStatus))
     {
         return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to set the lock state on the credential slot"};
     }
@@ -127,7 +129,7 @@ API::APIReturn AdminPortal_Endpoints_AccountCredentials::setMustChangeCredential
     API::APIReturn response;
 
     // Extract and validate input
-    std::string accountUUID = Helpers::JSON::ASSTRING(*request.inputJSON, "accountUUID", "");
+    std::string accountUUID (Helpers::JSON::ASSTRING(*request.inputJSON, "accountUUID", ""));
     uint32_t slotId = Helpers::JSON::ASUINT(*request.inputJSON, "slotId", 0);
     bool mustChange = Helpers::JSON::ASBOOL(*request.inputJSON, "mustChange", true);
 
@@ -142,7 +144,7 @@ API::APIReturn AdminPortal_Endpoints_AccountCredentials::setMustChangeCredential
     }
 
     // Force credential expiration for the account slot
-    if (!Globals::getIdentityManager()->authController->setAccountCredentialMustChange(authClientDetails, request.jwtToken->getSubject(), accountUUID, slotId, mustChange))
+    if (!Globals::getIdentityManager()->authController->setAccountCredentialMustChange(authClientDetails,request.jwtToken->getSubject(), accountUUID, slotId, mustChange))
     {
         return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to change credential flag to change"};
     }
@@ -155,7 +157,7 @@ API::APIReturn AdminPortal_Endpoints_AccountCredentials::generateMasterPassword(
     API::APIReturn response;
 
     // Extract and validate input
-    std::string accountUUID = Helpers::JSON::ASSTRING(*request.inputJSON, "accountUUID", "");
+    std::string accountUUID (Helpers::JSON::ASSTRING(*request.inputJSON, "accountUUID", ""));
 
     if (accountUUID.empty())
     {
@@ -164,13 +166,14 @@ API::APIReturn AdminPortal_Endpoints_AccountCredentials::generateMasterPassword(
 
     // Generate a new master password for the account
     std::string newTempPassword;
-    bool ok = Globals::getIdentityManager()->authController->recoverAccountMasterCredential(authClientDetails, request.jwtToken->getSubject(), accountUUID, &newTempPassword);
+    bool ok = Globals::getIdentityManager()->authController->recoverAccountMasterCredential(authClientDetails,request.jwtToken->getSubject(), accountUUID, &newTempPassword);
 
     if (!ok)
     {
         return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to generate new master password"};
     }
 
-    (*response.responseJSON())["password"] = newTempPassword;
-    return response;
+    return boost::json::value(boost::json::object{
+        {"password", newTempPassword},
+    });
 }

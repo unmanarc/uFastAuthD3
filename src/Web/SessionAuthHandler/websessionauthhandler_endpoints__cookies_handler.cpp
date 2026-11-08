@@ -1,9 +1,9 @@
 #include "websessionauthhandler_endpoints.h"
 #include <Mantids30/Helpers/json.h>
-#include <json/value.h>
+#include <Mantids30/DataFormat_JSON/json.h>
 
 #include <boost/algorithm/string/join.hpp>
-#include <json/config.h>
+#include <Mantids30/DataFormat_JSON/json.h>
 
 using namespace Mantids30;
 using namespace Mantids30::DataFormat;
@@ -16,7 +16,7 @@ void WebSessionAuthHandler_Endpoints::setupAccessTokenCookies(APIReturn &respons
     CookieProperties props;
     props.sessionCookie = true; // The access Token it's always a session cookie.
     props.expirationTime = accessToken.getExpirationTime(); // expire with the JWT token expiration.
-    props.path = Helpers::JSON::ASSTRING(tokenProps.tokensConfiguration["accessToken"], "path", "/");
+    props.path = Helpers::JSON::ASSTRING(Helpers::JSON::MEMBER_OR_NULL(tokenProps.tokensConfiguration, "accessToken"), "path", "/");
     setupCookie(response, "AccessToken", signApplicationToken(accessToken, tokenProps), props);
 }
 
@@ -29,24 +29,25 @@ void WebSessionAuthHandler_Endpoints::setupRefreshTokenCookies(APIReturn &respon
     // Si recibi mantenerme autenticado, entonces el refresh token no es de sesión.
     props.sessionCookie = !keepAuthenticated;
     props.expirationTime = refreshToken.getExpirationTime(); // expire with the JWT token expiration.
-    props.path = Helpers::JSON::ASSTRING(tokenProps.tokensConfiguration["refreshToken"], "path", "/auth");
+    props.path = Helpers::JSON::ASSTRING(Helpers::JSON::MEMBER_OR_NULL(tokenProps.tokensConfiguration, "refreshToken"), "path", "/auth");
     setupCookie(response, "RefreshToken", signApplicationToken(refreshToken, tokenProps), props);
 
     CookieProperties propsForCORSPublicData;
     propsForCORSPublicData.sessionCookie = !keepAuthenticated;
     propsForCORSPublicData.expirationTime = refreshToken.getExpirationTime(); // expire with the JWT token expiration.
-    propsForCORSPublicData.path = Helpers::JSON::ASSTRING(tokenProps.tokensConfiguration["refreshToken"], "path", "/auth");
+    propsForCORSPublicData.path = Helpers::JSON::ASSTRING(Helpers::JSON::MEMBER_OR_NULL(tokenProps.tokensConfiguration, "refreshToken"), "path", "/auth");
     propsForCORSPublicData.sameSitePolicy = Mantids30::Network::Protocol::HTTP::Headers::Cookie::SameSitePolicy::NONE;
 
     setupCookie(response, "RefreshTokenId", refreshToken.getJwtId(), propsForCORSPublicData);
 
     // Everyone can see if you are logged in and with what user (plus session metadata).
-    Json::Value sessionPublicData;
-    sessionPublicData["user"] = refreshToken.getSubject();
-    sessionPublicData["loginTime"] = refreshToken.getIssuedAt();
-    sessionPublicData["expirationTime"] = refreshToken.getExpirationTime();
-    sessionPublicData["keepAuthenticated"] = keepAuthenticated;
-    sessionPublicData["app"] = refreshToken.getClaim("app");
+    boost::json::object sessionPublicData{
+        {"user",             refreshToken.getSubject()},
+        {"loginTime",        refreshToken.getIssuedAt()},
+        {"expirationTime",   refreshToken.getExpirationTime()},
+        {"keepAuthenticated", keepAuthenticated},
+        {"app",              refreshToken.getClaim("app")},
+    };
 
     CookieProperties propsForLocalModeRead;
     propsForLocalModeRead.httpOnly = false;
@@ -55,12 +56,13 @@ void WebSessionAuthHandler_Endpoints::setupRefreshTokenCookies(APIReturn &respon
     propsForLocalModeRead.sessionCookie = !keepAuthenticated;
     propsForLocalModeRead.sameSitePolicy = Mantids30::Network::Protocol::HTTP::Headers::Cookie::SameSitePolicy::NONE;
     setupCookie(response, "SessionPublicData",
-        Mantids30::Helpers::Encoders::encodeToBase64(sessionPublicData.toStyledString()),
+        Mantids30::Helpers::Encoders::encodeToBase64(Helpers::JSON::toString(sessionPublicData)),
         propsForLocalModeRead);
 }
 
-void WebSessionAuthHandler_Endpoints::setupCookie(APIReturn &response, const std::string &name, const std::string &value, const CookieProperties &props)
+void WebSessionAuthHandler_Endpoints::setupCookie(APIReturn &response, const std::string_view &_name, const std::string_view &value, const CookieProperties &props)
 {
+    std::string name(_name);
     response.cookiesMap[name] = HTTP::Headers::Cookie();
     response.cookiesMap[name].setExpiration(props.expirationTime);
     response.cookiesMap[name].secure = props.secure;

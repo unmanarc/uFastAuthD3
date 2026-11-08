@@ -59,7 +59,7 @@ private:
     };
 
     static bool validateAndDecodeRefreshToken(const std::string &refreshTokenStr, RefreshTokenData &outData, std::string &outErrorMessage, std::string &outErrorType);
-    static void setupCookie(APIReturn &response, const std::string &name, const std::string &value, const CookieProperties &props);
+    static void setupCookie(APIReturn &response, const std::string_view &name, const std::string_view &value, const CookieProperties &props);
     static void setupMaxAgeCookie(APIReturn &response, const std::string &name, time_t expirationTime);
     static std::string signApplicationToken(JWT::Token &accessToken, const ApplicationAuthSettings &appAuthSettings);
 };
