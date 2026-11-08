@@ -30,7 +30,7 @@ struct AccountDetailFieldValue
 
     [[nodiscard]] boost::json::object toJSON() const
     {
-        boost::json::value fieldValue = value.has_value() ? boost::json::value(value.value()) : boost::json::value(boost::json::value{});
+        boost::json::value fieldValue = value.has_value() ? boost::json::value(value.value()) : boost::json::value{};
         return boost::json::object{
             {"extendedAttribs",   extendedAttribs},
             {"name",              name},

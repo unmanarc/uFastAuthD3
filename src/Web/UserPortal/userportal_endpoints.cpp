@@ -263,8 +263,8 @@ boost::json::value getLastLoginJSON(const RequestContext &request)
     std::string_view accountUUID = request.jwtToken->getSubject();
     IdentityManager::LastAccountAccessResult lastLoginOpt = Globals::getIdentityManager()->authController->getAccountLastAccess(accountUUID);
 
-    boost::json::value timestampValue = lastLoginOpt.lastAccess ? boost::json::value(static_cast<int64_t>(lastLoginOpt.lastAccess.value().time)) : boost::json::value(boost::json::value{});
-    boost::json::value appNameValue = lastLoginOpt.lastAccess ? boost::json::value(lastLoginOpt.lastAccess.value().app) : boost::json::value(boost::json::value{});
+    boost::json::value timestampValue = lastLoginOpt.lastAccess ? boost::json::value(static_cast<int64_t>(lastLoginOpt.lastAccess.value().time)) : boost::json::value{};
+    boost::json::value appNameValue = lastLoginOpt.lastAccess ? boost::json::value(lastLoginOpt.lastAccess.value().app) : boost::json::value{};
 
     return boost::json::object{
         {"timestamp", timestampValue},
