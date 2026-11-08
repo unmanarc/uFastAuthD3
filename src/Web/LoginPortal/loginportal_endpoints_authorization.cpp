@@ -8,7 +8,6 @@
 
 #include "globals.h"
 
-#include <Mantids30/DataFormat_JSON/json.h>
 #include <cinttypes>
 #include <cstdint>
 #include <memory>

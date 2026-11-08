@@ -31,7 +31,10 @@ public:
     static APIReturn activateOTP(void *context, const RequestContext &request, ClientDetails &clientDetails);
     static APIReturn removeCredential(void *context, const RequestContext &request, ClientDetails &clientDetails);
     static APIReturn createChallengeToken(void *context, const RequestContext &request, ClientDetails &clientDetails);
-    static APIReturn changeCredential(void *context, const RequestContext &request, ClientDetails &clientDetails);
+    static void extracted();
+    static APIReturn changeCredential(void *context,
+                                      const RequestContext &request,
+                                      ClientDetails &clientDetails);
 
     /**
      * @brief Returns the last login time for the authenticated user.

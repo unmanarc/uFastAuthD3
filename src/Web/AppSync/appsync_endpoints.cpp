@@ -159,7 +159,7 @@ void AppSync_Endpoints::updateAppRoles(const std::string &appName, const std::st
         std::set<std::string> proposedScopeIds;
         for (const boost::json::value &scope : roleScopes)
         {
-            std::string scopeId(Mantids30::Helpers::JSON::ASSTRING(scope, "id", ""));
+            std::string scopeId(Mantids30::Helpers::JSON::ASSTRING_D(scope, ""));
             if (!scopeId.empty())
             {
                 proposedScopeIds.insert(scopeId);
