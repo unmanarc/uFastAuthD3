@@ -53,16 +53,10 @@ include_directories(${SQLITE3_INCLUDE_DIRS})
 link_directories(${SQLITE3_LIBRARY_DIRS})
 target_link_libraries(${APP_NAME} ${SQLITE3_LIBRARIES})
 
-################################################################################
-# Find jsoncpp
-pkg_check_modules(JSONCPP REQUIRED jsoncpp)
-include_directories(${JSONCPP_INCLUDE_DIRS})
-link_directories(${JSONCPP_LIBRARY_DIRS})
-target_link_libraries(${APP_NAME} ${JSONCPP_LIBRARIES})
 
 ################################################################################
 # Boost Packages:
-find_package(Boost REQUIRED COMPONENTS regex thread)
+find_package(Boost REQUIRED COMPONENTS regex thread json)
 include_directories(${Boost_INCLUDE_DIRS})
 target_link_libraries(${APP_NAME} ${Boost_LIBRARIES})
 
@@ -97,6 +91,7 @@ set(Mantids30_LIBRARIES
     Mantids30_Scripts_JSONExprEval
     Mantids30_Scripts_MantidsLang
     Mantids30_DataFormat_JWT
+    Mantids30_DataFormat_JSON
     Mantids30_Config_REST
     Mantids30_Config_JWT
     Mantids30_Config_Logs

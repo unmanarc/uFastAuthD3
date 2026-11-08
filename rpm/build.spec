@@ -34,7 +34,7 @@ Group:          Applications/Internet
 %endif
 
 BuildRequires: libMantids-devel >= 2.8.0
-BuildRequires: %{cmake} systemd libMantids-sqlite zlib-devel boost-devel gcc-c++ jsoncpp-devel sqlite-devel
+BuildRequires: %{cmake} systemd libMantids-sqlite zlib-devel boost-devel gcc-c++ sqlite-devel
 %if 0%{?rhel} == 7
 BuildRequires:  openssl11-devel
 %else
@@ -43,7 +43,7 @@ BuildRequires:  openssl-devel
 
 
 Requires: libMantids >= 2.8.0
-Requires: libMantids-sqlite zlib boost-regex jsoncpp sqlite
+Requires: libMantids-sqlite zlib boost-regex sqlite
 
 %if 0%{?rhel} == 7
 Requires:       openssl11
