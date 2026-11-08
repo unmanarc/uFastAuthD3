@@ -1,4 +1,7 @@
 <script>
+    // Tracks whether the account field modal is being used to create or to edit a field.
+    let accountFieldModalMode = 'create';
+
     function updateFieldTypeIcon() {
         var fieldType = document.getElementById("fieldType").value;
         var icon = document.getElementById("fieldTypeIcon");
@@ -43,6 +46,9 @@
     }
 
     function createAccountFieldClearParameters() {
+        // Reset modal mode to "create"
+        accountFieldModalMode = 'create';
+
         // Reset text inputs
         document.getElementById("fieldName").value = "";
         document.getElementById("fieldName").readOnly = false;
@@ -87,14 +93,9 @@
         document.getElementById("modalCreateAccountFieldLabel").innerText = "Create Accounts Field";
 
         // Change button text to "Create Field"
-        const createButton = document.querySelector('#modalCreateAccountField .bfsuccess btn-primary');
+        const createButton = document.getElementById("modalCreateAccountFieldSubmit");
         if (createButton) {
             createButton.innerText = "Create Field";
-            createButton.onclick = function () {
-                // Custom logic for creating the field can be added here
-                // For now, we'll just call the existing ajaxCreateAccountField function
-                ajaxCreateAccountField();
-            };
         }
     }
 
@@ -110,8 +111,13 @@
             }),
             error: commonFunctionError,
             success: function (response, textStatus, xhr) {
-                var myModal = new bootstrap.Modal(document.getElementById("modalCreateAccountField"));
-                myModal.show();
+                // Switch the modal to "edit" mode BEFORE showing it, so the submit button
+                // is already bound to the update action when the user clicks it.
+                accountFieldModalMode = 'edit';
+
+                // Use the jQuery plugin (same instance the data-bs-toggle create button uses)
+                // so a single Bootstrap modal instance manages both the create and edit paths.
+                $('#modalCreateAccountField').modal('show');
 
                 // Populate form fields with response data
                 document.getElementById("fieldName").value = fieldName;
@@ -147,19 +153,28 @@
                 document.getElementById("modalCreateAccountFieldLabel").innerText = "Edit Accounts Field";
 
                 // Change button text to "Update Field"
-                const updateButton = document.querySelector('#modalCreateAccountField .bfsuccess btn-primary');
+                const updateButton = document.getElementById("modalCreateAccountFieldSubmit");
                 if (updateButton) {
                     updateButton.innerText = "Update Field";
-                    updateButton.onclick = function () {
-
-                        showYesNoHTMLDialog("<b>WARNING:</b> Updating this field will not verify the data already stored in the database against the new parameters. Existing data may become invalid or incompatible with the updated field settings.<br><br>Do you still want to update?", 
-                        function (result) {
-                            ajaxCreateAccountField(true);
-                        });
-                    };
                 }
             }
         });
+    }
+
+    // Submit handler for the account field modal. Dispatches to the create or update
+    // action based on accountFieldModalMode. In edit mode a confirmation dialog is
+    // shown first, since changing field settings may make stored data incompatible.
+    function modalCreateAccountFieldSubmit() {
+        if (accountFieldModalMode === 'edit') {
+            showYesNoHTMLDialog("<b>WARNING:</b> Updating this field will not verify the data already stored in the database against the new parameters. Existing data may become invalid or incompatible with the updated field settings.<br><br>Do you still want to update?",
+            function (result) {
+                if (result) {
+                    ajaxCreateAccountField(true);
+                }
+            });
+        } else {
+            ajaxCreateAccountField(false);
+        }
     }
 
     function ajaxCreateAccountField(isUpdate = false) {
@@ -210,20 +225,35 @@
                 }
             }),
             success: function (response, textStatus, xhr) {
-                $('#modalCreateAccountField').modal('hide');
-
-                // Refresh the DataTable after successful field creation/update
-                var table = new DataTable('#fieldsTable');
-                table.ajax.reload();
+                // Refresh the fields table right after a successful create/update
+                $('#fieldsTable').DataTable().ajax.reload(null, false);
 
                 // Show appropriate success message
                 showTextToastSuccess(isUpdate
                     ? "Field updated successfully."
                     : "Field created successfully.");
+
+                // Close the modal (it may still be open, e.g. when the confirmation
+                // dialog was dismissed and reopened).
+                $('#modalCreateAccountField').modal('hide');
             },
             error: commonFunctionError
         });
     }
+
+    // Safety-net handler for the account field modal:
+    // - Removes any orphaned backdrop left behind (which would block the whole page),
+    // - Resets the modal mode flag so the next open always starts clean,
+    // - Reloads the fields table so create/update/delete are always reflected.
+    $('#modalCreateAccountField').on('hidden.bs.modal', function () {
+        $('.modal-backdrop').removeClass('show').remove();
+        accountFieldModalMode = 'create';
+        try {
+            $('#fieldsTable').DataTable().ajax.reload(null, false);
+        } catch (e) {
+            // Table may not be initialized yet; ignore.
+        }
+    });
 </script>
 
 <div class="modal fade" id="modalCreateAccountField" data-bs-backdrop="static" data-bs-keyboard="true" tabindex="-1"
@@ -329,7 +359,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <button type="button" class="btn bfsuccess btn-primary" onclick="javascript:ajaxCreateAccountField()">Create
+                <button type="button" id="modalCreateAccountFieldSubmit" class="btn bfsuccess btn-primary" onclick="modalCreateAccountFieldSubmit()">Create
                     Field</button>
             </div>
         </div>
