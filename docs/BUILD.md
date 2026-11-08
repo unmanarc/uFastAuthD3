@@ -17,8 +17,7 @@ This guide provides detailed instructions for building and installing uFastAuthD
 - **libMantids30** (development and SQLite packages)
 - **SQLite3** (development headers)
 - **OpenSSL** (development headers)
-- **jsoncpp** (development headers)
-- **Boost** (regex, thread components)
+- **Boost** (regex, thread and json components)
 - **pthread**
 - **zlib** (development headers)
 
@@ -35,12 +34,12 @@ This guide provides detailed instructions for building and installing uFastAuthD
 
 **Debian/Ubuntu:**
 ```bash
-sudo apt-get install build-essential cmake libsqlite3-dev libssl-dev libjsoncpp-dev libboost-dev libboost-regex-dev libboost-thread-dev zlib1g-dev pkg-config
+sudo apt-get install build-essential cmake libsqlite3-dev libssl-dev libboost-dev libboost-regex-dev libboost-thread-dev zlib1g-dev pkg-config
 ```
 
 **Red Hat/CentOS/Fedora:**
 ```bash
-sudo yum install gcc-c++ cmake sqlite-devel openssl-devel jsoncpp-devel boost-devel zlib-devel pkg-config
+sudo yum install gcc-c++ cmake sqlite-devel openssl-devel boost-devel zlib-devel pkg-config
 ```
 
 ### Step 2: Clone and Build
