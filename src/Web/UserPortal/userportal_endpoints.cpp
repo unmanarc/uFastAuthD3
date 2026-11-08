@@ -40,7 +40,8 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::changeCredential(void *con
     API::APIReturn response;
     std::string challengeTokenSignedStr = request.clientRequest->getCookie("ChallengeToken");
     JWT::Token challengeToken;
-    bool tokenVerified = request.jwtValidator->verify(challengeTokenSignedStr, &challengeToken);
+    JWT::VerifyError verifyError = JWT::VerifyError::NONE;
+    bool tokenVerified = request.jwtValidator->verify(challengeTokenSignedStr, &challengeToken, &verifyError);
     bool appMatches = challengeToken.getClaim("app") == request.jwtToken->getClaim("app");
     bool typeIsChallenge = challengeToken.getClaim("type") == "challenge";
 
@@ -48,6 +49,12 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::changeCredential(void *con
     {
         if (!tokenVerified)
         {
+            LOG_APP->log2(__func__,
+                          std::string(std::string_view(request.jwtToken->getClaim("app").as_string())),
+                          clientDetails.ipAddress,
+                          Logs::LogLevel::SECURITY_ALERT,
+                          "Challenge Token verification failed. Reason: %s",
+                          Mantids30::DataFormat::JWT::verifyErrorToString(verifyError).c_str());
             return {HTTP::Status::Code::S_401_UNAUTHORIZED, "change_credential_failed", "Challenge Token Expired or Invalid, Try Again."};
         }
         else if (!appMatches)

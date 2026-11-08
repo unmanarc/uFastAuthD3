@@ -192,10 +192,13 @@ bool WebSessionAuthHandler_Endpoints::validateAndDecodeRefreshToken(const std::s
     }
 
     JWT::Token refreshTokenVerified;
-    if (!validator->verify(refreshTokenStr, &refreshTokenVerified))
+    JWT::VerifyError verifyError = JWT::VerifyError::NONE;
+    if (!validator->verify(refreshTokenStr, &refreshTokenVerified, &verifyError))
     {
         outErrorMessage = "Failed to verify refresh token.";
         outErrorType = "invalid_token";
+        LOG_APP->log1(__func__, "", Logs::LogLevel::SECURITY_ALERT, "Refresh Token verification failed for app %s. Reason: %s",
+                      refreshTokenApp.c_str(), Mantids30::DataFormat::JWT::verifyErrorToString(verifyError).c_str());
         return false;
     }
 

@@ -34,9 +34,11 @@ bool JWTDynamicTokenValidatorFunction(const std::string &accessTokenStr, std::st
     ApplicationAuthSettings tokenProps = identityManager->applications->getAuthSettingsFromApplication(appNameStr);
     std::shared_ptr<Mantids30::DataFormat::JWT> validator = identityManager->applications->getAppJWTValidator(appNameStr);
 
-    if (!validator->verify(accessTokenStr, accessToken))
+    Mantids30::DataFormat::JWT::VerifyError verifyError = Mantids30::DataFormat::JWT::VerifyError::NONE;
+    if (!validator->verify(accessTokenStr, accessToken, &verifyError))
     {
-        LOG_APP->log1(__func__, "", Logs::LogLevel::SECURITY_ALERT, "Invalid Signature for JWT Token at app %s.", appNameStr.c_str());
+        LOG_APP->log1(__func__, "", Logs::LogLevel::SECURITY_ALERT, "Invalid Signature for JWT Token at app %s. Reason: %s",
+                      appNameStr.c_str(), Mantids30::DataFormat::JWT::verifyErrorToString(verifyError).c_str());
         return false;
     }
 

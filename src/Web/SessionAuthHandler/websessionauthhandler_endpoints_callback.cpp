@@ -5,7 +5,6 @@
 #include <Mantids30/DataFormat_JSON/json.h>
 
 #include <boost/algorithm/string/join.hpp>
-#include <Mantids30/DataFormat_JSON/json.h>
 
 #include "globals.h"
 
@@ -66,21 +65,25 @@ API::APIReturn WebSessionAuthHandler_Endpoints::callback(void *context, const Re
     std::shared_ptr<JWT> validator = identityManager->applications->getAppJWTValidator(appNameStr);
 
     JWT::Token accessToken, refreshToken;
+    JWT::VerifyError accessTokenError = JWT::VerifyError::NONE;
+    JWT::VerifyError refreshTokenError = JWT::VerifyError::NONE;
 
     // Verify that the tokens are valid, if not, don't return the tokens.
-    bool accessTokenValid = validator->verify(accessTokenStr, &accessToken);
-    bool refreshTokenValid = validator->verify(refreshTokenStr, &refreshToken);
+    bool accessTokenValid = validator->verify(accessTokenStr, &accessToken, &accessTokenError);
+    bool refreshTokenValid = validator->verify(refreshTokenStr, &refreshToken, &refreshTokenError);
 
     if (!accessTokenValid || !refreshTokenValid)
     {
         std::string logMessage = "Invalid JWT token(s) provided.";
         if (!accessTokenValid)
         {
-            logMessage += " Access Token verification failed.";
+            logMessage += " Access Token verification failed: ";
+            logMessage += Mantids30::DataFormat::JWT::verifyErrorToString(accessTokenError);
         }
         if (!refreshTokenValid)
         {
-            logMessage += " Refresh Token verification failed.";
+            logMessage += " Refresh Token verification failed: ";
+            logMessage += Mantids30::DataFormat::JWT::verifyErrorToString(refreshTokenError);
         }
 
         LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LogLevel::SECURITY_ALERT, logMessage.c_str());
