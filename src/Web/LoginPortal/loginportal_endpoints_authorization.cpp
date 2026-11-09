@@ -24,7 +24,7 @@ using namespace Mantids30::DataFormat;
 API::APIReturn LoginPortal_Endpoints::preAuthorize(void *context, const API::RESTful::RequestContext &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
-    boost::json::value r;
+    boost::json::value result;
     // Environment:
     IdentityManager *identityManager = Globals::getIdentityManager();
     std::shared_ptr<TransientAuthenticationContext> authContext = std::make_shared<TransientAuthenticationContext>();
@@ -84,22 +84,22 @@ API::APIReturn LoginPortal_Endpoints::preAuthorize(void *context, const API::RES
 
     if (activityName == "LOGIN")
     {
-        r = identityManager->authController->getApplicableAuthenticationSchemesForAccount(IAM_LOGINPORTAL_APPNAME, activityName, accountUUID, authContext->authenticatedSlots);
+        result = identityManager->authController->getApplicableAuthenticationSchemesForAccount(IAM_LOGINPORTAL_APPNAME, activityName, accountUUID, authContext->authenticatedSlots);
     }
     else
     { // Activity from the application.
-        r = identityManager->authController->getApplicableAuthenticationSchemesForAccount(appName, activityName, accountUUID, authContext->authenticatedSlots);
+        result = identityManager->authController->getApplicableAuthenticationSchemesForAccount(appName, activityName, accountUUID, authContext->authenticatedSlots);
     }
 
-    if (r.as_object()["defaultScheme"] == boost::json::value{})
+    if (result.as_object()["defaultScheme"] == boost::json::value{})
     {
         // Member not found.
         return {HTTP::Status::Code::S_404_NOT_FOUND, "not_found", "There is no Authentication Scheme Available."};
     }
 
-    r.as_object()["loginAuthenticationTimeout"] = loginAuthenticationTimeout;
+    result.as_object()["loginAuthenticationTimeout"] = loginAuthenticationTimeout;
 
-    response = API::APIReturn(r);
+    response = API::APIReturn(result);
     response.cookiesMap["LPToken"].deleteCookie();
     return response;
 }

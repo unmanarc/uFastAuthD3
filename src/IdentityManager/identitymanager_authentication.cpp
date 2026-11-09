@@ -12,12 +12,12 @@ using namespace Mantids30;
 
 boost::json::array IdentityManager::AuthController::authSlotsToJSON(const std::vector<AuthenticationSchemeUsedSlot> &authSlots)
 {
-    boost::json::array r;
+    boost::json::array result;
     for (const AuthenticationSchemeUsedSlot &slot : authSlots)
     {
-        r.push_back(slot.toJSON());
+        result.push_back(slot.toJSON());
     }
-    return r;
+    return result;
 }
 void IdentityManager::AuthController::updateCredentialAuthStatus(const AuthenticationResult &authResult, std::string_view accountUUID, const Credential &storedCredentialData, const uint32_t &slotId,
                                                                  const ClientDetails &clientDetails)
@@ -208,7 +208,7 @@ std::map<uint32_t, Credential> IdentityManager::AuthController::getAccountAllCre
 {
     // TODO: this function can only be accessed if the user has been authenticated...
     std::shared_lock<std::shared_mutex> lock(m_parent->m_mutex);
-    std::map<uint32_t, Credential> r;
+    std::map<uint32_t, Credential> result;
     std::set<uint32_t> slotIdsUsedByAccount = listUsedAuthenticationSlotsOnAccount(accountUUID);
     for (const uint32_t slotId : slotIdsUsedByAccount)
     {
@@ -216,10 +216,10 @@ std::map<uint32_t, Credential> IdentityManager::AuthController::getAccountAllCre
         Credential credential = retrieveAccountCredential(accountUUID, slotId, &accountFound, &authSlotFound);
         if (accountFound && authSlotFound)
         {
-            r[slotId] = credential.getPublicData(m_authenticationPolicy);
+            result[slotId] = credential.getPublicData(m_authenticationPolicy);
         }
     }
-    return r;
+    return result;
 }
 
 // TODO: this can only be called when authenticated.
@@ -336,14 +336,14 @@ bool IdentityManager::AuthController::setAccountPasswordOnScheme(const ClientDet
         credentialData = m_parent->authController->createNewCredential(authSlots.begin()->slotId, newPass, true);
     }
 
-    bool r = m_parent->authController->changeAccountCredential(clientDetails, performedBy, accountUUID, credentialData, authSlots.begin()->slotId);
+    bool result = m_parent->authController->changeAccountCredential(clientDetails, performedBy, accountUUID, credentialData, authSlots.begin()->slotId);
 
-    if (r)
+    if (result)
     {
         *sInitPW = newPass;
     }
 
-    return r;
+    return result;
 
     /*
             &&
@@ -367,56 +367,56 @@ bool IdentityManager::AuthController::setAccountPasswordOnScheme(const ClientDet
 
 Credential IdentityManager::AuthController::createNewCredential(const uint32_t &slotId, std::string_view passwordInput, bool mustChange)
 {
-    Credential r;
+    Credential result;
 
     std::map<uint32_t, AuthenticationSlotDetails> authSlots = listAllAuthenticationSlots();
 
     if (authSlots.find(slotId) == authSlots.end())
     {
-        return r;
+        return result;
     }
 
-    r.slotDetails = authSlots[slotId];
-    r.mustChange = mustChange;
-    r.expirationTimestamp = time(nullptr) + r.slotDetails.defaultExpirationSeconds;
+    result.slotDetails = authSlots[slotId];
+    result.mustChange = mustChange;
+    result.expirationTimestamp = time(nullptr) + result.slotDetails.defaultExpirationSeconds;
 
-    if (r.slotDetails.passwordFunction.has_value())
+    if (result.slotDetails.passwordFunction.has_value())
     {
-        switch (static_cast<HashFunction>(r.slotDetails.passwordFunction.value()))
+        switch (static_cast<HashFunction>(result.slotDetails.passwordFunction.value()))
         {
         case HashFunction::PLAIN:
         {
-            r.hash = passwordInput;
+            result.hash = passwordInput;
         }
         break;
         case HashFunction::SHA256:
         {
-            r.hash = Helpers::Crypto::calcSHA256(passwordInput);
+            result.hash = Helpers::Crypto::calcSHA256(passwordInput);
         }
         break;
         case HashFunction::SHA512:
         {
-            r.hash = Helpers::Crypto::calcSHA512(passwordInput);
+            result.hash = Helpers::Crypto::calcSHA512(passwordInput);
         }
         break;
         case HashFunction::SSHA256:
         {
-            Mantids30::Helpers::Random::createRandomSalt32(r.ssalt);
-            r.hash = Helpers::Crypto::calcSSHA256(passwordInput, r.ssalt);
+            Mantids30::Helpers::Random::createRandomSalt32(result.ssalt);
+            result.hash = Helpers::Crypto::calcSSHA256(passwordInput, result.ssalt);
         }
         break;
         case HashFunction::SSHA512:
         {
-            Mantids30::Helpers::Random::createRandomSalt32(r.ssalt);
-            r.hash = Helpers::Crypto::calcSSHA512(passwordInput, r.ssalt);
+            Mantids30::Helpers::Random::createRandomSalt32(result.ssalt);
+            result.hash = Helpers::Crypto::calcSSHA512(passwordInput, result.ssalt);
         }
         break;
         case HashFunction::GAUTHTIME:
-            r.hash = passwordInput;
+            result.hash = passwordInput;
         }
     }
 
-    return r;
+    return result;
 }
 
 boost::json::value IdentityManager::AuthController::getApplicableAuthenticationSchemesForAccount(std::string_view app, std::string_view activity, std::string_view accountUUID,
@@ -425,7 +425,7 @@ boost::json::value IdentityManager::AuthController::getApplicableAuthenticationS
     std::shared_lock<std::shared_mutex> lock(m_parent->m_mutex);
 
     // Initialize the result JSON
-    boost::json::object r{
+    boost::json::object result{
         {"defaultScheme",    boost::json::value{}},
         {"availableSchemes", boost::json::object{}},
     };
@@ -442,7 +442,7 @@ boost::json::value IdentityManager::AuthController::getApplicableAuthenticationS
         if (defaultSchemeId.has_value())
         {
             std::vector<AuthenticationSchemeUsedSlot> slots = listAuthenticationSlotsUsedByScheme(*defaultSchemeId);
-            r["defaultScheme"] = std::to_string(*defaultSchemeId);
+            result["defaultScheme"] = std::to_string(*defaultSchemeId);
 
             // Create the scheme as a properly structured object
             boost::json::object currentScheme{
@@ -455,9 +455,9 @@ boost::json::value IdentityManager::AuthController::getApplicableAuthenticationS
                 currentScheme["firstSlot"] = slots.begin()->toJSON();
             }
 
-            r["availableSchemes"].as_object()[std::to_string(*defaultSchemeId)] = currentScheme;
+            result["availableSchemes"].as_object()[std::to_string(*defaultSchemeId)] = currentScheme;
         }
-        return r;
+        return result;
     }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -507,22 +507,22 @@ boost::json::value IdentityManager::AuthController::getApplicableAuthenticationS
                 {"firstSlot",   firstSlot},
             };
 
-            r["availableSchemes"].as_object()[std::to_string(schemeId)] = currentScheme;
+            result["availableSchemes"].as_object()[std::to_string(schemeId)] = currentScheme;
 
             // Put the default scheme OR if you found something without slot ids (already authenticated), go with it.
-            if ((defaultScheme.has_value() && schemeId == *defaultScheme && r["defaultScheme"] == boost::json::value{}) || firstSlot == boost::json::value{})
+            if ((defaultScheme.has_value() && schemeId == *defaultScheme && result["defaultScheme"] == boost::json::value{}) || firstSlot == boost::json::value{})
             {
-                r["defaultScheme"] = std::to_string(schemeId);
+                result["defaultScheme"] = std::to_string(schemeId);
             }
         }
     }
-    return r;
+    return result;
 }
 
 std::optional<uint32_t> IdentityManager::AuthController::initializateDefaultPasswordSchemes(bool *defaultPasswordSchemesExist)
 {
     uint32_t schemeId, authSlotId;
-    bool r = true;
+    bool result = true;
     ClientDetails clientDetails;
     const std::string performedBy;
 
@@ -530,20 +530,20 @@ std::optional<uint32_t> IdentityManager::AuthController::initializateDefaultPass
 
     if (authSchemes.empty())
     {
-        if (r)
+        if (result)
         {
             std::optional<uint32_t> opt_asi = createAuthenticationSlot(clientDetails, performedBy,
                                                                        AuthenticationSlotDetails("Master Password", HashFunction::SHA256, "", 3600 * 24 * 365 * 1, 0, false));
-            if ((r = opt_asi.has_value()))
+            if ((result = opt_asi.has_value()))
             {
                 authSlotId = *opt_asi;
             }
         }
 
-        if (r)
+        if (result)
         {
             std::optional<uint32_t> opt_sid = createAuthenticationScheme(clientDetails, performedBy, "Simple Password Login");
-            if ((r = opt_sid.has_value()))
+            if ((result = opt_sid.has_value()))
             {
                 schemeId = *opt_sid;
             }
@@ -551,11 +551,11 @@ std::optional<uint32_t> IdentityManager::AuthController::initializateDefaultPass
 
         updateDefaultAuthScheme(clientDetails, performedBy, schemeId);
 
-        r = r && updateAuthenticationSlotUsedByScheme(clientDetails, performedBy, schemeId, {AuthenticationSchemeUsedSlot(authSlotId, 0, false)});
+        result = result && updateAuthenticationSlotUsedByScheme(clientDetails, performedBy, schemeId, {AuthenticationSchemeUsedSlot(authSlotId, 0, false)});
 
         *defaultPasswordSchemesExist = false;
 
-        if (!r)
+        if (!result)
         {
             return std::nullopt;
         }

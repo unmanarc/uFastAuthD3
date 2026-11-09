@@ -44,19 +44,19 @@ bool IdentityManager::AuthController::recoverAccountMasterCredential(const Clien
         credentialData = m_parent->authController->createNewCredential(authSlots.begin()->first, newPass, true);
     }
 
-    bool r = m_parent->authController->changeAccountCredential(clientDetails, performedBy, accountUUID, credentialData, authSlots.begin()->first);
+    bool result = m_parent->authController->changeAccountCredential(clientDetails, performedBy, accountUUID, credentialData, authSlots.begin()->first);
 
-    if (r)
+    if (result)
     {
         *sInitPW = newPass;
     }
 
-    return r;
+    return result;
 }
 
 Credential IdentityManager_DB::AuthController_DB::retrieveAccountCredential(std::string_view accountUUID, const uint32_t &slotId, bool *accountFound, bool *authSlotFound)
 {
-    Credential ret;
+    Credential result;
     *authSlotFound = false;
     *accountFound = false;
 
@@ -71,19 +71,19 @@ Credential IdentityManager_DB::AuthController_DB::retrieveAccountCredential(std:
 
     if (!*accountFound)
     {
-        return ret;
+        return result;
     }
 
     std::map<uint32_t, AuthenticationSlotDetails> authSlots = listAllAuthenticationSlots();
 
     if (authSlots.find(slotId) != authSlots.end())
     {
-        ret.slotDetails = authSlots[slotId];
+        result.slotDetails = authSlots[slotId];
     }
     else
     {
         // Bad...
-        return ret;
+        return result;
     }
 
     if (_parent->m_sqlConnector->qSelectSingleRow(R"(SELECT `mustChange`,`expiration`,`badAttempts`,`salt`,`hash`,`lastChange`,`isLocked`
@@ -94,20 +94,20 @@ Credential IdentityManager_DB::AuthController_DB::retrieveAccountCredential(std:
                                                   {&mustChange, &expiration, &badAttempts, &salt, &hash, &lastChange, &isLocked}))
     {
         *authSlotFound = true;
-        ret.isLocked = isLocked.getValue();
-        ret.lastChange = lastChange.getValue();
-        ret.mustChange = mustChange.getValue();
-        ret.expirationTimestamp = expiration.getValue();
-        ret.badAttempts = badAttempts.getValue();
-        Mantids30::Helpers::Encoders::fromHex(salt.getValue(), ret.ssalt, 4);
-        ret.hash = hash.getValue();
+        result.isLocked = isLocked.getValue();
+        result.lastChange = lastChange.getValue();
+        result.mustChange = mustChange.getValue();
+        result.expirationTimestamp = expiration.getValue();
+        result.badAttempts = badAttempts.getValue();
+        Mantids30::Helpers::Encoders::fromHex(salt.getValue(), result.ssalt, 4);
+        result.hash = hash.getValue();
     }
-    return ret;
+    return result;
 }
 
 boost::json::value IdentityManager_DB::AuthController_DB::searchAccountCredentialsActivity(std::string_view accountUUID, const boost::json::value &dataTablesFilters)
 {
-    boost::json::object ret{
+    boost::json::object result{
         {"data", boost::json::array{}},
         {"draw", Mantids30::Helpers::JSON::MEMBER_OR_NULL(dataTablesFilters, "draw")},
     };
@@ -158,16 +158,16 @@ boost::json::value IdentityManager_DB::AuthController_DB::searchAccountCredentia
                 {"logStatus",     logStatus.getValue()},
             };
 
-            ret["data"].as_array().push_back(row);
+            result["data"].as_array().push_back(row);
         }
 
         if (i)
         {
-            ret["recordsTotal"] = i->getTotalRecordsCount();
-            ret["recordsFiltered"] = i->getFilteredRecordsCount();
+            result["recordsTotal"] = i->getTotalRecordsCount();
+            result["recordsFiltered"] = i->getFilteredRecordsCount();
         }
     }
-    return ret;
+    return result;
 }
 
 std::pair<uint32_t, uint32_t> IdentityManager_DB::AuthController_DB::getAccountActiveCredentialsCount(std::string_view accountUUID)
@@ -195,7 +195,7 @@ std::pair<uint32_t, uint32_t> IdentityManager_DB::AuthController_DB::getAccountA
 
 std::set<uint32_t> IdentityManager_DB::AuthController_DB::listUsedAuthenticationSlotsOnAccount(std::string_view accountUUID)
 {
-    std::set<uint32_t> r;
+    std::set<uint32_t> result;
     std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
 
     Abstract::UINT32 slotId;
@@ -204,16 +204,16 @@ std::set<uint32_t> IdentityManager_DB::AuthController_DB::listUsedAuthentication
 
     while (i && i->isSuccessful() && i->step())
     {
-        r.insert(slotId.getValue());
+        result.insert(slotId.getValue());
     }
 
-    return r;
+    return result;
 }
 
 std::map<uint32_t, std::pair<bool, Credential>> IdentityManager_DB::AuthController_DB::listAllAuthCredentialSlotsPublicDataForAccount(std::string_view accountUUID)
 {
     std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
-    std::map<uint32_t, std::pair<bool, Credential>> r;
+    std::map<uint32_t, std::pair<bool, Credential>> result;
 
     // Get all authentication slots and configured slots.
     std::map<uint32_t, AuthenticationSlotDetails> allAuthSlots = listAllAuthenticationSlots();
@@ -235,7 +235,7 @@ std::map<uint32_t, std::pair<bool, Credential>> IdentityManager_DB::AuthControll
                 // UNEXPECTED ERROR!.
                 return {};
             }
-            r[id] = std::make_pair(true, cred.getPublicData(m_authenticationPolicy));
+            result[id] = std::make_pair(true, cred.getPublicData(m_authenticationPolicy));
         }
         else
         {
@@ -243,11 +243,11 @@ std::map<uint32_t, std::pair<bool, Credential>> IdentityManager_DB::AuthControll
             // we deliver only the slot details instead.
             Credential cred;
             cred.slotDetails = slotDetails;
-            r[id] = std::make_pair(false, cred);
+            result[id] = std::make_pair(false, cred);
         }
     }
 
-    return r;
+    return result;
 }
 
 bool IdentityManager_DB::AuthController_DB::doesCredentialSlotExistOnAccount(std::string_view accountUUID, uint32_t slotId)

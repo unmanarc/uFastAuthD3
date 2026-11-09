@@ -198,10 +198,10 @@ bool IdentityManager_DB::Accounts_DB::removeAccount(const ClientDetails &clientD
 
 bool IdentityManager_DB::Accounts_DB::doesAccountExist(std::string_view accountUUID)
 {
-    bool ret = false;
+    bool result = false;
     std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
-    ret = _parent->m_sqlConnector->qSelectSingleRow("SELECT `isEnabled` FROM iam.accounts WHERE `accountUUID`=:accountUUID LIMIT 1;", {{":accountUUID", MAKE_VAR(STRING, accountUUID)}}, {});
-    return ret;
+    result = _parent->m_sqlConnector->qSelectSingleRow("SELECT `isEnabled` FROM iam.accounts WHERE `accountUUID`=:accountUUID LIMIT 1;", {{":accountUUID", MAKE_VAR(STRING, accountUUID)}}, {});
+    return result;
 }
 
 bool IdentityManager_DB::Accounts_DB::disableAccount(const ClientDetails &clientDetails, std::string_view performedBy, std::string_view accountUUID, bool disabled)
@@ -325,7 +325,7 @@ bool IdentityManager_DB::Accounts_DB::changeAccountExpiration(const ClientDetail
 
 AccountFlags IdentityManager_DB::Accounts_DB::getAccountFlags(std::string_view accountUUID)
 {
-    AccountFlags r;
+    AccountFlags result;
 
     Abstract::BOOL enabled, confirmed, admin, blocked;
 
@@ -333,13 +333,13 @@ AccountFlags IdentityManager_DB::Accounts_DB::getAccountFlags(std::string_view a
                                                   {{":accountUUID", MAKE_VAR(STRING, accountUUID)}},
                                                   {&enabled, &confirmed, &admin, &blocked}))
     {
-        r.enabled = enabled.getValue();
-        r.confirmed = confirmed.getValue();
-        r.admin = admin.getValue();
-        r.blocked = blocked.getValue();
+        result.enabled = enabled.getValue();
+        result.confirmed = confirmed.getValue();
+        result.admin = admin.getValue();
+        result.blocked = blocked.getValue();
     }
 
-    return r;
+    return result;
 }
 
 bool IdentityManager_DB::Accounts_DB::updateAccountApplicationRoles(const ClientDetails &clientDetails, std::string_view performedBy, std::string_view appName, std::string_view accountUUID,
@@ -422,7 +422,7 @@ time_t IdentityManager_DB::Accounts_DB::getAccountCreationTime(std::string_view 
 
 boost::json::value IdentityManager_DB::Accounts_DB::searchAccounts(const boost::json::value &dataTablesFilters)
 {
-    boost::json::object ret{
+    boost::json::object result{
         {"data", boost::json::array{}},
         // DataTables:
         {"draw", Helpers::JSON::MEMBER_OR_NULL(dataTablesFilters,"draw")},
@@ -519,19 +519,19 @@ boost::json::value IdentityManager_DB::Accounts_DB::searchAccounts(const boost::
                 {"DT_RowData",          rowData},
             };
 
-            ret["data"].as_array().push_back(row);
+            result["data"].as_array().push_back(row);
         }
 
         if (i)
         {
-            ret["recordsTotal"] = i->getTotalRecordsCount();
-            ret["recordsFiltered"] = i->getFilteredRecordsCount();
+            result["recordsTotal"] = i->getTotalRecordsCount();
+            result["recordsFiltered"] = i->getFilteredRecordsCount();
         }
     }
 
     // Now fill applications for each account (after the query scope ended to avoid DB blocking)
     // Iterate the non-const array so we can mutate each row (ASARRAY_OR_EMPTY returns a const array).
-    for (boost::json::value &row : ret["data"].as_array())
+    for (boost::json::value &row : result["data"].as_array())
     {
         std::string_view accountUUID = Helpers::JSON::ASSTRING(row,"accountUUID","");
         boost::json::object &rowObj = row.as_object();
@@ -562,42 +562,42 @@ boost::json::value IdentityManager_DB::Accounts_DB::searchAccounts(const boost::
         rowData["isInactive"] = _parent->authController->isAccountInactive(_parent->authController->getAccountLastAccess(accountUUID), rowData["isAdmin"].as_bool());
     }
 
-    return ret;
+    return result;
 }
 
 std::set<std::string> IdentityManager_DB::Accounts_DB::listAccounts()
 {
-    std::set<std::string> ret;
+    std::set<std::string> result;
     std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
 
     Abstract::STRING accountUUID;
     std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelect("SELECT `accountUUID` FROM iam.accounts;", {}, {&accountUUID});
     while (i && i->isSuccessful() && i->step())
     {
-        ret.insert(accountUUID.getValue());
+        result.insert(accountUUID.getValue());
     }
 
-    return ret;
+    return result;
 }
 
 std::set<std::string> IdentityManager_DB::Accounts_DB::listAdminAccounts()
 {
-    std::set<std::string> ret;
+    std::set<std::string> result;
     std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
 
     Abstract::STRING accountUUID;
     std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelect("SELECT `accountUUID` FROM iam.accounts WHERE `isAdmin`=:admin;", {{":admin", MAKE_VAR(BOOL, true)}}, {&accountUUID});
     while (i && i->isSuccessful() && i->step())
     {
-        ret.insert(accountUUID.getValue());
+        result.insert(accountUUID.getValue());
     }
 
-    return ret;
+    return result;
 }
 
 std::set<ApplicationRole> IdentityManager_DB::Accounts_DB::getAccountApplicationRoles(std::string_view appName, std::string_view accountUUID, bool lock)
 {
-    std::set<ApplicationRole> ret;
+    std::set<ApplicationRole> result;
     if (lock)
     {
         _parent->m_mutex.lock_shared();
@@ -616,7 +616,7 @@ std::set<ApplicationRole> IdentityManager_DB::Accounts_DB::getAccountApplication
             appRole.id = role.getValue();
             appRole.appName = appName;
             appRole.description = roleDescription.getValue();
-            ret.insert(appRole);
+            result.insert(appRole);
         }
     }
 
@@ -625,7 +625,7 @@ std::set<ApplicationRole> IdentityManager_DB::Accounts_DB::getAccountApplication
         _parent->m_mutex.unlock_shared();
     }
 
-    return ret;
+    return result;
 }
 
 bool IdentityManager_DB::Accounts_DB::hasValidAdminAccount()
@@ -741,7 +741,7 @@ std::optional<std::string> IdentityManager_DB::Accounts_DB::getAccountUUIDByAcco
     // and matching its value in accountDetailValues.
     Abstract::STRING accountUUID;
 
-    bool r = _parent->m_sqlConnector->qSelectSingleRow(
+    bool result = _parent->m_sqlConnector->qSelectSingleRow(
         R"(
             SELECT vadv.f_accountUUID
             FROM iam.accountDetailValues vadv
@@ -753,7 +753,7 @@ std::optional<std::string> IdentityManager_DB::Accounts_DB::getAccountUUIDByAcco
         {{":accountName", MAKE_VAR(STRING, accountName)}},
         {&accountUUID});
 
-    if (r)
+    if (result)
     {
         std::string uuid = accountUUID.getValue();
         if (!uuid.empty())

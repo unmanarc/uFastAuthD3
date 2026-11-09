@@ -91,7 +91,7 @@ std::map<uint32_t, AuthenticationSlotDetails> IdentityManager_DB::AuthController
 {
     std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
 
-    std::map<uint32_t, AuthenticationSlotDetails> ret;
+    std::map<uint32_t, AuthenticationSlotDetails> result;
 
     // Temporal Variables to store the results
     Abstract::UINT32 uSlotId;
@@ -112,7 +112,7 @@ std::map<uint32_t, AuthenticationSlotDetails> IdentityManager_DB::AuthController
     while (i && i->isSuccessful() && i->step())
     {
         // Build AuthenticationSlotDetails and insert it to the maps
-        ret.insert({uSlotId.getValue(),
+        result.insert({uSlotId.getValue(),
                     AuthenticationSlotDetails(sDescription.getValue(),
                                               static_cast<HashFunction>(uFunction.getValue()),
                                               Mantids30::Helpers::JSON::parse(sStrengthJSONValidator.getValue().c_str()),
@@ -121,5 +121,5 @@ std::map<uint32_t, AuthenticationSlotDetails> IdentityManager_DB::AuthController
                                               canSkipWhenExpired.getValue())});
     }
 
-    return ret;
+    return result;
 }

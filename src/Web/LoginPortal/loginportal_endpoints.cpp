@@ -54,7 +54,7 @@ void LoginPortal_Endpoints::addEndpoints(const std::shared_ptr<Endpoints> &endpo
 
 LoginPortal_Endpoints::APIReturn LoginPortal_Endpoints::getApplicationLoginPublicData(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
-    boost::json::object r;
+    boost::json::object result;
     // Get the identity manager from global settings to handle authentication.
 
     // Determine appName: prioritize x-api-key header, fallback to inputJSON "app" field
@@ -68,12 +68,12 @@ LoginPortal_Endpoints::APIReturn LoginPortal_Endpoints::getApplicationLoginPubli
             LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LogLevel::SECURITY_ALERT, "Invalid API key provided. Application not found.");
             return {HTTP::Status::Code::S_401_UNAUTHORIZED, "invalid_api_key", "The provided API key is invalid or unauthorized."};
         }
-        r["mode"] = "EMBEDDED";
+        result["mode"] = "EMBEDDED";
     }
     else
     {
         appName = request.clientRequest->getVarsBySource(HTTP::Source::GET)->getTValue<std::string>("app");
-        r["mode"] = "DOMAIN";
+        result["mode"] = "DOMAIN";
     }
 
 
@@ -88,7 +88,7 @@ LoginPortal_Endpoints::APIReturn LoginPortal_Endpoints::getApplicationLoginPubli
         {"session",     session},
     };
 
-    r["app"] = std::move(app);
+    result["app"] = std::move(app);
 
-    return boost::json::value(std::move(r));
+    return boost::json::value(std::move(result));
 }

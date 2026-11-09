@@ -136,7 +136,7 @@ bool AuthStorageImpl::createAuth()
         return false;
     }
 
-    bool r = true;
+    bool result = true;
     bool appExisted, defaultPasswordSchemesExisted;
 
     std::optional<uint32_t> schemeId = identityManager->authController->initializateDefaultPasswordSchemes(&defaultPasswordSchemesExisted);
@@ -145,7 +145,7 @@ bool AuthStorageImpl::createAuth()
     {
         if (!schemeId.has_value())
         {
-            r = false;
+            result = false;
             LOG_APP->log0(__func__, Logs::LogLevel::ERROR, "Default password scheme for simple login does not exist anymore.");
         }
         else
@@ -157,7 +157,7 @@ bool AuthStorageImpl::createAuth()
     {
         if (!schemeId.has_value())
         {
-            r = false;
+            result = false;
             LOG_APP->log0(__func__, Logs::LogLevel::ERROR, "Default password scheme for simple login can't be created.");
         }
         else
@@ -184,7 +184,7 @@ bool AuthStorageImpl::createAuth()
     for (const AppConfig &app : appsToInitialize)
     {
         // Check previous result before proceeding
-        if (!r)
+        if (!result)
         {
             break;
         }
@@ -194,7 +194,7 @@ bool AuthStorageImpl::createAuth()
         // Attempt to initialize the application
         // Note: identityManager->initializeApplicationWithScheme returns a boolean success status
         // We chain it with 'r' to ensure we stop on the first failure
-        r = identityManager->initializeApplicationWithScheme(app.name, app.description, app.url, *schemeId, &appExisted);
+        result = identityManager->initializeApplicationWithScheme(app.name, app.description, app.url, *schemeId, &appExisted);
 
         // Log based on the result of this specific call
         if (appExisted)
@@ -204,7 +204,7 @@ bool AuthStorageImpl::createAuth()
         }
         else
         {
-            if (r)
+            if (result)
             {
                 LOG_APP->log0(__func__, Logs::LogLevel::INFO, "APP '%s' successfully created.", app.name);
             }
@@ -234,7 +234,7 @@ bool AuthStorageImpl::createAuth()
         return false;
     }
 
-    if (r)
+    if (result)
     {
         if (!identityManager->initializeAdminAccountWithPasswordIfNotExist(*schemeId, Globals::getDoCreateNewAdminAccount()))
         {

@@ -95,10 +95,10 @@ bool IdentityManager_DB::Applications_DB::removeApplication(const ClientDetails 
 
 bool IdentityManager_DB::Applications_DB::doesApplicationExist(std::string_view appName)
 {
-    bool ret = false;
+    bool result = false;
     std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
-    ret = _parent->m_sqlConnector->qSelectSingleRow("SELECT `appDescription` FROM iam.applications WHERE `appName`=:appName LIMIT 1;", {{":appName", MAKE_VAR(STRING, appName)}}, {});
-    return ret;
+    result = _parent->m_sqlConnector->qSelectSingleRow("SELECT `appDescription` FROM iam.applications WHERE `appName`=:appName LIMIT 1;", {{":appName", MAKE_VAR(STRING, appName)}}, {});
+    return result;
 }
 
 bool IdentityManager_DB::Applications_DB::updateApplicationAttributes(const ClientDetails &clientDetails, std::string_view performedBy, std::string_view appName,
@@ -154,8 +154,8 @@ std::string IdentityManager_DB::Applications_DB::getApplicationAPIKey(std::strin
     Abstract::STRING apiKey;
     if (_parent->m_sqlConnector->qSelectSingleRow("SELECT `apiKey` FROM iam.applications WHERE `appName`=:appName LIMIT 1;", {{":appName", MAKE_VAR(STRING, appName)}}, {&apiKey}))
     {
-        auto ret = Encoders::decodeFromBase64Obf(apiKey.getValue());
-        return ret;
+        auto result = Encoders::decodeFromBase64Obf(apiKey.getValue());
+        return result;
     }
     return "";
 }
@@ -203,16 +203,16 @@ std::string IdentityManager_DB::Applications_DB::getApplicationNameByAPIKey(std:
 
 std::set<std::string> IdentityManager_DB::Applications_DB::listApplications()
 {
-    std::set<std::string> ret;
+    std::set<std::string> result;
     std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
 
     Abstract::STRING sAppName;
     std::shared_ptr<Query> i = _parent->m_sqlConnector->qSelect("SELECT `appName` FROM iam.applications;", {}, {&sAppName});
     while (i && i->isSuccessful() && i->step())
     {
-        ret.insert(sAppName.getValue());
+        result.insert(sAppName.getValue());
     }
-    return ret;
+    return result;
 }
 
 bool IdentityManager_DB::Applications_DB::isApplicationAdmin(std::string_view appName, std::string_view accountUUID)
@@ -241,7 +241,7 @@ bool IdentityManager_DB::Applications_DB::validateApplicationAccount(std::string
 }
 std::set<std::string> IdentityManager_DB::Applications_DB::listApplicationAdmins(std::string_view appName)
 {
-    std::set<std::string> ret;
+    std::set<std::string> result;
     std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
 
     Abstract::STRING accountUUID;
@@ -250,15 +250,15 @@ std::set<std::string> IdentityManager_DB::Applications_DB::listApplicationAdmins
                                                                 {&accountUUID});
     while (i && i->isSuccessful() && i->step())
     {
-        ret.insert(accountUUID.getValue());
+        result.insert(accountUUID.getValue());
     }
 
-    return ret;
+    return result;
 }
 
 std::set<std::string> IdentityManager_DB::Applications_DB::listApplicationAccounts(std::string_view appName)
 {
-    std::set<std::string> ret;
+    std::set<std::string> result;
     std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
 
     Abstract::STRING accountUUID;
@@ -267,15 +267,15 @@ std::set<std::string> IdentityManager_DB::Applications_DB::listApplicationAccoun
                                                                 {&accountUUID});
     while (i && i->isSuccessful() && i->step())
     {
-        ret.insert(accountUUID.getValue());
+        result.insert(accountUUID.getValue());
     }
 
-    return ret;
+    return result;
 }
 
 std::set<std::string> IdentityManager_DB::Applications_DB::listAccountApplications(std::string_view accountUUID)
 {
-    std::set<std::string> ret;
+    std::set<std::string> result;
     std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
 
     Abstract::STRING applicationName;
@@ -284,10 +284,10 @@ std::set<std::string> IdentityManager_DB::Applications_DB::listAccountApplicatio
                                                                 {&applicationName});
     while (i && i->isSuccessful() && i->step())
     {
-        ret.insert(applicationName.getValue());
+        result.insert(applicationName.getValue());
     }
 
-    return ret;
+    return result;
 }
 
 bool IdentityManager_DB::Applications_DB::_addAccountToApplication(const ClientDetails &clientDetails, std::string_view performedBy, std::string_view appName, std::string_view accountUUID)
@@ -311,13 +311,13 @@ bool IdentityManager_DB::Applications_DB::removeAccountFromApplication(const Cli
 {
     std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
 
-    bool ret = _parent->m_sqlConnector->qExecuteEx("DELETE FROM iam.applicationAccounts WHERE `f_appName`=:appName AND `f_accountUUID`=:accountUUID;",
+    bool result = _parent->m_sqlConnector->qExecuteEx("DELETE FROM iam.applicationAccounts WHERE `f_appName`=:appName AND `f_accountUUID`=:accountUUID;",
                                                    {{":appName", MAKE_VAR(STRING, appName)}, {":accountUUID", MAKE_VAR(STRING, accountUUID)}});
-    if (ret)
+    if (result)
     {
         _parent->logSecurityEventOnApplications(appName, SecurityEventAction::REVOKE_ACCOUNT, "Revoked account '" + std::string(accountUUID) + "'", performedBy, clientDetails);
     }
-    return ret;
+    return result;
 }
 
 bool IdentityManager_DB::Applications_DB::_setAccountAsApplicationAdmin(const ClientDetails &clientDetails, std::string_view performedBy, std::string_view appName, std::string_view accountUUID,
@@ -341,7 +341,7 @@ bool IdentityManager_DB::Applications_DB::setAccountAsApplicationAdmin(const Cli
 
 boost::json::value IdentityManager_DB::Applications_DB::searchApplications(const boost::json::value &dataTablesFilters)
 {
-    boost::json::object ret{
+    boost::json::object result{
         {"data", boost::json::array{}},
         // DataTables:
         {"draw", Helpers::JSON::MEMBER_OR_NULL(dataTablesFilters,"draw")},
@@ -396,19 +396,19 @@ boost::json::value IdentityManager_DB::Applications_DB::searchApplications(const
                 {"DT_RowData",           rowData},
             };
 
-            ret["data"].as_array().push_back(row);
+            result["data"].as_array().push_back(row);
         }
 
         if (i)
         {
-            ret["recordsTotal"] = i->getTotalRecordsCount();
-            ret["recordsFiltered"] = i->getFilteredRecordsCount();
+            result["recordsTotal"] = i->getTotalRecordsCount();
+            result["recordsFiltered"] = i->getFilteredRecordsCount();
         }
     }
 
     // Now fill creator displayName for each application (after the query scope ended to avoid DB blocking)
     // Iterate the non-const array so we can mutate each row (ASARRAY_OR_EMPTY returns a const array).
-    for (boost::json::value &row : ret["data"].as_array())
+    for (boost::json::value &row : result["data"].as_array())
     {
         boost::json::object &rowObj = row.as_object();
         // DT_RowData is a boost::json::object, so access it via as_object()
@@ -424,12 +424,12 @@ boost::json::value IdentityManager_DB::Applications_DB::searchApplications(const
         }
     }
 
-    return ret;
+    return result;
 }
 
 std::vector<AccountApplicationInfo> IdentityManager_DB::Applications_DB::listAccountApplicationsFullInfo(std::string_view accountUUID)
 {
-    std::vector<AccountApplicationInfo> ret;
+    std::vector<AccountApplicationInfo> result;
     std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
 
     // Query 1: Obtener apps basicas con JOIN
@@ -453,11 +453,11 @@ std::vector<AccountApplicationInfo> IdentityManager_DB::Applications_DB::listAcc
             info.isAppAdmin = isAppAdmin.getValue();
             info.enrollmentDate = enrollmentDate.getValue();
 
-            ret.push_back(info);
+            result.push_back(info);
         }
     }
 
-    for (AccountApplicationInfo &info : ret)
+    for (AccountApplicationInfo &info : result)
     {
         // Query 2: Obtener roles del account en esta app
         {
@@ -507,7 +507,7 @@ std::vector<AccountApplicationInfo> IdentityManager_DB::Applications_DB::listAcc
         }
     }
 
-    return ret;
+    return result;
 }
 
 bool IdentityManager_DB::Applications_DB::addWebLoginAllowedRedirectURIToApplication(const ClientDetails &clientDetails, std::string_view performedBy, std::string_view appName,
@@ -585,21 +585,21 @@ bool IdentityManager_DB::Applications_DB::setApplicationWebLoginCallbackURI(cons
 {
     std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
 
-    bool ret = false;
+    bool result = false;
 
     // Delete existing callback URI for the application if it exists
     _parent->m_sqlConnector->qExecuteEx("DELETE FROM iam.applicationsLoginCallbackURI WHERE `f_appName`=:appName;", {{":appName", MAKE_VAR(STRING, appName)}});
 
     // Insert new callback URI
-    ret = _parent->m_sqlConnector->qExecuteEx("INSERT INTO iam.applicationsLoginCallbackURI (`f_appName`, `callbackURI`) VALUES (:appName, :callbackURI);",
+    result = _parent->m_sqlConnector->qExecuteEx("INSERT INTO iam.applicationsLoginCallbackURI (`f_appName`, `callbackURI`) VALUES (:appName, :callbackURI);",
                                               {{":appName", MAKE_VAR(STRING, appName)}, {":callbackURI", MAKE_VAR(STRING, callbackURI)}});
 
-    if (ret)
+    if (result)
     {
         _parent->logSecurityEventOnApplications(appName, SecurityEventAction::UPDATE, "Set callback URI '" + std::string(callbackURI) + "'", performedBy, clientDetails);
     }
 
-    return ret;
+    return result;
 }
 std::string IdentityManager_DB::Applications_DB::getApplicationCallbackURI(std::string_view appName)
 {

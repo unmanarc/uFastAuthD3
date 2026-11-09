@@ -64,7 +64,7 @@ std::optional<AccountDetails> IdentityManager_DB::Accounts_DB::getAccountDetails
 
 boost::json::value IdentityManager_DB::Accounts_DB::searchFields(const boost::json::value &dataTablesFilters)
 {
-    boost::json::object ret{
+    boost::json::object result{
         {"data", boost::json::array{}},
     };
     std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
@@ -103,12 +103,12 @@ boost::json::value IdentityManager_DB::Accounts_DB::searchFields(const boost::js
                     {"orderPriority",     orderPriority.getValue()},
                 };
 
-                ret["data"].as_array().push_back(row);
+                result["data"].as_array().push_back(row);
             }
         }
     }
 
-    return ret;
+    return result;
 }
 
 bool IdentityManager_DB::Accounts_DB::createAccountDetailField(const ClientDetails &clientDetails, std::string_view performedBy, std::string_view fieldName, const AccountDetailField &details)
@@ -498,15 +498,15 @@ std::optional<AccountDetailField> IdentityManager_DB::Accounts_DB::getAccountDet
                                                   {{":fieldName", MAKE_VAR(STRING, fieldName)}},
                                                   {&fieldDescription, &fieldType, &isOptionalField, &isUnique, &isLoginIdentifier, &jsonExtendedAttribsText, &orderPriority}))
     {
-        boost::json::value r;
-        Helpers::JSON::parse(jsonExtendedAttribsText.getValue(), r);
+        boost::json::value result;
+        Helpers::JSON::parse(jsonExtendedAttribsText.getValue(), result);
 
         field.description = fieldDescription.getValue();
         field.fieldType = fieldType.getValue();
         field.isOptionalField = isOptionalField.getValue();
         field.isUnique = isUnique.getValue();
         field.isLoginIdentifier = isLoginIdentifier.getValue();
-        field.extendedAttributes = r;
+        field.extendedAttributes = result;
         field.orderPriority = orderPriority.getValue();
 
         return field;
@@ -629,8 +629,8 @@ std::map<std::string, AccountDetailField> IdentityManager_DB::Accounts_DB::_list
     {
         while (i->step())
         {
-            boost::json::value r;
-            Helpers::JSON::parse(jsonExtendedAttribsText.getValue(), r);
+            boost::json::value result;
+            Helpers::JSON::parse(jsonExtendedAttribsText.getValue(), result);
 
             AccountDetailField field;
             field.description = fieldDescription.getValue();
@@ -638,7 +638,7 @@ std::map<std::string, AccountDetailField> IdentityManager_DB::Accounts_DB::_list
             field.isOptionalField = isOptionalField.getValue();
             field.isUnique = isUnique.getValue();
             field.isLoginIdentifier = isLoginIdentifier.getValue();
-            field.extendedAttributes = r;
+            field.extendedAttributes = result;
             field.orderPriority = orderPriority.getValue();
 
             fieldMap[fieldName.getValue()] = field;

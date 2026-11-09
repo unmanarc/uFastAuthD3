@@ -99,15 +99,15 @@ API::APIReturn LoginPortal_Endpoints::token(void *context, const RequestContext 
     //////////////////////////////////////////////////////////////////////////////////////////
     //// ---------------------------    ACCOUNT VALIDATIONS   --------------------------- ////
     //////////////////////////////////////////////////////////////////////////////////////////
-    AuthenticationResult r;
-    if (!identityManager->isAccountActiveAndValidForApp(authenticatedUser, appName, r, true))
+    AuthenticationResult result;
+    if (!identityManager->isAccountActiveAndValidForApp(authenticatedUser, appName, result, true))
     {
         // This token is not available for retrieving app tokens because the user does not have a valid account with the specified application.
-        const char *reasonText = authResultToString(r);
+        const char *reasonText = authResultToString(result);
         LOG_APP->log2(__func__, authenticatedUser, authClientDetails.ipAddress, Logs::LogLevel::SECURITY_ALERT,
                       "Token request denied: User '%s' attempted to obtain an access token for app '%s', but the account is not valid or authorized for this application. Reason: %s.",
                       std::string(authenticatedUser).c_str(), appName.c_str(), reasonText);
-        return {HTTP::Status::Code::S_401_UNAUTHORIZED, "AUTH_ERR_INVALID_ACCT", authResultToString(r)};
+        return {HTTP::Status::Code::S_401_UNAUTHORIZED, "AUTH_ERR_INVALID_ACCT", authResultToString(result)};
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////

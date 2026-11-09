@@ -35,7 +35,7 @@ void CredentialValidator::cleanupExpiredTokens(void *asv)
 AuthenticationResult CredentialValidator::validateStoredCredential(std::string_view accountUUID, const Credential &storedCredential, std::string_view passwordInput, std::string_view challengeSalt,
                                                                    Mode authMode)
 {
-    AuthenticationResult r = AuthenticationResult::NOT_IMPLEMENTED;
+    AuthenticationResult result = AuthenticationResult::NOT_IMPLEMENTED;
     //  bool saltedHash = false;
     std::string toCompare;
 
@@ -74,33 +74,33 @@ AuthenticationResult CredentialValidator::validateStoredCredential(std::string_v
     }
     break;
     case HashFunction::GAUTHTIME:
-        r = validateGAuth(std::string(accountUUID), storedCredential.hash, std::string(passwordInput)); // GAuth Time Based Token comparisson (seed,token)
+        result = validateGAuth(std::string(accountUUID), storedCredential.hash, std::string(passwordInput)); // GAuth Time Based Token comparisson (seed,token)
         goto skipAuthMode;
     }
 
     switch (authMode)
     {
     case Mode::PLAIN:
-        r = storedCredential.hash == toCompare ? AuthenticationResult::AUTHENTICATED : AuthenticationResult::AUTHENTICATION_FAILED; // 1-1 comparisson
+        result = storedCredential.hash == toCompare ? AuthenticationResult::AUTHENTICATED : AuthenticationResult::AUTHENTICATION_FAILED; // 1-1 comparisson
         break;
     case Mode::CHALLENGE:
-        r = validateChallenge(storedCredential.hash, passwordInput, challengeSalt);
+        result = validateChallenge(storedCredential.hash, passwordInput, challengeSalt);
         break;
     }
 
 skipAuthMode:;
 
-    if (storedCredential.isExpired() && r == AuthenticationResult::AUTHENTICATED)
+    if (storedCredential.isExpired() && result == AuthenticationResult::AUTHENTICATED)
     {
-        r = AuthenticationResult::EXPIRED_CREDENTIAL;
+        result = AuthenticationResult::EXPIRED_CREDENTIAL;
     }
 
-    if (storedCredential.mustChange && r == AuthenticationResult::AUTHENTICATED)
+    if (storedCredential.mustChange && result == AuthenticationResult::AUTHENTICATED)
     {
-        r = AuthenticationResult::MUST_CHANGE_CREDENTIAL;
+        result = AuthenticationResult::MUST_CHANGE_CREDENTIAL;
     }
 
-    return r;
+    return result;
 }
 
 AuthenticationResult CredentialValidator::validateChallenge(std::string_view passwordFromDB, std::string_view challengeInput, std::string_view challengeSalt)

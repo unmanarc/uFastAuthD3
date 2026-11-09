@@ -136,13 +136,13 @@ bool IdentityManager::initializeAdminAccountWithPasswordIfNotExist(const uint32_
 
 bool IdentityManager::initializeApplicationWithScheme(std::string_view appName, std::string_view appDescription, std::string_view appURL, const uint32_t &schemeId, bool *alreadyExist) const
 {
-    bool r = true;
+    bool result = true;
     ClientDetails clientDetails;
     std::string performedByUUID = "00000000-0000-4000-8000-000000000000"; // nobody (initialization)
 
     if (!applications->doesApplicationExist(appName))
     {
-        r = r
+        result = result
             && applications->createApplication(clientDetails, performedByUUID, appName, appDescription, appURL, Mantids30::Helpers::Random::createRandomString(32), performedByUUID,
                                                Applications::ApplicationAttributes(), true);
         *alreadyExist = false;
@@ -152,7 +152,7 @@ bool IdentityManager::initializeApplicationWithScheme(std::string_view appName, 
         *alreadyExist = true;
     }
 
-    return r;
+    return result;
 }
 
 std::optional<std::string> IdentityManager::Accounts::createAdminAccount(const ClientDetails &clientDetails, std::string_view accountName, std::string_view performedByUUID)

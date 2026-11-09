@@ -37,12 +37,12 @@ API::APIReturn WebSessionAuthHandler_Endpoints::callback(void *context, const Re
         }
 
         // We clear the logout cookies here and we proceed to reg the logout in the database.
-        APIReturn r = appLogout(context, request, authClientDetails);
+        APIReturn result = appLogout(context, request, authClientDetails);
         API::OptionsHandlerConfig options;
         options.insertAllowedOrigin(allowedOrigin);
         options.setAllowCredentials(true);
-        options.configureAPIReturnOptionsHeaders(r, request.clientRequest->getOrigin());
-        return r;
+        options.configureAPIReturnOptionsHeaders(result, request.clientRequest->getOrigin());
+        return result;
     }
 
     std::string accessTokenStr = request.clientRequest->getVarsBySource(Source::POST)->getStringValue("accessToken");

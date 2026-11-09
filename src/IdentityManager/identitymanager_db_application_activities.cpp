@@ -229,12 +229,12 @@ std::optional<IdentityManager::ApplicationActivities::ActivityData> IdentityMana
 
     )
     {
-        IdentityManager::ApplicationActivities::ActivityData r;
-        r = {.description = description.toString(),
+        IdentityManager::ApplicationActivities::ActivityData result;
+        result = {.description = description.toString(),
              .parentActivity = parentActivity.toString(),
              .defaultSchemeDescription = defaultSchemeDescription.toString(),
              .defaultSchemeID = defaultSchemeId.getValue()};
-        return r;
+        return result;
     }
     return std::nullopt;
 }
@@ -315,7 +315,7 @@ std::set<uint32_t> IdentityManager_DB::ApplicationActivities_DB::listAuthenticat
 {
     std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
 
-    std::set<uint32_t> ret;
+    std::set<uint32_t> result;
 
     // Temporal Variables to store the results
     Abstract::UINT32 uSchemeId;
@@ -326,10 +326,10 @@ std::set<uint32_t> IdentityManager_DB::ApplicationActivities_DB::listAuthenticat
     // Iterate:
     while (i && i->isSuccessful() && i->step())
     {
-        ret.insert(uSchemeId.getValue());
+        result.insert(uSchemeId.getValue());
     }
 
-    return ret;
+    return result;
 }
 
 bool IdentityManager_DB::ApplicationActivities_DB::addAuthenticationSchemeToApplicationActivity(const ClientDetails &clientDetails, std::string_view performedBy, std::string_view appName,
@@ -342,11 +342,11 @@ bool IdentityManager_DB::ApplicationActivities_DB::addAuthenticationSchemeToAppl
     }
 
     // Execute the query using direct parameter passing...
-    bool r = _parent->m_sqlConnector->qExecuteEx("INSERT INTO iam.applicationActivitiesAuthSchemes (`f_appName`, `f_activityName`, `f_schemeId`) "
+    bool result = _parent->m_sqlConnector->qExecuteEx("INSERT INTO iam.applicationActivitiesAuthSchemes (`f_appName`, `f_activityName`, `f_schemeId`) "
                                                  "VALUES (:appName, :activityName, :schemeId);",
                                                  {{":appName", MAKE_VAR(STRING, appName)}, {":activityName", MAKE_VAR(STRING, activityName)}, {":schemeId", MAKE_VAR(UINT32, schemeId)}});
 
-    if (r)
+    if (result)
     {
         _parent->logSecurityEventOnApplicationActivities(appName, activityName, schemeId, SecurityEventAction::ASSIGN_SCHEME, "Authentication scheme added to application activity", performedBy,
                                                          clientDetails);
@@ -356,7 +356,7 @@ bool IdentityManager_DB::ApplicationActivities_DB::addAuthenticationSchemeToAppl
     {
         _parent->m_mutex.unlock();
     }
-    return r;
+    return result;
 }
 
 bool IdentityManager_DB::ApplicationActivities_DB::removeAuthenticationSchemeFromApplicationActivity(const ClientDetails &clientDetails, std::string_view performedBy, std::string_view appName,

@@ -156,12 +156,12 @@ struct TransientAuthenticationContext
 
     [[nodiscard]] boost::json::value getAllAuthenticatedSlotsIds() const
     {
-        std::set<uint32_t> r = authenticatedSlots;
+        std::set<uint32_t> result = authenticatedSlots;
         if (currentSlotId.has_value())
         {
-            r.insert(currentSlotId.value());
+            result.insert(currentSlotId.value());
         }
-        return Helpers::JSON::fromSet(r);
+        return Helpers::JSON::fromSet(result);
     }
 
     [[nodiscard]] boost::json::array getAllAuthenticatedSchemes() const

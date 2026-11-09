@@ -102,7 +102,7 @@ std::map<uint32_t, std::string> IdentityManager_DB::AuthController_DB::listAuthe
 {
     std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
 
-    std::map<uint32_t, std::string> ret;
+    std::map<uint32_t, std::string> result;
 
     // Temporal Variables to store the results
     Abstract::UINT32 uSlotId;
@@ -113,10 +113,10 @@ std::map<uint32_t, std::string> IdentityManager_DB::AuthController_DB::listAuthe
     // Iterate:
     while (i && i->isSuccessful() && i->step())
     {
-        ret.insert({uSlotId.getValue(), sDescription.getValue()});
+        result.insert({uSlotId.getValue(), sDescription.getValue()});
     }
 
-    return ret;
+    return result;
 }
 
 std::vector<AuthenticationSchemeUsedSlot> IdentityManager_DB::AuthController_DB::listAuthenticationSlotsUsedByScheme(const uint32_t &schemeId)

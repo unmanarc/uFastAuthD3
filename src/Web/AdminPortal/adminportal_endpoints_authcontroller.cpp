@@ -65,13 +65,13 @@ AdminPortal_Endpoints_AuthController::APIReturn AdminPortal_Endpoints_AuthContro
 API::APIReturn AdminPortal_Endpoints_AuthController::createAuthenticationScheme(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
     API::APIReturn response;
-    std::optional<uint32_t> r = Globals::getIdentityManager()->authController->createAuthenticationScheme(authClientDetails,request.jwtToken->getSubject(),
+    std::optional<uint32_t> result = Globals::getIdentityManager()->authController->createAuthenticationScheme(authClientDetails,request.jwtToken->getSubject(),
                                                                                                        Helpers::JSON::ASSTRING(*request.inputJSON, "description", ""));
-    if (!r.has_value())
+    if (!result.has_value())
     {
         return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to add the new authentication scheme"};
     }
-    return boost::json::value(*r);
+    return boost::json::value(*result);
 }
 
 API::APIReturn AdminPortal_Endpoints_AuthController::listAuthenticationSchemes(void *context, const RequestContext &request, ClientDetails &authClientDetails)
@@ -183,14 +183,14 @@ API::APIReturn AdminPortal_Endpoints_AuthController::updateAuthenticationSlotsUs
 API::APIReturn AdminPortal_Endpoints_AuthController::listAuthenticationSlots(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
     std::map<uint32_t, AuthenticationSlotDetails> slots = Globals::getIdentityManager()->authController->listAllAuthenticationSlots();
-    boost::json::array r{};
+    boost::json::array result{};
     for (const auto &slot : slots)
     {
         boost::json::object rSlot = slot.second.toJSON();
         rSlot["id"] = slot.first;
-        Helpers::JSON::ARRAY_APPEND(r, rSlot);
+        Helpers::JSON::ARRAY_APPEND(result, rSlot);
     }
-    return r;
+    return result;
 }
 
 API::APIReturn AdminPortal_Endpoints_AuthController::createAuthenticationSlot(void *context, const RequestContext &request, ClientDetails &authClientDetails)
@@ -199,12 +199,12 @@ API::APIReturn AdminPortal_Endpoints_AuthController::createAuthenticationSlot(vo
 
     AuthenticationSlotDetails slot;
     slot.fromJSON(*request.inputJSON);
-    std::optional<uint32_t> r = Globals::getIdentityManager()->authController->createAuthenticationSlot(authClientDetails,request.jwtToken->getSubject(), slot);
-    if (!r.has_value())
+    std::optional<uint32_t> result = Globals::getIdentityManager()->authController->createAuthenticationSlot(authClientDetails,request.jwtToken->getSubject(), slot);
+    if (!result.has_value())
     {
         return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to add the new slot"};
     }
-    return boost::json::value(*r);
+    return boost::json::value(*result);
 }
 
 API::APIReturn AdminPortal_Endpoints_AuthController::deleteAuthenticationSlot(void *context, const RequestContext &request, ClientDetails &authClientDetails)

@@ -80,7 +80,7 @@ API::APIReturn LoginPortal_Endpoints::registerAccount(void *context, const Reque
 
     if (!newPass.empty() && success)
     {
-        bool r = false;
+        bool result = false;
         std::optional<uint32_t> applicationRoleDefaultSSOLogin = identityManager->applicationActivities->getApplicationActivityDefaultScheme(IAM_USRPORTAL_APPNAME, "LOGIN");
 
         // Not any scheme to the default
@@ -93,13 +93,13 @@ API::APIReturn LoginPortal_Endpoints::registerAccount(void *context, const Reque
                 if (authSlots.begin()->details.isTextPasswordFunction())
                 {
                     auto credentialData = identityManager->authController->createNewCredential(authSlots.begin()->slotId, newPass, true);
-                    r = identityManager->authController->changeAccountCredential(accountToCreate, credentialData, authSlots.begin()->slotId);
+                    result = identityManager->authController->changeAccountCredential(accountToCreate, credentialData, authSlots.begin()->slotId);
                 }
             }
         }
 
-        LOG_APP->log2(__func__, request.jwtToken->getSubject(), clientDetails.ipAddress, r ? Logs::LogLevel::SECURITY_ALERT : Logs::LogLevel::INFO,
-                      !r ? "Failed to change initial password on account '%s'" : "Initial password for account '%s' changed.", accountToCreate.c_str());
+        LOG_APP->log2(__func__, request.jwtToken->getSubject(), clientDetails.ipAddress, result ? Logs::LogLevel::SECURITY_ALERT : Logs::LogLevel::INFO,
+                      !result ? "Failed to change initial password on account '%s'" : "Initial password for account '%s' changed.", accountToCreate.c_str());
     }
     */
     return response;

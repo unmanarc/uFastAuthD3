@@ -68,17 +68,17 @@ bool IdentityManager_DB::ApplicationRoles_DB::addAccountToRole(const ClientDetai
 bool IdentityManager_DB::ApplicationRoles_DB::removeAccountFromRole(const ClientDetails &clientDetails, std::string_view performedBy, std::string_view appName, std::string_view roleName,
                                                                     std::string_view accountUUID, bool lock)
 {
-    bool ret = false;
+    bool result = false;
 
     if (lock)
     {
         _parent->m_mutex.lock();
     }
 
-    ret = _parent->m_sqlConnector->qExecuteEx("DELETE FROM iam.applicationRolesAccounts WHERE `f_roleName`=:roleName AND `f_appName`=:appName AND `f_accountUUID`=:accountUUID;",
+    result = _parent->m_sqlConnector->qExecuteEx("DELETE FROM iam.applicationRolesAccounts WHERE `f_roleName`=:roleName AND `f_appName`=:appName AND `f_accountUUID`=:accountUUID;",
                                               {{":roleName", MAKE_VAR(STRING, roleName)}, {":appName", MAKE_VAR(STRING, appName)}, {":accountUUID", MAKE_VAR(STRING, accountUUID)}});
 
-    if (ret)
+    if (result)
     {
         _parent->logSecurityEventOnApplicationRoles(appName, roleName, accountUUID, SecurityEventAction::REVOKE_ACCOUNT, "Account removed from role", performedBy, clientDetails);
     }
@@ -87,7 +87,7 @@ bool IdentityManager_DB::ApplicationRoles_DB::removeAccountFromRole(const Client
     {
         _parent->m_mutex.unlock();
     }
-    return ret;
+    return result;
 }
 
 bool IdentityManager_DB::ApplicationRoles_DB::updateRoleDescription(const ClientDetails &clientDetails, std::string_view performedBy, std::string_view appName, std::string_view roleName,
@@ -136,7 +136,7 @@ std::string IdentityManager_DB::ApplicationRoles_DB::getApplicationRoleDescripti
 
 std::set<ApplicationRole> IdentityManager_DB::ApplicationRoles_DB::getApplicationRolesList(std::string_view appName)
 {
-    std::set<ApplicationRole> ret;
+    std::set<ApplicationRole> result;
     std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
 
     Abstract::STRING roleName, description;
@@ -144,20 +144,20 @@ std::set<ApplicationRole> IdentityManager_DB::ApplicationRoles_DB::getApplicatio
                                                                 {&roleName, &description});
     while (i && i->isSuccessful() && i->step())
     {
-        ApplicationRole r;
+        ApplicationRole role;
 
-        r.appName = appName;
-        r.description = description.getValue();
-        r.id = roleName.getValue();
+        role.appName = appName;
+        role.description = description.getValue();
+        role.id = roleName.getValue();
 
-        ret.insert(r);
+        result.insert(role);
     }
-    return ret;
+    return result;
 }
 
 std::set<std::string> IdentityManager_DB::ApplicationRoles_DB::getApplicationRoleAccounts(std::string_view appName, std::string_view roleName, bool lock)
 {
-    std::set<std::string> ret;
+    std::set<std::string> result;
     if (lock)
     {
         _parent->m_mutex.lock_shared();
@@ -168,19 +168,19 @@ std::set<std::string> IdentityManager_DB::ApplicationRoles_DB::getApplicationRol
                                                                 {{":appName", MAKE_VAR(STRING, appName)}, {":roleName", MAKE_VAR(STRING, roleName)}}, {&accountUUID});
     while (i && i->isSuccessful() && i->step())
     {
-        ret.insert(accountUUID.getValue());
+        result.insert(accountUUID.getValue());
     }
 
     if (lock)
     {
         _parent->m_mutex.unlock_shared();
     }
-    return ret;
+    return result;
 }
 
 boost::json::value IdentityManager_DB::ApplicationRoles_DB::searchApplicationRoles(const boost::json::value &dataTablesFilters)
 {
-    boost::json::object ret{
+    boost::json::object result{
         {"data", boost::json::array{}},
         // DataTables:
         {"draw", Mantids30::Helpers::JSON::MEMBER_OR_NULL(dataTablesFilters, "draw")},
@@ -228,16 +228,16 @@ boost::json::value IdentityManager_DB::ApplicationRoles_DB::searchApplicationRol
                 {"roleDescription", roleDescription.getValue()},
             };
 
-            ret["data"].as_array().push_back(row);
+            result["data"].as_array().push_back(row);
         }
 
         if (i)
         {
-            ret["recordsTotal"] = i->getTotalRecordsCount();
-            ret["recordsFiltered"] = i->getFilteredRecordsCount();
+            result["recordsTotal"] = i->getTotalRecordsCount();
+            result["recordsFiltered"] = i->getFilteredRecordsCount();
         }
     }
 
-    return ret;
+    return result;
 }
 

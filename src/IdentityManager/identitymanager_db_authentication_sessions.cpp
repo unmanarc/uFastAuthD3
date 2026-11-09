@@ -36,7 +36,7 @@ uint32_t IdentityManager_DB::AuthController_DB::getAccountActiveSessionsCount(st
 
 boost::json::value IdentityManager_DB::AuthController_DB::searchAccountSessions(std::string_view accountUUID, const boost::json::value &dataTablesFilters)
 {
-    boost::json::object ret{
+    boost::json::object result{
         {"data", boost::json::array{}},
         {"draw", Mantids30::Helpers::JSON::MEMBER_OR_NULL(dataTablesFilters, "draw")},
     };
@@ -101,17 +101,17 @@ boost::json::value IdentityManager_DB::AuthController_DB::searchAccountSessions(
                 {"isActive",               (logoutDateTime.isNull() && accessTokenExpiration.isInFuture() && refreshTokenExpiration.isInFuture())},
             };
 
-            ret["data"].as_array().push_back(row);
+            result["data"].as_array().push_back(row);
         }
 
         if (i)
         {
-            ret["recordsTotal"] = i->getTotalRecordsCount();
-            ret["recordsFiltered"] = i->getFilteredRecordsCount();
+            result["recordsTotal"] = i->getTotalRecordsCount();
+            result["recordsFiltered"] = i->getFilteredRecordsCount();
         }
     }
 
-    return ret;
+    return result;
 }
 
 void IdentityManager_DB::AuthController_DB::markExpiredAuthLogSessions()
