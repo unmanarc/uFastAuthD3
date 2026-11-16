@@ -1,9 +1,9 @@
 #include "credentialvalidator.h"
 #include "IdentityManager/ds_authentication.h"
-#include <Mantids30/Helpers/totp.h>
+#include <Mantids30/Core/Helpers/totp.h>
 
-#include <Mantids30/Helpers/crypto.h>
-#include <Mantids30/Helpers/encoders.h>
+#include <Mantids30/Core/Helpers/crypto.h>
+#include <Mantids30/Core/Helpers/encoders.h>
 
 CredentialValidator::CredentialValidator()
 {
@@ -53,23 +53,23 @@ AuthenticationResult CredentialValidator::validateStoredCredential(std::string_v
     break;
     case HashFunction::SHA256:
     {
-        toCompare = Mantids30::Helpers::Crypto::calcSHA256(passwordInput);
+        toCompare = Mantids30::Core::Helpers::Crypto::calcSHA256(passwordInput);
     }
     break;
     case HashFunction::SHA512:
     {
-        toCompare = Mantids30::Helpers::Crypto::calcSHA512(passwordInput);
+        toCompare = Mantids30::Core::Helpers::Crypto::calcSHA512(passwordInput);
     }
     break;
     case HashFunction::SSHA256:
     {
-        toCompare = Mantids30::Helpers::Crypto::calcSSHA256(passwordInput, storedCredential.ssalt);
+        toCompare = Mantids30::Core::Helpers::Crypto::calcSSHA256(passwordInput, storedCredential.ssalt);
         // saltedHash = true;
     }
     break;
     case HashFunction::SSHA512:
     {
-        toCompare = Mantids30::Helpers::Crypto::calcSSHA512(passwordInput, storedCredential.ssalt);
+        toCompare = Mantids30::Core::Helpers::Crypto::calcSSHA512(passwordInput, storedCredential.ssalt);
         //saltedHash = true;
     }
     break;
@@ -105,7 +105,7 @@ skipAuthMode:;
 
 AuthenticationResult CredentialValidator::validateChallenge(std::string_view passwordFromDB, std::string_view challengeInput, std::string_view challengeSalt)
 {
-    return challengeInput == Mantids30::Helpers::Crypto::calcSHA256(std::string(passwordFromDB) + std::string(challengeSalt)) ? AuthenticationResult::AUTHENTICATED : AuthenticationResult::AUTHENTICATION_FAILED;
+    return challengeInput == Mantids30::Core::Helpers::Crypto::calcSHA256(std::string(passwordFromDB) + std::string(challengeSalt)) ? AuthenticationResult::AUTHENTICATED : AuthenticationResult::AUTHENTICATION_FAILED;
 }
 
 AuthenticationResult CredentialValidator::validateGAuth(const std::string &accountUUID, const std::string &seed, const std::string &tokenInput)
@@ -134,7 +134,7 @@ AuthenticationResult CredentialValidator::validateGAuth(const std::string &accou
     }
 
     // Verify the token and update the cache and expirationQueue if successful
-    if (Mantids30::Helpers::OTP::TOTP::verifyToken(seed, tokenInput))
+    if (Mantids30::Core::Helpers::OTP::TOTP::verifyToken(seed, tokenInput))
     {
         // Add token to cache:
         if (useTokenCache)

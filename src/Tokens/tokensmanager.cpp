@@ -4,12 +4,13 @@
 #include <memory>
 
 using namespace Mantids30;
-using namespace Mantids30::Network::Protocol;
-using namespace API::RESTful;
+using namespace Mantids30::Protocol::HTTP;
+using namespace Mantids30::Protocol;
+using namespace Mantids30::Server::WebRESTFul::RESTful;
 
 time_t TokensManager::getExpirationTime(const ApplicationTokenCommonParams &commonParams, IdentityManager *identityManager, const std::string &tokenType, time_t defaultTimeout)
 {
-    time_t expectedExpirationTime = time(nullptr) + Helpers::JSON::ASINT64(Helpers::JSON::MEMBER_OR_NULL(commonParams.appAuthSettings.tokensConfiguration, tokenType), "timeout", defaultTimeout);
+    time_t expectedExpirationTime = time(nullptr) + DataFormat::JSON::ASINT64(DataFormat::JSON::MEMBER_OR_NULL(commonParams.appAuthSettings.tokensConfiguration, tokenType), "timeout", defaultTimeout);
     time_t accountExpirationTime = identityManager->accounts->getAccountExpirationTime(commonParams.jwtAccountName);
 
     if (accountExpirationTime == 0 || accountExpirationTime >= expectedExpirationTime)
@@ -28,12 +29,12 @@ void TokensManager::configureApplicationAccessToken(Mantids30::DataFormat::JWT::
 {
     IdentityManager *identityManager = Globals::getIdentityManager();
 
-    std::string tokenId = Mantids30::Helpers::Random::createRandomString(16);
+    std::string tokenId = Mantids30::Core::Helpers::Random::createRandomString(16);
     accessToken.setSubject(commonParams.jwtAccountName);
     accessToken.setIssuedAt(time(nullptr));
     accessToken.setExpirationTime(TokensManager::getExpirationTime(commonParams, identityManager, "accessToken", 300));
     accessToken.setNotBefore(time(nullptr) - 30);
-    accessToken.setClaim("slotIds", Helpers::JSON::fromSet(commonParams.slotIds));
+    accessToken.setClaim("slotIds", DataFormat::JSON::fromSet(commonParams.slotIds));
     accessToken.setJwtId(tokenId);
     accessToken.setClaim("parentTokenId", commonParams.refreshTokenId);
     accessToken.setClaim("app", commonParams.appName);
@@ -84,7 +85,7 @@ void TokensManager::configureApplicationRefreshToken(Mantids30::DataFormat::JWT:
     refreshToken.setSubject(commonParams.jwtAccountName);
     refreshToken.setIssuedAt(time(nullptr));
     refreshToken.setNotBefore(time(nullptr) - 30);
-    refreshToken.setClaim("slotIds", Helpers::JSON::fromSet(commonParams.slotIds));
+    refreshToken.setClaim("slotIds", DataFormat::JSON::fromSet(commonParams.slotIds));
     refreshToken.setJwtId(commonParams.refreshTokenId);
     refreshToken.setClaim("app", commonParams.appName);
     refreshToken.setClaim("activity", refreshParams.activity);
@@ -117,7 +118,7 @@ void TokensManager::configureLPToken(Mantids30::DataFormat::JWT::Token &lpToken,
     lpToken.setClaim("type", "access");
     lpToken.setClaim("app", IAM_LOGINPORTAL_APPNAME);
     lpToken.setClaim("keepAuthenticated", authContext->keepAuthenticated);
-    lpToken.setJwtId(Mantids30::Helpers::Random::createRandomString(16));
+    lpToken.setJwtId(Mantids30::Core::Helpers::Random::createRandomString(16));
 }
 
 void TokensManager::issueLPTokenCookie(APIReturn &response, const RequestContext &request, const std::shared_ptr<TransientAuthenticationContext> &authContext)
@@ -142,7 +143,7 @@ void TokensManager::issueLPTokenCookie(APIReturn &response, const RequestContext
         {"exp", std::to_string(lpToken.getExpirationTime())},
         {"subject", authContext->accountUUID},
         {"displayName", identityManager->accounts->getAccountDisplayName(authContext->accountUUID)},
-        {"slotIds", Helpers::JSON::fromSet(authContext->authenticatedSlots)},
+        {"slotIds", DataFormat::JSON::fromSet(authContext->authenticatedSlots)},
         {"authenticatedSchemes", authContext->getAllAuthenticatedSchemes()},
         {"authenticatedAppsCallbackURLs", authContext->getAllAuthenticatedAppsCallbackURLs()}
     };
@@ -155,6 +156,6 @@ void TokensManager::issueLPTokenCookie(APIReturn &response, const RequestContext
         response.cookiesMap["loggedIn"].secure = true;
         response.cookiesMap["loggedIn"].httpOnly = false;
         response.cookiesMap["loggedIn"].path = "/";
-        response.cookiesMap["loggedIn"].value = Helpers::Encoders::encodeToBase64(Helpers::JSON::toString(authenticationPublicData));
+        response.cookiesMap["loggedIn"].value = Core::Helpers::Encoders::encodeToBase64(DataFormat::JSON::toString(authenticationPublicData));
     }
 }

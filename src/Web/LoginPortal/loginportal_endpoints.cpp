@@ -1,19 +1,22 @@
 #include "loginportal_endpoints.h"
 
-#include <Mantids30/Protocol_HTTP/httpv1_base.h>
+#include <Mantids30/Protocol/HTTP/httpv1_base.h>
 #include "globals.h"
-#include <Mantids30/DataFormat_JSON/json.h>
+#include <Mantids30/DataFormat/JSON/json.h>
 #include <boost/json/value.hpp>
 
 using namespace Mantids30;
-using namespace Mantids30::Program;
-using namespace Mantids30::API::RESTful;
-using namespace Mantids30::Network::Protocol;
+using namespace Mantids30::Protocol::HTTP;
+using namespace Mantids30::Server::WebRESTFul;
+using namespace Mantids30::Server::WebRESTFul;
+using namespace Mantids30::Runtime;
+using namespace Mantids30::Server::WebRESTFul::RESTful;
+using namespace Mantids30::Protocol;
 using namespace Mantids30::DataFormat;
 
 void LoginPortal_Endpoints::addEndpoints(const std::shared_ptr<Endpoints> &endpoints)
 {
-    using SecurityRequirements = API::Security::Requirements;
+    using SecurityRequirements = Mantids30::Server::WebRESTFul::Security::Requirements;
 
     // AUTHENTICATION FUNCTIONS:
 
@@ -80,7 +83,7 @@ LoginPortal_Endpoints::APIReturn LoginPortal_Endpoints::getApplicationLoginPubli
     ApplicationAuthSettings tokenProps = Globals::getIdentityManager()->applications->getAuthSettingsFromApplication(appName);
 
     boost::json::object session{
-        {"useSessionCookiesByDefault", Helpers::JSON::ASBOOL(Helpers::JSON::MEMBER_OR_NULL(tokenProps.tokensConfiguration, "accessToken"), "useSessionCookiesByDefault", true)},
+        {"useSessionCookiesByDefault", DataFormat::JSON::ASBOOL(DataFormat::JSON::MEMBER_OR_NULL(tokenProps.tokensConfiguration, "accessToken"), "useSessionCookiesByDefault", true)},
     };
     boost::json::object app{
         {"name",        appName},

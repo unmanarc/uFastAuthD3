@@ -1,19 +1,19 @@
 #include "identitymanager_db.h"
 
-#include <Mantids30/Helpers/datatables.h>
+#include <Mantids30/DataFormat/JSON/datatables.h>
 
 
-#include <Mantids30/Memory/a_bool.h>
-#include <Mantids30/Memory/a_datetime.h>
-#include <Mantids30/Memory/a_int32.h>
-#include <Mantids30/Memory/a_string.h>
-#include <Mantids30/Memory/a_uint32.h>
-#include <Mantids30/Memory/a_uint64.h>
-#include <Mantids30/Memory/a_var.h>
+#include <Mantids30/Core/Memory/a_bool.h>
+#include <Mantids30/Core/Memory/a_datetime.h>
+#include <Mantids30/Core/Memory/a_int32.h>
+#include <Mantids30/Core/Memory/a_string.h>
+#include <Mantids30/Core/Memory/a_uint32.h>
+#include <Mantids30/Core/Memory/a_uint64.h>
+#include <Mantids30/Core/Memory/a_var.h>
 #include <memory>
 
-using namespace Mantids30::Memory;
-using namespace Mantids30::Database;
+using namespace Mantids30::Core::Memory;
+using namespace Mantids30::DB::Common;
 using namespace Mantids30;
 
 uint32_t IdentityManager_DB::AuthController_DB::getAccountActiveSessionsCount(std::string_view accountUUID)
@@ -38,16 +38,16 @@ boost::json::value IdentityManager_DB::AuthController_DB::searchAccountSessions(
 {
     boost::json::object result{
         {"data", boost::json::array{}},
-        {"draw", Mantids30::Helpers::JSON::MEMBER_OR_NULL(dataTablesFilters, "draw")},
+        {"draw", Mantids30::DataFormat::JSON::MEMBER_OR_NULL(dataTablesFilters, "draw")},
     };
     std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
 
-    uint64_t offset = Helpers::JSON::ASUINT64(dataTablesFilters, "start", 0);
-    uint64_t limit = Helpers::JSON::ASUINT64(dataTablesFilters, "length", 0);
+    uint64_t offset = DataFormat::JSON::ASUINT64(dataTablesFilters, "start", 0);
+    uint64_t limit = DataFormat::JSON::ASUINT64(dataTablesFilters, "length", 0);
 
-    std::string orderByStatement = Helpers::DataTables::getOrderByStatement(dataTablesFilters);
-    const boost::json::value &searchFilter = Mantids30::Helpers::JSON::MEMBER_OR_NULL(dataTablesFilters, "search");
-    std::string searchValue (Helpers::JSON::ASSTRING(searchFilter, "value", ""));
+    std::string orderByStatement = DataFormat::JSON::DataTables::getOrderByStatement(dataTablesFilters);
+    const boost::json::value &searchFilter = Mantids30::DataFormat::JSON::MEMBER_OR_NULL(dataTablesFilters, "search");
+    std::string searchValue (DataFormat::JSON::ASSTRING(searchFilter, "value", ""));
     std::string whereFilters = "`f_accountUUID` = :ACCOUNTNAME";
 
     std::string sqlQueryStr = R"(

@@ -1,21 +1,21 @@
 #include "identitymanager_db.h"
 
-#include <Mantids30/Helpers/datatables.h>
+#include <Mantids30/DataFormat/JSON/datatables.h>
 
 
-#include <Mantids30/Memory/a_bool.h>
-#include <Mantids30/Memory/a_datetime.h>
-#include <Mantids30/Memory/a_int32.h>
-#include <Mantids30/Memory/a_string.h>
-#include <Mantids30/Memory/a_uint32.h>
-#include <Mantids30/Memory/a_uint64.h>
-#include <Mantids30/Memory/a_var.h>
+#include <Mantids30/Core/Memory/a_bool.h>
+#include <Mantids30/Core/Memory/a_datetime.h>
+#include <Mantids30/Core/Memory/a_int32.h>
+#include <Mantids30/Core/Memory/a_string.h>
+#include <Mantids30/Core/Memory/a_uint32.h>
+#include <Mantids30/Core/Memory/a_uint64.h>
+#include <Mantids30/Core/Memory/a_var.h>
 #include <memory>
 #include <string>
 #include <utility>
 
-using namespace Mantids30::Memory;
-using namespace Mantids30::Database;
+using namespace Mantids30::Core::Memory;
+using namespace Mantids30::DB::Common;
 using namespace Mantids30;
 
 bool IdentityManager::AuthController::recoverAccountMasterCredential(const ClientDetails &clientDetails, std::string_view performedBy, std::string_view accountUUID, std::string *sInitPW)
@@ -40,7 +40,7 @@ bool IdentityManager::AuthController::recoverAccountMasterCredential(const Clien
         {
             return false;
         }
-        newPass = Mantids30::Helpers::Random::createRandomString(16);
+        newPass = Mantids30::Core::Helpers::Random::createRandomString(16);
         credentialData = m_parent->authController->createNewCredential(authSlots.begin()->first, newPass, true);
     }
 
@@ -99,7 +99,7 @@ Credential IdentityManager_DB::AuthController_DB::retrieveAccountCredential(std:
         result.mustChange = mustChange.getValue();
         result.expirationTimestamp = expiration.getValue();
         result.badAttempts = badAttempts.getValue();
-        Mantids30::Helpers::Encoders::fromHex(salt.getValue(), result.ssalt, 4);
+        Mantids30::Core::Helpers::Encoders::fromHex(salt.getValue(), result.ssalt, 4);
         result.hash = hash.getValue();
     }
     return result;
@@ -109,15 +109,15 @@ boost::json::value IdentityManager_DB::AuthController_DB::searchAccountCredentia
 {
     boost::json::object result{
         {"data", boost::json::array{}},
-        {"draw", Mantids30::Helpers::JSON::MEMBER_OR_NULL(dataTablesFilters, "draw")},
+        {"draw", Mantids30::DataFormat::JSON::MEMBER_OR_NULL(dataTablesFilters, "draw")},
     };
     std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
 
-    uint64_t offset = Helpers::JSON::ASUINT64(dataTablesFilters, "start", 0);
-    uint64_t limit = Helpers::JSON::ASUINT64(dataTablesFilters, "length", 0);
-    std::string orderByStatement = Helpers::DataTables::getOrderByStatement(dataTablesFilters);
-    const boost::json::value &searchFilter = Mantids30::Helpers::JSON::MEMBER_OR_NULL(dataTablesFilters, "search");
-    std::string searchValue (Helpers::JSON::ASSTRING(searchFilter, "value", ""));
+    uint64_t offset = DataFormat::JSON::ASUINT64(dataTablesFilters, "start", 0);
+    uint64_t limit = DataFormat::JSON::ASUINT64(dataTablesFilters, "length", 0);
+    std::string orderByStatement = DataFormat::JSON::DataTables::getOrderByStatement(dataTablesFilters);
+    const boost::json::value &searchFilter = Mantids30::DataFormat::JSON::MEMBER_OR_NULL(dataTablesFilters, "search");
+    std::string searchValue (DataFormat::JSON::ASSTRING(searchFilter, "value", ""));
     std::string whereFilters = "`f_accountUUID` = :ACCOUNTNAME";
     std::string sqlQueryStr = R"(
         SELECT `f_accountUUID`, `f_slotId`, `logDateTime`, `logIP`, `logTLSCN`,
@@ -301,7 +301,7 @@ bool IdentityManager_DB::AuthController_DB::changeAccountCredential(const Client
                                                         {":account", MAKE_VAR(STRING, accountUUID)},
                                                         {":hash", MAKE_VAR(STRING, passwordData.hash)},
                                                         {":expiration", MAKE_VAR(DATETIME, passwordData.expirationTimestamp)},
-                                                        {":salt", MAKE_VAR(STRING, Mantids30::Helpers::Encoders::toHex(passwordData.ssalt, 4))},
+                                                        {":salt", MAKE_VAR(STRING, Mantids30::Core::Helpers::Encoders::toHex(passwordData.ssalt, 4))},
                                                         {":mustChange", MAKE_VAR(BOOL, passwordData.mustChange)}
 
                                                        });

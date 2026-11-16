@@ -1,6 +1,6 @@
 #include "identitymanager.h"
 
-#include <Mantids30/Helpers/random.h>
+#include <Mantids30/Core/Helpers/random.h>
 
 
 

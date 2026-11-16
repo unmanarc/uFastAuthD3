@@ -1,31 +1,34 @@
 #include "websessionauthhandler_endpoints.h"
 
-#include <Mantids30/DataFormat_JWT/jwt.h>
-#include <Mantids30/Helpers/json.h>
-#include <Mantids30/Helpers/random.h>
-#include <Mantids30/Program_Logs/applog.h>
-#include <Mantids30/Program_Logs/loglevels.h>
-#include <Mantids30/Protocol_HTTP/hdr_cookie.h>
-#include <Mantids30/Protocol_HTTP/httpv1_base.h>
-#include <Mantids30/Protocol_HTTP/rsp_status.h>
+#include <Mantids30/DataFormat/JWT/jwt.h>
+#include <Mantids30/DataFormat/JSON/json.h>
+#include <Mantids30/Core/Helpers/random.h>
+#include <Mantids30/Runtime/Logs/applog.h>
+#include <Mantids30/Runtime/Logs/loglevels.h>
+#include <Mantids30/Protocol/HTTP/hdr_cookie.h>
+#include <Mantids30/Protocol/HTTP/httpv1_base.h>
+#include <Mantids30/Protocol/HTTP/rsp_status.h>
 
 #include <boost/algorithm/string.hpp>
-#include <Mantids30/DataFormat_JSON/json.h>
+#include <Mantids30/DataFormat/JSON/json.h>
 #include <string>
 
 #include "IdentityManager/ds_authentication.h"
 #include "globals.h"
-#include <Mantids30/API_EndpointsAndSessions/api_options_handler.h>
+#include <Mantids30/Server/WebRESTFul/api_options_handler.h>
 
 using namespace Mantids30;
-using namespace Mantids30::Program;
-using namespace Mantids30::API::RESTful;
-using namespace Mantids30::Network::Protocol;
+using namespace Mantids30::Protocol::HTTP;
+using namespace Mantids30::Server::WebRESTFul;
+using namespace Mantids30::Server::WebRESTFul;
+using namespace Mantids30::Runtime;
+using namespace Mantids30::Server::WebRESTFul::RESTful;
+using namespace Mantids30::Protocol;
 using namespace Mantids30::DataFormat;
 
 void WebSessionAuthHandler_Endpoints::addEndpoints(const std::shared_ptr<Endpoints> &endpoints)
 {
-    using SecurityRequirements = API::Security::Requirements;
+    using SecurityRequirements = Mantids30::Server::WebRESTFul::Security::Requirements;
 
     endpoints->addEndpoint(HTTP::Method::GET, "getLogoutCallbackURL", SecurityRequirements::NONE, {}, nullptr, &getLogoutCallbackURL);
     endpoints->addEndpoint(HTTP::Method::POST, "refreshAccessToken", SecurityRequirements::NONE, {}, nullptr, &refreshAccessToken);            // Using refresh token auth.
@@ -33,11 +36,11 @@ void WebSessionAuthHandler_Endpoints::addEndpoints(const std::shared_ptr<Endpoin
     endpoints->addEndpoint(HTTP::Method::GET, "getUserPublicData", SecurityRequirements::JWT_COOKIE_AUTH, {}, nullptr, &getUserPublicData);    // Using refresh token auth.
     endpoints->addEndpoint(HTTP::Method::POST, "logout", SecurityRequirements::JWT_COOKIE_AUTH, {}, nullptr, &appLogout);
     endpoints->addEndpoint(HTTP::Method::POST, "callback", SecurityRequirements::NONE, {}, nullptr, &callback);
-    endpoints->setEndpointOptions("callback", API::OptionsHandlerConfig().insertAllowedOrigin(Globals::pConfig.get<std::string>("AppVars.LoginPortalURL", "")).setAllowCredentials(true));
+    endpoints->setEndpointOptions("callback", OptionsHandlerConfig().insertAllowedOrigin(Globals::pConfig.get<std::string>("AppVars.LoginPortalURL", "")).setAllowCredentials(true));
 }
 
 HTTP::Status::Code WebSessionAuthHandler_Endpoints::handleRetokenizeHTML(const std::string &urlPostfix, HTTPv1_Base::Request *request, HTTPv1_Base::Response *response, const std::shared_ptr<void> &,
-                                                                         const Sessions::SessionInfo *sessionInfo)
+                                                                         const SessionInfo *sessionInfo)
 {
     std::string page;
     page = R"(
@@ -151,8 +154,8 @@ bool WebSessionAuthHandler_Endpoints::validateAndDecodeRefreshToken(const std::s
     }
 
     // 2. Extraer Claims básicos
-    std::string refreshTokenApp (Helpers::JSON::ASSTRING_D(refreshTokenNoVerified.getClaim("app"), ""));
-    std::string tokenType (Helpers::JSON::ASSTRING_D(refreshTokenNoVerified.getClaim("type"), ""));
+    std::string refreshTokenApp (DataFormat::JSON::ASSTRING_D(refreshTokenNoVerified.getClaim("app"), ""));
+    std::string tokenType (DataFormat::JSON::ASSTRING_D(refreshTokenNoVerified.getClaim("type"), ""));
 
     // Validar tipo de token
     if (tokenType != "refresher")
@@ -183,7 +186,7 @@ bool WebSessionAuthHandler_Endpoints::validateAndDecodeRefreshToken(const std::s
     }
 
     // 3. Validar la firma del token
-    std::shared_ptr<JWT> validator = Globals::getIdentityManager()->applications->getAppJWTValidator(refreshTokenApp);
+    std::shared_ptr<Mantids30::DataFormat::JWT> validator = Globals::getIdentityManager()->applications->getAppJWTValidator(refreshTokenApp);
     if (!validator)
     {
         outErrorMessage = "No JWT validator found for application.";
@@ -209,8 +212,8 @@ bool WebSessionAuthHandler_Endpoints::validateAndDecodeRefreshToken(const std::s
     outData.app = refreshTokenApp;
     outData.user = refreshTokenUser;
     outData.jwtId = refreshTokenVerified.getJwtId();
-    outData.slotIds = Helpers::JSON::toUInt32Set(refreshTokenVerified.getClaim("slotIds"));
-    outData.useEmbeddedInPortalAuthentication = Helpers::JSON::ASBOOL_D(refreshTokenVerified.getClaim("useEmbeddedInPortalAuthentication"), false);
+    outData.slotIds = DataFormat::JSON::toUInt32Set(refreshTokenVerified.getClaim("slotIds"));
+    outData.useEmbeddedInPortalAuthentication = DataFormat::JSON::ASBOOL_D(refreshTokenVerified.getClaim("useEmbeddedInPortalAuthentication"), false);
     outData.tokenProps = tokenProps;
 
     return true;
@@ -243,7 +246,7 @@ WebSessionAuthHandler_Endpoints::APIReturn WebSessionAuthHandler_Endpoints::getU
 
 WebSessionAuthHandler_Endpoints::APIReturn WebSessionAuthHandler_Endpoints::getApplicationPublicData(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
-    API::APIReturn response;
+    APIReturn response;
     std::string refreshTokenStr = request.clientRequest->getCookies()->getSubVar("RefreshToken");
     RefreshTokenData tokenData;
     std::string errorMsg;
@@ -322,8 +325,8 @@ bool WebSessionAuthHandler_Endpoints::validateAPIKey(const std::string &app, API
 
 std::string WebSessionAuthHandler_Endpoints::signApplicationToken(JWT::Token &accessToken, const ApplicationAuthSettings &appAuthSettings)
 {
-    std::string appName (Helpers::JSON::ASSTRING_D(accessToken.getClaim("app"), ""));
-    std::shared_ptr<JWT> signingJWT = Globals::getIdentityManager()->applications->getAppJWTSigner(appName);
+    std::string appName (DataFormat::JSON::ASSTRING_D(accessToken.getClaim("app"), ""));
+    std::shared_ptr<Mantids30::DataFormat::JWT> signingJWT = Globals::getIdentityManager()->applications->getAppJWTSigner(appName);
     if (!signingJWT)
     {
         return {};

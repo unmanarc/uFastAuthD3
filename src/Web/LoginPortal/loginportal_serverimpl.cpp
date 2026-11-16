@@ -4,19 +4,19 @@
 #include "globals.h"
 #include "loginportal_endpoints.h"
 
-#include <Mantids30/Config_REST/config_builder.h>
+#include <Mantids30/ConfigBuilder/Server_WebRESTFul/config_builder.h>
 
-#include <Mantids30/Server_RESTfulWebAPI/engine.h>
+#include <Mantids30/Server/WebRESTFul/engine.h>
 
 #include <boost/algorithm/string/predicate.hpp>
 #include <memory>
 
 // Imported namespaces are shortened and grouped for better readability
 using namespace Mantids30;
-using namespace Network;
-using namespace Network::Sockets;
-using namespace Network::Servers;
-using namespace Program;
+using namespace Mantids30::Network;
+using namespace Mantids30::Network::Sockets;
+using namespace Mantids30::Server::WebRESTFul;
+using namespace Mantids30::Runtime;
 
 bool appOriginValidatorFunction(const std::string &requestOrigin, const std::string &apikey, const std::set<std::string> &configPermittedAPIOrigins)
 {
@@ -53,7 +53,7 @@ bool appOriginValidatorFunction(const std::string &requestOrigin, const std::str
     }
 }
 
-Protocol::HTTP::Status::Code dynInitialChecks(Mantids30::Network::Protocol::HTTP::HTTPv1_Base::Request *request, Mantids30::Network::Protocol::HTTP::HTTPv1_Base::Response *response)
+Protocol::HTTP::Status::Code dynInitialChecks(Mantids30::Protocol::HTTP::HTTPv1_Base::Request *request, Mantids30::Protocol::HTTP::HTTPv1_Base::Response *response)
 {
     std::string refreshTokenUserCookie = request->getCookie("SessionPublicData");
     std::string accessTokenCookie = request->getCookie("AccessToken");
@@ -84,8 +84,8 @@ bool LoginPortal_ServerImpl::createService()
         return false;
     }
 
-    RESTful::Engine *loginWebServer = Program::Config::RESTful_Engine::createRESTfulEngine(config, LOG_APP, LOG_RPC, "Web Login", IAM_LOGINPORTAL_DEF_WEBROOTDIR,
-                                                                                           Program::Config::REST_ENGINE_MANDATORY_SSL);
+    Mantids30::Server::WebRESTFul::Engine *loginWebServer = ConfigBuilder::Server_WebRESTFul::Builder::createRESTfulEngine(config, LOG_APP, LOG_RPC, "Web Login", IAM_LOGINPORTAL_DEF_WEBROOTDIR,
+                                                                                           ConfigBuilder::Server_WebRESTFul::REST_ENGINE_MANDATORY_SSL);
 
     if (!loginWebServer)
     {
@@ -102,7 +102,7 @@ bool LoginPortal_ServerImpl::createService()
     loginWebServer->config.appName = IAM_LOGINPORTAL_APPNAME;
 
     // Setup the methods handler for version 1:
-    loginWebServer->endpointsHandler[1] = std::make_shared<API::RESTful::Endpoints>();
+    loginWebServer->endpointsHandler[1] = std::make_shared<Mantids30::Server::WebRESTFul::RESTful::Endpoints>();
 
     // Set the validations against the LPToken
     loginWebServer->jwtAccessTokenName = "LPToken";

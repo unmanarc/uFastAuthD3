@@ -1,8 +1,8 @@
 #pragma once
 
-#include <Mantids30/API_EndpointsAndSessions/api_restful_endpoints.h>
-#include <Mantids30/Helpers/json.h>
-#include <Mantids30/Protocol_HTTP/httpv1_base.h>
+#include <Mantids30/Server/WebRESTFul/api_restful_endpoints.h>
+#include <Mantids30/DataFormat/JSON/json.h>
+#include <Mantids30/Protocol/HTTP/httpv1_base.h>
 
 #include "IdentityManager/identitymanager.h"
 
@@ -10,12 +10,12 @@
 class AppSync_Endpoints
 {
 public:
-    using Endpoints = Mantids30::API::RESTful::Endpoints;
-    using APIReturn = Mantids30::API::APIReturn;
-    using RequestContext = Mantids30::API::RESTful::RequestContext;
-    using HTTPv1_Base = Mantids30::Network::Protocol::HTTP::HTTPv1_Base;
-    using ClientDetails = Mantids30::Sessions::ClientDetails;
-    using JWT = Mantids30::DataFormat::JWT;
+    using Endpoints = Mantids30::Server::WebRESTFul::RESTful::Endpoints;
+    using APIReturn = Mantids30::Protocol::HTTP::APIReturn;
+    using RequestContext = Mantids30::Server::WebRESTFul::RESTful::RequestContext;
+    using HTTPv1_Base = Mantids30::Protocol::HTTP::HTTPv1_Base;
+    using ClientDetails = Mantids30::Server::WebRESTFul::Sessions::ClientDetails;
+    using JWT = ::Mantids30::DataFormat::JWT;
 
     /**
     * @brief Adds the available login authentication methods as server functions.

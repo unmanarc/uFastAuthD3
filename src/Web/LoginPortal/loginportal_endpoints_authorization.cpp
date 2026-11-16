@@ -1,10 +1,10 @@
 #include "IdentityManager/ds_authentication.h"
 #include "Tokens/tokensmanager.h"
 #include "loginportal_endpoints.h"
-#include <Mantids30/DataFormat_JSON/json.h>
-#include <Mantids30/Helpers/json.h>
-#include <Mantids30/Program_Logs/loglevels.h>
-#include <Mantids30/Protocol_HTTP/api_return.h>
+#include <Mantids30/DataFormat/JSON/json.h>
+#include <Mantids30/DataFormat/JSON/json.h>
+#include <Mantids30/Runtime/Logs/loglevels.h>
+#include <Mantids30/Protocol/HTTP/api_return.h>
 
 #include "globals.h"
 
@@ -15,15 +15,15 @@
 #include <string>
 
 using namespace Mantids30;
-using namespace Program;
-using namespace API::RESTful;
-using namespace Network::Protocol;
+using namespace Mantids30::Runtime;
+using namespace Mantids30::Server::WebRESTFul::RESTful;
+using namespace Mantids30::Protocol;
 using namespace Mantids30::DataFormat;
 
 // Validate user and get authorization flow:
-API::APIReturn LoginPortal_Endpoints::preAuthorize(void *context, const API::RESTful::RequestContext &request, ClientDetails &authClientDetails)
+APIReturn LoginPortal_Endpoints::preAuthorize(void *context, const Mantids30::Server::WebRESTFul::RESTful::RequestContext &request, ClientDetails &authClientDetails)
 {
-    API::APIReturn response;
+    APIReturn response;
     boost::json::value result;
     // Environment:
     IdentityManager *identityManager = Globals::getIdentityManager();
@@ -33,8 +33,8 @@ API::APIReturn LoginPortal_Endpoints::preAuthorize(void *context, const API::RES
     uint32_t loginAuthenticationTimeout = Globals::pConfig.get<uint32_t>("LoginPortal.AuthenticationTimeout", 300);
 
     // Input parameters:
-    authContext->accountName = Helpers::JSON::ASSTRING(*request.inputJSON, "accountName", ""); // ACCOUNT ID.
-    std::string activityName(Helpers::JSON::ASSTRING(*request.inputJSON, "activity", ""));     // APP ACTIVITY NAME.
+    authContext->accountName = DataFormat::JSON::ASSTRING(*request.inputJSON, "accountName", ""); // ACCOUNT ID.
+    std::string activityName(DataFormat::JSON::ASSTRING(*request.inputJSON, "activity", ""));     // APP ACTIVITY NAME.
     authContext->loadUUIDFromAccountName();
 
     // Account UUID
@@ -68,7 +68,7 @@ API::APIReturn LoginPortal_Endpoints::preAuthorize(void *context, const API::RES
     }
     else
     {
-        appName = Helpers::JSON::ASSTRING(*request.inputJSON, "app", "");
+        appName = DataFormat::JSON::ASSTRING(*request.inputJSON, "app", "");
     }
 
     if (!identityManager->applications->doesApplicationExist(appName))
@@ -99,12 +99,12 @@ API::APIReturn LoginPortal_Endpoints::preAuthorize(void *context, const API::RES
 
     result.as_object()["loginAuthenticationTimeout"] = loginAuthenticationTimeout;
 
-    response = API::APIReturn(result);
+    response = APIReturn(result);
     response.cookiesMap["LPToken"].deleteCookie();
     return response;
 }
 
-void LoginPortal_Endpoints::issueTransientAuthTokenResponse(const RequestContext &request, Mantids30::API::APIReturn &response, const std::shared_ptr<TransientAuthenticationContext> &authContext,
+void LoginPortal_Endpoints::issueTransientAuthTokenResponse(const RequestContext &request, Mantids30::Protocol::HTTP::APIReturn &response, const std::shared_ptr<TransientAuthenticationContext> &authContext,
                                                             const std::vector<AuthenticationSchemeUsedSlot> &requiredAuthSlots, bool mustChangeCredential, bool canSkipPasswordChange)
 {
     // Retrieve configuration parameters from global settings.
@@ -159,9 +159,9 @@ void LoginPortal_Endpoints::issueTransientAuthTokenResponse(const RequestContext
 }
 
 // Validate credential:
-API::APIReturn LoginPortal_Endpoints::authorize(void *context, const RequestContext &request, ClientDetails &clientDetails)
+APIReturn LoginPortal_Endpoints::authorize(void *context, const RequestContext &request, ClientDetails &clientDetails)
 {
-    API::APIReturn response;
+    APIReturn response;
 
     // Get the identity manager from global settings to handle authentication.
     IdentityManager *identityManager = Globals::getIdentityManager();
@@ -190,10 +190,10 @@ API::APIReturn LoginPortal_Endpoints::authorize(void *context, const RequestCont
     // TODO implement other authentication modes (Eg. CRAM)
     AuthenticationResult authRetCode = identityManager->authController->authenticateCredential(clientDetails,
                                                                                                authContext->accountUUID,
-                                                                                               Helpers::JSON::ASSTRING(*request.inputJSON, "password", ""),
+                                                                                               DataFormat::JSON::ASSTRING(*request.inputJSON, "password", ""),
                                                                                                authContext->currentSlotId.value(),
-                                                                                               getAuthModeFromString(Helpers::JSON::ASSTRING(*request.inputJSON, "authMode", "MODE_PLAIN")),
-                                                                                               Helpers::JSON::ASSTRING(*request.inputJSON, "challengeSalt", ""),
+                                                                                               getAuthModeFromString(DataFormat::JSON::ASSTRING(*request.inputJSON, "authMode", "MODE_PLAIN")),
+                                                                                               DataFormat::JSON::ASSTRING(*request.inputJSON, "challengeSalt", ""),
                                                                                                authContext);
 
     LOG_APP->log2(__func__,

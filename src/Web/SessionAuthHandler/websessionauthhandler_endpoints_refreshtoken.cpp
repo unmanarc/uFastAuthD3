@@ -1,7 +1,7 @@
-#include <Mantids30/DataFormat_JSON/json.h>
-#include <Mantids30/Helpers/json.h>
-#include <Mantids30/Program_Logs/loglevels.h>
-#include <Mantids30/Protocol_HTTP/httpv1_base.h>
+#include <Mantids30/DataFormat/JSON/json.h>
+#include <Mantids30/DataFormat/JSON/json.h>
+#include <Mantids30/Runtime/Logs/loglevels.h>
+#include <Mantids30/Protocol/HTTP/httpv1_base.h>
 #include <boost/algorithm/string/join.hpp>
 
 #include "Tokens/tokensmanager.h"
@@ -9,14 +9,15 @@
 #include "websessionauthhandler_endpoints.h"
 
 using namespace Mantids30;
+using namespace Mantids30::Protocol::HTTP;
 using namespace Mantids30::DataFormat;
-using namespace Program;
-using namespace API::RESTful;
-using namespace Network::Protocol;
+using namespace Mantids30::Runtime;
+using namespace Mantids30::Server::WebRESTFul::RESTful;
+using namespace Mantids30::Protocol;
 
-API::APIReturn WebSessionAuthHandler_Endpoints::refreshAccessToken(void *context, const RequestContext &request, ClientDetails &authClientDetails)
+APIReturn WebSessionAuthHandler_Endpoints::refreshAccessToken(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
-    API::APIReturn response;
+    APIReturn response;
     std::string refreshTokenStr = request.clientRequest->getCookies()->getSubVar("RefreshToken");
     RefreshTokenData refreshTokenData;
     std::string errorMsg;

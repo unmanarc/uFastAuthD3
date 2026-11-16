@@ -1,19 +1,19 @@
 #include "identitymanager_db.h"
 
-#include <Mantids30/Helpers/datatables.h>
+#include <Mantids30/DataFormat/JSON/datatables.h>
 
 
-#include <Mantids30/Memory/a_bool.h>
-#include <Mantids30/Memory/a_datetime.h>
-#include <Mantids30/Memory/a_int32.h>
-#include <Mantids30/Memory/a_string.h>
-#include <Mantids30/Memory/a_uint32.h>
-#include <Mantids30/Memory/a_uint64.h>
-#include <Mantids30/Memory/a_var.h>
+#include <Mantids30/Core/Memory/a_bool.h>
+#include <Mantids30/Core/Memory/a_datetime.h>
+#include <Mantids30/Core/Memory/a_int32.h>
+#include <Mantids30/Core/Memory/a_string.h>
+#include <Mantids30/Core/Memory/a_uint32.h>
+#include <Mantids30/Core/Memory/a_uint64.h>
+#include <Mantids30/Core/Memory/a_var.h>
 #include <optional>
 
-using namespace Mantids30::Memory;
-using namespace Mantids30::Database;
+using namespace Mantids30::Core::Memory;
+using namespace Mantids30::DB::Common;
 using namespace Mantids30;
 
 

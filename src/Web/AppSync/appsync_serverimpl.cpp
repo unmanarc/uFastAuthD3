@@ -4,18 +4,18 @@
 #include "defs.h"
 #include "globals.h"
 
-#include <Mantids30/Config_REST/config_builder.h>
-#include <Mantids30/Server_RESTfulWebAPI/engine.h>
+#include <Mantids30/ConfigBuilder/Server_WebRESTFul/config_builder.h>
+#include <Mantids30/Server/WebRESTFul/engine.h>
 
 #include <boost/algorithm/string/predicate.hpp>
 #include <memory>
 
 // Imported namespaces are shortened and grouped for better readability
 using namespace Mantids30;
-using namespace Network;
-using namespace Network::Sockets;
-using namespace Network::Servers;
-using namespace Program;
+using namespace Mantids30::Network;
+using namespace Mantids30::Network::Sockets;
+using namespace Mantids30::Server::WebRESTFul;
+using namespace Mantids30::Runtime;
 
 bool AppSync_ServerImpl::createService()
 {
@@ -31,8 +31,8 @@ bool AppSync_ServerImpl::createService()
         return false;
     }
 
-    RESTful::Engine *webSessionAuthHandlerServer = Program::Config::RESTful_Engine::createRESTfulEngine(config, LOG_APP, LOG_RPC, "Application Synchronization Service", IAM_LOGINPORTAL_DEF_WEBROOTDIR,
-                                                                                                        Program::Config::REST_ENGINE_NOCONFIG_JWT);
+    Mantids30::Server::WebRESTFul::Engine *webSessionAuthHandlerServer = ConfigBuilder::Server_WebRESTFul::Builder::createRESTfulEngine(config, LOG_APP, LOG_RPC, "Application Synchronization Service", IAM_LOGINPORTAL_DEF_WEBROOTDIR,
+                                                                                                        ConfigBuilder::Server_WebRESTFul::REST_ENGINE_NOCONFIG_JWT);
 
     if (!webSessionAuthHandlerServer)
     {
@@ -43,7 +43,7 @@ bool AppSync_ServerImpl::createService()
     webSessionAuthHandlerServer->config.setSoftwareVersion(atoi(PROJECT_VER_MAJOR), atoi(PROJECT_VER_MINOR), atoi(PROJECT_VER_PATCH), "a");
 
     // Setup the methods handler for version 1:
-    webSessionAuthHandlerServer->endpointsHandler[1] = std::make_shared<API::RESTful::Endpoints>();
+    webSessionAuthHandlerServer->endpointsHandler[1] = std::make_shared<Mantids30::Server::WebRESTFul::RESTful::Endpoints>();
 
     // This will validate the JWT, the app should match with this:
     webSessionAuthHandlerServer->config.appName = "APPSYNC";

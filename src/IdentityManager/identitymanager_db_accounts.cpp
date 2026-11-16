@@ -1,38 +1,38 @@
 #include "IdentityManager/identitymanager.h"
-#include "Mantids30/DataFormat_JSON/json_accessors.h"
-#include "Mantids30/DataFormat_JSON/json_accessors_array.h"
+#include <Mantids30/DataFormat/JSON/json_accessors.h>
+#include <Mantids30/DataFormat/JSON/json_accessors_array.h>
 #include "identitymanager_db.h"
 #include "globals.h"
-#include <Mantids30/Helpers/json.h>
+#include <Mantids30/DataFormat/JSON/json.h>
 
-#include <Mantids30/DB/transaction.h>
-#include <Mantids30/Helpers/datatables.h>
-#include <Mantids30/Helpers/random.h>
+#include <Mantids30/DB/Common/transaction.h>
+#include <Mantids30/DataFormat/JSON/datatables.h>
+#include <Mantids30/Core/Helpers/random.h>
 
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/join.hpp>
 #include <boost/json/value.hpp>
 #include <boost/regex.hpp>
 #include <regex>
-#include <Mantids30/DataFormat_JSON/json.h>
+#include <Mantids30/DataFormat/JSON/json.h>
 #include <optional>
 
-#include <Mantids30/Memory/a_bool.h>
-#include <Mantids30/Memory/a_datetime.h>
-#include <Mantids30/Memory/a_int32.h>
-#include <Mantids30/Memory/a_string.h>
-#include <Mantids30/Memory/a_uint32.h>
-#include <Mantids30/Memory/a_uint64.h>
-#include <Mantids30/Memory/a_var.h>
+#include <Mantids30/Core/Memory/a_bool.h>
+#include <Mantids30/Core/Memory/a_datetime.h>
+#include <Mantids30/Core/Memory/a_int32.h>
+#include <Mantids30/Core/Memory/a_string.h>
+#include <Mantids30/Core/Memory/a_uint32.h>
+#include <Mantids30/Core/Memory/a_uint64.h>
+#include <Mantids30/Core/Memory/a_var.h>
 
 using namespace Mantids30;
-using namespace Mantids30::Memory;
-using namespace Mantids30::Database;
+using namespace Mantids30::Core::Memory;
+using namespace Mantids30::DB::Common;
 
 bool IdentityManager_DB::Accounts_DB::extendInactivity(std::string_view accountUUID, const time_t &validUntil)
 {
     std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
-    Database::Transaction tg(*_parent->m_sqlConnector);
+    DB::Common::Transaction tg(*_parent->m_sqlConnector);
 
     // Step 1: Delete the existing record if it exists
     // Note: In SQLite, if accountUUID is not unique, this deletes ALL matching rows.
@@ -72,9 +72,9 @@ CreateAccountResult IdentityManager_DB::Accounts_DB::createAccount(time_t expira
                                                                    const std::map<std::string, ApplicationDef> &appDefs, const std::map<std::string, std::string> &detailFieldsValues)
 {
     std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
-    Database::Transaction tg(*_parent->m_sqlConnector);
+    DB::Common::Transaction tg(*_parent->m_sqlConnector);
 
-    std::string accountUUID = Helpers::Random::createUUIDv4();
+    std::string accountUUID = Core::Helpers::Random::createUUIDv4();
 
     bool r = _parent->m_sqlConnector->qExecuteEx("INSERT INTO iam.accounts (`accountUUID`,`isAdmin`,`isEnabled`,`isBlocked`,`expiration`,`isAccountConfirmed`,`creator`) "
                                                  "VALUES(:accountUUID,:admin ,:enabled, :blocked ,:expiration ,:confirmed ,:creator);",
@@ -266,7 +266,7 @@ std::string IdentityManager_DB::Accounts_DB::getAccountDisplayName(std::string_v
         auto it = fieldValuesMap.find(tagName);
         if (it != fieldValuesMap.end())
         {
-            std::string placeholder = Helpers::Random::createRandomString(16);
+            std::string placeholder = Core::Helpers::Random::createRandomString(16);
             placeholderToValue[placeholder] = it->second;
             result.append(placeholder);
         }
@@ -425,19 +425,19 @@ boost::json::value IdentityManager_DB::Accounts_DB::searchAccounts(const boost::
     boost::json::object result{
         {"data", boost::json::array{}},
         // DataTables:
-        {"draw", Helpers::JSON::MEMBER_OR_NULL(dataTablesFilters,"draw")},
+        {"draw", DataFormat::JSON::MEMBER_OR_NULL(dataTablesFilters,"draw")},
     };
 
     std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
 
-    uint64_t offset = Helpers::JSON::ASUINT64(dataTablesFilters, "start", 0);
-    uint64_t limit = Helpers::JSON::ASUINT64(dataTablesFilters, "length", 0);
+    uint64_t offset = DataFormat::JSON::ASUINT64(dataTablesFilters, "start", 0);
+    uint64_t limit = DataFormat::JSON::ASUINT64(dataTablesFilters, "length", 0);
 
     // Manejo de ordenamiento (order)
-    std::string orderByStatement = Helpers::DataTables::getOrderByStatement(dataTablesFilters);
+    std::string orderByStatement = DataFormat::JSON::DataTables::getOrderByStatement(dataTablesFilters);
 
     // Extract the search value from dataTablesFilters
-    std::string searchValue (Helpers::JSON::ASSTRING(Helpers::JSON::MEMBER_OR_NULL(dataTablesFilters,"search"), "value", ""));
+    std::string searchValue (DataFormat::JSON::ASSTRING(DataFormat::JSON::MEMBER_OR_NULL(dataTablesFilters,"search"), "value", ""));
     std::string whereFilters;
 
     // Build the SQL query with WHERE clause for DataTables search
@@ -533,7 +533,7 @@ boost::json::value IdentityManager_DB::Accounts_DB::searchAccounts(const boost::
     // Iterate the non-const array so we can mutate each row (ASARRAY_OR_EMPTY returns a const array).
     for (boost::json::value &row : result["data"].as_array())
     {
-        std::string_view accountUUID = Helpers::JSON::ASSTRING(row,"accountUUID","");
+        std::string_view accountUUID = DataFormat::JSON::ASSTRING(row,"accountUUID","");
         boost::json::object &rowObj = row.as_object();
         boost::json::array appsArray{};
         for (const std::string &appName : _parent->applications->listAccountApplications(accountUUID))

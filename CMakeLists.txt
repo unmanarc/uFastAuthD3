@@ -73,30 +73,30 @@ target_compile_options(${APP_NAME} PUBLIC ${OPENSSL_CFLAGS_OTHER})
 target_link_libraries(${APP_NAME} ${OPENSSL_LDFLAGS})
 
 ################################################################################
-# List of Mantids30 libraries to link against
+# List of Mantids30 libraries to link against (new libMantids30 layout, v3.0+)
 set(Mantids30_LIBRARIES
-    Mantids30_Server_WebCore
-    Mantids30_Server_RESTfulWebAPI
-    Mantids30_API_EndpointsAndSessions
-    Mantids30_DB
-    Mantids30_DB_SQLite3
+    Mantids30_Server_WebRESTFul
     Mantids30_Protocol_HTTP
     Mantids30_Protocol_MIME
-    Mantids30_Net_Sockets
-    Mantids30_Threads
-    Mantids30_Memory
-    Mantids30_Program_Service
-    Mantids30_Program_Logs
-    Mantids30_Helpers
-    Mantids30_Scripts_JSONExprEval
-    Mantids30_Scripts_MantidsLang
+    Mantids30_Protocol_FastRPC1
+    Mantids30_Protocol_LineRecv
+    Mantids30_DB_Common
+    Mantids30_DB_SQLite3
+    Mantids30_Network_Sockets
+    Mantids30_Network_Chains
+    Mantids30_Core_Threads
+    Mantids30_Core_Memory
+    Mantids30_Core_Helpers
+    Mantids30_Runtime_Service
+    Mantids30_Runtime_Logs
+    Mantids30_Scripting_JSONExprEval
+    Mantids30_Scripting_MantidsLang
     Mantids30_DataFormat_JWT
     Mantids30_DataFormat_JSON
-    Mantids30_Config_REST
-    Mantids30_Config_JWT
-    Mantids30_Config_Logs
-    Mantids30_Protocol_FastRPC1
-    Mantids30_Protocol_APISync
+    Mantids30_ConfigBuilder_Runtime_Logs
+    Mantids30_ConfigBuilder_Server_WebRESTFul
+    Mantids30_ConfigBuilder_DataFormat_JWT
+    Mantids30_Client_APISync
 )
 
 #set(ENV{PKG_CONFIG_PATH} "mydevelpath/ROOT/share/pkgconfig:$ENV{PKG_CONFIG_PATH}")

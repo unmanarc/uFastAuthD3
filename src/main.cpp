@@ -1,9 +1,9 @@
-#include <Mantids30/Helpers/file.h>
-#include <Mantids30/Memory/a_bool.h>
-#include <Mantids30/Net_Sockets/socket_tls.h>
-#include <Mantids30/Config_Logs/config_builder.h>
-#include <Mantids30/Program_Service/application.h>
-#include <Mantids30/Program_Service/program_config.h>
+#include <Mantids30/Core/Helpers/file.h>
+#include <Mantids30/Core/Memory/a_bool.h>
+#include <Mantids30/Network/Sockets/socket_tls.h>
+#include <Mantids30/ConfigBuilder/Runtime_Logs/config_builder.h>
+#include <Mantids30/Runtime/Service/application.h>
+#include <Mantids30/Runtime/Service/program_config.h>
 
 #include "Web/AdminPortal/adminportal_serverimpl.h"
 #include "Web/AppSync/appsync_serverimpl.h"
@@ -29,7 +29,9 @@
 #include <boost/property_tree/info_parser.hpp>
 
 using namespace Mantids30;
-using namespace Mantids30::Program;
+using namespace Mantids30::Runtime;
+using namespace Mantids30::Runtime::Service;
+using namespace Mantids30::ConfigBuilder;
 
 class Main : public Application
 {
@@ -44,14 +46,14 @@ public:
         globalArguments->addAuthor({"Aarón Mizrachi", "dev@unmanarc.com"});
         globalArguments->setVersion(atoi(PROJECT_VER_MAJOR), atoi(PROJECT_VER_MINOR), atoi(PROJECT_VER_PATCH), "a");
 
-        globalArguments->addCommandLineOption("Service Options", 'c', "config-dir", "Configuration directory", "/etc/ufastauthd3", Memory::Abstract::Var::Type::STRING);
-        globalArguments->addCommandLineOption("Recovery Options", 'r', "createnewadmin", "Create new admin account", "false", Memory::Abstract::Var::Type::BOOL);
+        globalArguments->addCommandLineOption("Service Options", 'c', "config-dir", "Configuration directory", "/etc/ufastauthd3", Core::Memory::Abstract::Var::Type::STRING);
+        globalArguments->addCommandLineOption("Recovery Options", 'r', "createnewadmin", "Create new admin account", "false", Core::Memory::Abstract::Var::Type::BOOL);
     }
 
     bool _config(int, char *argv[], Arguments::GlobalArguments *globalArguments) override
     {
         // process config:
-        std::shared_ptr<Logs::AppLog> initLog = Config::Logs::createInitLog();
+        std::shared_ptr<Logs::AppLog> initLog = ConfigBuilder::Runtime_Logs::Builder::createInitLog();
         Logs::Mode logMode = Logs::Mode::STANDARD;
 
         Network::Sockets::Socket_TLS::prepareTLS();
@@ -72,7 +74,7 @@ public:
         //chdir(configDir.c_str());
 
         bool isConfigFileInsecure = true;
-        if (!Helpers::File::isSensitiveConfigPermissionInsecure(configFile, &isConfigFileInsecure))
+        if (!Core::Helpers::File::isSensitiveConfigPermissionInsecure(configFile, &isConfigFileInsecure))
         {
             initLog->log0(__func__, Logs::LogLevel::WARNING, "The configuration 'ufastauthd3.conf' file is inaccessible, loading defaults...");
         }
@@ -86,7 +88,7 @@ public:
                               "update any affected applications or services as necessary.",
                               configFile.c_str());
 
-                if (Helpers::File::fixSensitiveConfigPermission(configFile))
+                if (Core::Helpers::File::fixSensitiveConfigPermission(configFile))
                 {
                     initLog->log0(__func__, Logs::LogLevel::SECURITY_ALERT, "The permissions of the 'ufastauthd3.conf' file has been changed to 0600.");
                 }
@@ -114,8 +116,8 @@ public:
             }
         }
 
-        Globals::appLog = Config::Logs::createAppLog(Globals::pConfig);
-        Globals::rpcLog = Config::Logs::createRPCLog(Globals::pConfig);
+        Globals::appLog = ConfigBuilder::Runtime_Logs::Builder::createAppLog(Globals::pConfig);
+        Globals::rpcLog = ConfigBuilder::Runtime_Logs::Builder::createRPCLog(Globals::pConfig);
 
         return true;
     }

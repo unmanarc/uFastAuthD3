@@ -2,28 +2,31 @@
 #include "IdentityManager/ds_account.h"
 #include "IdentityManager/ds_application.h"
 #include "IdentityManager/ds_authentication.h"
-#include <Mantids30/DataFormat_JSON/json.h>
-#include <Mantids30/Program_Logs/applog.h>
+#include <Mantids30/DataFormat/JSON/json.h>
+#include <Mantids30/Runtime/Logs/applog.h>
 
-#include "Mantids30/DataFormat_JSON/json_accessors.h"
-#include "Mantids30/DataFormat_JSON/json_accessors_array.h"
-#include "Mantids30/DataFormat_JSON/json_detail.h"
+#include <Mantids30/DataFormat/JSON/json_accessors.h>
+#include <Mantids30/DataFormat/JSON/json_accessors_array.h>
+#include <Mantids30/DataFormat/JSON/json_detail.h>
 #include "defs.h"
 #include "globals.h"
-#include <Mantids30/Helpers/json.h>
+#include <Mantids30/DataFormat/JSON/json.h>
 #include <algorithm>
 #include <boost/algorithm/string/join.hpp>
 #include <boost/json/array.hpp>
 #include <boost/json/object.hpp>
 #include <string>
 
-using namespace Mantids30::Program;
+using namespace Mantids30::Runtime;
+using namespace Mantids30::Protocol::HTTP;
+using namespace Mantids30::Server::WebRESTFul;
+using namespace Mantids30::Server::WebRESTFul;
 using namespace Mantids30;
-using namespace Mantids30::Network::Protocol;
+using namespace Mantids30::Protocol;
 
 void AdminPortal_Endpoints_Accounts::addEndpoints_Accounts(const std::shared_ptr<Endpoints> &endpoints)
 {
-    using SecurityRequirements = API::Security::Requirements;
+    using SecurityRequirements = Mantids30::Server::WebRESTFul::Security::Requirements;
 
     // Accounts:
     endpoints->addEndpoint(HTTP::Method::POST, "createAccount", SecurityRequirements::JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"}, nullptr, &createAccount);
@@ -54,8 +57,8 @@ void AdminPortal_Endpoints_Accounts::addEndpoints_Accounts(const std::shared_ptr
 
 AdminPortal_Endpoints_Accounts::APIReturn AdminPortal_Endpoints_Accounts::extendInactivity(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
-    std::string accountUUID(Helpers::JSON::ASSTRING(*request.inputJSON, "accountUUID", ""));
-    time_t validUntil = Helpers::JSON::ASINT64(*request.inputJSON, "validUntil", 0);
+    std::string accountUUID(DataFormat::JSON::ASSTRING(*request.inputJSON, "accountUUID", ""));
+    time_t validUntil = DataFormat::JSON::ASINT64(*request.inputJSON, "validUntil", 0);
 
     // Validate that account name is not empty
     if (accountUUID.empty())
@@ -71,14 +74,14 @@ AdminPortal_Endpoints_Accounts::APIReturn AdminPortal_Endpoints_Accounts::extend
     return {};
 }
 
-API::APIReturn AdminPortal_Endpoints_Accounts::createAccount(void *context, const RequestContext &request, ClientDetails &authClientDetails)
+APIReturn AdminPortal_Endpoints_Accounts::createAccount(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
-    API::APIReturn response;
+    APIReturn response;
     // Extract account name from request
 
     // Initialize account flags from request
     AccountFlags accountFlags;
-    accountFlags.fromJSON(Helpers::JSON::MEMBER_OR_NULL(*request.inputJSON, "flags"));
+    accountFlags.fromJSON(DataFormat::JSON::MEMBER_OR_NULL(*request.inputJSON, "flags"));
 
     // Can't create admin from non-admin account:
     if (accountFlags.admin && !request.jwtToken->isAdmin())
@@ -88,11 +91,11 @@ API::APIReturn AdminPortal_Endpoints_Accounts::createAccount(void *context, cons
 
     // Parse application definitions from request
     std::map<std::string, ApplicationDef> applicationDefs;
-    for (const auto &app : Helpers::JSON::ASARRAY_OR_EMPTY(*request.inputJSON, "applications"))
+    for (const auto &app : DataFormat::JSON::ASARRAY_OR_EMPTY(*request.inputJSON, "applications"))
     {
         ApplicationDef appDef;
-        std::string appName(Helpers::JSON::ASSTRING(app, "name", ""));
-        appDef.isAppAdmin = Helpers::JSON::ASBOOL(app, "isAppAdmin", false);
+        std::string appName(DataFormat::JSON::ASSTRING(app, "name", ""));
+        appDef.isAppAdmin = DataFormat::JSON::ASBOOL(app, "isAppAdmin", false);
 
         // Can't create application admin without APP_MODIFY scope.
         if (appDef.isAppAdmin && !request.jwtToken->hasScope("APP_MODIFY"))
@@ -101,15 +104,15 @@ API::APIReturn AdminPortal_Endpoints_Accounts::createAccount(void *context, cons
         }
 
         // Parse roles
-        for (const auto &role : Helpers::JSON::ASARRAY_OR_EMPTY(app, "roles"))
+        for (const auto &role : DataFormat::JSON::ASARRAY_OR_EMPTY(app, "roles"))
         {
-            appDef.roles.insert(std::string(Helpers::JSON::ASSTRING_D(role, "")));
+            appDef.roles.insert(std::string(DataFormat::JSON::ASSTRING_D(role, "")));
         }
 
         // Parse scopes
-        for (const auto &scope : Helpers::JSON::ASARRAY_OR_EMPTY(app, "scopes"))
+        for (const auto &scope : DataFormat::JSON::ASARRAY_OR_EMPTY(app, "scopes"))
         {
-            appDef.scopes.insert(std::string(Helpers::JSON::ASSTRING_D(scope, "")));
+            appDef.scopes.insert(std::string(DataFormat::JSON::ASSTRING_D(scope, "")));
         }
 
         if (!applicationDefs.count(appName))
@@ -135,10 +138,10 @@ API::APIReturn AdminPortal_Endpoints_Accounts::createAccount(void *context, cons
     // Parse detail field values from request
     std::map<std::string, std::string> fieldValues;
 
-    for (const auto &fv : Helpers::JSON::ASARRAY_OR_EMPTY(*request.inputJSON, "fieldValues"))
+    for (const auto &fv : DataFormat::JSON::ASARRAY_OR_EMPTY(*request.inputJSON, "fieldValues"))
     {
-        std::string fieldName(Helpers::JSON::ASSTRING(fv, "name", ""));
-        std::string fieldValue(Helpers::JSON::ASSTRING(fv, "value", ""));
+        std::string fieldName(DataFormat::JSON::ASSTRING(fv, "name", ""));
+        std::string fieldValue(DataFormat::JSON::ASSTRING(fv, "value", ""));
 
         if (!fieldName.empty())
         {
@@ -147,7 +150,7 @@ API::APIReturn AdminPortal_Endpoints_Accounts::createAccount(void *context, cons
     }
 
     // Add the new account to the system with specified expiration and flags
-    int64_t expirationDate = Helpers::JSON::ASINT64(*request.inputJSON, "expirationDate", 0);
+    int64_t expirationDate = DataFormat::JSON::ASINT64(*request.inputJSON, "expirationDate", 0);
     CreateAccountResult createResult = Globals::getIdentityManager()
                                            ->accounts->createAccount(expirationDate, accountFlags, authClientDetails, request.jwtToken->getSubject(), applicationDefs, fieldValues);
     if (!createResult.success)
@@ -192,11 +195,11 @@ API::APIReturn AdminPortal_Endpoints_Accounts::createAccount(void *context, cons
     const std::string &accountUUID = createResult.accountUUID;
 
     // Extract credential information from request
-    boost::json::value tempCredential = Helpers::JSON::MEMBER_OR_NULL(*request.inputJSON, "tempCredential");
-    std::string secretTempPass(Helpers::JSON::ASSTRING(*request.inputJSON, "secretTempPass", ""));
+    boost::json::value tempCredential = DataFormat::JSON::MEMBER_OR_NULL(*request.inputJSON, "tempCredential");
+    std::string secretTempPass(DataFormat::JSON::ASSTRING(*request.inputJSON, "secretTempPass", ""));
 
     Credential newCredentialData;
-    uint32_t slotId = Helpers::JSON::ASUINT(*request.inputJSON, "slotId", 1);
+    uint32_t slotId = DataFormat::JSON::ASUINT(*request.inputJSON, "slotId", 1);
 
     // Either tempCredential or secretTempPass must be provided
     if (tempCredential != boost::json::value{})
@@ -223,10 +226,10 @@ API::APIReturn AdminPortal_Endpoints_Accounts::createAccount(void *context, cons
     return response;
 }
 
-API::APIReturn AdminPortal_Endpoints_Accounts::getAccountFlags(void *context, const RequestContext &request, ClientDetails &authClientDetails)
+APIReturn AdminPortal_Endpoints_Accounts::getAccountFlags(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
     APIReturn response;
-    std::string accountUUID(Helpers::JSON::ASSTRING(*request.inputJSON, "accountUUID", ""));
+    std::string accountUUID(DataFormat::JSON::ASSTRING(*request.inputJSON, "accountUUID", ""));
 
     if (accountUUID.empty())
     {
@@ -236,12 +239,12 @@ API::APIReturn AdminPortal_Endpoints_Accounts::getAccountFlags(void *context, co
     return Globals::getIdentityManager()->accounts->getAccountFlags(accountUUID).toJSON();
 }
 
-API::APIReturn AdminPortal_Endpoints_Accounts::changeAccountFlags(void *context, const RequestContext &request, ClientDetails &authClientDetails)
+APIReturn AdminPortal_Endpoints_Accounts::changeAccountFlags(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
     APIReturn response;
-    std::string accountUUID(Helpers::JSON::ASSTRING(*request.inputJSON, "accountUUID", ""));
+    std::string accountUUID(DataFormat::JSON::ASSTRING(*request.inputJSON, "accountUUID", ""));
 
-    if (!Helpers::JSON::HAS_MEMBER(*request.inputJSON, "flags"))
+    if (!DataFormat::JSON::HAS_MEMBER(*request.inputJSON, "flags"))
     {
         return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Account flags are required"};
     }
@@ -252,7 +255,7 @@ API::APIReturn AdminPortal_Endpoints_Accounts::changeAccountFlags(void *context,
     }
 
     AccountFlags flags;
-    flags.fromJSON(Helpers::JSON::MEMBER_OR_NULL(*request.inputJSON, "flags"));
+    flags.fromJSON(DataFormat::JSON::MEMBER_OR_NULL(*request.inputJSON, "flags"));
 
     bool changed = Globals::getIdentityManager()->accounts->changeAccountFlags(authClientDetails, request.jwtToken->getSubject(), accountUUID, flags);
 
@@ -263,10 +266,10 @@ API::APIReturn AdminPortal_Endpoints_Accounts::changeAccountFlags(void *context,
     return response;
 }
 
-API::APIReturn AdminPortal_Endpoints_Accounts::getAccountDisplayName(void *context, const RequestContext &request, ClientDetails &authClientDetails)
+APIReturn AdminPortal_Endpoints_Accounts::getAccountDisplayName(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
-    API::APIReturn response;
-    std::string accountUUID(Helpers::JSON::ASSTRING(*request.inputJSON, "accountUUID", ""));
+    APIReturn response;
+    std::string accountUUID(DataFormat::JSON::ASSTRING(*request.inputJSON, "accountUUID", ""));
 
     if (accountUUID.empty())
     {
@@ -285,14 +288,14 @@ API::APIReturn AdminPortal_Endpoints_Accounts::getAccountDisplayName(void *conte
     });
 }
 
-API::APIReturn AdminPortal_Endpoints_Accounts::searchAccounts(void *context, const RequestContext &request, ClientDetails &authClientDetails)
+APIReturn AdminPortal_Endpoints_Accounts::searchAccounts(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
     return Globals::getIdentityManager()->accounts->searchAccounts(*request.inputJSON);
 }
 
-API::APIReturn AdminPortal_Endpoints_Accounts::getAccountApplications(void *context, const RequestContext &request, ClientDetails &authClientDetails)
+APIReturn AdminPortal_Endpoints_Accounts::getAccountApplications(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
-    const std::string accountUUID(Helpers::JSON::ASSTRING(*request.inputJSON, "accountUUID", ""));
+    const std::string accountUUID(DataFormat::JSON::ASSTRING(*request.inputJSON, "accountUUID", ""));
 
     std::set<std::string> listAccountApplications = Globals::getIdentityManager()->applications->listAccountApplications(accountUUID);
     std::set<ApplicationScope> directScopes = Globals::getIdentityManager()->applicationScopes->getAccountDirectApplicationScopes(accountUUID);
@@ -310,7 +313,7 @@ API::APIReturn AdminPortal_Endpoints_Accounts::getAccountApplications(void *cont
         boost::json::array usedRoles{};
         for (const ApplicationRole &role : usedAppRoles)
         {
-            Helpers::JSON::ARRAY_APPEND(usedRoles, role.toJSON());
+            DataFormat::JSON::ARRAY_APPEND(usedRoles, role.toJSON());
         }
 
         // Add available roles (roles that can be added)
@@ -319,7 +322,7 @@ API::APIReturn AdminPortal_Endpoints_Accounts::getAccountApplications(void *cont
         {
             if (usedAppRoles.find(role) == usedAppRoles.end())
             {
-                Helpers::JSON::ARRAY_APPEND(availableRoles, role.toJSON());
+                DataFormat::JSON::ARRAY_APPEND(availableRoles, role.toJSON());
             }
         }
 
@@ -329,7 +332,7 @@ API::APIReturn AdminPortal_Endpoints_Accounts::getAccountApplications(void *cont
         {
             if (directApplicationScope.appName == applicationName)
             {
-                Helpers::JSON::ARRAY_APPEND(directScopesOut, directApplicationScope.toJSON());
+                DataFormat::JSON::ARRAY_APPEND(directScopesOut, directApplicationScope.toJSON());
             }
         }
 
@@ -339,7 +342,7 @@ API::APIReturn AdminPortal_Endpoints_Accounts::getAccountApplications(void *cont
         {
             if (directScopes.find(scope) == directScopes.end())
             {
-                Helpers::JSON::ARRAY_APPEND(directScopesLeft, scope.toJSON());
+                DataFormat::JSON::ARRAY_APPEND(directScopesLeft, scope.toJSON());
             }
         }
 
@@ -347,7 +350,7 @@ API::APIReturn AdminPortal_Endpoints_Accounts::getAccountApplications(void *cont
         boost::json::array usableScopesOut{};
         for (const ApplicationScope &usableScope : usableScopes)
         {
-            Helpers::JSON::ARRAY_APPEND(usableScopesOut, usableScope.toJSON());
+            DataFormat::JSON::ARRAY_APPEND(usableScopesOut, usableScope.toJSON());
         }
 
         boost::json::object application{
@@ -360,7 +363,7 @@ API::APIReturn AdminPortal_Endpoints_Accounts::getAccountApplications(void *cont
             {"directScopesLeft", directScopesLeft},
             {"usableScopes",     usableScopesOut},
         };
-        Helpers::JSON::ARRAY_APPEND(applications, application);
+        DataFormat::JSON::ARRAY_APPEND(applications, application);
     }
 
     // Build the applications the account does not belong to yet
@@ -373,7 +376,7 @@ API::APIReturn AdminPortal_Endpoints_Accounts::getAccountApplications(void *cont
                 {"name",        applicationName},
                 {"description", Globals::getIdentityManager()->applications->getApplicationDescription(applicationName)},
             };
-            Helpers::JSON::ARRAY_APPEND(applicationsLeft, application);
+            DataFormat::JSON::ARRAY_APPEND(applicationsLeft, application);
         }
     }
 
@@ -383,12 +386,12 @@ API::APIReturn AdminPortal_Endpoints_Accounts::getAccountApplications(void *cont
     };
 }
 
-API::APIReturn AdminPortal_Endpoints_Accounts::addAccountToApplication(void *context, const RequestContext &request, ClientDetails &authClientDetails)
+APIReturn AdminPortal_Endpoints_Accounts::addAccountToApplication(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
-    API::APIReturn response;
+    APIReturn response;
 
-    std::string accountUUID(Helpers::JSON::ASSTRING(*request.inputJSON, "accountUUID", ""));
-    std::string appName(Helpers::JSON::ASSTRING(*request.inputJSON, "appName", ""));
+    std::string accountUUID(DataFormat::JSON::ASSTRING(*request.inputJSON, "accountUUID", ""));
+    std::string appName(DataFormat::JSON::ASSTRING(*request.inputJSON, "appName", ""));
 
     if (accountUUID.empty())
     {
@@ -408,12 +411,12 @@ API::APIReturn AdminPortal_Endpoints_Accounts::addAccountToApplication(void *con
     return response;
 }
 
-API::APIReturn AdminPortal_Endpoints_Accounts::removeAccountFromApplication(void *context, const RequestContext &request, ClientDetails &authClientDetails)
+APIReturn AdminPortal_Endpoints_Accounts::removeAccountFromApplication(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
-    API::APIReturn response;
+    APIReturn response;
 
-    std::string accountUUID(Helpers::JSON::ASSTRING(*request.inputJSON, "accountUUID", ""));
-    std::string appName(Helpers::JSON::ASSTRING(*request.inputJSON, "appName", ""));
+    std::string accountUUID(DataFormat::JSON::ASSTRING(*request.inputJSON, "accountUUID", ""));
+    std::string appName(DataFormat::JSON::ASSTRING(*request.inputJSON, "appName", ""));
 
     if (accountUUID.empty())
     {
@@ -433,9 +436,9 @@ API::APIReturn AdminPortal_Endpoints_Accounts::removeAccountFromApplication(void
 }
 
 // This is used for new accounts...
-API::APIReturn AdminPortal_Endpoints_Accounts::listDetailFields(void *context, const RequestContext &request, ClientDetails &authClientDetails)
+APIReturn AdminPortal_Endpoints_Accounts::listDetailFields(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
-    API::APIReturn response;
+    APIReturn response;
     boost::json::array fieldsArray{};
 
     std::map<std::string, AccountDetailField> fields = Globals::getIdentityManager()->accounts->listAccountDetailFields();
@@ -450,18 +453,18 @@ API::APIReturn AdminPortal_Endpoints_Accounts::listDetailFields(void *context, c
     return response;
 }
 
-API::APIReturn AdminPortal_Endpoints_Accounts::searchFields(void *context, const RequestContext &request, ClientDetails &authClientDetails)
+APIReturn AdminPortal_Endpoints_Accounts::searchFields(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
     return Globals::getIdentityManager()->accounts->searchFields(*request.inputJSON);
 }
 
-API::APIReturn AdminPortal_Endpoints_Accounts::createAccountDetailField(void *context, const RequestContext &request, ClientDetails &authClientDetails)
+APIReturn AdminPortal_Endpoints_Accounts::createAccountDetailField(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
-    API::APIReturn response;
+    APIReturn response;
 
     AccountDetailField fieldDetails;
     fieldDetails.fromJSON(*request.inputJSON);
-    std::string fieldName(Helpers::JSON::ASSTRING((*request.inputJSON), "fieldName", ""));
+    std::string fieldName(DataFormat::JSON::ASSTRING((*request.inputJSON), "fieldName", ""));
     if (fieldName.empty())
     {
         return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Field Key Name is Empty"};
@@ -476,10 +479,10 @@ API::APIReturn AdminPortal_Endpoints_Accounts::createAccountDetailField(void *co
 
 AdminPortal_Endpoints_Accounts::APIReturn AdminPortal_Endpoints_Accounts::updateAccountDetailField(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
-    API::APIReturn response;
+    APIReturn response;
     AccountDetailField fieldDetails;
     fieldDetails.fromJSON(*request.inputJSON);
-    std::string fieldName(Helpers::JSON::ASSTRING((*request.inputJSON), "fieldName", ""));
+    std::string fieldName(DataFormat::JSON::ASSTRING((*request.inputJSON), "fieldName", ""));
     if (fieldName.empty())
     {
         return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Field Key Name is Empty"};
@@ -504,9 +507,9 @@ AdminPortal_Endpoints_Accounts::APIReturn AdminPortal_Endpoints_Accounts::update
     }
 }
 
-API::APIReturn AdminPortal_Endpoints_Accounts::removeAccountDetailField(void *context, const RequestContext &request, ClientDetails &authClientDetails)
+APIReturn AdminPortal_Endpoints_Accounts::removeAccountDetailField(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
-    std::string fieldName(Helpers::JSON::ASSTRING((*request.inputJSON), "fieldName", ""));
+    std::string fieldName(DataFormat::JSON::ASSTRING((*request.inputJSON), "fieldName", ""));
     if (fieldName.empty())
     {
         return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Field Key Name is Empty"};
@@ -527,11 +530,11 @@ API::APIReturn AdminPortal_Endpoints_Accounts::removeAccountDetailField(void *co
     }
 }
 
-API::APIReturn AdminPortal_Endpoints_Accounts::getAccountDetailField(void *context, const RequestContext &request, ClientDetails &authClientDetails)
+APIReturn AdminPortal_Endpoints_Accounts::getAccountDetailField(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
-    API::APIReturn response;
+    APIReturn response;
 
-    std::string fieldName(Helpers::JSON::ASSTRING((*request.inputJSON), "fieldName", ""));
+    std::string fieldName(DataFormat::JSON::ASSTRING((*request.inputJSON), "fieldName", ""));
     if (fieldName.empty())
     {
         return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Field Key Name is Empty"};
@@ -545,9 +548,9 @@ API::APIReturn AdminPortal_Endpoints_Accounts::getAccountDetailField(void *conte
     return field.value().toJSON();
 }
 
-API::APIReturn AdminPortal_Endpoints_Accounts::moveAccountDetailFieldUp(void *context, const RequestContext &request, ClientDetails &authClientDetails)
+APIReturn AdminPortal_Endpoints_Accounts::moveAccountDetailFieldUp(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
-    std::string fieldName(Helpers::JSON::ASSTRING((*request.inputJSON), "fieldName", ""));
+    std::string fieldName(DataFormat::JSON::ASSTRING((*request.inputJSON), "fieldName", ""));
     if (fieldName.empty())
     {
         return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Field Key Name is Empty"};
@@ -561,9 +564,9 @@ API::APIReturn AdminPortal_Endpoints_Accounts::moveAccountDetailFieldUp(void *co
     return {};
 }
 
-API::APIReturn AdminPortal_Endpoints_Accounts::moveAccountDetailFieldDown(void *context, const RequestContext &request, ClientDetails &authClientDetails)
+APIReturn AdminPortal_Endpoints_Accounts::moveAccountDetailFieldDown(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
-    std::string fieldName(Helpers::JSON::ASSTRING((*request.inputJSON), "fieldName", ""));
+    std::string fieldName(DataFormat::JSON::ASSTRING((*request.inputJSON), "fieldName", ""));
     if (fieldName.empty())
     {
         return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Field Key Name is Empty"};
@@ -577,11 +580,11 @@ API::APIReturn AdminPortal_Endpoints_Accounts::moveAccountDetailFieldDown(void *
     return {};
 }
 
-API::APIReturn AdminPortal_Endpoints_Accounts::getAccountDetailFieldsValues(void *context, const RequestContext &request, ClientDetails &authClientDetails)
+APIReturn AdminPortal_Endpoints_Accounts::getAccountDetailFieldsValues(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
-    API::APIReturn response;
+    APIReturn response;
 
-    std::string accountUUID(Helpers::JSON::ASSTRING((*request.inputJSON), "accountUUID", ""));
+    std::string accountUUID(DataFormat::JSON::ASSTRING((*request.inputJSON), "accountUUID", ""));
     if (accountUUID.empty())
     {
         return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Account Name is Empty"};
@@ -597,23 +600,23 @@ API::APIReturn AdminPortal_Endpoints_Accounts::getAccountDetailFieldsValues(void
     boost::json::array result{};
     for (const auto &fieldValue : sortedFieldValues)
     {
-        Helpers::JSON::ARRAY_APPEND(result, fieldValue.second.toJSON());
+        DataFormat::JSON::ARRAY_APPEND(result, fieldValue.second.toJSON());
     }
     return result;
 }
 
-API::APIReturn AdminPortal_Endpoints_Accounts::updateAccountDetailFieldsValues(void *context, const RequestContext &request, ClientDetails &authClientDetails)
+APIReturn AdminPortal_Endpoints_Accounts::updateAccountDetailFieldsValues(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
-    API::APIReturn response;
+    APIReturn response;
 
-    std::string accountUUID(Helpers::JSON::ASSTRING((*request.inputJSON), "accountUUID", ""));
+    std::string accountUUID(DataFormat::JSON::ASSTRING((*request.inputJSON), "accountUUID", ""));
     if (accountUUID.empty())
     {
         return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Account Name is Empty"};
     }
 
     // Get the list of field values from input
-    boost::json::value fieldValuesArray = Helpers::JSON::MEMBER_OR_NULL(*request.inputJSON, "fieldValues");
+    boost::json::value fieldValuesArray = DataFormat::JSON::MEMBER_OR_NULL(*request.inputJSON, "fieldValues");
     if (!fieldValuesArray.is_array())
     {
         return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Field values must be an array"};
@@ -624,8 +627,8 @@ API::APIReturn AdminPortal_Endpoints_Accounts::updateAccountDetailFieldsValues(v
     // Process each field value in the array
     for (const auto &i : fieldValuesArray.as_array())
     {
-        std::string fieldName(Helpers::JSON::ASSTRING(i, "name", ""));
-        std::string fieldValue(Helpers::JSON::ASSTRING(i, "value", ""));
+        std::string fieldName(DataFormat::JSON::ASSTRING(i, "name", ""));
+        std::string fieldValue(DataFormat::JSON::ASSTRING(i, "value", ""));
         if (!fieldName.empty())
         {
             fieldValues[fieldName] = fieldValue;
@@ -665,10 +668,10 @@ API::APIReturn AdminPortal_Endpoints_Accounts::updateAccountDetailFieldsValues(v
     }
 }
 
-API::APIReturn AdminPortal_Endpoints_Accounts::removeAccount(void *context, const RequestContext &request, ClientDetails &authClientDetails)
+APIReturn AdminPortal_Endpoints_Accounts::removeAccount(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
-    API::APIReturn response;
-    std::string accountUUID(Helpers::JSON::ASSTRING(*request.inputJSON, "accountUUID", ""));
+    APIReturn response;
+    std::string accountUUID(DataFormat::JSON::ASSTRING(*request.inputJSON, "accountUUID", ""));
 
     if (accountUUID.empty())
     {

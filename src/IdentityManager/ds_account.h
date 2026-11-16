@@ -1,8 +1,8 @@
 #pragma once
 
-#include "Mantids30/DataFormat_JSON/json_detail.h"
-#include <Mantids30/DataFormat_JSON/json.h>
-#include <Mantids30/Helpers/json.h>
+#include <Mantids30/DataFormat/JSON/json_detail.h>
+#include <Mantids30/DataFormat/JSON/json.h>
+#include <Mantids30/DataFormat/JSON/json.h>
 #include <boost/json/value.hpp>
 #include <ctime>
 #include <optional>
@@ -53,17 +53,17 @@ struct AccountDetailFieldValue
 
     void fromJSON(const boost::json::value &json)
     {
-        name = Mantids30::Helpers::JSON::ASSTRING(json, "name", "");
-        description = Mantids30::Helpers::JSON::ASSTRING(json, "description", "");
-        fieldType = Mantids30::Helpers::JSON::ASSTRING(json, "type", "");
-        fieldRegexpValidator = Mantids30::Helpers::JSON::ASSTRING(json, "regexpValidator", "");
-        extendedAttribs = Mantids30::Helpers::JSON::MEMBER_OR_NULL(json, "extendedAttribs");
-        orderPriority = Mantids30::Helpers::JSON::ASINT(json, "orderPriority", 0);
+        name = Mantids30::DataFormat::JSON::ASSTRING(json, "name", "");
+        description = Mantids30::DataFormat::JSON::ASSTRING(json, "description", "");
+        fieldType = Mantids30::DataFormat::JSON::ASSTRING(json, "type", "");
+        fieldRegexpValidator = Mantids30::DataFormat::JSON::ASSTRING(json, "regexpValidator", "");
+        extendedAttribs = Mantids30::DataFormat::JSON::MEMBER_OR_NULL(json, "extendedAttribs");
+        orderPriority = Mantids30::DataFormat::JSON::ASINT(json, "orderPriority", 0);
 
-        boost::json::value _value = Mantids30::Helpers::JSON::MEMBER_OR_NULL(json, "value");
+        boost::json::value _value = Mantids30::DataFormat::JSON::MEMBER_OR_NULL(json, "value");
         if (!_value.is_null())
         {
-            value = Mantids30::Helpers::JSON::ASSTRING_D(json, "value");
+            value = Mantids30::DataFormat::JSON::ASSTRING_D(json, "value");
         }
     }
 };
@@ -78,9 +78,9 @@ struct AccountDetailField
     int orderPriority = 0;
     boost::json::value extendedAttributes;
 
-    [[nodiscard]] std::string_view getRegexpValidatorText() const { return Mantids30::Helpers::JSON::ASSTRING( Mantids30::Helpers::JSON::MEMBER_OR_NULL(extendedAttributes,"behavior"), "regexpValidator", ""); }
+    [[nodiscard]] std::string_view getRegexpValidatorText() const { return Mantids30::DataFormat::JSON::ASSTRING( Mantids30::DataFormat::JSON::MEMBER_OR_NULL(extendedAttributes,"behavior"), "regexpValidator", ""); }
 
-    [[nodiscard]] bool canUserEdit() const { return Mantids30::Helpers::JSON::ASBOOL(Mantids30::Helpers::JSON::MEMBER_OR_NULL(extendedAttributes,"security"), "canUserEdit", false); }
+    [[nodiscard]] bool canUserEdit() const { return Mantids30::DataFormat::JSON::ASBOOL(Mantids30::DataFormat::JSON::MEMBER_OR_NULL(extendedAttributes,"security"), "canUserEdit", false); }
 
     [[nodiscard]] boost::json::object toJSON() const
     {
@@ -97,13 +97,13 @@ struct AccountDetailField
 
     void fromJSON(const boost::json::value &r)
     {
-        orderPriority = Mantids30::Helpers::JSON::ASINT(r, "orderPriority", 0);
-        description = Mantids30::Helpers::JSON::ASSTRING(r, "description", "");
-        fieldType = Mantids30::Helpers::JSON::ASSTRING(r, "fieldType", "TEXTLINE");
-        isOptionalField = Mantids30::Helpers::JSON::ASBOOL(r, "isOptionalField", true);
-        isUnique = Mantids30::Helpers::JSON::ASBOOL(r, "isUnique", false);
-        isLoginIdentifier = Mantids30::Helpers::JSON::ASBOOL(r, "isLoginIdentifier", false);
-        extendedAttributes = Mantids30::Helpers::JSON::MEMBER_OR_NULL(r, "extendedAttributes");
+        orderPriority = Mantids30::DataFormat::JSON::ASINT(r, "orderPriority", 0);
+        description = Mantids30::DataFormat::JSON::ASSTRING(r, "description", "");
+        fieldType = Mantids30::DataFormat::JSON::ASSTRING(r, "fieldType", "TEXTLINE");
+        isOptionalField = Mantids30::DataFormat::JSON::ASBOOL(r, "isOptionalField", true);
+        isUnique = Mantids30::DataFormat::JSON::ASBOOL(r, "isUnique", false);
+        isLoginIdentifier = Mantids30::DataFormat::JSON::ASBOOL(r, "isLoginIdentifier", false);
+        extendedAttributes = Mantids30::DataFormat::JSON::MEMBER_OR_NULL(r, "extendedAttributes");
     }
 };
 
@@ -156,10 +156,10 @@ struct AccountFlags
 
     void fromJSON(const boost::json::value &r)
     {
-        enabled = Mantids30::Helpers::JSON::ASBOOL(r, "enabled", false);
-        confirmed = Mantids30::Helpers::JSON::ASBOOL(r, "confirmed", false);
-        admin = Mantids30::Helpers::JSON::ASBOOL(r, "admin", false);
-        blocked = Mantids30::Helpers::JSON::ASBOOL(r, "blocked", false);
+        enabled = Mantids30::DataFormat::JSON::ASBOOL(r, "enabled", false);
+        confirmed = Mantids30::DataFormat::JSON::ASBOOL(r, "confirmed", false);
+        admin = Mantids30::DataFormat::JSON::ASBOOL(r, "admin", false);
+        blocked = Mantids30::DataFormat::JSON::ASBOOL(r, "blocked", false);
     }
 
     bool blocked = false;
@@ -211,7 +211,7 @@ struct AccountDetails
     void fromJSON(const boost::json::value &r)
     {
         // Deserialize 'fields' map
-        const boost::json::value &fieldsJson = Mantids30::Helpers::JSON::MEMBER_OR_NULL(r, "fields");
+        const boost::json::value &fieldsJson = Mantids30::DataFormat::JSON::MEMBER_OR_NULL(r, "fields");
         if (fieldsJson.is_object())
         {
             for (const auto &kv : fieldsJson.as_object())
@@ -222,10 +222,10 @@ struct AccountDetails
             }
         }
 
-        accountUUID = std::string(Mantids30::Helpers::JSON::ASSTRING(r, "accountUUID", ""));
-        creator = std::string(Mantids30::Helpers::JSON::ASSTRING(r, "creator", ""));
-        accountFlags.fromJSON(Mantids30::Helpers::JSON::MEMBER_OR_NULL(r, "accountFlags"));
-        expirationDate = Mantids30::Helpers::JSON::ASINT64(r, "expirationDate", 0);
+        accountUUID = std::string(Mantids30::DataFormat::JSON::ASSTRING(r, "accountUUID", ""));
+        creator = std::string(Mantids30::DataFormat::JSON::ASSTRING(r, "creator", ""));
+        accountFlags.fromJSON(Mantids30::DataFormat::JSON::MEMBER_OR_NULL(r, "accountFlags"));
+        expirationDate = Mantids30::DataFormat::JSON::ASINT64(r, "expirationDate", 0);
         expired = std::time(nullptr) > expirationDate;
     }
 };

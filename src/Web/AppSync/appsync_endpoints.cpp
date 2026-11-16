@@ -1,26 +1,29 @@
 #include "appsync_endpoints.h"
 
-#include <Mantids30/DataFormat_JWT/jwt.h>
-#include <Mantids30/Helpers/json.h>
-#include <Mantids30/Helpers/random.h>
-#include <Mantids30/Program_Logs/applog.h>
-#include <Mantids30/Program_Logs/loglevels.h>
-#include <Mantids30/Protocol_HTTP/hdr_cookie.h>
-#include <Mantids30/Protocol_HTTP/httpv1_base.h>
-#include <Mantids30/Protocol_HTTP/rsp_status.h>
+#include <Mantids30/DataFormat/JWT/jwt.h>
+#include <Mantids30/DataFormat/JSON/json.h>
+#include <Mantids30/Core/Helpers/random.h>
+#include <Mantids30/Runtime/Logs/applog.h>
+#include <Mantids30/Runtime/Logs/loglevels.h>
+#include <Mantids30/Protocol/HTTP/hdr_cookie.h>
+#include <Mantids30/Protocol/HTTP/httpv1_base.h>
+#include <Mantids30/Protocol/HTTP/rsp_status.h>
 
-#include <Mantids30/DataFormat_JSON/json.h>
+#include <Mantids30/DataFormat/JSON/json.h>
 #include <boost/algorithm/string.hpp>
 #include <string>
 
 #include "IdentityManager/ds_account.h"
-#include "Mantids30/DataFormat_JSON/json_accessors_array.h"
+#include <Mantids30/DataFormat/JSON/json_accessors_array.h>
 #include "globals.h"
 
 using namespace Mantids30;
-using namespace Mantids30::Program;
-using namespace Mantids30::API::RESTful;
-using namespace Mantids30::Network::Protocol;
+using namespace Mantids30::Protocol::HTTP;
+using namespace Mantids30::Server::WebRESTFul;
+using namespace Mantids30::Server::WebRESTFul;
+using namespace Mantids30::Runtime;
+using namespace Mantids30::Server::WebRESTFul::RESTful;
+using namespace Mantids30::Protocol;
 using namespace Mantids30::DataFormat;
 /**
  * @brief Add API endpoints for application synchronization
@@ -28,7 +31,7 @@ using namespace Mantids30::DataFormat;
  */
 void AppSync_Endpoints::addAPIEndpoints(const std::shared_ptr<Endpoints> &endpoints)
 {
-    using SecurityRequirements = API::Security::Requirements;
+    using SecurityRequirements = Mantids30::Server::WebRESTFul::Security::Requirements;
 
     // Web API Endpoints:
     endpoints->addEndpoint(HTTP::Method::POST, "getApplicationAccountsList", SecurityRequirements::NONE, {}, nullptr, &getApplicationAccountsList);
@@ -49,14 +52,14 @@ void AppSync_Endpoints::updateAppScopes(const std::string &appName, const std::s
     std::set<std::string> proposedScopeIds;
     for (const boost::json::value &scope : proposedScopes)
     {
-        std::string id(Helpers::JSON::ASSTRING(scope, "id", ""));
+        std::string id(DataFormat::JSON::ASSTRING(scope, "id", ""));
         if (!id.empty())
         {
             proposedScopeIds.insert(id);
             ApplicationScope newScope;
             newScope.appName = appName;
             newScope.id = id;
-            newScope.description = Helpers::JSON::ASSTRING(scope, "description", "");
+            newScope.description = DataFormat::JSON::ASSTRING(scope, "description", "");
 
             // Check if scope exists
             std::set<ApplicationScope>::iterator existingScope = currentScopes.find(newScope);
@@ -103,7 +106,7 @@ void AppSync_Endpoints::updateAppRoles(const std::string &appName, const std::st
     std::set<std::string> proposedRoleNames;
     for (const boost::json::value &role : proposedRoles)
     {
-        std::string id(Helpers::JSON::ASSTRING(role, "id", ""));
+        std::string id(DataFormat::JSON::ASSTRING(role, "id", ""));
         if (id.empty())
         {
             continue; // skip invalid entries
@@ -111,7 +114,7 @@ void AppSync_Endpoints::updateAppRoles(const std::string &appName, const std::st
         proposedRoleNames.insert(id);
         proposedRoleData[id] = role; // Store for scope processing
 
-        std::string description(Helpers::JSON::ASSTRING(role, "description", ""));
+        std::string description(DataFormat::JSON::ASSTRING(role, "description", ""));
         ApplicationRole newRole;
         newRole.appName = appName;
         newRole.id = id;
@@ -150,7 +153,7 @@ void AppSync_Endpoints::updateAppRoles(const std::string &appName, const std::st
         const std::string &roleName = pair.first;
         const boost::json::value &roleData = pair.second;
 
-        boost::json::array roleScopes = Helpers::JSON::ASARRAY_OR_EMPTY(roleData, "scopes");
+        boost::json::array roleScopes = DataFormat::JSON::ASARRAY_OR_EMPTY(roleData, "scopes");
         // Get current scopes assigned to this role
         std::set<std::string> currentScopeIdsForRole = Globals::getIdentityManager()
                                                            ->applicationRoles->listApplicationScopesOnApplicationRole(appName, roleName); // This won't work correctly, need different approach
@@ -159,7 +162,7 @@ void AppSync_Endpoints::updateAppRoles(const std::string &appName, const std::st
         std::set<std::string> proposedScopeIds;
         for (const boost::json::value &scope : roleScopes)
         {
-            std::string scopeId(Mantids30::Helpers::JSON::ASSTRING_D(scope, ""));
+            std::string scopeId(Mantids30::DataFormat::JSON::ASSTRING_D(scope, ""));
             if (!scopeId.empty())
             {
                 proposedScopeIds.insert(scopeId);
@@ -203,7 +206,7 @@ void AppSync_Endpoints::updateAppActivities(const std::string &appName, const st
 
     for (const boost::json::value &act : proposedActivities)
     {
-        std::string name(Helpers::JSON::ASSTRING(act, "id", ""));
+        std::string name(DataFormat::JSON::ASSTRING(act, "id", ""));
         if (name.empty())
         {
             continue; // skip invalid entries
@@ -282,7 +285,7 @@ AppSync_Endpoints::APIReturn AppSync_Endpoints::validateAndFetchApplicationAttri
         return {HTTP::Status::Code::S_400_BAD_REQUEST, "sync_not_enabled", "Application sync is not enabled."};
     }
 
-    std::string apiKey(Helpers::JSON::ASSTRING(*request.inputJSON, "APIKEY", ""));
+    std::string apiKey(DataFormat::JSON::ASSTRING(*request.inputJSON, "APIKEY", ""));
     if (apiKey.empty())
     {
         LOG_APP->log2(__func__, "", authClientDetails.ipAddress, Logs::LogLevel::WARNING, "Missing API key in request for application '%s'.", appName.c_str());
@@ -312,9 +315,9 @@ AppSync_Endpoints::APIReturn AppSync_Endpoints::updateAccessControlContext(void 
     // Scopes, Roles, and Activities...
     // ------------------------------------------------------
 
-    updateAppScopes(appName, authClientDetails.ipAddress, Helpers::JSON::ASARRAY_OR_EMPTY(*request.inputJSON, "scopes"));
-    updateAppRoles(appName, authClientDetails.ipAddress, Helpers::JSON::ASARRAY_OR_EMPTY(*request.inputJSON, "roles"));
-    updateAppActivities(appName, authClientDetails.ipAddress, Helpers::JSON::ASARRAY_OR_EMPTY(*request.inputJSON, "activities"));
+    updateAppScopes(appName, authClientDetails.ipAddress, DataFormat::JSON::ASARRAY_OR_EMPTY(*request.inputJSON, "scopes"));
+    updateAppRoles(appName, authClientDetails.ipAddress, DataFormat::JSON::ASARRAY_OR_EMPTY(*request.inputJSON, "roles"));
+    updateAppActivities(appName, authClientDetails.ipAddress, DataFormat::JSON::ASARRAY_OR_EMPTY(*request.inputJSON, "activities"));
 
     return {}; // Success
 }

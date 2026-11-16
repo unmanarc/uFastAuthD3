@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Mantids30/Program_Logs/applog.h>
+#include <Mantids30/Runtime/Logs/applog.h>
 
 /**
  * Event actions for account security events logging.
@@ -88,7 +88,7 @@ inline const char *SecurityEventActionToString(SecurityEventAction action)
     }
 }
 
-inline Mantids30::Program::Logs::LogLevel SecurityEventActionToLogLevel(SecurityEventAction action)
+inline Mantids30::Runtime::Logs::LogLevel SecurityEventActionToLogLevel(SecurityEventAction action)
 {
     switch (action)
     {
@@ -103,17 +103,17 @@ inline Mantids30::Program::Logs::LogLevel SecurityEventActionToLogLevel(Security
     case SecurityEventAction::ASSIGN_ACCOUNT:
     case SecurityEventAction::ASSIGN_ROLE:
     case SecurityEventAction::ASSIGN_SCHEME:
-        return Mantids30::Program::Logs::LogLevel::INFO;
+        return Mantids30::Runtime::Logs::LogLevel::INFO;
     case SecurityEventAction::FAILED:
     case SecurityEventAction::AUTO_LOCK:
     case SecurityEventAction::LOCK:
     case SecurityEventAction::DISABLE:
-        return Mantids30::Program::Logs::LogLevel::SECURITY_ALERT;
+        return Mantids30::Runtime::Logs::LogLevel::SECURITY_ALERT;
     case SecurityEventAction::REVOKE_ACCOUNT:
     case SecurityEventAction::REVOKE_ROLE:
     case SecurityEventAction::REVOKE_SCHEME:
-        return Mantids30::Program::Logs::LogLevel::WARNING;
+        return Mantids30::Runtime::Logs::LogLevel::WARNING;
     default:
-        return Mantids30::Program::Logs::LogLevel::INFO;
+        return Mantids30::Runtime::Logs::LogLevel::INFO;
     }
 }

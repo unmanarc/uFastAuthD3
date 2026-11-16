@@ -1,28 +1,28 @@
 #include "IdentityManager/identitymanager.h"
 #include "identitymanager_db.h"
-#include <Mantids30/Helpers/json.h>
+#include <Mantids30/DataFormat/JSON/json.h>
 
-#include <Mantids30/DB/transaction.h>
-#include <Mantids30/Helpers/datatables.h>
-#include <Mantids30/Helpers/random.h>
+#include <Mantids30/DB/Common/transaction.h>
+#include <Mantids30/DataFormat/JSON/datatables.h>
+#include <Mantids30/Core/Helpers/random.h>
 
 #include <boost/algorithm/string/join.hpp>
 #include <boost/regex.hpp>
-#include <Mantids30/DataFormat_JSON/json.h>
+#include <Mantids30/DataFormat/JSON/json.h>
 #include <optional>
 #include <regex>
 
-#include <Mantids30/Memory/a_bool.h>
-#include <Mantids30/Memory/a_datetime.h>
-#include <Mantids30/Memory/a_int32.h>
-#include <Mantids30/Memory/a_string.h>
-#include <Mantids30/Memory/a_uint32.h>
-#include <Mantids30/Memory/a_uint64.h>
-#include <Mantids30/Memory/a_var.h>
+#include <Mantids30/Core/Memory/a_bool.h>
+#include <Mantids30/Core/Memory/a_datetime.h>
+#include <Mantids30/Core/Memory/a_int32.h>
+#include <Mantids30/Core/Memory/a_string.h>
+#include <Mantids30/Core/Memory/a_uint32.h>
+#include <Mantids30/Core/Memory/a_uint64.h>
+#include <Mantids30/Core/Memory/a_var.h>
 
 using namespace Mantids30;
-using namespace Mantids30::Memory;
-using namespace Mantids30::Database;
+using namespace Mantids30::Core::Memory;
+using namespace Mantids30::DB::Common;
 
 std::optional<AccountDetails> IdentityManager_DB::Accounts_DB::getAccountDetails(std::string_view accountUUID, const AccountDetailsToShow &detailsToShow)
 {
@@ -143,7 +143,7 @@ bool IdentityManager_DB::Accounts_DB::createAccountDetailField(const ClientDetai
                           {":isOptionalField", MAKE_VAR(BOOL, details.isOptionalField)},
                           {":isUnique", MAKE_VAR(BOOL, details.isUnique)},
                           {":isLoginIdentifier", MAKE_VAR(BOOL, details.isLoginIdentifier)},
-                          {":jsonExtendedAttribs", MAKE_VAR(STRING, Helpers::JSON::toString(details.extendedAttributes))},
+                          {":jsonExtendedAttribs", MAKE_VAR(STRING, DataFormat::JSON::toString(details.extendedAttributes))},
                           {":orderPriority", MAKE_VAR(INT32, maxOrderPriority)}}))
     {
         _parent->logSecurityEventOnAccountDetailFields(fieldName, SecurityEventAction::CREATE, "Account detail field created", performedBy, clientDetails);
@@ -349,7 +349,7 @@ IdentityManager::Accounts::UpdateAccountDetailFieldResult IdentityManager_DB::Ac
         {
             // Build the IN clause placeholders and parameters.
             std::vector<std::string> placeholders;
-            std::map<std::string, std::shared_ptr<Mantids30::Memory::Abstract::Var>> params;
+            std::map<std::string, std::shared_ptr<Mantids30::Core::Memory::Abstract::Var>> params;
             for (size_t i = 0; i < loginIdentifierFields.size(); ++i)
             {
                 std::string placeholder = ":field" + std::to_string(i);
@@ -392,7 +392,7 @@ IdentityManager::Accounts::UpdateAccountDetailFieldResult IdentityManager_DB::Ac
                                               {":isOptionalField", MAKE_VAR(BOOL, details.isOptionalField)},
                                               {":isUnique", MAKE_VAR(BOOL, details.isUnique)},
                                               {":isLoginIdentifier", MAKE_VAR(BOOL, details.isLoginIdentifier)},
-                                              {":jsonExtendedAttribs", MAKE_VAR(STRING, Helpers::JSON::toString(details.extendedAttributes))}}))
+                                              {":jsonExtendedAttribs", MAKE_VAR(STRING, DataFormat::JSON::toString(details.extendedAttributes))}}))
     {
         return UpdateAccountDetailFieldResult::DB_ERROR;
     }
@@ -499,7 +499,7 @@ std::optional<AccountDetailField> IdentityManager_DB::Accounts_DB::getAccountDet
                                                   {&fieldDescription, &fieldType, &isOptionalField, &isUnique, &isLoginIdentifier, &jsonExtendedAttribsText, &orderPriority}))
     {
         boost::json::value result;
-        Helpers::JSON::parse(jsonExtendedAttribsText.getValue(), result);
+        DataFormat::JSON::parse(jsonExtendedAttribsText.getValue(), result);
 
         field.description = fieldDescription.getValue();
         field.fieldType = fieldType.getValue();
@@ -591,7 +591,7 @@ UpdateAccountDetailFieldValuesResult IdentityManager_DB::Accounts_DB::updateAcco
                                                                                                      const std::map<std::string, std::string> &inputFieldValues, bool isAdmin)
 {
     std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
-    Database::Transaction tg(*_parent->m_sqlConnector);
+    DB::Common::Transaction tg(*_parent->m_sqlConnector);
 
     UpdateAccountDetailFieldValuesResult result = _updateAccountDetailFieldValues(clientDetails, performedBy, accountUUID, inputFieldValues, isAdmin);
     if (result.status == UpdateAccountDetailFieldValuesResult::Status::SUCCESS)
@@ -630,7 +630,7 @@ std::map<std::string, AccountDetailField> IdentityManager_DB::Accounts_DB::_list
         while (i->step())
         {
             boost::json::value result;
-            Helpers::JSON::parse(jsonExtendedAttribsText.getValue(), result);
+            DataFormat::JSON::parse(jsonExtendedAttribsText.getValue(), result);
 
             AccountDetailField field;
             field.description = fieldDescription.getValue();
@@ -773,7 +773,7 @@ UpdateAccountDetailFieldValuesResult IdentityManager_DB::Accounts_DB::_updateAcc
         for (const std::string &fieldName : editableFields)
         {
             std::string sql = "DELETE FROM iam.accountDetailValues WHERE `f_accountUUID` = :account AND `f_fieldName` = :field;";
-            std::map<std::string, std::shared_ptr<Mantids30::Memory::Abstract::Var>> params;
+            std::map<std::string, std::shared_ptr<Mantids30::Core::Memory::Abstract::Var>> params;
             params[":account"] = MAKE_VAR(STRING, accountUUID);
             params[":field"] = MAKE_VAR(STRING, fieldName);
             if (!_parent->m_sqlConnector->qExecuteEx(sql, params))
@@ -828,23 +828,23 @@ std::map<std::string, AccountDetailFieldValue> IdentityManager_DB::Accounts_DB::
         while (i->step())
         {
             boost::json::value extendedAttributes;
-            Helpers::JSON::parse(jsonExtendedAttribsText.getValue(), extendedAttributes);
+            DataFormat::JSON::parse(jsonExtendedAttribsText.getValue(), extendedAttributes);
 
             bool visible = false;
 
             switch (detailsToShow)
             {
             case AccountDetailsToShow::SEARCH:
-                visible = Helpers::JSON::ASBOOL(Helpers::JSON::MEMBER_OR_NULL(extendedAttributes, "visibility"), "includeInSearch", false);
+                visible = DataFormat::JSON::ASBOOL(DataFormat::JSON::MEMBER_OR_NULL(extendedAttributes, "visibility"), "includeInSearch", false);
                 break;
             case AccountDetailsToShow::COLUMNVIEW:
-                visible = Helpers::JSON::ASBOOL(Helpers::JSON::MEMBER_OR_NULL(extendedAttributes, "visibility"), "includeInColumnView", false);
+                visible = DataFormat::JSON::ASBOOL(DataFormat::JSON::MEMBER_OR_NULL(extendedAttributes, "visibility"), "includeInColumnView", false);
                 break;
             case AccountDetailsToShow::TOKEN:
-                visible = Helpers::JSON::ASBOOL(Helpers::JSON::MEMBER_OR_NULL(extendedAttributes, "visibility"), "includeInToken", false);
+                visible = DataFormat::JSON::ASBOOL(DataFormat::JSON::MEMBER_OR_NULL(extendedAttributes, "visibility"), "includeInToken", false);
                 break;
             case AccountDetailsToShow::APISYNC:
-                visible = Helpers::JSON::ASBOOL(Helpers::JSON::MEMBER_OR_NULL(extendedAttributes, "visibility"), "includeInAPISync", false);
+                visible = DataFormat::JSON::ASBOOL(DataFormat::JSON::MEMBER_OR_NULL(extendedAttributes, "visibility"), "includeInAPISync", false);
                 break;
             case AccountDetailsToShow::ALL:
             default:
@@ -853,7 +853,7 @@ std::map<std::string, AccountDetailFieldValue> IdentityManager_DB::Accounts_DB::
                 break;
             }
 
-            visible &= Helpers::JSON::ASBOOL(Helpers::JSON::MEMBER_OR_NULL(extendedAttributes, "security"), "canUserView", false);
+            visible &= DataFormat::JSON::ASBOOL(DataFormat::JSON::MEMBER_OR_NULL(extendedAttributes, "security"), "canUserView", false);
 
             if (visible)
             {
@@ -861,7 +861,7 @@ std::map<std::string, AccountDetailFieldValue> IdentityManager_DB::Accounts_DB::
                 field.name = fieldName.getValue();
                 field.description = fieldDescription.getValue();
                 field.fieldType = fieldType.getValue();
-                field.fieldRegexpValidator = Helpers::JSON::ASSTRING(Helpers::JSON::MEMBER_OR_NULL(extendedAttributes, "behavior"), "regexpValidator", ""); // TODO: remover esta linea
+                field.fieldRegexpValidator = DataFormat::JSON::ASSTRING(DataFormat::JSON::MEMBER_OR_NULL(extendedAttributes, "behavior"), "regexpValidator", ""); // TODO: remover esta linea
                 field.extendedAttribs = extendedAttributes;
                 field.orderPriority = orderPriority.getValue();
 

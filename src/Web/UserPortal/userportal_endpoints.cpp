@@ -6,17 +6,20 @@
 #include <boost/algorithm/string/join.hpp>
 #include <cinttypes>
 #include <ctime>
-#include <Mantids30/DataFormat_JSON/json.h>
+#include <Mantids30/DataFormat/JSON/json.h>
 
 using namespace Mantids30;
-using namespace Mantids30::Program;
-using namespace Mantids30::API::RESTful;
-using namespace Mantids30::Network::Protocol;
+using namespace Mantids30::Protocol::HTTP;
+using namespace Mantids30::Server::WebRESTFul;
+using namespace Mantids30::Server::WebRESTFul;
+using namespace Mantids30::Runtime;
+using namespace Mantids30::Server::WebRESTFul::RESTful;
+using namespace Mantids30::Protocol;
 using namespace Mantids30::DataFormat;
 
 void UserPortal_Endpoints::addEndpoints(const std::shared_ptr<Endpoints> &endpoints)
 {
-    using SecurityRequirements = API::Security::Requirements;
+    using SecurityRequirements = Mantids30::Server::WebRESTFul::Security::Requirements;
 
     // TODO: assign permissions.
     // TODO: log password change/delete
@@ -37,7 +40,7 @@ void UserPortal_Endpoints::addEndpoints(const std::shared_ptr<Endpoints> &endpoi
 
 UserPortal_Endpoints::APIReturn UserPortal_Endpoints::changeCredential(void *context, const RequestContext &request, ClientDetails &clientDetails)
 {
-    API::APIReturn response;
+    APIReturn response;
     std::string challengeTokenSignedStr = request.clientRequest->getCookie("ChallengeToken");
     JWT::Token challengeToken;
     JWT::VerifyError verifyError = JWT::VerifyError::NONE;
@@ -67,16 +70,16 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::changeCredential(void *con
         }
     }
 
-    if (Helpers::JSON::ASSTRING(challengeToken.getClaim("details"), "operation", "") != "changeCredential")
+    if (DataFormat::JSON::ASSTRING(challengeToken.getClaim("details"), "operation", "") != "changeCredential")
     {
         return {HTTP::Status::Code::S_401_UNAUTHORIZED, "change_credential_failed", "Invalid Operation for Challenge Token"};
     }
 
     std::string_view accountUUID = challengeToken.getSubject();
-    uint32_t slotId = Helpers::JSON::ASUINT_D(challengeToken.getClaim("slotId"), 0);
+    uint32_t slotId = DataFormat::JSON::ASUINT_D(challengeToken.getClaim("slotId"), 0);
 
     Credential cred;
-    cred.fromJSON(Helpers::JSON::MEMBER_OR_NULL(*request.inputJSON, "credential"));
+    cred.fromJSON(DataFormat::JSON::MEMBER_OR_NULL(*request.inputJSON, "credential"));
     cred.setExpirationTimeAutomatically();
 
     if (!Globals::getIdentityManager()->authController->changeAccountCredential(clientDetails, accountUUID, accountUUID, cred, slotId))
@@ -89,18 +92,18 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::changeCredential(void *con
 
 UserPortal_Endpoints::APIReturn UserPortal_Endpoints::createChallengeToken(void *context, const RequestContext &request, ClientDetails &clientDetails)
 {
-    API::APIReturn response;
+    APIReturn response;
 
     std::string_view accountUUID = request.jwtToken->getSubject();
 
     // Parse input parameters
-    if (!Helpers::JSON::HAS_MEMBER(*request.inputJSON, "slotId") || !Helpers::JSON::HAS_MEMBER(*request.inputJSON, "verification") || !Helpers::JSON::HAS_MEMBER(*request.inputJSON, "details"))
+    if (!DataFormat::JSON::HAS_MEMBER(*request.inputJSON, "slotId") || !DataFormat::JSON::HAS_MEMBER(*request.inputJSON, "verification") || !DataFormat::JSON::HAS_MEMBER(*request.inputJSON, "details"))
     {
         return {HTTP::Status::Code::S_400_BAD_REQUEST, "missing_fields", "slotId + verification + details are required"};
     }
 
-    uint32_t slotId = Helpers::JSON::ASUINT((*request.inputJSON), "slotId", 0);
-    std::string verification (Helpers::JSON::ASSTRING((*request.inputJSON), "verification", ""));
+    uint32_t slotId = DataFormat::JSON::ASUINT((*request.inputJSON), "slotId", 0);
+    std::string verification (DataFormat::JSON::ASSTRING((*request.inputJSON), "verification", ""));
     AuthenticationResult authResult = Globals::getIdentityManager()->authController->authenticateCredential(clientDetails, accountUUID, verification, slotId);
 
     // Log the authentication result
@@ -126,7 +129,7 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::createChallengeToken(void 
     token.setClaim("app", request.jwtToken->getClaim("app"));
     token.setClaim("parentTokenId", request.jwtToken->getJwtId());
     token.setClaim("slotId", slotId);
-    token.setClaim("details", Helpers::JSON::MEMBER_OR_NULL(*request.inputJSON, "details"));
+    token.setClaim("details", DataFormat::JSON::MEMBER_OR_NULL(*request.inputJSON, "details"));
 
     HTTP::Headers::Cookie cookie = HTTP::Headers::Cookie();
     cookie.value = request.jwtSigner->signFromToken(token, false);
@@ -170,12 +173,12 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::listAccountApplicationsFul
 
 UserPortal_Endpoints::APIReturn UserPortal_Endpoints::updateAccountDetailFieldsValues(void *context, const RequestContext &request, ClientDetails &clientDetails)
 {
-    API::APIReturn response;
+    APIReturn response;
 
     std::string_view accountUUID = request.jwtToken->getSubject();
 
     // Get the list of field values from input
-    boost::json::value fieldValuesArray = Helpers::JSON::MEMBER_OR_NULL(*request.inputJSON,"fieldValues");
+    boost::json::value fieldValuesArray = DataFormat::JSON::MEMBER_OR_NULL(*request.inputJSON,"fieldValues");
 
     if (!fieldValuesArray.is_array())
     {
@@ -187,8 +190,8 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::updateAccountDetailFieldsV
     // Process each field value in the array
     for (const auto &i : fieldValuesArray.as_array())
     {
-        std::string fieldName (Helpers::JSON::ASSTRING(i, "name", ""));
-        std::string fieldValue (Helpers::JSON::ASSTRING(i, "value", ""));
+        std::string fieldName (DataFormat::JSON::ASSTRING(i, "name", ""));
+        std::string fieldValue (DataFormat::JSON::ASSTRING(i, "value", ""));
         if (!fieldName.empty())
         {
             fieldValues[fieldName] = fieldValue;
@@ -226,7 +229,7 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::updateAccountDetailFieldsV
 
 UserPortal_Endpoints::APIReturn UserPortal_Endpoints::getAccountDetailFieldsValues(void *context, const RequestContext &request, ClientDetails &clientDetails)
 {
-    API::APIReturn response;
+    APIReturn response;
 
     std::string_view accountUUID = request.jwtToken->getSubject();
 
@@ -297,19 +300,19 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::getLastLogin(void *context
 
 UserPortal_Endpoints::APIReturn UserPortal_Endpoints::activateCredential(void *context, const RequestContext &request, ClientDetails &clientDetails)
 {
-    API::APIReturn response;
+    APIReturn response;
 
     std::string_view accountUUID = request.jwtToken->getSubject();
 
     // Parse input parameters
-    if (!Helpers::JSON::HAS_MEMBER(*request.inputJSON, "slotId") || !Helpers::JSON::HAS_MEMBER(*request.inputJSON, "hash") || !Helpers::JSON::HAS_MEMBER(*request.inputJSON, "ssalt"))
+    if (!DataFormat::JSON::HAS_MEMBER(*request.inputJSON, "slotId") || !DataFormat::JSON::HAS_MEMBER(*request.inputJSON, "hash") || !DataFormat::JSON::HAS_MEMBER(*request.inputJSON, "ssalt"))
     {
         return {HTTP::Status::Code::S_400_BAD_REQUEST, "missing_fields", "slotId, hash, and ssalt are required"};
     }
 
-    uint32_t slotId = Helpers::JSON::ASUINT((*request.inputJSON), "slotId", 0);
-    std::string hash (Helpers::JSON::ASSTRING((*request.inputJSON), "hash", ""));
-    std::string ssalt (Helpers::JSON::ASSTRING((*request.inputJSON), "ssalt", ""));
+    uint32_t slotId = DataFormat::JSON::ASUINT((*request.inputJSON), "slotId", 0);
+    std::string hash (DataFormat::JSON::ASSTRING((*request.inputJSON), "hash", ""));
+    std::string ssalt (DataFormat::JSON::ASSTRING((*request.inputJSON), "ssalt", ""));
 
     // Check if credential already exists using the new function
     if (Globals::getIdentityManager()->authController->doesCredentialSlotExistOnAccount(accountUUID, slotId))
@@ -327,17 +330,17 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::activateCredential(void *c
 
 UserPortal_Endpoints::APIReturn UserPortal_Endpoints::activateOTP(void *context, const RequestContext &request, ClientDetails &clientDetails)
 {
-    API::APIReturn response;
+    APIReturn response;
 
     std::string_view accountUUID = request.jwtToken->getSubject();
 
-    if (!Helpers::JSON::HAS_MEMBER(*request.inputJSON, "slotId") || !Helpers::JSON::HAS_MEMBER(*request.inputJSON, "seed"))
+    if (!DataFormat::JSON::HAS_MEMBER(*request.inputJSON, "slotId") || !DataFormat::JSON::HAS_MEMBER(*request.inputJSON, "seed"))
     {
         return {HTTP::Status::Code::S_400_BAD_REQUEST, "missing_fields", "slotId and seed are required"};
     }
 
-    uint32_t slotId = Helpers::JSON::ASUINT((*request.inputJSON), "slotId", 0);
-    std::string seed (Helpers::JSON::ASSTRING((*request.inputJSON), "seed", ""));
+    uint32_t slotId = DataFormat::JSON::ASUINT((*request.inputJSON), "slotId", 0);
+    std::string seed (DataFormat::JSON::ASSTRING((*request.inputJSON), "seed", ""));
 
     if (Globals::getIdentityManager()->authController->doesCredentialSlotExistOnAccount(accountUUID, slotId))
     {
@@ -354,18 +357,18 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::activateOTP(void *context,
 
 UserPortal_Endpoints::APIReturn UserPortal_Endpoints::removeCredential(void *context, const RequestContext &request, ClientDetails &clientDetails)
 {
-    API::APIReturn response;
+    APIReturn response;
 
     std::string_view accountUUID = request.jwtToken->getSubject();
 
     // Parse input parameters
-    if (!Helpers::JSON::HAS_MEMBER(*request.inputJSON, "slotId") || !Helpers::JSON::HAS_MEMBER(*request.inputJSON, "verification"))
+    if (!DataFormat::JSON::HAS_MEMBER(*request.inputJSON, "slotId") || !DataFormat::JSON::HAS_MEMBER(*request.inputJSON, "verification"))
     {
         return {HTTP::Status::Code::S_400_BAD_REQUEST, "missing_fields", "slotId and verification is required"};
     }
 
-    uint32_t slotId = Helpers::JSON::ASUINT((*request.inputJSON), "slotId", 0);
-    std::string verification (Helpers::JSON::ASSTRING((*request.inputJSON), "verification", ""));
+    uint32_t slotId = DataFormat::JSON::ASUINT((*request.inputJSON), "slotId", 0);
+    std::string verification (DataFormat::JSON::ASSTRING((*request.inputJSON), "verification", ""));
 
     AuthenticationResult authResult = Globals::getIdentityManager()->authController->authenticateCredential(clientDetails, accountUUID, verification, slotId);
 

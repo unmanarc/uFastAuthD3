@@ -10,11 +10,11 @@
 #include "Web/AdminPortal/adminportal_endpoints_applications.h"
 #include "Web/AdminPortal/adminportal_endpoints_authcontroller.h"
 
-#include <Mantids30/DataFormat_JSON/json.h>
+#include <Mantids30/DataFormat/JSON/json.h>
 
-#include <Mantids30/API_EndpointsAndSessions/api_restful_endpoints.h>
-#include <Mantids30/Helpers/json.h>
-#include <Mantids30/Protocol_HTTP/httpv1_base.h>
+#include <Mantids30/Server/WebRESTFul/api_restful_endpoints.h>
+#include <Mantids30/DataFormat/JSON/json.h>
+#include <Mantids30/Protocol/HTTP/httpv1_base.h>
 
 class AdminPortal_Endpoints : private AdminPortal_Endpoints_Accounts,
                               private AdminPortal_Endpoints_AccountCredentials,
@@ -25,9 +25,9 @@ class AdminPortal_Endpoints : private AdminPortal_Endpoints_Accounts,
                               private AdminPortal_Endpoints_ApplicationActivities
 {
 public:
-    using Endpoints = Mantids30::API::RESTful::Endpoints;
-    using APIReturn = Mantids30::API::APIReturn;
-    using RequestContext = Mantids30::API::RESTful::RequestContext;
+    using Endpoints = Mantids30::Server::WebRESTFul::RESTful::Endpoints;
+    using APIReturn = Mantids30::Protocol::HTTP::APIReturn;
+    using RequestContext = Mantids30::Server::WebRESTFul::RESTful::RequestContext;
 
     /**
     * @brief Adds the available login authentication methods as server functions.

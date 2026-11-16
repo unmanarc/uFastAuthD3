@@ -1,18 +1,21 @@
 #include "adminportal_endpoints_application_roles.h"
 
-#include <Mantids30/API_EndpointsAndSessions/security.h>
-#include <Mantids30/DataFormat_JSON/json_accessors_array.h>
+#include <Mantids30/Server/WebRESTFul/security.h>
+#include <Mantids30/DataFormat/JSON/json_accessors_array.h>
 #include "globals.h"
-#include <Mantids30/Program_Logs/applog.h>
+#include <Mantids30/Runtime/Logs/applog.h>
 
 using namespace Mantids30;
-using namespace Mantids30::Program;
-using namespace Mantids30::Network::Protocol;
+using namespace Mantids30::Protocol::HTTP;
+using namespace Mantids30::Server::WebRESTFul;
+using namespace Mantids30::Server::WebRESTFul;
+using namespace Mantids30::Runtime;
+using namespace Mantids30::Protocol;
 
 void AdminPortal_Endpoints_ApplicationRoles::addEndpoints_Roles(const std::shared_ptr<Endpoints> &endpoints)
 {
-    using SecurityRequirements = API::Security::Requirements;
-    endpoints->addEndpoint(HTTP::Method::GET, "searchApplicationRoles", API::Security::Requirements::JWT_COOKIE_AUTH, {"APP_READ"}, nullptr, &searchApplicationRoles);
+    using SecurityRequirements = Mantids30::Server::WebRESTFul::Security::Requirements;
+    endpoints->addEndpoint(HTTP::Method::GET, "searchApplicationRoles", Mantids30::Server::WebRESTFul::Security::JWT_COOKIE_AUTH, {"APP_READ"}, nullptr, &searchApplicationRoles);
     endpoints->addEndpoint(HTTP::Method::POST, "createRole", SecurityRequirements::JWT_COOKIE_AUTH, {"APP_MODIFY"}, nullptr, &createRole);
     endpoints->addEndpoint(HTTP::Method::GET, "getRoleInfo", SecurityRequirements::JWT_COOKIE_AUTH, {"APP_READ"}, nullptr, &getRoleInfo);
     endpoints->addEndpoint(HTTP::Method::PATCH, "updateRoleDescription", SecurityRequirements::JWT_COOKIE_AUTH, {"APP_MODIFY"}, nullptr, &updateRoleDescription);
@@ -22,18 +25,18 @@ void AdminPortal_Endpoints_ApplicationRoles::addEndpoints_Roles(const std::share
     endpoints->addEndpoint(HTTP::Method::DELETE, "removeApplicationRoleFromAccount", SecurityRequirements::JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"}, nullptr, &removeApplicationRoleFromAccount);
 }
 
-API::APIReturn AdminPortal_Endpoints_ApplicationRoles::searchApplicationRoles(void *context, const RequestContext &request, ClientDetails &authClientDetails)
+APIReturn AdminPortal_Endpoints_ApplicationRoles::searchApplicationRoles(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
     return Globals::getIdentityManager()->applicationRoles->searchApplicationRoles(*request.inputJSON);
 }
 
-API::APIReturn AdminPortal_Endpoints_ApplicationRoles::updateRoleDescription(void *context, const RequestContext &request, ClientDetails &authClientDetails)
+APIReturn AdminPortal_Endpoints_ApplicationRoles::updateRoleDescription(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
-    API::APIReturn response;
+    APIReturn response;
 
-    std::string appName(Helpers::JSON::ASSTRING(*request.inputJSON, "appName", ""));
-    std::string roleName (Helpers::JSON::ASSTRING(*request.inputJSON, "roleName", ""));
-    std::string roleDescription (Helpers::JSON::ASSTRING(*request.inputJSON, "roleDescription", ""));
+    std::string appName(DataFormat::JSON::ASSTRING(*request.inputJSON, "appName", ""));
+    std::string roleName (DataFormat::JSON::ASSTRING(*request.inputJSON, "roleName", ""));
+    std::string roleDescription (DataFormat::JSON::ASSTRING(*request.inputJSON, "roleDescription", ""));
 
     if (roleName.empty())
     {
@@ -57,13 +60,13 @@ API::APIReturn AdminPortal_Endpoints_ApplicationRoles::updateRoleDescription(voi
     return response;
 }
 
-API::APIReturn AdminPortal_Endpoints_ApplicationRoles::createRole(void *context, const RequestContext &request, ClientDetails &authClientDetails)
+APIReturn AdminPortal_Endpoints_ApplicationRoles::createRole(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
-    API::APIReturn response;
+    APIReturn response;
 
-    std::string appName(Helpers::JSON::ASSTRING(*request.inputJSON, "appName", ""));
-    std::string roleName (Helpers::JSON::ASSTRING(*request.inputJSON, "roleName", ""));
-    std::string roleDescription (Helpers::JSON::ASSTRING(*request.inputJSON, "roleDescription", ""));
+    std::string appName(DataFormat::JSON::ASSTRING(*request.inputJSON, "appName", ""));
+    std::string roleName (DataFormat::JSON::ASSTRING(*request.inputJSON, "roleName", ""));
+    std::string roleDescription (DataFormat::JSON::ASSTRING(*request.inputJSON, "roleDescription", ""));
 
     if (roleName.empty())
     {
@@ -88,10 +91,10 @@ API::APIReturn AdminPortal_Endpoints_ApplicationRoles::createRole(void *context,
     return response;
 }
 
-API::APIReturn AdminPortal_Endpoints_ApplicationRoles::getRoleInfo(void *context, const RequestContext &request, ClientDetails &authClientDetails)
+APIReturn AdminPortal_Endpoints_ApplicationRoles::getRoleInfo(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
-    std::string appName(Helpers::JSON::ASSTRING(*request.inputJSON, "appName", ""));
-    std::string roleName (Helpers::JSON::ASSTRING(*request.inputJSON, "roleName", ""));
+    std::string appName(DataFormat::JSON::ASSTRING(*request.inputJSON, "appName", ""));
+    std::string roleName (DataFormat::JSON::ASSTRING(*request.inputJSON, "roleName", ""));
 
     if (roleName.empty())
     {
@@ -108,7 +111,7 @@ API::APIReturn AdminPortal_Endpoints_ApplicationRoles::getRoleInfo(void *context
     std::set<std::string> roleAccounts = Globals::getIdentityManager()->applicationRoles->getApplicationRoleAccounts(appName, roleName);
     for (const std::string &accountUUID : roleAccounts)
     {
-        Helpers::JSON::ARRAY_APPEND(accounts, boost::json::value(accountUUID));
+        DataFormat::JSON::ARRAY_APPEND(accounts, boost::json::value(accountUUID));
     }
 
     // Scopes:
@@ -119,7 +122,7 @@ API::APIReturn AdminPortal_Endpoints_ApplicationRoles::getRoleInfo(void *context
     boost::json::array usedScopesOut{};
     for (const ApplicationScope &scope : usedScopes)
     {
-        Helpers::JSON::ARRAY_APPEND(usedScopesOut, scope.toJSON());
+        DataFormat::JSON::ARRAY_APPEND(usedScopesOut, scope.toJSON());
     }
 
     // Populate unused scopes
@@ -128,7 +131,7 @@ API::APIReturn AdminPortal_Endpoints_ApplicationRoles::getRoleInfo(void *context
     {
         if (usedScopes.find(scope) == usedScopes.end())
         {
-            Helpers::JSON::ARRAY_APPEND(unusedScopesOut, scope.toJSON());
+            DataFormat::JSON::ARRAY_APPEND(unusedScopesOut, scope.toJSON());
         }
     }
 
@@ -144,11 +147,11 @@ API::APIReturn AdminPortal_Endpoints_ApplicationRoles::getRoleInfo(void *context
     };
 }
 
-API::APIReturn AdminPortal_Endpoints_ApplicationRoles::removeRole(void *context, const RequestContext &request, ClientDetails &authClientDetails)
+APIReturn AdminPortal_Endpoints_ApplicationRoles::removeRole(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
-    API::APIReturn response;
-    const std::string roleName (Helpers::JSON::ASSTRING(*request.inputJSON, "roleName", ""));
-    const std::string appName(Helpers::JSON::ASSTRING(*request.inputJSON, "appName", ""));
+    APIReturn response;
+    const std::string roleName (DataFormat::JSON::ASSTRING(*request.inputJSON, "roleName", ""));
+    const std::string appName(DataFormat::JSON::ASSTRING(*request.inputJSON, "appName", ""));
 
     if (appName.empty())
     {
@@ -167,13 +170,13 @@ API::APIReturn AdminPortal_Endpoints_ApplicationRoles::removeRole(void *context,
     return response;
 }
 
-API::APIReturn AdminPortal_Endpoints_ApplicationRoles::addApplicationRoleToAccount(void *context, const RequestContext &request, ClientDetails &authClientDetails)
+APIReturn AdminPortal_Endpoints_ApplicationRoles::addApplicationRoleToAccount(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
-    API::APIReturn response;
+    APIReturn response;
 
-    std::string appName(Helpers::JSON::ASSTRING(*request.inputJSON, "appName", ""));
-    std::string roleName (Helpers::JSON::ASSTRING(*request.inputJSON, "roleName", ""));
-    std::string accountUUID (Helpers::JSON::ASSTRING(*request.inputJSON, "accountUUID", ""));
+    std::string appName(DataFormat::JSON::ASSTRING(*request.inputJSON, "appName", ""));
+    std::string roleName (DataFormat::JSON::ASSTRING(*request.inputJSON, "roleName", ""));
+    std::string accountUUID (DataFormat::JSON::ASSTRING(*request.inputJSON, "accountUUID", ""));
 
     if (appName.empty())
     {
@@ -197,13 +200,13 @@ API::APIReturn AdminPortal_Endpoints_ApplicationRoles::addApplicationRoleToAccou
     return response;
 }
 
-API::APIReturn AdminPortal_Endpoints_ApplicationRoles::removeApplicationRoleFromAccount(void *context, const RequestContext &request, ClientDetails &authClientDetails)
+APIReturn AdminPortal_Endpoints_ApplicationRoles::removeApplicationRoleFromAccount(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
-    API::APIReturn response;
+    APIReturn response;
 
-    std::string appName(Helpers::JSON::ASSTRING(*request.inputJSON, "appName", ""));
-    std::string roleName (Helpers::JSON::ASSTRING(*request.inputJSON, "roleName", ""));
-    std::string accountUUID (Helpers::JSON::ASSTRING(*request.inputJSON, "accountUUID", ""));
+    std::string appName(DataFormat::JSON::ASSTRING(*request.inputJSON, "appName", ""));
+    std::string roleName (DataFormat::JSON::ASSTRING(*request.inputJSON, "roleName", ""));
+    std::string accountUUID (DataFormat::JSON::ASSTRING(*request.inputJSON, "accountUUID", ""));
 
     if (appName.empty())
     {

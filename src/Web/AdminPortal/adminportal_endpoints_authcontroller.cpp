@@ -1,18 +1,21 @@
 #include "adminportal_endpoints_authcontroller.h"
-#include "Mantids30/DataFormat_JSON/json_accessors_array.h"
+#include <Mantids30/DataFormat/JSON/json_accessors_array.h>
 #include "globals.h"
-#include <Mantids30/Program_Logs/applog.h>
-#include <Mantids30/DataFormat_JSON/json.h>
+#include <Mantids30/Runtime/Logs/applog.h>
+#include <Mantids30/DataFormat/JSON/json.h>
 #include <boost/json/value.hpp>
 #include <optional>
 
-using namespace Mantids30::Program;
+using namespace Mantids30::Runtime;
+using namespace Mantids30::Protocol::HTTP;
+using namespace Mantids30::Server::WebRESTFul;
+using namespace Mantids30::Server::WebRESTFul;
 using namespace Mantids30;
-using namespace Mantids30::Network::Protocol;
+using namespace Mantids30::Protocol;
 
 void AdminPortal_Endpoints_AuthController::addEndpoints_AuthController(const std::shared_ptr<Endpoints> &endpoints)
 {
-    using SecurityRequirements = API::Security::Requirements;
+    using SecurityRequirements = Mantids30::Server::WebRESTFul::Security::Requirements;
 
     endpoints->addEndpoint(HTTP::Method::GET, "listAuthenticationSlots", SecurityRequirements::JWT_COOKIE_AUTH, {"AUTH_READ"}, nullptr, &listAuthenticationSlots);
     endpoints->addEndpoint(HTTP::Method::POST, "createAuthenticationSlot", SecurityRequirements::JWT_COOKIE_AUTH, {"AUTH_WRITE"}, nullptr, &createAuthenticationSlot);
@@ -32,7 +35,7 @@ void AdminPortal_Endpoints_AuthController::addEndpoints_AuthController(const std
 AdminPortal_Endpoints_AuthController::APIReturn AdminPortal_Endpoints_AuthController::updateDefaultAuthScheme(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
     // Extract the new default authentication scheme ID from the request body
-    uint32_t newDefaultSchemeId = Helpers::JSON::ASUINT(*request.inputJSON, "defaultSchemeId", std::numeric_limits<uint32_t>::max());
+    uint32_t newDefaultSchemeId = DataFormat::JSON::ASUINT(*request.inputJSON, "defaultSchemeId", std::numeric_limits<uint32_t>::max());
 
     if (newDefaultSchemeId == std::numeric_limits<uint32_t>::max())
     {
@@ -62,11 +65,11 @@ AdminPortal_Endpoints_AuthController::APIReturn AdminPortal_Endpoints_AuthContro
     };
 }
 
-API::APIReturn AdminPortal_Endpoints_AuthController::createAuthenticationScheme(void *context, const RequestContext &request, ClientDetails &authClientDetails)
+APIReturn AdminPortal_Endpoints_AuthController::createAuthenticationScheme(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
-    API::APIReturn response;
+    APIReturn response;
     std::optional<uint32_t> result = Globals::getIdentityManager()->authController->createAuthenticationScheme(authClientDetails,request.jwtToken->getSubject(),
-                                                                                                       Helpers::JSON::ASSTRING(*request.inputJSON, "description", ""));
+                                                                                                       DataFormat::JSON::ASSTRING(*request.inputJSON, "description", ""));
     if (!result.has_value())
     {
         return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to add the new authentication scheme"};
@@ -74,7 +77,7 @@ API::APIReturn AdminPortal_Endpoints_AuthController::createAuthenticationScheme(
     return boost::json::value(*result);
 }
 
-API::APIReturn AdminPortal_Endpoints_AuthController::listAuthenticationSchemes(void *context, const RequestContext &request, ClientDetails &authClientDetails)
+APIReturn AdminPortal_Endpoints_AuthController::listAuthenticationSchemes(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
     std::map<uint32_t, std::string> slots = Globals::getIdentityManager()->authController->listAuthenticationSchemes();
     std::optional<uint32_t> defaultScheme = Globals::getIdentityManager()->authController->getDefaultAuthScheme();
@@ -86,7 +89,7 @@ API::APIReturn AdminPortal_Endpoints_AuthController::listAuthenticationSchemes(v
             {"description", slot.second},
             {"id",          slot.first},
         };
-        Helpers::JSON::ARRAY_APPEND(schemes, rSlot);
+        DataFormat::JSON::ARRAY_APPEND(schemes, rSlot);
     }
 
     return boost::json::value{
@@ -95,10 +98,10 @@ API::APIReturn AdminPortal_Endpoints_AuthController::listAuthenticationSchemes(v
     };
 }
 
-API::APIReturn AdminPortal_Endpoints_AuthController::deleteAuthenticationScheme(void *context, const RequestContext &request, ClientDetails &authClientDetails)
+APIReturn AdminPortal_Endpoints_AuthController::deleteAuthenticationScheme(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
-    API::APIReturn response;
-    uint32_t schemeId = Helpers::JSON::ASUINT(*request.inputJSON, "schemeId", 0);
+    APIReturn response;
+    uint32_t schemeId = DataFormat::JSON::ASUINT(*request.inputJSON, "schemeId", 0);
 
     if (!Globals::getIdentityManager()->authController->removeAuthenticationScheme(authClientDetails,request.jwtToken->getSubject(), schemeId))
     {
@@ -107,12 +110,12 @@ API::APIReturn AdminPortal_Endpoints_AuthController::deleteAuthenticationScheme(
     return response;
 }
 
-API::APIReturn AdminPortal_Endpoints_AuthController::updateAuthenticationScheme(void *context, const RequestContext &request, ClientDetails &authClientDetails)
+APIReturn AdminPortal_Endpoints_AuthController::updateAuthenticationScheme(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
-    API::APIReturn response;
+    APIReturn response;
 
-    uint32_t schemeId = Helpers::JSON::ASUINT(*request.inputJSON, "schemeId", 0);
-    std::string description (Helpers::JSON::ASSTRING(*request.inputJSON, "description", ""));
+    uint32_t schemeId = DataFormat::JSON::ASUINT(*request.inputJSON, "schemeId", 0);
+    std::string description (DataFormat::JSON::ASSTRING(*request.inputJSON, "description", ""));
 
     if (!Globals::getIdentityManager()->authController->updateAuthenticationScheme(authClientDetails,request.jwtToken->getSubject(), schemeId, description))
     {
@@ -122,9 +125,9 @@ API::APIReturn AdminPortal_Endpoints_AuthController::updateAuthenticationScheme(
     return response;
 }
 
-API::APIReturn AdminPortal_Endpoints_AuthController::listAuthenticationSlotsUsedByScheme(void *context, const RequestContext &request, ClientDetails &authClientDetails)
+APIReturn AdminPortal_Endpoints_AuthController::listAuthenticationSlotsUsedByScheme(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
-    uint32_t schemeId = Helpers::JSON::ASUINT(*request.inputJSON, "schemeId", 0);
+    uint32_t schemeId = DataFormat::JSON::ASUINT(*request.inputJSON, "schemeId", 0);
     std::vector<AuthenticationSchemeUsedSlot> slots = Globals::getIdentityManager()->authController->listAuthenticationSlotsUsedByScheme(schemeId);
 
     // Build the used slots array
@@ -133,7 +136,7 @@ API::APIReturn AdminPortal_Endpoints_AuthController::listAuthenticationSlotsUsed
     for (const AuthenticationSchemeUsedSlot &slot : slots)
     {
         usedSlotIds.insert(slot.slotId);
-        Helpers::JSON::ARRAY_APPEND(usedSlots, slot.toJSON());
+        DataFormat::JSON::ARRAY_APPEND(usedSlots, slot.toJSON());
     }
 
     // Build the left slots array (slots not yet used by this scheme)
@@ -148,7 +151,7 @@ API::APIReturn AdminPortal_Endpoints_AuthController::listAuthenticationSlotsUsed
                 {"slotId",  slot.first},
                 {"details", slot.second.toJSON()},
             };
-            Helpers::JSON::ARRAY_APPEND(leftSlots, rSlot);
+            DataFormat::JSON::ARRAY_APPEND(leftSlots, rSlot);
         }
     }
 
@@ -158,15 +161,15 @@ API::APIReturn AdminPortal_Endpoints_AuthController::listAuthenticationSlotsUsed
     };
 }
 
-API::APIReturn AdminPortal_Endpoints_AuthController::updateAuthenticationSlotsUsedByScheme(void *context, const RequestContext &request, ClientDetails &authClientDetails)
+APIReturn AdminPortal_Endpoints_AuthController::updateAuthenticationSlotsUsedByScheme(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
-    API::APIReturn response;
+    APIReturn response;
 
-    uint32_t schemeId = Helpers::JSON::ASUINT(*request.inputJSON, "schemeId", 0);
+    uint32_t schemeId = DataFormat::JSON::ASUINT(*request.inputJSON, "schemeId", 0);
 
     std::list<AuthenticationSchemeUsedSlot> slotsUsedByScheme;
 
-    for (const boost::json::value &jSlot : Helpers::JSON::MEMBER_OR_NULL(*request.inputJSON, "authSchemeSlots").as_array())
+    for (const boost::json::value &jSlot : DataFormat::JSON::MEMBER_OR_NULL(*request.inputJSON, "authSchemeSlots").as_array())
     {
         AuthenticationSchemeUsedSlot slot(0, 0, false);
         slot.fromJSON(jSlot);
@@ -180,7 +183,7 @@ API::APIReturn AdminPortal_Endpoints_AuthController::updateAuthenticationSlotsUs
     return response;
 }
 
-API::APIReturn AdminPortal_Endpoints_AuthController::listAuthenticationSlots(void *context, const RequestContext &request, ClientDetails &authClientDetails)
+APIReturn AdminPortal_Endpoints_AuthController::listAuthenticationSlots(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
     std::map<uint32_t, AuthenticationSlotDetails> slots = Globals::getIdentityManager()->authController->listAllAuthenticationSlots();
     boost::json::array result{};
@@ -188,14 +191,14 @@ API::APIReturn AdminPortal_Endpoints_AuthController::listAuthenticationSlots(voi
     {
         boost::json::object rSlot = slot.second.toJSON();
         rSlot["id"] = slot.first;
-        Helpers::JSON::ARRAY_APPEND(result, rSlot);
+        DataFormat::JSON::ARRAY_APPEND(result, rSlot);
     }
     return result;
 }
 
-API::APIReturn AdminPortal_Endpoints_AuthController::createAuthenticationSlot(void *context, const RequestContext &request, ClientDetails &authClientDetails)
+APIReturn AdminPortal_Endpoints_AuthController::createAuthenticationSlot(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
-    API::APIReturn response;
+    APIReturn response;
 
     AuthenticationSlotDetails slot;
     slot.fromJSON(*request.inputJSON);
@@ -207,11 +210,11 @@ API::APIReturn AdminPortal_Endpoints_AuthController::createAuthenticationSlot(vo
     return boost::json::value(*result);
 }
 
-API::APIReturn AdminPortal_Endpoints_AuthController::deleteAuthenticationSlot(void *context, const RequestContext &request, ClientDetails &authClientDetails)
+APIReturn AdminPortal_Endpoints_AuthController::deleteAuthenticationSlot(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
-    API::APIReturn response;
+    APIReturn response;
 
-    uint32_t slotId = Helpers::JSON::ASUINT(*request.inputJSON, "slotId", 0);
+    uint32_t slotId = DataFormat::JSON::ASUINT(*request.inputJSON, "slotId", 0);
 
     if (!Globals::getIdentityManager()->authController->removeAuthenticationSlot(authClientDetails,request.jwtToken->getSubject(), slotId))
     {
@@ -220,13 +223,13 @@ API::APIReturn AdminPortal_Endpoints_AuthController::deleteAuthenticationSlot(vo
     return response;
 }
 
-API::APIReturn AdminPortal_Endpoints_AuthController::updateAuthenticationSlot(void *context, const RequestContext &request, ClientDetails &authClientDetails)
+APIReturn AdminPortal_Endpoints_AuthController::updateAuthenticationSlot(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
-    API::APIReturn response;
+    APIReturn response;
 
     AuthenticationSlotDetails slotDetails;
     slotDetails.fromJSON(*request.inputJSON);
-    uint32_t slotId = Helpers::JSON::ASUINT(*request.inputJSON, "slotId", 0);
+    uint32_t slotId = DataFormat::JSON::ASUINT(*request.inputJSON, "slotId", 0);
 
     if (!Globals::getIdentityManager()->authController->updateAuthenticationSlotDetails(authClientDetails,request.jwtToken->getSubject(), slotId, slotDetails))
     {

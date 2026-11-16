@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Mantids30/DataFormat_JSON/json.h>
+#include <Mantids30/DataFormat/JSON/json.h>
 
 #include <list>
 #include <map>
@@ -12,18 +12,18 @@
 #include "ds_account.h"
 #include "ds_application.h"
 #include "ds_security_events.h"
-#include <Mantids30/Helpers/json.h>
+#include <Mantids30/DataFormat/JSON/json.h>
 #include <ctime>
 #include <string>
 
-#include <Mantids30/DataFormat_JWT/jwt.h>
+#include <Mantids30/DataFormat/JWT/jwt.h>
 
-#include <Mantids30/Threads/safe_mapitem.h>
+#include <Mantids30/Core/Threads/safe_mapitem.h>
 
-class IdentityManager : public Mantids30::Threads::Safe::MapItem
+class IdentityManager : public Mantids30::Core::Threads::Safe::MapItem
 {
 public:
-    using ClientDetails = Mantids30::Sessions::ClientDetails;
+    using ClientDetails = Mantids30::Server::WebRESTFul::Sessions::ClientDetails;
 
     /**
      * @brief Logout reasons for applicationAuthLog entries.
@@ -251,10 +251,10 @@ public:
             }
             void fromJSON(const boost::json::value &r)
             {
-                description = Helpers::JSON::ASSTRING(r, "description", "");
-                parentActivity = Helpers::JSON::ASSTRING(r, "parentActivity", "");
-                defaultSchemeDescription = Helpers::JSON::ASSTRING(r, "defaultSchemeDescription", "");
-                defaultSchemeID = Helpers::JSON::ASUINT(r, "defaultSchemeID", -1);
+                description = DataFormat::JSON::ASSTRING(r, "description", "");
+                parentActivity = DataFormat::JSON::ASSTRING(r, "parentActivity", "");
+                defaultSchemeDescription = DataFormat::JSON::ASSTRING(r, "defaultSchemeDescription", "");
+                defaultSchemeID = DataFormat::JSON::ASUINT(r, "defaultSchemeID", -1);
             }
 
             std::string description;
@@ -324,7 +324,7 @@ public:
     {
     private:
         IdentityManager *m_parent = nullptr;
-        Mantids30::Threads::GarbageCollector m_authLogGC;
+        Mantids30::Core::Threads::GarbageCollector m_authLogGC;
         static boost::json::array authSlotsToJSON(const std::vector<AuthenticationSchemeUsedSlot> &authSlots);
         void updateCredentialAuthStatus(const AuthenticationResult &authResult, std::string_view accountUUID, const Credential &storedCredentialData, const uint32_t &slotId,
                                         const ClientDetails &clientDetails);
@@ -525,12 +525,12 @@ public:
 
             void fromJSON(const boost::json::value &root)
             {
-                canAdminModifyApplicationSecurityContext = Helpers::JSON::ASBOOL(root, "canAdminModifyApplicationSecurityContext", false);
-                canUserAutoRegister = Helpers::JSON::ASBOOL(root, "canUserAutoRegister", false);
-                appSyncEnabled = Helpers::JSON::ASBOOL(root, "appSyncEnabled", false);
-                useEmbeddedInPortalAuthentication = Helpers::JSON::ASBOOL(root, "useEmbeddedInPortalAuthentication", false);
-                appSyncCanRetrieveAppAccountsList = Helpers::JSON::ASBOOL(root, "appSyncCanRetrieveAppAccountsList", false);
-                allowKeepMeSignedIn = Helpers::JSON::ASBOOL(root, "allowKeepMeSignedIn", false);
+                canAdminModifyApplicationSecurityContext = DataFormat::JSON::ASBOOL(root, "canAdminModifyApplicationSecurityContext", false);
+                canUserAutoRegister = DataFormat::JSON::ASBOOL(root, "canUserAutoRegister", false);
+                appSyncEnabled = DataFormat::JSON::ASBOOL(root, "appSyncEnabled", false);
+                useEmbeddedInPortalAuthentication = DataFormat::JSON::ASBOOL(root, "useEmbeddedInPortalAuthentication", false);
+                appSyncCanRetrieveAppAccountsList = DataFormat::JSON::ASBOOL(root, "appSyncCanRetrieveAppAccountsList", false);
+                allowKeepMeSignedIn = DataFormat::JSON::ASBOOL(root, "allowKeepMeSignedIn", false);
             }
 
             [[nodiscard]] std::string toString() const

@@ -1,7 +1,7 @@
-#include <Mantids30/Program_Logs/loglevels.h>
+#include <Mantids30/Runtime/Logs/loglevels.h>
 #include "loginportal_endpoints.h"
-#include <Mantids30/Helpers/json.h>
-#include <Mantids30/DataFormat_JSON/json.h>
+#include <Mantids30/DataFormat/JSON/json.h>
+#include <Mantids30/DataFormat/JSON/json.h>
 
 #include <boost/algorithm/string/join.hpp>
 #include <optional>
@@ -12,9 +12,9 @@
 
 using namespace Mantids30;
 using namespace Mantids30::DataFormat;
-using namespace Program;
-using namespace API::RESTful;
-using namespace Network::Protocol;
+using namespace Mantids30::Runtime;
+using namespace Mantids30::Server::WebRESTFul::RESTful;
+using namespace Mantids30::Protocol;
 
 bool LoginPortal_Endpoints::token_validateRedirectURI(const std::string &app, const std::string &redirectURI, const std::string &user, const std::string &ipAddress)
 {
@@ -43,8 +43,8 @@ bool LoginPortal_Endpoints::token_validateRedirectURI(const std::string &app, co
 
 std::optional<std::string> LoginPortal_Endpoints::token_signApplicationJWT(JWT::Token &accessToken)
 {
-    std::string appName (Helpers::JSON::ASSTRING_D(accessToken.getClaim("app"), ""));
-    std::shared_ptr<JWT> signingJWT = Globals::getIdentityManager()->applications->getAppJWTSigner(appName);
+    std::string appName (DataFormat::JSON::ASSTRING_D(accessToken.getClaim("app"), ""));
+    std::shared_ptr<Mantids30::DataFormat::JWT> signingJWT = Globals::getIdentityManager()->applications->getAppJWTSigner(appName);
     if (!signingJWT)
     {
         return std::nullopt;
@@ -69,8 +69,8 @@ bool LoginPortal_Endpoints::token_createAndSignApplicationRefreshAndAccessJWTs(c
 
     if (activity == "LOGIN")
     {
-        std::set<uint32_t> authenticatedSlotIdsSet = Helpers::JSON::toUInt32Set(jwtToken->getClaim("slotIds"));
-        std::string refreshTokenId = Mantids30::Helpers::Random::createRandomString(16);
+        std::set<uint32_t> authenticatedSlotIdsSet = DataFormat::JSON::toUInt32Set(jwtToken->getClaim("slotIds"));
+        std::string refreshTokenId = Mantids30::Core::Helpers::Random::createRandomString(16);
 
         JWT::Token accessToken, refreshToken; //, logoutToken;
 
@@ -139,7 +139,7 @@ bool LoginPortal_Endpoints::token_validateAuthenticationScheme(const JWT::Token 
     IdentityManager *identityManager = Globals::getIdentityManager();
 
     // 1. Extract authenticated slot IDs from the JWT token
-    std::set<uint32_t> authenticatedSlotIdsSet = Helpers::JSON::toUInt32Set(jwtToken->getClaim("slotIds"));
+    std::set<uint32_t> authenticatedSlotIdsSet = DataFormat::JSON::toUInt32Set(jwtToken->getClaim("slotIds"));
 
     // 2. Get schemes allowed for this activity
     std::set<uint32_t> schemesInActivity = identityManager->applicationActivities->listAuthenticationSchemesForApplicationActivity(requestedApp, requestedActivity);
@@ -219,7 +219,7 @@ bool LoginPortal_Endpoints::token_validateAuthenticationScheme(const JWT::Token 
 
 bool LoginPortal_Endpoints::token_validateAppAuthorization(const JWT::Token *jwtToken, const std::string_view &app, const std::string_view &user, const std::string_view &ipAddress)
 {
-    std::set<std::string> authenticatedAppsSet = Helpers::JSON::toStringSet(jwtToken->getClaim("apps"));
+    std::set<std::string> authenticatedAppsSet = DataFormat::JSON::toStringSet(jwtToken->getClaim("apps"));
     if (authenticatedAppsSet.find(std::string(app)) == authenticatedAppsSet.end())
     {
         LOG_APP->log2(__func__, user, ipAddress, Logs::LogLevel::SECURITY_ALERT, "Token request denied: Unauthorized application '%s' access.", std::string(app).c_str());

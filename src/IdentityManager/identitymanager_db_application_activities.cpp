@@ -1,18 +1,18 @@
 #include "identitymanager_db.h"
-#include <Mantids30/Helpers/encoders.h>
+#include <Mantids30/Core/Helpers/encoders.h>
 
-#include <Mantids30/Memory/a_bool.h>
-#include <Mantids30/Memory/a_datetime.h>
-#include <Mantids30/Memory/a_int32.h>
-#include <Mantids30/Memory/a_string.h>
-#include <Mantids30/Memory/a_uint32.h>
-#include <Mantids30/Memory/a_uint64.h>
-#include <Mantids30/Memory/a_var.h>
+#include <Mantids30/Core/Memory/a_bool.h>
+#include <Mantids30/Core/Memory/a_datetime.h>
+#include <Mantids30/Core/Memory/a_int32.h>
+#include <Mantids30/Core/Memory/a_string.h>
+#include <Mantids30/Core/Memory/a_uint32.h>
+#include <Mantids30/Core/Memory/a_uint64.h>
+#include <Mantids30/Core/Memory/a_var.h>
 #include <optional>
 
-using namespace Mantids30::Memory;
-using namespace Mantids30::Database;
-using namespace Mantids30::Helpers;
+using namespace Mantids30::Core::Memory;
+using namespace Mantids30::DB::Common;
+using namespace Mantids30::Core::Helpers;
 using namespace Mantids30;
 
 bool IdentityManager_DB::ApplicationActivities_DB::createApplicationActivity(const ClientDetails &clientDetails, std::string_view performedBy, std::string_view appName,

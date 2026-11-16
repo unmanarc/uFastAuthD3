@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Mantids30/Helpers/json.h>
+#include <Mantids30/DataFormat/JSON/json.h>
 #include <boost/json/value.hpp>
 #include <cstdint>
 #include <optional>
@@ -71,27 +71,27 @@ struct ApplicationAuthSettings
     // Getters that read from tokensConfiguration (no data duplication)
     [[nodiscard]] std::string getSignAlgorithm() const
     {
-        return std::string(Mantids30::Helpers::JSON::ASSTRING(tokensConfiguration,"signAlgorithm","HS256"));
+        return std::string(Mantids30::DataFormat::JSON::ASSTRING(tokensConfiguration,"signAlgorithm","HS256"));
     }
 
     [[nodiscard]] bool getAllowRefreshTokenRenovation() const
     {
-        return Mantids30::Helpers::JSON::ASBOOL(tokensConfiguration,"allowRefreshTokenRenovation",false);
+        return Mantids30::DataFormat::JSON::ASBOOL(tokensConfiguration,"allowRefreshTokenRenovation",false);
     }
 
     [[nodiscard]] bool getIncludeApplicationScopes() const
     {
-        return Mantids30::Helpers::JSON::ASBOOL(tokensConfiguration,"includeApplicationScopes",true);
+        return Mantids30::DataFormat::JSON::ASBOOL(tokensConfiguration,"includeApplicationScopes",true);
     }
 
     [[nodiscard]] bool getIncludeApplicationRoles() const
     {
-        return Mantids30::Helpers::JSON::ASBOOL(tokensConfiguration,"includeApplicationRoles",true);
+        return Mantids30::DataFormat::JSON::ASBOOL(tokensConfiguration,"includeApplicationRoles",true);
     }
 
     [[nodiscard]] bool getIncludeBasicAccountInfo() const
     {
-        return Mantids30::Helpers::JSON::ASBOOL(tokensConfiguration,"includeBasicAccountInfo",true);
+        return Mantids30::DataFormat::JSON::ASBOOL(tokensConfiguration,"includeBasicAccountInfo",true);
     }
 
     [[nodiscard]] boost::json::object toJSON() const
@@ -105,7 +105,7 @@ struct ApplicationAuthSettings
 
     std::optional<AppError> fromJSON(const boost::json::value &root)
     {
-        appName = Mantids30::Helpers::JSON::ASSTRING(root, "appName", "");
+        appName = Mantids30::DataFormat::JSON::ASSTRING(root, "appName", "");
         if (appName.empty())
         {
             AppError error;
@@ -115,8 +115,8 @@ struct ApplicationAuthSettings
             return error;
         }
 
-        tokensConfiguration = Mantids30::Helpers::JSON::MEMBER_OR_NULL(root, "tokensConfiguration");
-        sessionConfiguration = Mantids30::Helpers::JSON::MEMBER_OR_NULL(root, "sessionConfiguration");
+        tokensConfiguration = Mantids30::DataFormat::JSON::MEMBER_OR_NULL(root, "tokensConfiguration");
+        sessionConfiguration = Mantids30::DataFormat::JSON::MEMBER_OR_NULL(root, "sessionConfiguration");
         return std::nullopt;
     }
 

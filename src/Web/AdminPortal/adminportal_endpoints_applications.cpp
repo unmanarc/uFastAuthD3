@@ -2,21 +2,23 @@
 
 #include "defs.h"
 #include "globals.h"
-#include <Mantids30/DataFormat_JSON/json.h>
-#include <Mantids30/Program_Logs/applog.h>
-#include <Mantids30/Protocol_HTTP/api_return.h>
+#include <Mantids30/DataFormat/JSON/json.h>
+#include <Mantids30/Runtime/Logs/applog.h>
+#include <Mantids30/Protocol/HTTP/api_return.h>
 #include <optional>
 #include <string>
 
-using namespace Mantids30::Program;
+using namespace Mantids30::Runtime;
+using namespace Mantids30::Server::WebRESTFul;
+using namespace Mantids30::Server::WebRESTFul;
 using namespace Mantids30;
-using namespace Mantids30::Network::Protocol;
+using namespace Mantids30::Protocol;
 
-using ClientDetails = Mantids30::Sessions::ClientDetails;
+using ClientDetails = Mantids30::Server::WebRESTFul::Sessions::ClientDetails;
 
 void AdminPortal_Endpoints_Applications::addEndpoints_Applications(const std::shared_ptr<Endpoints> &endpoints)
 {
-    using SecurityRequirements = API::Security::Requirements;
+    using SecurityRequirements = Mantids30::Server::WebRESTFul::Security::Requirements;
 
     endpoints->addEndpoint(HTTP::Method::GET, "searchApplications", SecurityRequirements::JWT_COOKIE_AUTH, {"APP_READ"}, nullptr, &searchApplications);
     endpoints->addEndpoint(HTTP::Method::DELETE, "removeApplication", SecurityRequirements::JWT_COOKIE_AUTH, {"APP_DELETE"}, nullptr, &removeApplication);
@@ -40,16 +42,16 @@ void AdminPortal_Endpoints_Applications::addEndpoints_Applications(const std::sh
     endpoints->addEndpoint(HTTP::Method::PATCH, "setAccountAsApplicationAdmin", SecurityRequirements::JWT_COOKIE_AUTH, {"APP_MODIFY"}, nullptr, &setAccountAsApplicationAdmin);
 }
 
-API::APIReturn AdminPortal_Endpoints_Applications::searchApplications(void *context, const RequestContext &request, ClientDetails &authClientDetails)
+APIReturn AdminPortal_Endpoints_Applications::searchApplications(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
     return Globals::getIdentityManager()->applications->searchApplications(*request.inputJSON);
 }
 
-API::APIReturn AdminPortal_Endpoints_Applications::removeApplication(void *context, const RequestContext &request, ClientDetails &authClientDetails)
+APIReturn AdminPortal_Endpoints_Applications::removeApplication(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
-    API::APIReturn response;
+    APIReturn response;
 
-    std::string appName(Helpers::JSON::ASSTRING(*request.inputJSON, "appName", ""));
+    std::string appName(DataFormat::JSON::ASSTRING(*request.inputJSON, "appName", ""));
 
     if (appName == IAM_ADMPORTAL_APPNAME)
     {
@@ -68,13 +70,13 @@ API::APIReturn AdminPortal_Endpoints_Applications::removeApplication(void *conte
     }
     return response;
 }
-API::APIReturn AdminPortal_Endpoints_Applications::addApplication(void *context, const RequestContext &request, ClientDetails &authClientDetails)
+APIReturn AdminPortal_Endpoints_Applications::addApplication(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
-    API::APIReturn response;
+    APIReturn response;
 
     // Extract application name and description from input JSON
-    std::string appName(Helpers::JSON::ASSTRING(*request.inputJSON, "appName", ""));
-    std::string appDescription(Helpers::JSON::ASSTRING(*request.inputJSON, "description", ""));
+    std::string appName(DataFormat::JSON::ASSTRING(*request.inputJSON, "appName", ""));
+    std::string appDescription(DataFormat::JSON::ASSTRING(*request.inputJSON, "description", ""));
 
     // Validate input data
     if (appName.empty())
@@ -100,18 +102,18 @@ API::APIReturn AdminPortal_Endpoints_Applications::addApplication(void *context,
     }
 
     IdentityManager::Applications::ApplicationAttributes attribs;
-    attribs.fromJSON(Helpers::JSON::MEMBER_OR_NULL(*request.inputJSON, "applicationAttributes"));
+    attribs.fromJSON(DataFormat::JSON::MEMBER_OR_NULL(*request.inputJSON, "applicationAttributes"));
 
     // Attempt to create the new application
     if (!Globals::getIdentityManager()->applications->createApplication(authClientDetails,
                                                                         request.jwtToken->getSubject(),
                                                                         appName,
                                                                         appDescription,
-                                                                        Helpers::JSON::ASSTRING(*request.inputJSON, "appURL", ""),
-                                                                        Helpers::JSON::ASSTRING(*request.inputJSON, "appKey", ""),
+                                                                        DataFormat::JSON::ASSTRING(*request.inputJSON, "appURL", ""),
+                                                                        DataFormat::JSON::ASSTRING(*request.inputJSON, "appKey", ""),
                                                                         request.jwtToken->getSubject(),
                                                                         attribs,
-                                                                        Helpers::JSON::ASBOOL(*request.inputJSON, "initializeDefaults", true)))
+                                                                        DataFormat::JSON::ASBOOL(*request.inputJSON, "initializeDefaults", true)))
     {
         return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to create application"};
     }
@@ -119,10 +121,10 @@ API::APIReturn AdminPortal_Endpoints_Applications::addApplication(void *context,
     return response;
 }
 
-API::APIReturn AdminPortal_Endpoints_Applications::doesApplicationExist(void *context, const RequestContext &request, ClientDetails &authClientDetails)
+APIReturn AdminPortal_Endpoints_Applications::doesApplicationExist(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
-    API::APIReturn response;
-    std::string appName(Helpers::JSON::ASSTRING(*request.inputJSON, "appName", ""));
+    APIReturn response;
+    std::string appName(DataFormat::JSON::ASSTRING(*request.inputJSON, "appName", ""));
 
     if (appName.empty())
     {
@@ -138,15 +140,15 @@ API::APIReturn AdminPortal_Endpoints_Applications::doesApplicationExist(void *co
 
 AdminPortal_Endpoints_Applications::APIReturn AdminPortal_Endpoints_Applications::setAccountAsApplicationAdmin(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
-    API::APIReturn response;
-    std::string appName(Helpers::JSON::ASSTRING(*request.inputJSON, "appName", ""));
+    APIReturn response;
+    std::string appName(DataFormat::JSON::ASSTRING(*request.inputJSON, "appName", ""));
 
     if (appName.empty())
     {
         return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Application Name is Empty"};
     }
 
-    std::string accountUUID(Helpers::JSON::ASSTRING(*request.inputJSON, "accountUUID", ""));
+    std::string accountUUID(DataFormat::JSON::ASSTRING(*request.inputJSON, "accountUUID", ""));
 
     if (accountUUID.empty())
     {
@@ -154,16 +156,16 @@ AdminPortal_Endpoints_Applications::APIReturn AdminPortal_Endpoints_Applications
     }
 
     if (!Globals::getIdentityManager()
-             ->applications->setAccountAsApplicationAdmin(authClientDetails, request.jwtToken->getSubject(), appName, accountUUID, Helpers::JSON::ASBOOL(*request.inputJSON, "isAppAdmin", false)))
+             ->applications->setAccountAsApplicationAdmin(authClientDetails, request.jwtToken->getSubject(), appName, accountUUID, DataFormat::JSON::ASBOOL(*request.inputJSON, "isAppAdmin", false)))
     {
         return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Internal Error"};
     }
     return getApplicationAccountDetails(appName);
 }
 
-API::APIReturn AdminPortal_Endpoints_Applications::getApplicationInfo(void *context, const RequestContext &request, ClientDetails &authClientDetails)
+APIReturn AdminPortal_Endpoints_Applications::getApplicationInfo(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
-    std::string appName(Helpers::JSON::ASSTRING(*request.inputJSON, "appName", ""));
+    std::string appName(DataFormat::JSON::ASSTRING(*request.inputJSON, "appName", ""));
 
     if (appName.empty())
     {
@@ -184,7 +186,7 @@ API::APIReturn AdminPortal_Endpoints_Applications::getApplicationInfo(void *cont
     std::set<ApplicationScope> attrList = Globals::getIdentityManager()->applicationScopes->listApplicationScopes(appName);
     for (const ApplicationScope &scope : attrList)
     {
-        Helpers::JSON::ARRAY_APPEND(scopes, scope.toJSON());
+        DataFormat::JSON::ARRAY_APPEND(scopes, scope.toJSON());
     }
 
     // Get associated activities...
@@ -194,7 +196,7 @@ API::APIReturn AdminPortal_Endpoints_Applications::getApplicationInfo(void *cont
     {
         boost::json::object jActivity = activity.second.toJSON();
         jActivity["name"] = activity.first;
-        Helpers::JSON::ARRAY_APPEND(activities, jActivity);
+        DataFormat::JSON::ARRAY_APPEND(activities, jActivity);
     }
 
     return boost::json::value{
@@ -210,14 +212,14 @@ API::APIReturn AdminPortal_Endpoints_Applications::getApplicationInfo(void *cont
     };
 }
 
-API::APIReturn AdminPortal_Endpoints_Applications::updateApplicationDetails(void *context, const RequestContext &request, ClientDetails &authClientDetails)
+APIReturn AdminPortal_Endpoints_Applications::updateApplicationDetails(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
-    API::APIReturn response;
+    APIReturn response;
 
-    std::string appName(Helpers::JSON::ASSTRING(*request.inputJSON, "appName", ""));
+    std::string appName(DataFormat::JSON::ASSTRING(*request.inputJSON, "appName", ""));
 
     IdentityManager::Applications::ApplicationAttributes attribs;
-    attribs.fromJSON(Helpers::JSON::MEMBER_OR_NULL(*request.inputJSON, "applicationAttributes"));
+    attribs.fromJSON(DataFormat::JSON::MEMBER_OR_NULL(*request.inputJSON, "applicationAttributes"));
 
     if (appName.empty())
     {
@@ -232,40 +234,40 @@ API::APIReturn AdminPortal_Endpoints_Applications::updateApplicationDetails(void
     if (!Globals::getIdentityManager()->applications->updateApplicationDescription(authClientDetails,
                                                                                    request.jwtToken->getSubject(),
                                                                                    appName,
-                                                                                   Helpers::JSON::ASSTRING(*request.inputJSON, "description", "")))
+                                                                                   DataFormat::JSON::ASSTRING(*request.inputJSON, "description", "")))
     {
         return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to update application description."};
     }
     return response;
 }
 
-API::APIReturn AdminPortal_Endpoints_Applications::updateApplicationAPIKey(void *context, const RequestContext &request, ClientDetails &authClientDetails)
+APIReturn AdminPortal_Endpoints_Applications::updateApplicationAPIKey(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
-    API::APIReturn response;
+    APIReturn response;
 
-    std::string appName(Helpers::JSON::ASSTRING(*request.inputJSON, "appName", ""));
+    std::string appName(DataFormat::JSON::ASSTRING(*request.inputJSON, "appName", ""));
 
     if (appName.empty())
     {
         return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Application Name is Empty"};
     }
 
-    if (!Globals::getIdentityManager()->applications->updateApplicationAPIKey(authClientDetails, request.jwtToken->getSubject(), appName, Helpers::JSON::ASSTRING(*request.inputJSON, "appKey", "")))
+    if (!Globals::getIdentityManager()->applications->updateApplicationAPIKey(authClientDetails, request.jwtToken->getSubject(), appName, DataFormat::JSON::ASSTRING(*request.inputJSON, "appKey", "")))
     {
         return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to update application API key."};
     }
     return response;
 }
 
-API::APIReturn AdminPortal_Endpoints_Applications::updateAuthSettingsForApplication(void *context, const RequestContext &request, ClientDetails &authClientDetails)
+APIReturn AdminPortal_Endpoints_Applications::updateAuthSettingsForApplication(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
-    API::APIReturn response;
+    APIReturn response;
 
     ApplicationAuthSettings tokenInfo;
     std::optional<AppError> err = tokenInfo.fromJSON(*request.inputJSON);
     if (err.has_value())
     {
-        return {static_cast<Network::Protocol::HTTP::Status::Code>(err->http_code), err->error, err->message};
+        return {static_cast<Mantids30::Protocol::HTTP::Status::Code>(err->http_code), err->error, err->message};
     }
 
     if (!Globals::getIdentityManager()->applications->updateAuthSettingsForApplication(authClientDetails, request.jwtToken->getSubject(), tokenInfo))
@@ -275,12 +277,12 @@ API::APIReturn AdminPortal_Endpoints_Applications::updateAuthSettingsForApplicat
     return response;
 }
 
-API::APIReturn AdminPortal_Endpoints_Applications::updateApplicationLoginCallbackURI(void *context, const RequestContext &request, ClientDetails &authClientDetails)
+APIReturn AdminPortal_Endpoints_Applications::updateApplicationLoginCallbackURI(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
-    API::APIReturn response;
+    APIReturn response;
 
-    std::string appName(Helpers::JSON::ASSTRING(*request.inputJSON, "appName", ""));
-    std::string callbackURI(Helpers::JSON::ASSTRING(*request.inputJSON, "callbackURI", ""));
+    std::string appName(DataFormat::JSON::ASSTRING(*request.inputJSON, "appName", ""));
+    std::string callbackURI(DataFormat::JSON::ASSTRING(*request.inputJSON, "callbackURI", ""));
 
     if (appName.empty())
     {
@@ -295,11 +297,11 @@ API::APIReturn AdminPortal_Endpoints_Applications::updateApplicationLoginCallbac
     return getLoginFlowDetails(appName);
 }
 
-API::APIReturn AdminPortal_Endpoints_Applications::addApplicationLoginOrigin(void *context, const RequestContext &request, ClientDetails &authClientDetails)
+APIReturn AdminPortal_Endpoints_Applications::addApplicationLoginOrigin(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
-    API::APIReturn response;
+    APIReturn response;
 
-    std::string appName(Helpers::JSON::ASSTRING(*request.inputJSON, "appName", ""));
+    std::string appName(DataFormat::JSON::ASSTRING(*request.inputJSON, "appName", ""));
 
     if (appName.empty())
     {
@@ -309,7 +311,7 @@ API::APIReturn AdminPortal_Endpoints_Applications::addApplicationLoginOrigin(voi
     if (!Globals::getIdentityManager()->applications->addWebLoginOriginURLToApplication(authClientDetails,
                                                                                         request.jwtToken->getSubject(),
                                                                                         appName,
-                                                                                        Helpers::JSON::ASSTRING(*request.inputJSON, "loginOrigin", "")))
+                                                                                        DataFormat::JSON::ASSTRING(*request.inputJSON, "loginOrigin", "")))
     {
         return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to add login origin. Please check if the database is accessible or if the value already exists."};
     }
@@ -317,11 +319,11 @@ API::APIReturn AdminPortal_Endpoints_Applications::addApplicationLoginOrigin(voi
     return getLoginFlowDetails(appName);
 }
 
-API::APIReturn AdminPortal_Endpoints_Applications::removeApplicationLoginOrigin(void *context, const RequestContext &request, ClientDetails &authClientDetails)
+APIReturn AdminPortal_Endpoints_Applications::removeApplicationLoginOrigin(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
-    API::APIReturn response;
+    APIReturn response;
 
-    std::string appName(Helpers::JSON::ASSTRING(*request.inputJSON, "appName", ""));
+    std::string appName(DataFormat::JSON::ASSTRING(*request.inputJSON, "appName", ""));
 
     if (appName.empty())
     {
@@ -331,7 +333,7 @@ API::APIReturn AdminPortal_Endpoints_Applications::removeApplicationLoginOrigin(
     if (!Globals::getIdentityManager()->applications->removeWebLoginOriginURLToApplication(authClientDetails,
                                                                                            request.jwtToken->getSubject(),
                                                                                            appName,
-                                                                                           Helpers::JSON::ASSTRING(*request.inputJSON, "loginOrigin", "")))
+                                                                                           DataFormat::JSON::ASSTRING(*request.inputJSON, "loginOrigin", "")))
     {
         return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to remove login origin. Refresh and try again."};
     }
@@ -339,11 +341,11 @@ API::APIReturn AdminPortal_Endpoints_Applications::removeApplicationLoginOrigin(
     return getLoginFlowDetails(appName);
 }
 
-API::APIReturn AdminPortal_Endpoints_Applications::addApplicationLoginRedirectURI(void *context, const RequestContext &request, ClientDetails &authClientDetails)
+APIReturn AdminPortal_Endpoints_Applications::addApplicationLoginRedirectURI(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
-    API::APIReturn response;
+    APIReturn response;
 
-    std::string appName(Helpers::JSON::ASSTRING(*request.inputJSON, "appName", ""));
+    std::string appName(DataFormat::JSON::ASSTRING(*request.inputJSON, "appName", ""));
 
     if (appName.empty())
     {
@@ -353,7 +355,7 @@ API::APIReturn AdminPortal_Endpoints_Applications::addApplicationLoginRedirectUR
     if (!Globals::getIdentityManager()->applications->addWebLoginAllowedRedirectURIToApplication(authClientDetails,
                                                                                                  request.jwtToken->getSubject(),
                                                                                                  appName,
-                                                                                                 Helpers::JSON::ASSTRING(*request.inputJSON, "redirectURI", "")))
+                                                                                                 DataFormat::JSON::ASSTRING(*request.inputJSON, "redirectURI", "")))
     {
         return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to add redirect URI. Please check if the database is accessible or if the value already exists."};
     }
@@ -361,11 +363,11 @@ API::APIReturn AdminPortal_Endpoints_Applications::addApplicationLoginRedirectUR
     return getLoginFlowDetails(appName);
 }
 
-API::APIReturn AdminPortal_Endpoints_Applications::removeApplicationLoginRedirectURI(void *context, const RequestContext &request, ClientDetails &authClientDetails)
+APIReturn AdminPortal_Endpoints_Applications::removeApplicationLoginRedirectURI(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
-    API::APIReturn response;
+    APIReturn response;
 
-    std::string appName(Helpers::JSON::ASSTRING(*request.inputJSON, "appName", ""));
+    std::string appName(DataFormat::JSON::ASSTRING(*request.inputJSON, "appName", ""));
 
     if (appName.empty())
     {
@@ -375,7 +377,7 @@ API::APIReturn AdminPortal_Endpoints_Applications::removeApplicationLoginRedirec
     if (!Globals::getIdentityManager()->applications->removeWebLoginAllowedRedirectURIToApplication(authClientDetails,
                                                                                                     request.jwtToken->getSubject(),
                                                                                                     appName,
-                                                                                                    Helpers::JSON::ASSTRING(*request.inputJSON, "redirectURI", "")))
+                                                                                                    DataFormat::JSON::ASSTRING(*request.inputJSON, "redirectURI", "")))
     {
         return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to remove redirect URI. Refresh and try again."};
     }
@@ -386,9 +388,9 @@ API::APIReturn AdminPortal_Endpoints_Applications::removeApplicationLoginRedirec
 AdminPortal_Endpoints_Applications::APIReturn AdminPortal_Endpoints_Applications::updateWebLoginDefaultRedirectURIForApplication(void *context, const RequestContext &request,
                                                                                                                                  ClientDetails &authClientDetails)
 {
-    API::APIReturn response;
+    APIReturn response;
 
-    std::string appName(Helpers::JSON::ASSTRING(*request.inputJSON, "appName", ""));
+    std::string appName(DataFormat::JSON::ASSTRING(*request.inputJSON, "appName", ""));
 
     if (appName.empty())
     {
@@ -398,7 +400,7 @@ AdminPortal_Endpoints_Applications::APIReturn AdminPortal_Endpoints_Applications
     if (!Globals::getIdentityManager()->applications->updateWebLoginDefaultRedirectURIForApplication(authClientDetails,
                                                                                                      request.jwtToken->getSubject(),
                                                                                                      appName,
-                                                                                                     Helpers::JSON::ASSTRING(*request.inputJSON, "redirectURI", "")))
+                                                                                                     DataFormat::JSON::ASSTRING(*request.inputJSON, "redirectURI", "")))
     {
         return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to set default redirect URI. Please verify the application name and URI are valid."};
     }
@@ -414,13 +416,13 @@ boost::json::value AdminPortal_Endpoints_Applications::getLoginFlowDetails(const
     boost::json::array loginOrigins{};
     for (const std::string &url : webLoginOrigins)
     {
-        Helpers::JSON::ARRAY_APPEND(loginOrigins, boost::json::value(url));
+        DataFormat::JSON::ARRAY_APPEND(loginOrigins, boost::json::value(url));
     }
 
     boost::json::array redirectURIs{};
     for (const std::string &url : acceptedRedirectURIs)
     {
-        Helpers::JSON::ARRAY_APPEND(redirectURIs, boost::json::value(url));
+        DataFormat::JSON::ARRAY_APPEND(redirectURIs, boost::json::value(url));
     }
 
     return boost::json::object{
@@ -443,7 +445,7 @@ boost::json::value AdminPortal_Endpoints_Applications::getApplicationAccountDeta
             {"displayName", Globals::getIdentityManager()->accounts->getAccountDisplayName(accountUUID)},
             {"isAppAdmin", (appAdmins.find(accountUUID) != appAdmins.end())},
         };
-        Helpers::JSON::ARRAY_APPEND(payloadOut, jAccount);
+        DataFormat::JSON::ARRAY_APPEND(payloadOut, jAccount);
     }
     return payloadOut;
 }

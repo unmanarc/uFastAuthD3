@@ -1,13 +1,13 @@
 #include "identitymanager_db.h"
-#include <Mantids30/Helpers/datatables.h>
+#include <Mantids30/DataFormat/JSON/datatables.h>
 
 
-#include <Mantids30/Memory/a_string.h>
-#include <Mantids30/Memory/a_uint64.h>
+#include <Mantids30/Core/Memory/a_string.h>
+#include <Mantids30/Core/Memory/a_uint64.h>
 
 using namespace Mantids30;
-using namespace Mantids30::Memory;
-using namespace Mantids30::Database;
+using namespace Mantids30::Core::Memory;
+using namespace Mantids30::DB::Common;
 
 bool IdentityManager_DB::ApplicationScopes_DB::validateApplicationScopeOnRole(std::string_view roleName, const ApplicationScope &scope, bool lock)
 {
@@ -317,20 +317,20 @@ boost::json::value IdentityManager_DB::ApplicationScopes_DB::searchApplicationSc
     boost::json::object result{
         {"data", boost::json::array{}},
         // DataTables:
-        {"draw", Mantids30::Helpers::JSON::MEMBER_OR_NULL(dataTablesFilters, "draw")},
+        {"draw", Mantids30::DataFormat::JSON::MEMBER_OR_NULL(dataTablesFilters, "draw")},
     };
     std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
 
-    std::string appName (Helpers::JSON::ASSTRING(dataTablesFilters, "appName", ""));
+    std::string appName (DataFormat::JSON::ASSTRING(dataTablesFilters, "appName", ""));
 
-    uint64_t offset = Helpers::JSON::ASUINT64(dataTablesFilters, "start", 0);
-    uint64_t limit = Helpers::JSON::ASUINT64(dataTablesFilters, "length", 0);
+    uint64_t offset = DataFormat::JSON::ASUINT64(dataTablesFilters, "start", 0);
+    uint64_t limit = DataFormat::JSON::ASUINT64(dataTablesFilters, "length", 0);
 
     // Manejo de ordenamiento (order)
-    std::string orderByStatement = Helpers::DataTables::getOrderByStatement(dataTablesFilters);
+    std::string orderByStatement = DataFormat::JSON::DataTables::getOrderByStatement(dataTablesFilters);
 
     // Extract the search value from dataTablesFilters
-    std::string searchValue (Helpers::JSON::ASSTRING(Helpers::JSON::MEMBER_OR_NULL(dataTablesFilters,"search"), "value", ""));
+    std::string searchValue (DataFormat::JSON::ASSTRING(DataFormat::JSON::MEMBER_OR_NULL(dataTablesFilters,"search"), "value", ""));
     std::string whereFilters;
 
     // Build the SQL query with WHERE clause for DataTables search

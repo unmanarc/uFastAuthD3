@@ -1,16 +1,16 @@
 #pragma once
 
-#include <Mantids30/API_EndpointsAndSessions/api_restful_endpoints.h>
-#include <Mantids30/Helpers/json.h>
-#include <Mantids30/Protocol_HTTP/httpv1_base.h>
+#include <Mantids30/Server/WebRESTFul/api_restful_endpoints.h>
+#include <Mantids30/DataFormat/JSON/json.h>
+#include <Mantids30/Protocol/HTTP/httpv1_base.h>
 
 class AdminPortal_Endpoints_Applications
 {
 public:
-    using Endpoints = Mantids30::API::RESTful::Endpoints;
-    using APIReturn = Mantids30::API::APIReturn;
-    using RequestContext = Mantids30::API::RESTful::RequestContext;
-    using ClientDetails = Mantids30::Sessions::ClientDetails;
+    using Endpoints = Mantids30::Server::WebRESTFul::RESTful::Endpoints;
+    using APIReturn = Mantids30::Protocol::HTTP::APIReturn;
+    using RequestContext = Mantids30::Server::WebRESTFul::RESTful::RequestContext;
+    using ClientDetails = Mantids30::Server::WebRESTFul::Sessions::ClientDetails;
 
 protected:
     static void addEndpoints_Applications(const std::shared_ptr<Endpoints> &endpoints);

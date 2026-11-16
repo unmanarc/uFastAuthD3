@@ -1,19 +1,22 @@
 #include "adminportal_endpoints_application_activities.h"
 
-#include "Mantids30/DataFormat_JSON/json_accessors_array.h"
+#include <Mantids30/DataFormat/JSON/json_accessors_array.h>
 #include "globals.h"
-#include <Mantids30/Program_Logs/applog.h>
+#include <Mantids30/Runtime/Logs/applog.h>
 #include <optional>
 #include <string>
 
-using namespace Mantids30::Program;
+using namespace Mantids30::Runtime;
+using namespace Mantids30::Protocol::HTTP;
+using namespace Mantids30::Server::WebRESTFul;
+using namespace Mantids30::Server::WebRESTFul;
 using namespace Mantids30;
 
-using namespace Mantids30::Network::Protocol;
+using namespace Mantids30::Protocol;
 
 void AdminPortal_Endpoints_ApplicationActivities::addEndpoints_Activities(const std::shared_ptr<Endpoints> &endpoints)
 {
-    using SecurityRequirements = API::Security::Requirements;
+    using SecurityRequirements = Mantids30::Server::WebRESTFul::Security::Requirements;
 
     endpoints->addEndpoint(HTTP::Method::GET, "getActivityInfo", SecurityRequirements::JWT_COOKIE_AUTH, {"APP_READ"}, nullptr, &getActivityInfo);
     endpoints->addEndpoint(HTTP::Method::GET, "listApplicationActivities", SecurityRequirements::JWT_COOKIE_AUTH, {"APP_READ"}, nullptr, &listApplicationActivities);
@@ -29,13 +32,13 @@ void AdminPortal_Endpoints_ApplicationActivities::addEndpoints_Activities(const 
     endpoints->addEndpoint(HTTP::Method::PATCH, "updateDefaultSchemeOnApplicationActivity", SecurityRequirements::JWT_COOKIE_AUTH, {"APP_MODIFY"}, nullptr, &updateDefaultSchemeOnApplicationActivity);
 }
 
-API::APIReturn AdminPortal_Endpoints_ApplicationActivities::updateDefaultSchemeOnApplicationActivity(void *context, const RequestContext &request, ClientDetails &authClientDetails)
+APIReturn AdminPortal_Endpoints_ApplicationActivities::updateDefaultSchemeOnApplicationActivity(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
-    API::APIReturn response;
+    APIReturn response;
 
-    std::string appName(Helpers::JSON::ASSTRING(*request.inputJSON, "appName", ""));
-    std::string activityName(Helpers::JSON::ASSTRING(*request.inputJSON, "activityName", ""));
-    uint32_t schemeId = Helpers::JSON::ASUINT(*request.inputJSON, "schemeId", 0);
+    std::string appName(DataFormat::JSON::ASSTRING(*request.inputJSON, "appName", ""));
+    std::string activityName(DataFormat::JSON::ASSTRING(*request.inputJSON, "activityName", ""));
+    uint32_t schemeId = DataFormat::JSON::ASUINT(*request.inputJSON, "schemeId", 0);
 
     if (appName.empty())
     {
@@ -59,13 +62,13 @@ API::APIReturn AdminPortal_Endpoints_ApplicationActivities::updateDefaultSchemeO
     return response;
 }
 
-API::APIReturn AdminPortal_Endpoints_ApplicationActivities::addSchemeToApplicationActivity(void *context, const RequestContext &request, ClientDetails &authClientDetails)
+APIReturn AdminPortal_Endpoints_ApplicationActivities::addSchemeToApplicationActivity(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
-    API::APIReturn response;
+    APIReturn response;
 
-    std::string appName(Helpers::JSON::ASSTRING(*request.inputJSON, "appName", ""));
-    std::string activityName(Helpers::JSON::ASSTRING(*request.inputJSON, "activityName", ""));
-    uint32_t schemeId = Helpers::JSON::ASUINT(*request.inputJSON, "schemeId", 0);
+    std::string appName(DataFormat::JSON::ASSTRING(*request.inputJSON, "appName", ""));
+    std::string activityName(DataFormat::JSON::ASSTRING(*request.inputJSON, "activityName", ""));
+    uint32_t schemeId = DataFormat::JSON::ASUINT(*request.inputJSON, "schemeId", 0);
 
     if (appName.empty())
     {
@@ -89,13 +92,13 @@ API::APIReturn AdminPortal_Endpoints_ApplicationActivities::addSchemeToApplicati
     return response;
 }
 
-API::APIReturn AdminPortal_Endpoints_ApplicationActivities::removeSchemeFromApplicationActivity(void *context, const RequestContext &request, ClientDetails &authClientDetails)
+APIReturn AdminPortal_Endpoints_ApplicationActivities::removeSchemeFromApplicationActivity(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
-    API::APIReturn response;
+    APIReturn response;
 
-    std::string appName(Helpers::JSON::ASSTRING(*request.inputJSON, "appName", ""));
-    std::string activityName(Helpers::JSON::ASSTRING(*request.inputJSON, "activityName", ""));
-    uint32_t schemeId = Helpers::JSON::ASUINT(*request.inputJSON, "schemeId", 0);
+    std::string appName(DataFormat::JSON::ASSTRING(*request.inputJSON, "appName", ""));
+    std::string activityName(DataFormat::JSON::ASSTRING(*request.inputJSON, "activityName", ""));
+    uint32_t schemeId = DataFormat::JSON::ASUINT(*request.inputJSON, "schemeId", 0);
 
     if (appName.empty())
     {
@@ -119,13 +122,13 @@ API::APIReturn AdminPortal_Endpoints_ApplicationActivities::removeSchemeFromAppl
     return response;
 }
 
-API::APIReturn AdminPortal_Endpoints_ApplicationActivities::updateActivityDescription(void *context, const RequestContext &request, ClientDetails &authClientDetails)
+APIReturn AdminPortal_Endpoints_ApplicationActivities::updateActivityDescription(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
-    API::APIReturn response;
+    APIReturn response;
 
-    std::string appName(Helpers::JSON::ASSTRING(*request.inputJSON, "appName", ""));
-    std::string activityName(Helpers::JSON::ASSTRING(*request.inputJSON, "activityName", ""));
-    std::string activityDescription (Helpers::JSON::ASSTRING(*request.inputJSON, "activityDescription", ""));
+    std::string appName(DataFormat::JSON::ASSTRING(*request.inputJSON, "appName", ""));
+    std::string activityName(DataFormat::JSON::ASSTRING(*request.inputJSON, "activityName", ""));
+    std::string activityDescription (DataFormat::JSON::ASSTRING(*request.inputJSON, "activityDescription", ""));
 
     if (appName.empty())
     {
@@ -149,13 +152,13 @@ API::APIReturn AdminPortal_Endpoints_ApplicationActivities::updateActivityDescri
     return response;
 }
 
-API::APIReturn AdminPortal_Endpoints_ApplicationActivities::updateActivityParentActivity(void *context, const RequestContext &request, ClientDetails &authClientDetails)
+APIReturn AdminPortal_Endpoints_ApplicationActivities::updateActivityParentActivity(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
-    API::APIReturn response;
+    APIReturn response;
 
-    std::string appName(Helpers::JSON::ASSTRING(*request.inputJSON, "appName", ""));
-    std::string activityName(Helpers::JSON::ASSTRING(*request.inputJSON, "activityName", ""));
-    std::string parentActivityName (Helpers::JSON::ASSTRING(*request.inputJSON, "parentActivityName", ""));
+    std::string appName(DataFormat::JSON::ASSTRING(*request.inputJSON, "appName", ""));
+    std::string activityName(DataFormat::JSON::ASSTRING(*request.inputJSON, "activityName", ""));
+    std::string parentActivityName (DataFormat::JSON::ASSTRING(*request.inputJSON, "parentActivityName", ""));
 
     if (appName.empty())
     {
@@ -174,10 +177,10 @@ API::APIReturn AdminPortal_Endpoints_ApplicationActivities::updateActivityParent
     return response;
 }
 
-API::APIReturn AdminPortal_Endpoints_ApplicationActivities::getActivityInfo(void *context, const RequestContext &request, ClientDetails &authClientDetails)
+APIReturn AdminPortal_Endpoints_ApplicationActivities::getActivityInfo(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
-    std::string appName(Helpers::JSON::ASSTRING(*request.inputJSON, "appName", ""));
-    std::string activityName(Helpers::JSON::ASSTRING(*request.inputJSON, "activityName", ""));
+    std::string appName(DataFormat::JSON::ASSTRING(*request.inputJSON, "appName", ""));
+    std::string activityName(DataFormat::JSON::ASSTRING(*request.inputJSON, "activityName", ""));
 
     if (appName.empty())
     {
@@ -204,7 +207,7 @@ API::APIReturn AdminPortal_Endpoints_ApplicationActivities::getActivityInfo(void
         boost::json::object jActivity{
             {"name", activity.first},
         };
-        Helpers::JSON::ARRAY_APPEND(allActivities, jActivity);
+        DataFormat::JSON::ARRAY_APPEND(allActivities, jActivity);
     }
 
     // Activity Schemes:
@@ -224,11 +227,11 @@ API::APIReturn AdminPortal_Endpoints_ApplicationActivities::getActivityInfo(void
         };
         if (authSchemes.find(scheme.first) != authSchemes.end())
         {
-            Helpers::JSON::ARRAY_APPEND(schemes, jScheme);
+            DataFormat::JSON::ARRAY_APPEND(schemes, jScheme);
         }
         else
         {
-            Helpers::JSON::ARRAY_APPEND(leftSchemes, jScheme);
+            DataFormat::JSON::ARRAY_APPEND(leftSchemes, jScheme);
         }
     }
 
@@ -243,9 +246,9 @@ API::APIReturn AdminPortal_Endpoints_ApplicationActivities::getActivityInfo(void
     };
 }
 
-API::APIReturn AdminPortal_Endpoints_ApplicationActivities::listApplicationActivities(void *context, const RequestContext &request, ClientDetails &authClientDetails)
+APIReturn AdminPortal_Endpoints_ApplicationActivities::listApplicationActivities(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
-    std::string appName(Helpers::JSON::ASSTRING(*request.inputJSON, "appName", ""));
+    std::string appName(DataFormat::JSON::ASSTRING(*request.inputJSON, "appName", ""));
     boost::json::array responseJSON{};
 
     if (appName.empty())
@@ -263,19 +266,19 @@ API::APIReturn AdminPortal_Endpoints_ApplicationActivities::listApplicationActiv
         jActivity = activity.second.toJSON();
         jActivity.as_object()["name"] = activity.first;
 
-        Helpers::JSON::ARRAY_APPEND(responseJSON,jActivity);
+        DataFormat::JSON::ARRAY_APPEND(responseJSON,jActivity);
     }
 
     return responseJSON;
 }
 
-API::APIReturn AdminPortal_Endpoints_ApplicationActivities::createApplicationActivity(void *context, const RequestContext &request, ClientDetails &authClientDetails)
+APIReturn AdminPortal_Endpoints_ApplicationActivities::createApplicationActivity(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
-    API::APIReturn response;
+    APIReturn response;
 
-    std::string appName(Helpers::JSON::ASSTRING(*request.inputJSON, "appName", ""));
-    std::string activityName(Helpers::JSON::ASSTRING(*request.inputJSON, "activityName", ""));
-    std::string activityDescription (Helpers::JSON::ASSTRING(*request.inputJSON, "activityDescription", ""));
+    std::string appName(DataFormat::JSON::ASSTRING(*request.inputJSON, "appName", ""));
+    std::string activityName(DataFormat::JSON::ASSTRING(*request.inputJSON, "activityName", ""));
+    std::string activityDescription (DataFormat::JSON::ASSTRING(*request.inputJSON, "activityDescription", ""));
 
     if (activityName.empty())
     {
@@ -299,12 +302,12 @@ API::APIReturn AdminPortal_Endpoints_ApplicationActivities::createApplicationAct
     return response;
 }
 
-API::APIReturn AdminPortal_Endpoints_ApplicationActivities::removeApplicationActivity(void *context, const RequestContext &request, ClientDetails &authClientDetails)
+APIReturn AdminPortal_Endpoints_ApplicationActivities::removeApplicationActivity(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
-    API::APIReturn response;
+    APIReturn response;
 
-    std::string appName(Helpers::JSON::ASSTRING(*request.inputJSON, "appName", ""));
-    std::string activityName(Helpers::JSON::ASSTRING(*request.inputJSON, "activityName", ""));
+    std::string appName(DataFormat::JSON::ASSTRING(*request.inputJSON, "appName", ""));
+    std::string activityName(DataFormat::JSON::ASSTRING(*request.inputJSON, "activityName", ""));
 
     if (appName.empty())
     {

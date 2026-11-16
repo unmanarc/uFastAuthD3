@@ -2,9 +2,10 @@
 
 
 using namespace Mantids30;
-using namespace Program;
-using namespace API::RESTful;
-using namespace Network::Protocol;
+using namespace Mantids30::Protocol::HTTP;
+using namespace Mantids30::Runtime;
+using namespace Mantids30::Server::WebRESTFul::RESTful;
+using namespace Mantids30::Protocol;
 
 /*
  * TODO:
@@ -18,9 +19,9 @@ using namespace Network::Protocol;
     ANSWER: it should be at the IAM and the user portal itself, then, when you log into your user portal, you will be able to self-register into some specific app.
 */
 
-API::APIReturn LoginPortal_Endpoints::registerAccount(void *context, const RequestContext &request, ClientDetails &clientDetails)
+APIReturn LoginPortal_Endpoints::registerAccount(void *context, const RequestContext &request, ClientDetails &clientDetails)
 {
-    API::APIReturn response;
+    APIReturn response;
     /*
     IdentityManager *identityManager = Globals::getIdentityManager();
 
@@ -58,11 +59,11 @@ API::APIReturn LoginPortal_Endpoints::registerAccount(void *context, const Reque
         }
     }
 
-    std::string accountToCreate (Helpers::JSON::ASSTRING((*request.inputJSON)["accountDetails"], "accountUUID", ""));
+    std::string accountToCreate (DataFormat::JSON::ASSTRING((*request.inputJSON)["accountDetails"], "accountUUID", ""));
 
     if (create)
     {
-        success = identityManager->accounts->addAccount(accountToCreate, Helpers::JSON::ASUINT64(*request.inputJSON, "expiration", 0), accountFlags, request.jwtToken->getSubject());
+        success = identityManager->accounts->addAccount(accountToCreate, DataFormat::JSON::ASUINT64(*request.inputJSON, "expiration", 0), accountFlags, request.jwtToken->getSubject());
     }
 
     if (!success)
@@ -74,7 +75,7 @@ API::APIReturn LoginPortal_Endpoints::registerAccount(void *context, const Reque
                   !success ? "Failed to create account '%s'" : "Account '%s' created.", accountToCreate.c_str());
 
     // Set the credential:
-    std::string newPass (Helpers::JSON::ASSTRING(*request.inputJSON, "newPass", ""));
+    std::string newPass (DataFormat::JSON::ASSTRING(*request.inputJSON, "newPass", ""));
 
     // TODO: mejorar el nivel de log...
 
@@ -108,8 +109,8 @@ API::APIReturn LoginPortal_Endpoints::registerAccount(void *context, const Reque
 // TODO: llenar los details del user.
 
 /*AccountCreationDetails getAccountDetails;
-        getAccountDetails.description = Helpers::JSON::ASSTRING((*request.inputJSON)["getAccountDetails"], "description", "");
-        getAccountDetails.email = Helpers::JSON::ASSTRING((*request.inputJSON)["getAccountDetails"], "email", "");
-        getAccountDetails.extraData = Helpers::JSON::ASSTRING((*request.inputJSON)["getAccountDetails"], "extraData", "");
-        getAccountDetails.givenName = Helpers::JSON::ASSTRING((*request.inputJSON)["getAccountDetails"], "givenName", "");
-        getAccountDetails.lastName = Helpers::JSON::ASSTRING((*request.inputJSON)["getAccountDetails"], "lastName", "");*/
+        getAccountDetails.description = DataFormat::JSON::ASSTRING((*request.inputJSON)["getAccountDetails"], "description", "");
+        getAccountDetails.email = DataFormat::JSON::ASSTRING((*request.inputJSON)["getAccountDetails"], "email", "");
+        getAccountDetails.extraData = DataFormat::JSON::ASSTRING((*request.inputJSON)["getAccountDetails"], "extraData", "");
+        getAccountDetails.givenName = DataFormat::JSON::ASSTRING((*request.inputJSON)["getAccountDetails"], "givenName", "");
+        getAccountDetails.lastName = DataFormat::JSON::ASSTRING((*request.inputJSON)["getAccountDetails"], "lastName", "");*/

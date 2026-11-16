@@ -1,23 +1,24 @@
 #include "IdentityManager/ds_authentication.h"
-#include <Mantids30/Protocol_HTTP/api_return.h>
+#include <Mantids30/Protocol/HTTP/api_return.h>
 #include "loginportal_endpoints.h"
-#include <Mantids30/Helpers/json.h>
+#include <Mantids30/DataFormat/JSON/json.h>
 
 #include "globals.h"
 
 #include <cstdint>
-#include <Mantids30/DataFormat_JSON/json.h>
+#include <Mantids30/DataFormat/JSON/json.h>
 #include <memory>
 #include <string>
 
 using namespace Mantids30;
-using namespace Program;
-using namespace API::RESTful;
-using namespace Network::Protocol;
+using namespace Mantids30::Protocol::HTTP;
+using namespace Mantids30::Runtime;
+using namespace Mantids30::Server::WebRESTFul::RESTful;
+using namespace Mantids30::Protocol;
 using namespace Mantids30::DataFormat;
 
 std::vector<AuthenticationSchemeUsedSlot> LoginPortal_Endpoints::calculateRequiredAuthSlotsLeftForTheNewTransientAuthToken(const std::shared_ptr<TransientAuthenticationContext> &authContext,
-                                                                                                                           API::APIReturn *response)
+                                                                                                                           APIReturn *response)
 {
     std::vector<AuthenticationSchemeUsedSlot> requiredAuthSlotsOnScheme;
 

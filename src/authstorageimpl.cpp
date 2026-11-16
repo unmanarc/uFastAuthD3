@@ -1,19 +1,19 @@
 #include "authstorageimpl.h"
-#include <Mantids30/API_EndpointsAndSessions/session.h>
-#include <Mantids30/Program_Logs/loglevels.h>
-#include <Mantids30/Helpers/json.h>
+#include <Mantids30/Server/WebRESTFul/session.h>
+#include <Mantids30/Runtime/Logs/loglevels.h>
+#include <Mantids30/DataFormat/JSON/json.h>
 #include "globals.h"
 
 #include <optional>
 #include <sys/stat.h>
 
-#include <Mantids30/Program_Logs/applog.h>
+#include <Mantids30/Runtime/Logs/applog.h>
 
 #include <boost/algorithm/string/case_conv.hpp>
 
-#include <Mantids30/DB_SQLite3/sqlconnector_sqlite3.h>
-#include <Mantids30/Helpers/crypto.h>
-#include <Mantids30/Helpers/random.h>
+#include <Mantids30/DB/SQLite3/sqlconnector_sqlite3.h>
+#include <Mantids30/Core/Helpers/crypto.h>
+#include <Mantids30/Core/Helpers/random.h>
 
 #include "defs.h"
 
@@ -22,8 +22,9 @@
 
 #include "Web/AppSync/appsync_endpoints.h"
 
-using namespace Mantids30::Database;
-using namespace Mantids30::Program;
+using namespace Mantids30::DB::Common;
+using namespace Mantids30::DB::SQLite3;
+using namespace Mantids30::Runtime;
 using namespace Mantids30;
 
 bool AuthStorageImpl::createAuth()
@@ -254,7 +255,7 @@ bool AuthStorageImpl::setupAdminPortalScopesAndRoles()
         return false;
     }
 
-    AppSync_Endpoints::updateAppScopes(IAM_ADMPORTAL_APPNAME, "127.0.0.1", Helpers::JSON::parse(R"(
+    AppSync_Endpoints::updateAppScopes(IAM_ADMPORTAL_APPNAME, "127.0.0.1", DataFormat::JSON::parse(R"(
         [
             {
                 "id": "SELF_PWDCHANGE",
@@ -356,7 +357,7 @@ bool AuthStorageImpl::setupUserPortalScopesAndRoles()
         return false;
     }
 
-    AppSync_Endpoints::updateAppScopes(IAM_USRPORTAL_APPNAME, "127.0.0.1", Helpers::JSON::parse(R"(
+    AppSync_Endpoints::updateAppScopes(IAM_USRPORTAL_APPNAME, "127.0.0.1", DataFormat::JSON::parse(R"(
     [
       {
         "id": "LOGIN",
@@ -397,7 +398,7 @@ bool AuthStorageImpl::setupUserPortalScopesAndRoles()
     ]
     )").as_array());
 
-    AppSync_Endpoints::updateAppRoles(IAM_USRPORTAL_APPNAME, "127.0.0.1", Helpers::JSON::parse(R"(
+    AppSync_Endpoints::updateAppRoles(IAM_USRPORTAL_APPNAME, "127.0.0.1", DataFormat::JSON::parse(R"(
     [
       {
         "id": "GENERIC_USER",

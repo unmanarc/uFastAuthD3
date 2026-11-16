@@ -1,17 +1,17 @@
 #pragma once
 
-#include "Mantids30/DataFormat_JSON/json_accessors.h"
-#include "Mantids30/DataFormat_JSON/json_detail.h"
-#include <Mantids30/DataFormat_JSON/json.h>
+#include <Mantids30/DataFormat/JSON/json_accessors.h>
+#include <Mantids30/DataFormat/JSON/json_detail.h>
+#include <Mantids30/DataFormat/JSON/json.h>
 #include <boost/json/value.hpp>
 #include <cstdint>
 #include <optional>
 #include <string>
 
-#include <Mantids30/Helpers/crypto.h>
-#include <Mantids30/Helpers/encoders.h>
-#include <Mantids30/Helpers/json.h>
-#include <Mantids30/Helpers/random.h>
+#include <Mantids30/Core/Helpers/crypto.h>
+#include <Mantids30/Core/Helpers/encoders.h>
+#include <Mantids30/DataFormat/JSON/json.h>
+#include <Mantids30/Core/Helpers/random.h>
 
 /**
  * @brief The Function enum defines the supported password hashing and authentication functions.
@@ -98,12 +98,12 @@ struct AuthenticationSlotDetails
 {
     void fromJSON(const boost::json::value &j)
     {
-        passwordFunction = toHashFunction(Mantids30::Helpers::JSON::ASUINT(j, "passwordFunction", 500));
-        description = Mantids30::Helpers::JSON::ASSTRING(j, "description", "");
-        defaultExpirationSeconds = Mantids30::Helpers::JSON::ASUINT(j, "defaultExpirationSeconds", 0);
-        strengthJSONValidator = Mantids30::Helpers::JSON::MEMBER_OR_NULL(j, "strengthJSONValidator");
-        totp2FAStepsToleranceWindow = Mantids30::Helpers::JSON::ASUINT(j, "totp2FAStepsToleranceWindow", 0);
-        canSkipWhenExpired = Mantids30::Helpers::JSON::ASBOOL(j, "canSkipWhenExpired", false);
+        passwordFunction = toHashFunction(Mantids30::DataFormat::JSON::ASUINT(j, "passwordFunction", 500));
+        description = Mantids30::DataFormat::JSON::ASSTRING(j, "description", "");
+        defaultExpirationSeconds = Mantids30::DataFormat::JSON::ASUINT(j, "defaultExpirationSeconds", 0);
+        strengthJSONValidator = Mantids30::DataFormat::JSON::MEMBER_OR_NULL(j, "strengthJSONValidator");
+        totp2FAStepsToleranceWindow = Mantids30::DataFormat::JSON::ASUINT(j, "totp2FAStepsToleranceWindow", 0);
+        canSkipWhenExpired = Mantids30::DataFormat::JSON::ASBOOL(j, "canSkipWhenExpired", false);
     }
 
     [[nodiscard]] boost::json::object toJSON() const
@@ -154,13 +154,13 @@ struct Credential
 
     void fromJSON(const boost::json::value &j)
     {
-        slotDetails.fromJSON( Mantids30::Helpers::JSON::MEMBER_OR_NULL(j, "slotDetails"));
-        mustChange = Mantids30::Helpers::JSON::ASBOOL(j, "mustChange", true);
-        badAttempts = Mantids30::Helpers::JSON::ASUINT(j, "badAttempts", 0);
-        lastChange = static_cast<time_t>(Mantids30::Helpers::JSON::ASINT64(j, "lastChange", 0));
-        expirationTimestamp = static_cast<time_t>(Mantids30::Helpers::JSON::ASINT64(j, "expirationTimestamp", 0));
-        hash = Mantids30::Helpers::JSON::ASSTRING(j, "hash", "");
-        Mantids30::Helpers::Encoders::fromHex(Mantids30::Helpers::JSON::ASSTRING(j, "ssalt", "FFFFFFFF"), ssalt, 4);
+        slotDetails.fromJSON( Mantids30::DataFormat::JSON::MEMBER_OR_NULL(j, "slotDetails"));
+        mustChange = Mantids30::DataFormat::JSON::ASBOOL(j, "mustChange", true);
+        badAttempts = Mantids30::DataFormat::JSON::ASUINT(j, "badAttempts", 0);
+        lastChange = static_cast<time_t>(Mantids30::DataFormat::JSON::ASINT64(j, "lastChange", 0));
+        expirationTimestamp = static_cast<time_t>(Mantids30::DataFormat::JSON::ASINT64(j, "expirationTimestamp", 0));
+        hash = Mantids30::DataFormat::JSON::ASSTRING(j, "hash", "");
+        Mantids30::Core::Helpers::Encoders::fromHex(Mantids30::DataFormat::JSON::ASSTRING(j, "ssalt", "FFFFFFFF"), ssalt, 4);
     }
 
     [[nodiscard]] boost::json::object toJSON(const AuthenticationPolicy &authPolicy) const
@@ -174,7 +174,7 @@ struct Credential
             {"isExpired",               isExpired()},
             {"slotDetails",             slotDetails.toJSON()},
             {"expirationTimestamp",     expirationTimestamp},
-            {"ssalt",                   Mantids30::Helpers::Encoders::toHex(ssalt, 4)},
+            {"ssalt",                   Mantids30::Core::Helpers::Encoders::toHex(ssalt, 4)},
             {"hasExceededMaxAttempts",  hasExceededMaxAttempts(authPolicy)},
         };
     }
@@ -183,7 +183,7 @@ struct Credential
     {
         Credential cred;
         cred.slotDetails = AuthenticationSlotDetails("SHA256 Temporal", HashFunction::SHA256, "", 0, 0, false);
-        cred.hash = Mantids30::Helpers::Crypto::calcSHA256(password);
+        cred.hash = Mantids30::Core::Helpers::Crypto::calcSHA256(password);
         return cred;
     }
 
@@ -343,10 +343,10 @@ struct AuthenticationSchemeUsedSlot
      */
     void fromJSON(const boost::json::value &j)
     {
-        slotId = Mantids30::Helpers::JSON::ASUINT(j, "slotId", 0);
-        orderPriority = Mantids30::Helpers::JSON::ASUINT(j, "orderPriority", 0);
-        optional = Mantids30::Helpers::JSON::ASBOOL(j, "optional", false);
-        details.fromJSON( Mantids30::Helpers::JSON::MEMBER_OR_NULL(j, "details"));
+        slotId = Mantids30::DataFormat::JSON::ASUINT(j, "slotId", 0);
+        orderPriority = Mantids30::DataFormat::JSON::ASUINT(j, "orderPriority", 0);
+        optional = Mantids30::DataFormat::JSON::ASBOOL(j, "optional", false);
+        details.fromJSON( Mantids30::DataFormat::JSON::MEMBER_OR_NULL(j, "details"));
 
     }
 

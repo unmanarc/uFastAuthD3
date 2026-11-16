@@ -1,22 +1,23 @@
-#include <Mantids30/Program_Logs/loglevels.h>
+#include <Mantids30/Runtime/Logs/loglevels.h>
 #include "defs.h"
 #include "loginportal_endpoints.h"
-#include <Mantids30/Helpers/json.h>
-#include <Mantids30/DataFormat_JSON/json.h>
+#include <Mantids30/DataFormat/JSON/json.h>
+#include <Mantids30/DataFormat/JSON/json.h>
 #include <boost/algorithm/string/join.hpp>
 
 #include "globals.h"
 
 using namespace Mantids30;
+using namespace Mantids30::Protocol::HTTP;
 using namespace Mantids30::DataFormat;
-using namespace Program;
-using namespace API::RESTful;
-using namespace Network::Protocol;
+using namespace Mantids30::Runtime;
+using namespace Mantids30::Server::WebRESTFul::RESTful;
+using namespace Mantids30::Protocol;
 
 /*
     This will tranform the current authentication into the login token for an APP first access...
 */
-API::APIReturn LoginPortal_Endpoints::token(void *context, const RequestContext &request, ClientDetails &authClientDetails)
+APIReturn LoginPortal_Endpoints::token(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
 
     IdentityManager *identityManager = Globals::getIdentityManager();
@@ -24,11 +25,11 @@ API::APIReturn LoginPortal_Endpoints::token(void *context, const RequestContext 
     std::string_view authenticatedUser = request.jwtToken->getSubject();
 
     bool isEmbeddedInPortalAuthentication = false;
-    bool keepAuthenticated  = Helpers::JSON::ASBOOL_D(request.jwtToken->getClaim("keepAuthenticated"), false);
-    std::string activity    (Helpers::JSON::ASSTRING(*request.inputJSON, "activity", ""));       // APP ACTIVITY NAME.
-    std::string redirectURI (Helpers::JSON::ASSTRING(*request.inputJSON, "redirectURI", "")); // APP REDIRECT URI.
-    uint32_t schemeId       = Helpers::JSON::ASUINT(*request.inputJSON, "schemeId", 0);             // APP SCHEME ID.
-    bool mock               = Helpers::JSON::ASBOOL(*request.inputJSON, "mock", false);                     // MOCK
+    bool keepAuthenticated  = DataFormat::JSON::ASBOOL_D(request.jwtToken->getClaim("keepAuthenticated"), false);
+    std::string activity    (DataFormat::JSON::ASSTRING(*request.inputJSON, "activity", ""));       // APP ACTIVITY NAME.
+    std::string redirectURI (DataFormat::JSON::ASSTRING(*request.inputJSON, "redirectURI", "")); // APP REDIRECT URI.
+    uint32_t schemeId       = DataFormat::JSON::ASUINT(*request.inputJSON, "schemeId", 0);             // APP SCHEME ID.
+    bool mock               = DataFormat::JSON::ASBOOL(*request.inputJSON, "mock", false);                     // MOCK
 
 
     // Determine appName: prioritize x-api-key header, fallback to inputJSON "app" field
@@ -60,7 +61,7 @@ API::APIReturn LoginPortal_Endpoints::token(void *context, const RequestContext 
     }
     else
     {
-        appName = Helpers::JSON::ASSTRING(*request.inputJSON, "app", "");
+        appName = DataFormat::JSON::ASSTRING(*request.inputJSON, "app", "");
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////
@@ -127,7 +128,7 @@ API::APIReturn LoginPortal_Endpoints::token(void *context, const RequestContext 
         return {};
     }
 
-    API::APIReturn response;
+    APIReturn response;
 
     //////////////////////////////////////////////////////////////////////////////////////////
     //// -------------------------       TOKEN CREATION       --------------------------- ////

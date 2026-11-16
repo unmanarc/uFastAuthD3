@@ -1,14 +1,15 @@
 #include "globals.h"
 #include "loginportal_endpoints.h"
-#include <Mantids30/Helpers/encoders.h>
-#include <Mantids30/Helpers/json.h>
+#include <Mantids30/Core/Helpers/encoders.h>
+#include <Mantids30/DataFormat/JSON/json.h>
 #include <boost/algorithm/string/replace.hpp>
-#include <Mantids30/DataFormat_JSON/json.h>
+#include <Mantids30/DataFormat/JSON/json.h>
 
 using namespace Mantids30;
-using namespace Mantids30::Program;
-using namespace Mantids30::API::RESTful;
-using namespace Mantids30::Network::Protocol;
+using namespace Mantids30::Protocol::HTTP;
+using namespace Mantids30::Runtime;
+using namespace Mantids30::Server::WebRESTFul::RESTful;
+using namespace Mantids30::Protocol;
 using namespace Mantids30::DataFormat;
 
 std::regex LoginPortal_Endpoints::originPattern = std::regex("^(https?://[^/]+)");
@@ -37,7 +38,7 @@ bool LoginPortal_Endpoints::retrieveAndValidateAppOrigin(HTTPv1_Base::Request *r
 }
 
 HTTP::Status::Code LoginPortal_Endpoints::handleLogoutDynamicRequest(const std::string &urlPostfix, HTTPv1_Base::Request *request, HTTPv1_Base::Response *response, const std::shared_ptr<void> &,
-                                                                     const Sessions::SessionInfo *sessionInfo)
+                                                                     const SessionInfo *sessionInfo)
 {
     if (request->requestLine.getHTTPMethod() != "POST")
     {
@@ -69,9 +70,9 @@ HTTP::Status::Code LoginPortal_Endpoints::handleLogoutDynamicRequest(const std::
     boost::json::value jSessionPublicData;
     if (!sessionPublicData.empty())
     {
-        std::string decoded = Mantids30::Helpers::Encoders::decodeFromBase64(sessionPublicData);
+        std::string decoded = Mantids30::Core::Helpers::Encoders::decodeFromBase64(sessionPublicData);
 
-        Mantids30::Helpers::JSON::Reader reader;
+        Mantids30::DataFormat::JSON::Reader reader;
         if (!reader.parse(decoded, jSessionPublicData))
         {
             LOG_APP->log2(__func__, "", request->networkClientInfo.REMOTE_ADDR, Logs::LogLevel::SECURITY_ALERT, "Failed to parse sessionPublicData: %s",
@@ -89,7 +90,7 @@ HTTP::Status::Code LoginPortal_Endpoints::handleLogoutDynamicRequest(const std::
         {"defaultCallbackURL",   defaultAPPCallback},
     };
 
-    std::string xstrValue = Mantids30::Helpers::JSON::toString(boost::json::value(v));
+    std::string xstrValue = Mantids30::DataFormat::JSON::toString(boost::json::value(v));
 
     std::regex appRegex("^[a-zA-Z0-9\\_]+$");
 
@@ -198,9 +199,9 @@ HTTP::Status::Code LoginPortal_Endpoints::handleLogoutDynamicRequest(const std::
     return HTTP::Status::Code::S_200_OK;
 }
 
-API::APIReturn LoginPortal_Endpoints::logout(void *context, const RequestContext &request, ClientDetails &authClientDetails)
+APIReturn LoginPortal_Endpoints::logout(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
-    API::APIReturn response;
+    APIReturn response;
     deleteLoginCookies(context, request, authClientDetails, &response);
     return response;
 }

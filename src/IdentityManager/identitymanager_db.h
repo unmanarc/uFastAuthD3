@@ -2,13 +2,13 @@
 
 #include "IdentityManager/credentialvalidator.h"
 #include "identitymanager.h"
-#include <Mantids30/DB/sqlconnector.h>
+#include <Mantids30/DB/Common/sqlconnector.h>
 #include <optional>
 
 class IdentityManager_DB : public IdentityManager
 {
 public:
-    IdentityManager_DB(Mantids30::Database::SQLConnector *_SQLDirConnection);
+    IdentityManager_DB(Mantids30::DB::Common::SQLConnector *_SQLDirConnection);
     bool initializeDatabase() override;
 
     void logSecurityEventOnAccounts(std::string_view accountUUID, SecurityEventAction eventAction, std::string_view description, std::string_view performedBy, const ClientDetails &clientDetails);
@@ -407,5 +407,5 @@ public:
 
 private:
     std::list<std::string> m_sqlErrorList;
-    Mantids30::Database::SQLConnector *m_sqlConnector;
+    Mantids30::DB::Common::SQLConnector *m_sqlConnector;
 };

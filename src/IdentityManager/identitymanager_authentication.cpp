@@ -1,8 +1,8 @@
 #include "IdentityManager/ds_authentication.h"
 #include "identitymanager.h"
 
-#include <Mantids30/DataFormat_JSON/json.h>
-#include <Mantids30/Helpers/random.h>
+#include <Mantids30/DataFormat/JSON/json.h>
+#include <Mantids30/Core/Helpers/random.h>
 
 #include <boost/json/object.hpp>
 #include <optional>
@@ -117,12 +117,12 @@ AuthenticationResult IdentityManager::AuthController::authenticateCredential(con
             if (authContext->doesTransientTokenNotExist)
             {
                 //CHelpers::JSON::toString(alc the) s
-                authContext->slotSchemeHash = Helpers::Crypto::calcSHA256(Helpers::JSON::toString(authSlotsToJSON(authSlotsUsedByScheme)));
+                authContext->slotSchemeHash = Core::Helpers::Crypto::calcSHA256(DataFormat::JSON::toString(authSlotsToJSON(authSlotsUsedByScheme)));
             }
             else
             {
                 // hash is not compatible (slots changed, prevent race condition)
-                if (authContext->slotSchemeHash != Helpers::Crypto::calcSHA256(Helpers::JSON::toString(authSlotsToJSON(authSlotsUsedByScheme))))
+                if (authContext->slotSchemeHash != Core::Helpers::Crypto::calcSHA256(DataFormat::JSON::toString(authSlotsToJSON(authSlotsUsedByScheme))))
                 {
                     return AuthenticationResult::AUTH_SCHEME_CHANGED;
                 }
@@ -180,7 +180,7 @@ AuthenticationResult IdentityManager::AuthController::authenticateCredential(con
 
 std::string IdentityManager::AuthController::genRandomConfirmationToken()
 {
-    return Mantids30::Helpers::Random::createRandomString(64);
+    return Mantids30::Core::Helpers::Random::createRandomString(64);
 }
 
 AuthenticationPolicy IdentityManager::AuthController::getGlobalAuthenticationPolicy()
@@ -332,7 +332,7 @@ bool IdentityManager::AuthController::setAccountPasswordOnScheme(const ClientDet
         {
             return false;
         }
-        newPass = Mantids30::Helpers::Random::createRandomString(16);
+        newPass = Mantids30::Core::Helpers::Random::createRandomString(16);
         credentialData = m_parent->authController->createNewCredential(authSlots.begin()->slotId, newPass, true);
     }
 
@@ -357,7 +357,7 @@ bool IdentityManager::AuthController::setAccountPasswordOnScheme(const ClientDet
                                     {":account",MAKE_VAR(STRING,accountUUID)},
                                     {":hash",MAKE_VAR(STRING,credentialData.hash)},
                                     {":expiration",MAKE_VAR(DATETIME,credentialData.expirationTimestamp)},
-                                    {":salt",MAKE_VAR(STRING,Mantids30::Helpers::Encoders::toHex(credentialData.ssalt,4))},
+                                    {":salt",MAKE_VAR(STRING,Mantids30::Core::Helpers::Encoders::toHex(credentialData.ssalt,4))},
                                     {":mustChange",MAKE_VAR(BOOL,credentialData.mustChange)}
                                 }
                                 );*/
@@ -391,24 +391,24 @@ Credential IdentityManager::AuthController::createNewCredential(const uint32_t &
         break;
         case HashFunction::SHA256:
         {
-            result.hash = Helpers::Crypto::calcSHA256(passwordInput);
+            result.hash = Core::Helpers::Crypto::calcSHA256(passwordInput);
         }
         break;
         case HashFunction::SHA512:
         {
-            result.hash = Helpers::Crypto::calcSHA512(passwordInput);
+            result.hash = Core::Helpers::Crypto::calcSHA512(passwordInput);
         }
         break;
         case HashFunction::SSHA256:
         {
-            Mantids30::Helpers::Random::createRandomSalt32(result.ssalt);
-            result.hash = Helpers::Crypto::calcSSHA256(passwordInput, result.ssalt);
+            Mantids30::Core::Helpers::Random::createRandomSalt32(result.ssalt);
+            result.hash = Core::Helpers::Crypto::calcSSHA256(passwordInput, result.ssalt);
         }
         break;
         case HashFunction::SSHA512:
         {
-            Mantids30::Helpers::Random::createRandomSalt32(result.ssalt);
-            result.hash = Helpers::Crypto::calcSSHA512(passwordInput, result.ssalt);
+            Mantids30::Core::Helpers::Random::createRandomSalt32(result.ssalt);
+            result.hash = Core::Helpers::Crypto::calcSSHA512(passwordInput, result.ssalt);
         }
         break;
         case HashFunction::GAUTHTIME:

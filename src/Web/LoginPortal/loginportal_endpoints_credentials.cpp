@@ -1,22 +1,23 @@
-#include <Mantids30/Protocol_HTTP/api_return.h>
-#include "Mantids30/DataFormat_JSON/json_detail.h"
+#include <Mantids30/Protocol/HTTP/api_return.h>
+#include <Mantids30/DataFormat/JSON/json_detail.h>
 #include "loginportal_endpoints.h"
 
 #include "globals.h"
 
 using namespace Mantids30;
-using namespace Program;
-using namespace API::RESTful;
-using namespace Network::Protocol;
+using namespace Mantids30::Protocol::HTTP;
+using namespace Mantids30::Runtime;
+using namespace Mantids30::Server::WebRESTFul::RESTful;
+using namespace Mantids30::Protocol;
 
-API::APIReturn LoginPortal_Endpoints::changeCredential(void *context, const RequestContext &request, ClientDetails &authClientDetails)
+APIReturn LoginPortal_Endpoints::changeCredential(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
     // Get the identity manager from global settings to handle authentication.
     IdentityManager *identityManager = Globals::getIdentityManager();
 
     // INPUTS:
-    uint32_t slotId = Helpers::JSON::ASUINT(*request.inputJSON, "slotId", 0);
-    Credential newCredential = Credential::createFromJSON( Helpers::JSON::MEMBER_OR_NULL(*request.inputJSON,"newCredential") );
+    uint32_t slotId = DataFormat::JSON::ASUINT(*request.inputJSON, "slotId", 0);
+    Credential newCredential = Credential::createFromJSON( DataFormat::JSON::MEMBER_OR_NULL(*request.inputJSON,"newCredential") );
 
     // Set the expiration timestamp automatically on authController->changeAccountCredential
     newCredential.setExpirationTimeAutomatically();

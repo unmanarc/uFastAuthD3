@@ -1,7 +1,7 @@
 #pragma once
 
 #include "identitymanager.h"
-#include <Mantids30/Threads/safe_map.h>
+#include <Mantids30/Core/Threads/safe_map.h>
 
 /**
  * @brief The Domains class provides a manager for managing authentication domains.
@@ -39,5 +39,5 @@ private:
     /**
      * @brief A thread-safe map of authentication domain names to their associated Manager objects.
      */
-    Mantids30::Threads::Safe::Map<std::string> m_domainMap;
+    Mantids30::Core::Threads::Safe::Map<std::string> m_domainMap;
 };

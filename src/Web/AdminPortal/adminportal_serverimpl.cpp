@@ -5,18 +5,18 @@
 #include "defs.h"
 #include "globals.h"
 
-#include <Mantids30/Config_REST/config_builder.h>
+#include <Mantids30/ConfigBuilder/Server_WebRESTFul/config_builder.h>
 
-#include <Mantids30/Server_RESTfulWebAPI/engine.h>
+#include <Mantids30/Server/WebRESTFul/engine.h>
 #include <boost/algorithm/string/predicate.hpp>
 #include <memory>
 
 // Imported namespaces are shortened and grouped for better readability
 using namespace Mantids30;
-using namespace Network;
-using namespace Network::Sockets;
-using namespace Network::Servers;
-using namespace Program;
+using namespace Mantids30::Network;
+using namespace Mantids30::Network::Sockets;
+using namespace Mantids30::Server::WebRESTFul;
+using namespace Mantids30::Runtime;
 
 bool AdminPortal_ServerImpl::createService()
 {
@@ -34,8 +34,8 @@ bool AdminPortal_ServerImpl::createService()
     std::map<std::string, std::string> vars;
     vars["APIKEY"] = Globals::getIdentityManager()->applications->getApplicationAPIKey(IAM_ADMPORTAL_APPNAME);
 
-    RESTful::Engine *adminPortalWebServer = Program::Config::RESTful_Engine::createRESTfulEngine(config, LOG_APP, LOG_RPC, "AdminPortal", IAM_ADMPORTAL_DEF_WEBROOTDIR,
-                                                                                                 Program::Config::REST_ENGINE_NOCONFIG_JWT | Program::Config::REST_ENGINE_MANDATORY_SSL, vars);
+    Mantids30::Server::WebRESTFul::Engine *adminPortalWebServer = ConfigBuilder::Server_WebRESTFul::Builder::createRESTfulEngine(config, LOG_APP, LOG_RPC, "AdminPortal", IAM_ADMPORTAL_DEF_WEBROOTDIR,
+                                                                                                 ConfigBuilder::Server_WebRESTFul::REST_ENGINE_NOCONFIG_JWT | ConfigBuilder::Server_WebRESTFul::REST_ENGINE_MANDATORY_SSL, vars);
 
     if (!adminPortalWebServer)
     {
@@ -57,7 +57,7 @@ bool AdminPortal_ServerImpl::createService()
     adminPortalWebServer->config.setSoftwareVersion(atoi(PROJECT_VER_MAJOR), atoi(PROJECT_VER_MINOR), atoi(PROJECT_VER_PATCH), "a");
 
     // Setup the methods handler for version 1:
-    adminPortalWebServer->endpointsHandler[1] = std::make_shared<API::RESTful::Endpoints>();
+    adminPortalWebServer->endpointsHandler[1] = std::make_shared<Mantids30::Server::WebRESTFul::RESTful::Endpoints>();
 
     // Add authentication methods
     AdminPortal_Endpoints::addEndpoints(adminPortalWebServer->endpointsHandler[1]);

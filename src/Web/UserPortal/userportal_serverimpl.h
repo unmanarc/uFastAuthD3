@@ -1,9 +1,9 @@
 #pragma once
 
-#include <Mantids30/API_EndpointsAndSessions/session.h>
-#include <Mantids30/Net_Sockets/socket_stream.h>
-#include <Mantids30/Protocol_HTTP/httpv1_base.h>
-#include <Mantids30/DataFormat_JSON/json.h>
+#include <Mantids30/Server/WebRESTFul/session.h>
+#include <Mantids30/Network/Sockets/socket_stream.h>
+#include <Mantids30/Protocol/HTTP/httpv1_base.h>
+#include <Mantids30/DataFormat/JSON/json.h>
 
 class UserPortal_ServerImpl
 {

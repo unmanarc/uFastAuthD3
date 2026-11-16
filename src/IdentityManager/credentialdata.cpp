@@ -1,6 +1,6 @@
 #include "credentialdata.h"
-#include "Mantids30/DataFormat_JSON/json_accessors.h"
-#include "Mantids30/DataFormat_JSON/json_convert.h"
+#include <Mantids30/DataFormat/JSON/json_accessors.h>
+#include <Mantids30/DataFormat/JSON/json_convert.h>
 #include <boost/json/value.hpp>
 
 using namespace Mantids30;
@@ -21,7 +21,7 @@ bool CredentialData::parse(std::string_view sAuth)
         return true;
     }
 
-    Helpers::JSON::Reader reader;
+    DataFormat::JSON::Reader reader;
 
     if (!reader.parse(sAuth, x))
     {
@@ -38,13 +38,13 @@ bool CredentialData::parse(std::string_view sAuth)
 
 bool CredentialData::setJSON(const boost::json::value &jsonObject)
 {
-    if (!Helpers::JSON::HAS_MEMBER(jsonObject,"pass") || Helpers::JSON::HAS_MEMBER(jsonObject,"slotId"))
+    if (!DataFormat::JSON::HAS_MEMBER(jsonObject,"pass") || DataFormat::JSON::HAS_MEMBER(jsonObject,"slotId"))
     {
         return false;
     }
 
-    this->m_password = Helpers::JSON::ASSTRING(jsonObject, "pass", "");
-    this->m_slotId = Helpers::JSON::ASUINT(jsonObject, "slotId", 0);
+    this->m_password = DataFormat::JSON::ASSTRING(jsonObject, "pass", "");
+    this->m_slotId = DataFormat::JSON::ASUINT(jsonObject, "slotId", 0);
 
     return true;
 }

@@ -1,16 +1,16 @@
 #pragma once
 
-#include <Mantids30/DataFormat_JSON/json.h>
-#include <Mantids30/API_EndpointsAndSessions/session.h>
-#include <Mantids30/DataFormat_JWT/jwt.h>
-#include <Mantids30/Threads/garbagecollector.h>
+#include <Mantids30/DataFormat/JSON/json.h>
+#include <Mantids30/Server/WebRESTFul/session.h>
+#include <Mantids30/DataFormat/JWT/jwt.h>
+#include <Mantids30/Core/Threads/garbagecollector.h>
 
 #include <boost/json/object.hpp>
 #include <mutex>
 #include <string>
 #include <unordered_map>
 
-#include <Mantids30/Helpers/json.h>
+#include <Mantids30/DataFormat/JSON/json.h>
 #include "ds_authentication.h"
 #include "transient_auth_context.h"
 
@@ -126,7 +126,7 @@ public:
      * @note On failure, the function ensures to increment bad attempt counters for the account and slot ID to
      *       enforce policies such as account locking or throttling after repeated failed attempts.
      */
-    virtual AuthenticationResult authenticateCredential(const Mantids30::Sessions::ClientDetails &clientDetails, std::string_view accountUUID, std::string_view password, const uint32_t &slotId,
+    virtual AuthenticationResult authenticateCredential(const Mantids30::Server::WebRESTFul::Sessions::ClientDetails &clientDetails, std::string_view accountUUID, std::string_view password, const uint32_t &slotId,
                                                         const Mode &authMode = Mode::PLAIN, std::string_view challengeSalt = "", std::shared_ptr<TransientAuthenticationContext> authContext = nullptr)
         = 0;
 
@@ -193,7 +193,7 @@ private:
     std::mutex cacheMutex;
 
     // Garbage collector for authentication tokens cache...
-    Mantids30::Threads::GarbageCollector usedTokensCacheGC;
+    Mantids30::Core::Threads::GarbageCollector usedTokensCacheGC;
 
     bool useTokenCache = true;
 };

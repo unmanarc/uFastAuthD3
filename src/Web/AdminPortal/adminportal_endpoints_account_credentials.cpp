@@ -1,17 +1,20 @@
 #include "adminportal_endpoints_account_credentials.h"
 
 #include "globals.h"
-#include <Mantids30/Program_Logs/applog.h>
-#include <Mantids30/DataFormat_JSON/json.h>
+#include <Mantids30/Runtime/Logs/applog.h>
+#include <Mantids30/DataFormat/JSON/json.h>
 #include <utility>
 
-using namespace Mantids30::Program;
+using namespace Mantids30::Runtime;
+using namespace Mantids30::Protocol::HTTP;
+using namespace Mantids30::Server::WebRESTFul;
+using namespace Mantids30::Server::WebRESTFul;
 using namespace Mantids30;
-using namespace Mantids30::Network::Protocol;
+using namespace Mantids30::Protocol;
 
 void AdminPortal_Endpoints_AccountCredentials::addEndpoints_AccountCredentials(const std::shared_ptr<Endpoints> &endpoints)
 {
-    using SecurityRequirements = API::Security::Requirements;
+    using SecurityRequirements = Mantids30::Server::WebRESTFul::Security::Requirements;
 
     // Account Credential Slots:
     endpoints->addEndpoint(HTTP::Method::GET, "getAccountCredentialSlots", SecurityRequirements::JWT_COOKIE_AUTH, {"ACCOUNT_READ"}, nullptr, &getAccountCredentialSlots);
@@ -21,12 +24,12 @@ void AdminPortal_Endpoints_AccountCredentials::addEndpoints_AccountCredentials(c
     endpoints->addEndpoint(HTTP::Method::POST, "generateMasterPassword", SecurityRequirements::JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"}, nullptr, &generateMasterPassword);
 }
 
-API::APIReturn AdminPortal_Endpoints_AccountCredentials::getAccountCredentialSlots(void *context, const RequestContext &request, ClientDetails &authClientDetails)
+APIReturn AdminPortal_Endpoints_AccountCredentials::getAccountCredentialSlots(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
-    API::APIReturn response;
+    APIReturn response;
 
     // Extract and validate input
-    std::string accountUUID (Helpers::JSON::ASSTRING(*request.inputJSON, "accountUUID", ""));
+    std::string accountUUID (DataFormat::JSON::ASSTRING(*request.inputJSON, "accountUUID", ""));
 
     if (accountUUID.empty())
     {
@@ -58,19 +61,19 @@ API::APIReturn AdminPortal_Endpoints_AccountCredentials::getAccountCredentialSlo
             jResponse["currentAuthPolicy"] = slotData.currentAuthPolicy.toJSON();
         }
 
-        Helpers::JSON::ARRAY_APPEND(jResponse["slots"].as_array(), rSlot);
+        DataFormat::JSON::ARRAY_APPEND(jResponse["slots"].as_array(), rSlot);
     }
 
     return jResponse;
 }
 
-API::APIReturn AdminPortal_Endpoints_AccountCredentials::removeAccountCredentialSlot(void *context, const RequestContext &request, ClientDetails &authClientDetails)
+APIReturn AdminPortal_Endpoints_AccountCredentials::removeAccountCredentialSlot(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
-    API::APIReturn response;
+    APIReturn response;
 
     // Extract and validate input
-    std::string accountUUID (Helpers::JSON::ASSTRING(*request.inputJSON, "accountUUID", ""));
-    uint32_t slotId = Helpers::JSON::ASUINT(*request.inputJSON, "slotId", 0);
+    std::string accountUUID (DataFormat::JSON::ASSTRING(*request.inputJSON, "accountUUID", ""));
+    uint32_t slotId = DataFormat::JSON::ASUINT(*request.inputJSON, "slotId", 0);
 
     if (accountUUID.empty())
     {
@@ -96,14 +99,14 @@ API::APIReturn AdminPortal_Endpoints_AccountCredentials::removeAccountCredential
     return response;
 }
 
-API::APIReturn AdminPortal_Endpoints_AccountCredentials::setAccountCredentialLockedStatus(void *context, const RequestContext &request, ClientDetails &authClientDetails)
+APIReturn AdminPortal_Endpoints_AccountCredentials::setAccountCredentialLockedStatus(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
-    API::APIReturn response;
+    APIReturn response;
 
     // Extract and validate input
-    std::string accountUUID (Helpers::JSON::ASSTRING(*request.inputJSON, "accountUUID", ""));
-    uint32_t slotId = Helpers::JSON::ASUINT(*request.inputJSON, "slotId", 0);
-    bool lockedStatus = Helpers::JSON::ASBOOL(*request.inputJSON, "lockedStatus", false);
+    std::string accountUUID (DataFormat::JSON::ASSTRING(*request.inputJSON, "accountUUID", ""));
+    uint32_t slotId = DataFormat::JSON::ASUINT(*request.inputJSON, "slotId", 0);
+    bool lockedStatus = DataFormat::JSON::ASBOOL(*request.inputJSON, "lockedStatus", false);
 
     if (accountUUID.empty())
     {
@@ -124,14 +127,14 @@ API::APIReturn AdminPortal_Endpoints_AccountCredentials::setAccountCredentialLoc
     return response;
 }
 
-API::APIReturn AdminPortal_Endpoints_AccountCredentials::setMustChangeCredential(void *context, const RequestContext &request, ClientDetails &authClientDetails)
+APIReturn AdminPortal_Endpoints_AccountCredentials::setMustChangeCredential(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
-    API::APIReturn response;
+    APIReturn response;
 
     // Extract and validate input
-    std::string accountUUID (Helpers::JSON::ASSTRING(*request.inputJSON, "accountUUID", ""));
-    uint32_t slotId = Helpers::JSON::ASUINT(*request.inputJSON, "slotId", 0);
-    bool mustChange = Helpers::JSON::ASBOOL(*request.inputJSON, "mustChange", true);
+    std::string accountUUID (DataFormat::JSON::ASSTRING(*request.inputJSON, "accountUUID", ""));
+    uint32_t slotId = DataFormat::JSON::ASUINT(*request.inputJSON, "slotId", 0);
+    bool mustChange = DataFormat::JSON::ASBOOL(*request.inputJSON, "mustChange", true);
 
     if (accountUUID.empty())
     {
@@ -152,12 +155,12 @@ API::APIReturn AdminPortal_Endpoints_AccountCredentials::setMustChangeCredential
     return response;
 }
 
-API::APIReturn AdminPortal_Endpoints_AccountCredentials::generateMasterPassword(void *context, const RequestContext &request, ClientDetails &authClientDetails)
+APIReturn AdminPortal_Endpoints_AccountCredentials::generateMasterPassword(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
-    API::APIReturn response;
+    APIReturn response;
 
     // Extract and validate input
-    std::string accountUUID (Helpers::JSON::ASSTRING(*request.inputJSON, "accountUUID", ""));
+    std::string accountUUID (DataFormat::JSON::ASSTRING(*request.inputJSON, "accountUUID", ""));
 
     if (accountUUID.empty())
     {

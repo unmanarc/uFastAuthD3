@@ -2,16 +2,19 @@
 
 #include "defs.h"
 #include "globals.h"
-#include <Mantids30/Program_Logs/applog.h>
+#include <Mantids30/Runtime/Logs/applog.h>
 #include <regex>
 
-using namespace Mantids30::Program;
+using namespace Mantids30::Runtime;
+using namespace Mantids30::Protocol::HTTP;
+using namespace Mantids30::Server::WebRESTFul;
+using namespace Mantids30::Server::WebRESTFul;
 using namespace Mantids30;
-using namespace Mantids30::Network::Protocol;
+using namespace Mantids30::Protocol;
 
 void AdminPortal_Endpoints_ApplicationsScopes::addEndpoints_Scopes(const std::shared_ptr<Endpoints> &endpoints)
 {
-    using SecurityRequirements = API::Security::Requirements;
+    using SecurityRequirements = Mantids30::Server::WebRESTFul::Security::Requirements;
     endpoints->addEndpoint(HTTP::Method::POST, "addApplicationScopeToAccount", SecurityRequirements::JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"}, nullptr, &addApplicationScopeToAccount);
     endpoints->addEndpoint(HTTP::Method::DELETE, "removeApplicationScopeFromAccount", SecurityRequirements::JWT_COOKIE_AUTH, {"ACCOUNT_MODIFY"}, nullptr, &removeApplicationScopeFromAccount);
 
@@ -22,14 +25,14 @@ void AdminPortal_Endpoints_ApplicationsScopes::addEndpoints_Scopes(const std::sh
     endpoints->addEndpoint(HTTP::Method::GET, "searchApplicationScopes", SecurityRequirements::JWT_COOKIE_AUTH, {"APP_READ"}, nullptr, &searchApplicationScopes);
 }
 
-API::APIReturn AdminPortal_Endpoints_ApplicationsScopes::addApplicationScopeToAccount(void *context, const RequestContext &request, ClientDetails &authClientDetails)
+APIReturn AdminPortal_Endpoints_ApplicationsScopes::addApplicationScopeToAccount(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
-    API::APIReturn response;
+    APIReturn response;
 
     // Extract and validate input values
-    std::string appName(Helpers::JSON::ASSTRING(*request.inputJSON, "appName", ""));
-    std::string scopeId (Helpers::JSON::ASSTRING(*request.inputJSON, "scopeId", ""));
-    std::string accountUUID (Helpers::JSON::ASSTRING(*request.inputJSON, "accountUUID", ""));
+    std::string appName(DataFormat::JSON::ASSTRING(*request.inputJSON, "appName", ""));
+    std::string scopeId (DataFormat::JSON::ASSTRING(*request.inputJSON, "scopeId", ""));
+    std::string accountUUID (DataFormat::JSON::ASSTRING(*request.inputJSON, "accountUUID", ""));
 
     if (appName.empty() || scopeId.empty() || accountUUID.empty())
     {
@@ -44,14 +47,14 @@ API::APIReturn AdminPortal_Endpoints_ApplicationsScopes::addApplicationScopeToAc
     return response;
 }
 
-API::APIReturn AdminPortal_Endpoints_ApplicationsScopes::removeApplicationScopeFromAccount(void *context, const RequestContext &request, ClientDetails &authClientDetails)
+APIReturn AdminPortal_Endpoints_ApplicationsScopes::removeApplicationScopeFromAccount(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
-    API::APIReturn response;
+    APIReturn response;
 
     // Extract and validate input values
-    std::string appName(Helpers::JSON::ASSTRING(*request.inputJSON, "appName", ""));
-    std::string scopeId (Helpers::JSON::ASSTRING(*request.inputJSON, "scopeId", ""));
-    std::string accountUUID (Helpers::JSON::ASSTRING(*request.inputJSON, "accountUUID", ""));
+    std::string appName(DataFormat::JSON::ASSTRING(*request.inputJSON, "appName", ""));
+    std::string scopeId (DataFormat::JSON::ASSTRING(*request.inputJSON, "scopeId", ""));
+    std::string accountUUID (DataFormat::JSON::ASSTRING(*request.inputJSON, "accountUUID", ""));
 
     if (appName.empty() || scopeId.empty() || accountUUID.empty())
     {
@@ -65,13 +68,13 @@ API::APIReturn AdminPortal_Endpoints_ApplicationsScopes::removeApplicationScopeF
     }
     return response;
 }
-API::APIReturn AdminPortal_Endpoints_ApplicationsScopes::createApplicationScope(void *context, const RequestContext &request, ClientDetails &authClientDetails)
+APIReturn AdminPortal_Endpoints_ApplicationsScopes::createApplicationScope(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
-    API::APIReturn response;
+    APIReturn response;
 
-    std::string appName(Helpers::JSON::ASSTRING(*request.inputJSON, "appName", ""));
-    std::string scopeId (Helpers::JSON::ASSTRING(*request.inputJSON, "scopeId", ""));
-    std::string scopeDescription (Helpers::JSON::ASSTRING(*request.inputJSON, "scopeDescription", ""));
+    std::string appName(DataFormat::JSON::ASSTRING(*request.inputJSON, "appName", ""));
+    std::string scopeId (DataFormat::JSON::ASSTRING(*request.inputJSON, "scopeId", ""));
+    std::string scopeDescription (DataFormat::JSON::ASSTRING(*request.inputJSON, "scopeDescription", ""));
 
     // Validate input parameters
     if (appName.empty())
@@ -105,12 +108,12 @@ API::APIReturn AdminPortal_Endpoints_ApplicationsScopes::createApplicationScope(
     return response;
 }
 
-API::APIReturn AdminPortal_Endpoints_ApplicationsScopes::removeApplicationScope(void *context, const RequestContext &request, ClientDetails &authClientDetails)
+APIReturn AdminPortal_Endpoints_ApplicationsScopes::removeApplicationScope(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
-    API::APIReturn response;
+    APIReturn response;
 
-    std::string appName(Helpers::JSON::ASSTRING(*request.inputJSON, "appName", ""));
-    std::string scopeId (Helpers::JSON::ASSTRING(*request.inputJSON, "scopeId", ""));
+    std::string appName(DataFormat::JSON::ASSTRING(*request.inputJSON, "appName", ""));
+    std::string scopeId (DataFormat::JSON::ASSTRING(*request.inputJSON, "scopeId", ""));
 
     // Validate input parameters
     if (appName.empty())
@@ -137,28 +140,28 @@ API::APIReturn AdminPortal_Endpoints_ApplicationsScopes::removeApplicationScope(
     return response;
 }
 
-API::APIReturn AdminPortal_Endpoints_ApplicationsScopes::addApplicationScopeToRole(void *context, const RequestContext &request, ClientDetails &authClientDetails)
+APIReturn AdminPortal_Endpoints_ApplicationsScopes::addApplicationScopeToRole(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
-    API::APIReturn response;
+    APIReturn response;
 
     if (!Globals::getIdentityManager()->applicationScopes->addApplicationScopeToRole(authClientDetails,request.jwtToken->getSubject(),
-                                                                                    {std::string(Helpers::JSON::ASSTRING(*request.inputJSON, "appName", "")),
-                                                                                     std::string(Helpers::JSON::ASSTRING(*request.inputJSON, "scopeId", ""))},
-                                                                                    Helpers::JSON::ASSTRING(*request.inputJSON, "roleName", "")))
+                                                                                    {std::string(DataFormat::JSON::ASSTRING(*request.inputJSON, "appName", "")),
+                                                                                     std::string(DataFormat::JSON::ASSTRING(*request.inputJSON, "scopeId", ""))},
+                                                                                    DataFormat::JSON::ASSTRING(*request.inputJSON, "roleName", "")))
     {
         return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Failed to add the application scope to the role."};
     }
 
     return response;
 }
-API::APIReturn AdminPortal_Endpoints_ApplicationsScopes::removeApplicationScopeFromRole(void *context, const RequestContext &request, ClientDetails &authClientDetails)
+APIReturn AdminPortal_Endpoints_ApplicationsScopes::removeApplicationScopeFromRole(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
-    API::APIReturn response;
+    APIReturn response;
 
     if (!Globals::getIdentityManager()->applicationScopes->removeApplicationScopeFromRole(authClientDetails,request.jwtToken->getSubject(),
-                                                                                        {std::string(Helpers::JSON::ASSTRING(*request.inputJSON, "appName", "")),
-                                                                                         std::string(Helpers::JSON::ASSTRING(*request.inputJSON, "scopeId", ""))},
-                                                                                        Helpers::JSON::ASSTRING(*request.inputJSON, "roleName", "")))
+                                                                                        {std::string(DataFormat::JSON::ASSTRING(*request.inputJSON, "appName", "")),
+                                                                                         std::string(DataFormat::JSON::ASSTRING(*request.inputJSON, "scopeId", ""))},
+                                                                                        DataFormat::JSON::ASSTRING(*request.inputJSON, "roleName", "")))
     {
         return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Internal Error"};
     }
@@ -166,7 +169,7 @@ API::APIReturn AdminPortal_Endpoints_ApplicationsScopes::removeApplicationScopeF
     return response;
 }
 
-API::APIReturn AdminPortal_Endpoints_ApplicationsScopes::searchApplicationScopes(void *context, const RequestContext &request, ClientDetails &authClientDetails)
+APIReturn AdminPortal_Endpoints_ApplicationsScopes::searchApplicationScopes(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
     return Globals::getIdentityManager()->applicationScopes->searchApplicationScopes(*request.inputJSON);
 }

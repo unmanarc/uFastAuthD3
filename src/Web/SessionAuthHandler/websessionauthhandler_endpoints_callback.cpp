@@ -1,8 +1,8 @@
-#include <Mantids30/Program_Logs/loglevels.h>
-#include <Mantids30/Protocol_HTTP/httpv1_base.h>
+#include <Mantids30/Runtime/Logs/loglevels.h>
+#include <Mantids30/Protocol/HTTP/httpv1_base.h>
 #include "websessionauthhandler_endpoints.h"
-#include <Mantids30/Helpers/json.h>
-#include <Mantids30/DataFormat_JSON/json.h>
+#include <Mantids30/DataFormat/JSON/json.h>
+#include <Mantids30/DataFormat/JSON/json.h>
 
 #include <boost/algorithm/string/join.hpp>
 
@@ -10,15 +10,15 @@
 
 using namespace Mantids30;
 using namespace Mantids30::DataFormat;
-using namespace Program;
-using namespace API::RESTful;
-using namespace Network::Protocol;
-using namespace Network::Protocol::HTTP;
+using namespace Mantids30::Runtime;
+using namespace Mantids30::Server::WebRESTFul::RESTful;
+using namespace Mantids30::Protocol;
+using namespace Mantids30::Protocol::HTTP;
 
 // Receives the token from the Login Portal (Via proxy, this is why we receive the X-API-Key from the intermediate app), and then, we set the refresh/access token as cookies
-API::APIReturn WebSessionAuthHandler_Endpoints::callback(void *context, const RequestContext &request, ClientDetails &authClientDetails)
+APIReturn WebSessionAuthHandler_Endpoints::callback(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
-    API::APIReturn response;
+    APIReturn response;
     IdentityManager *identityManager = Globals::getIdentityManager();
 
     // HTTP CLIENT VARS:
@@ -38,7 +38,7 @@ API::APIReturn WebSessionAuthHandler_Endpoints::callback(void *context, const Re
 
         // We clear the logout cookies here and we proceed to reg the logout in the database.
         APIReturn result = appLogout(context, request, authClientDetails);
-        API::OptionsHandlerConfig options;
+        Mantids30::Server::WebRESTFul::OptionsHandlerConfig options;
         options.insertAllowedOrigin(allowedOrigin);
         options.setAllowCredentials(true);
         options.configureAPIReturnOptionsHeaders(result, request.clientRequest->getOrigin());
@@ -62,7 +62,7 @@ API::APIReturn WebSessionAuthHandler_Endpoints::callback(void *context, const Re
     }
 
     ApplicationAuthSettings tokenProps = identityManager->applications->getAuthSettingsFromApplication(appNameStr);
-    std::shared_ptr<JWT> validator = identityManager->applications->getAppJWTValidator(appNameStr);
+    std::shared_ptr<Mantids30::DataFormat::JWT> validator = identityManager->applications->getAppJWTValidator(appNameStr);
 
     JWT::Token accessToken, refreshToken;
     JWT::VerifyError accessTokenError = JWT::VerifyError::NONE;

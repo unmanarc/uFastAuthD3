@@ -1,38 +1,39 @@
 #include "websessionauthhandler_endpoints.h"
 
-#include <Mantids30/Program_Logs/loglevels.h>
-#include <Mantids30/Protocol_HTTP/httpv1_base.h>
-#include <Mantids30/Helpers/json.h>
-#include <Mantids30/Helpers/encoders.h>
-#include <Mantids30/DataFormat_JSON/json.h>
+#include <Mantids30/Runtime/Logs/loglevels.h>
+#include <Mantids30/Protocol/HTTP/httpv1_base.h>
+#include <Mantids30/DataFormat/JSON/json.h>
+#include <Mantids30/Core/Helpers/encoders.h>
+#include <Mantids30/DataFormat/JSON/json.h>
 
 #include <boost/algorithm/string/join.hpp>
 
 #include "globals.h"
 
 using namespace Mantids30;
+using namespace Mantids30::Protocol::HTTP;
 using namespace Mantids30::DataFormat;
-using namespace Program;
-using namespace API::RESTful;
-using namespace Network::Protocol;
+using namespace Mantids30::Runtime;
+using namespace Mantids30::Server::WebRESTFul::RESTful;
+using namespace Mantids30::Protocol;
 
 // Helper to set delete cookies for logout
-static void setLogoutCookies(API::APIReturn &response, const ApplicationAuthSettings &tokenProps)
+static void setLogoutCookies(APIReturn &response, const ApplicationAuthSettings &tokenProps)
 {
     // Clear AccessToken
     response.cookiesMap["AccessToken"] = HTTP::Headers::Cookie();
     response.cookiesMap["AccessToken"].deleteCookie();
-    response.cookiesMap["AccessToken"].path = Helpers::JSON::ASSTRING(Helpers::JSON::MEMBER_OR_NULL(tokenProps.tokensConfiguration, "accessToken"), "path", "/");
+    response.cookiesMap["AccessToken"].path = DataFormat::JSON::ASSTRING(DataFormat::JSON::MEMBER_OR_NULL(tokenProps.tokensConfiguration, "accessToken"), "path", "/");
 
     // Clear RefreshToken
     response.cookiesMap["RefreshToken"] = HTTP::Headers::Cookie();
     response.cookiesMap["RefreshToken"].deleteCookie();
-    response.cookiesMap["RefreshToken"].path = Helpers::JSON::ASSTRING(Helpers::JSON::MEMBER_OR_NULL(tokenProps.tokensConfiguration, "refreshToken"), "path", "/auth");
+    response.cookiesMap["RefreshToken"].path = DataFormat::JSON::ASSTRING(DataFormat::JSON::MEMBER_OR_NULL(tokenProps.tokensConfiguration, "refreshToken"), "path", "/auth");
 
     // Clear RefreshTokenId
     response.cookiesMap["RefreshTokenId"] = HTTP::Headers::Cookie();
     response.cookiesMap["RefreshTokenId"].deleteCookie();
-    response.cookiesMap["RefreshTokenId"].path = Helpers::JSON::ASSTRING(Helpers::JSON::MEMBER_OR_NULL(tokenProps.tokensConfiguration, "refreshToken"), "path", "/auth");
+    response.cookiesMap["RefreshTokenId"].path = DataFormat::JSON::ASSTRING(DataFormat::JSON::MEMBER_OR_NULL(tokenProps.tokensConfiguration, "refreshToken"), "path", "/auth");
 
     // Clear SessionPublicData
     response.cookiesMap["SessionPublicData"] = HTTP::Headers::Cookie();
@@ -40,10 +41,10 @@ static void setLogoutCookies(API::APIReturn &response, const ApplicationAuthSett
     response.cookiesMap["SessionPublicData"].path = "/";
 }
 
-API::APIReturn WebSessionAuthHandler_Endpoints::appLogout(void *context, const RequestContext &request, IdentityManager::ClientDetails &authClientDetails)
+APIReturn WebSessionAuthHandler_Endpoints::appLogout(void *context, const RequestContext &request, IdentityManager::ClientDetails &authClientDetails)
 {
     // Helper to extract common request parameters safely
-    API::APIReturn response;
+    APIReturn response;
     IdentityManager *identityManager = Globals::getIdentityManager();
 
     std::string apiKey = request.clientRequest->getHeaderOption("x-api-key");
@@ -65,12 +66,12 @@ API::APIReturn WebSessionAuthHandler_Endpoints::appLogout(void *context, const R
     std::string user;
     if (!sessionPublicData.empty())
     {
-        std::string decoded = Mantids30::Helpers::Encoders::decodeFromBase64(sessionPublicData);
+        std::string decoded = Mantids30::Core::Helpers::Encoders::decodeFromBase64(sessionPublicData);
         boost::json::value jSessionPublicData;
         std::string errors;
-        if (Mantids30::Helpers::JSON::parse(decoded, jSessionPublicData, &errors))
+        if (Mantids30::DataFormat::JSON::parse(decoded, jSessionPublicData, &errors))
         {
-            user = Mantids30::Helpers::JSON::ASSTRING(jSessionPublicData, "user", "");
+            user = Mantids30::DataFormat::JSON::ASSTRING(jSessionPublicData, "user", "");
         }
     }
     std::string jwtId = request.clientRequest->getCookie("RefreshTokenId");
@@ -86,7 +87,7 @@ API::APIReturn WebSessionAuthHandler_Endpoints::appLogout(void *context, const R
 
 WebSessionAuthHandler_Endpoints::APIReturn WebSessionAuthHandler_Endpoints::getLogoutCallbackURL(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
-    API::APIReturn response;
+    APIReturn response;
     IdentityManager *identityManager = Globals::getIdentityManager();
 
     // VARS:

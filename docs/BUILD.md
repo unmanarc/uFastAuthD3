@@ -10,7 +10,7 @@ This guide provides detailed instructions for building and installing uFastAuthD
 - systemd-enabled Linux distribution (Ubuntu, CentOS, Fedora, Debian, etc.)
 
 ### Compiler
-- GCC or Clang with **C++20** support
+- GCC or Clang with **C++17** support (the project builds with `CMAKE_CXX_STANDARD 17`)
 
 ### Build Dependencies
 - **CMake** >= 3.12
@@ -44,13 +44,29 @@ sudo yum install gcc-c++ cmake sqlite-devel openssl-devel boost-devel zlib-devel
 
 ### Step 2: Clone and Build
 
+> **libMantids30 must be discoverable by pkg-config.** uFastAuthD3 finds every
+> `Mantids30_*` module through `pkg_check_modules`, so the directory that holds the
+> `Mantids30_*.pc` files must be on `PKG_CONFIG_PATH`. If libMantids30 is installed to
+> a custom (non-system) prefix — e.g. `/home/user/Devel/ROOT` — instead of `/usr/local`,
+> export that prefix before configuring, otherwise CMake fails with
+> `The following required packages were not found: Mantids30_Server_WebRESTFul`.
+
 ```bash
+# Only needed when libMantids30 is NOT installed system-wide (e.g. under a custom prefix).
+export MANTIDS30_PREFIX=/home/user/Devel/ROOT
+export PKG_CONFIG_PATH="$MANTIDS30_PREFIX/share/pkgconfig:$PKG_CONFIG_PATH"
+
 cd /root
 git clone https://github.com/unmanarc/uFastAuthD3
 cmake -B../builds/uFastAuthD3 ./uFastAuthD3 -DCMAKE_VERBOSE_MAKEFILE=ON
 cd ../builds/uFastAuthD3
 make -j12 install
 ```
+
+> **Runtime:** if the libMantids30 shared objects live in a custom prefix, add that
+> `lib` directory to the dynamic loader path before running the binary, e.g.
+> `export LD_LIBRARY_PATH="$MANTIDS30_PREFIX/lib:$LD_LIBRARY_PATH"`. Installing
+> libMantids30 under `/usr/local` avoids both of these exports entirely.
 
 ### Step 3: Install Configuration Files
 

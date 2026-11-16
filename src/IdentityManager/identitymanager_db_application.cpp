@@ -1,23 +1,23 @@
-#include "Mantids30/DataFormat_JSON/json_convert.h"
-#include "Mantids30/DataFormat_JSON/json_detail.h"
+#include <Mantids30/DataFormat/JSON/json_convert.h>
+#include <Mantids30/DataFormat/JSON/json_detail.h>
 #include "identitymanager_db.h"
-#include <Mantids30/Helpers/encoders.h>
+#include <Mantids30/Core/Helpers/encoders.h>
 
 
 
-#include <Mantids30/Helpers/datatables.h>
-#include <Mantids30/Memory/a_bool.h>
-#include <Mantids30/Memory/a_datetime.h>
-#include <Mantids30/Memory/a_int32.h>
-#include <Mantids30/Memory/a_string.h>
-#include <Mantids30/Memory/a_uint32.h>
-#include <Mantids30/Memory/a_uint64.h>
-#include <Mantids30/Memory/a_var.h>
+#include <Mantids30/DataFormat/JSON/datatables.h>
+#include <Mantids30/Core/Memory/a_bool.h>
+#include <Mantids30/Core/Memory/a_datetime.h>
+#include <Mantids30/Core/Memory/a_int32.h>
+#include <Mantids30/Core/Memory/a_string.h>
+#include <Mantids30/Core/Memory/a_uint32.h>
+#include <Mantids30/Core/Memory/a_uint64.h>
+#include <Mantids30/Core/Memory/a_var.h>
 #include <optional>
 
-using namespace Mantids30::Memory;
-using namespace Mantids30::Database;
-using namespace Mantids30::Helpers;
+using namespace Mantids30::Core::Memory;
+using namespace Mantids30::DB::Common;
+using namespace Mantids30::Core::Helpers;
 using namespace Mantids30;
 
 bool IdentityManager_DB::Applications_DB::createApplication(const ClientDetails &clientDetails, std::string_view performedBy, std::string_view appName, std::string_view applicationDescription,
@@ -36,17 +36,17 @@ bool IdentityManager_DB::Applications_DB::createApplication(const ClientDetails 
                                                   {":appCreatorAccountUUID", MAKE_VAR(STRING, creatorAccountUUID)},
                                                   {":description", MAKE_VAR(STRING, applicationDescription)},
                                                   {":apiKey", MAKE_VAR(STRING, Encoders::encodeToBase64Obf(apiKey))},
-                                                  {":appAttributesJSON", MAKE_VAR(STRING, Helpers::JSON::toString(appAttributes.toJSON()))}});
+                                                  {":appAttributesJSON", MAKE_VAR(STRING, DataFormat::JSON::toString(appAttributes.toJSON()))}});
 
         // If the insertion is successful, insert another row default values into iam.applicationsAuthSettings.
         if (appInsertSuccess)
         {
-            std::string randomSecret = Mantids30::Helpers::Random::createRandomString(64);
+            std::string randomSecret = Mantids30::Core::Helpers::Random::createRandomString(64);
             tokenInsertSuccess = _parent->m_sqlConnector->qExecuteEx("INSERT INTO iam.applicationsAuthSettings (`f_appName`, `accessTokenSigningKey`, `accessTokenValidationKey`) "
                                                                      "VALUES (:appName, :signingKey, :validationKey);",
                                                                      {{":appName", MAKE_VAR(STRING, appName)},
-                                                                      {":signingKey", MAKE_VAR(STRING, Helpers::Encoders::encodeToBase64Obf(randomSecret, 0x8A376C54D999F187))},
-                                                                      {":validationKey", MAKE_VAR(STRING, Helpers::Encoders::encodeToBase64Obf(randomSecret, 0x8A376C54D999F187))}});
+                                                                      {":signingKey", MAKE_VAR(STRING, Core::Helpers::Encoders::encodeToBase64Obf(randomSecret, 0x8A376C54D999F187))},
+                                                                      {":validationKey", MAKE_VAR(STRING, Core::Helpers::Encoders::encodeToBase64Obf(randomSecret, 0x8A376C54D999F187))}});
         }
         else
         {
@@ -107,7 +107,7 @@ bool IdentityManager_DB::Applications_DB::updateApplicationAttributes(const Clie
     std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
     bool result = _parent->m_sqlConnector->qExecuteEx("UPDATE iam.applications SET "
                                                       "`appAttributesJSON`=:appAttributesJSON WHERE `appName`=:appName;",
-                                                      {{":appName", MAKE_VAR(STRING, appName)}, {":appAttributesJSON", MAKE_VAR(STRING, Helpers::JSON::toString(appAttributes.toJSON()))}});
+                                                      {{":appName", MAKE_VAR(STRING, appName)}, {":appAttributesJSON", MAKE_VAR(STRING, DataFormat::JSON::toString(appAttributes.toJSON()))}});
     if (result)
     {
         _parent->logSecurityEventOnApplications(appName, SecurityEventAction::UPDATE, "Updated attributes: " + appAttributes.toString(), performedBy, clientDetails);
@@ -127,7 +127,7 @@ std::optional<IdentityManager::Applications::ApplicationAttributes> IdentityMana
     {
         IdentityManager::Applications::ApplicationAttributes attrs;
         boost::json::value root;
-        Helpers::JSON::Reader reader;
+        DataFormat::JSON::Reader reader;
         reader.parse(appAttributesJSON.getValue(), root);
         attrs.fromJSON(root);
         return attrs;
@@ -344,18 +344,18 @@ boost::json::value IdentityManager_DB::Applications_DB::searchApplications(const
     boost::json::object result{
         {"data", boost::json::array{}},
         // DataTables:
-        {"draw", Helpers::JSON::MEMBER_OR_NULL(dataTablesFilters,"draw")},
+        {"draw", DataFormat::JSON::MEMBER_OR_NULL(dataTablesFilters,"draw")},
     };
     std::shared_lock<std::shared_mutex> lock(_parent->m_mutex);
 
-    uint64_t offset = Helpers::JSON::ASUINT64(dataTablesFilters, "start", 0);
-    uint64_t limit = Helpers::JSON::ASUINT64(dataTablesFilters, "length", 0);
+    uint64_t offset = DataFormat::JSON::ASUINT64(dataTablesFilters, "start", 0);
+    uint64_t limit = DataFormat::JSON::ASUINT64(dataTablesFilters, "length", 0);
 
     // Manejo de ordenamiento (order)
-    std::string orderByStatement = Helpers::DataTables::getOrderByStatement(dataTablesFilters);
+    std::string orderByStatement = DataFormat::JSON::DataTables::getOrderByStatement(dataTablesFilters);
 
     // Extract the search value from dataTablesFilters
-    std::string searchValue (Helpers::JSON::ASSTRING(Helpers::JSON::MEMBER_OR_NULL(dataTablesFilters,"search"), "value", ""));
+    std::string searchValue (DataFormat::JSON::ASSTRING(DataFormat::JSON::MEMBER_OR_NULL(dataTablesFilters,"search"), "value", ""));
     std::string whereFilters;
 
     // Build the SQL query with WHERE clause for DataTables search
@@ -671,8 +671,8 @@ bool IdentityManager_DB::Applications_DB::updateAuthSettingsForApplication(const
                                                        "tokensConfigJSON=:tokensConfigJSON, "
                                                        "sessionConfigJSON=:sessionConfigJSON WHERE f_appName=:appName;",
                                                        {{":appName", MAKE_VAR(STRING, tokenInfo.appName)},
-                                                        {":tokensConfigJSON", MAKE_VAR(STRING, Helpers::JSON::toString(tokensConfig))},
-                                                        {":sessionConfigJSON", MAKE_VAR(STRING, Helpers::JSON::toString(tokenInfo.sessionConfiguration))}});
+                                                        {":tokensConfigJSON", MAKE_VAR(STRING, DataFormat::JSON::toString(tokensConfig))},
+                                                        {":sessionConfigJSON", MAKE_VAR(STRING, DataFormat::JSON::toString(tokenInfo.sessionConfiguration))}});
     if (result)
     {
         _parent->logSecurityEventOnApplications(tokenInfo.appName, SecurityEventAction::UPDATE, "Updated JWT token config", performedBy, clientDetails);
@@ -697,8 +697,8 @@ ApplicationAuthSettings IdentityManager_DB::Applications_DB::getAuthSettingsFrom
             {{":appName", MAKE_VAR(STRING, appName)}},
             {&tokensConfigJSON, &sessionConfigJSON}))
     {
-        tokenInfo.tokensConfiguration = Helpers::JSON::parse(tokensConfigJSON.getValue().c_str());
-        tokenInfo.sessionConfiguration = Helpers::JSON::parse(sessionConfigJSON.getValue().c_str());
+        tokenInfo.tokensConfiguration = DataFormat::JSON::parse(tokensConfigJSON.getValue().c_str());
+        tokenInfo.sessionConfiguration = DataFormat::JSON::parse(sessionConfigJSON.getValue().c_str());
     }
     return tokenInfo;
 }
@@ -708,7 +708,7 @@ bool IdentityManager_DB::Applications_DB::setWebLoginJWTSigningKeyForApplication
 {
     std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
     return _parent->m_sqlConnector->qExecuteEx("UPDATE iam.applicationsAuthSettings SET accessTokenSigningKey=:signingKey WHERE f_appName=:appName;",
-                                               {{":appName", MAKE_VAR(STRING, appName)}, {":signingKey", MAKE_VAR(STRING, Helpers::Encoders::encodeToBase64Obf(signingKey, 0x8A376C54D999F187))}});
+                                               {{":appName", MAKE_VAR(STRING, appName)}, {":signingKey", MAKE_VAR(STRING, Core::Helpers::Encoders::encodeToBase64Obf(signingKey, 0x8A376C54D999F187))}});
 }
 
 std::string IdentityManager_DB::Applications_DB::getWebLoginJWTSigningKeyForApplication(std::string_view appName)
@@ -721,7 +721,7 @@ std::string IdentityManager_DB::Applications_DB::getWebLoginJWTSigningKeyForAppl
                                                   {&signingKey}))
     {
         // SBO... -.- (protect your .db file)
-        return Helpers::Encoders::decodeFromBase64Obf(signingKey.getValue(), 0x8A376C54D999F187);
+        return Core::Helpers::Encoders::decodeFromBase64Obf(signingKey.getValue(), 0x8A376C54D999F187);
     }
     return "";
 }
@@ -731,7 +731,7 @@ bool IdentityManager_DB::Applications_DB::setWebLoginJWTValidationKeyForApplicat
 {
     std::unique_lock<std::shared_mutex> lock(_parent->m_mutex);
     return _parent->m_sqlConnector->qExecuteEx("UPDATE iam.applicationsAuthSettings SET accessTokenValidationKey=:validationKey WHERE f_appName=:appName;",
-                                               {{":appName", MAKE_VAR(STRING, appName)}, {":validationKey", MAKE_VAR(STRING, Helpers::Encoders::encodeToBase64Obf(validationKey, 0x8A376C54D999F187))}});
+                                               {{":appName", MAKE_VAR(STRING, appName)}, {":validationKey", MAKE_VAR(STRING, Core::Helpers::Encoders::encodeToBase64Obf(validationKey, 0x8A376C54D999F187))}});
 }
 
 std::string IdentityManager_DB::Applications_DB::getWebLoginJWTValidationKeyForApplication(std::string_view appName)
@@ -743,7 +743,7 @@ std::string IdentityManager_DB::Applications_DB::getWebLoginJWTValidationKeyForA
                                                   {{":appName", MAKE_VAR(STRING, appName)}},
                                                   {&validationKey}))
     {
-        return Helpers::Encoders::decodeFromBase64Obf(validationKey.getValue(), 0x8A376C54D999F187);
+        return Core::Helpers::Encoders::decodeFromBase64Obf(validationKey.getValue(), 0x8A376C54D999F187);
     }
     return "";
 }

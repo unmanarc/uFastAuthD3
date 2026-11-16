@@ -1,14 +1,14 @@
 #include "identitymanager_db.h"
 #include "ds_security_events.h"
 #include "globals.h"
-#include <Mantids30/Memory/a_int32.h>
-#include <Mantids30/Memory/a_string.h>
-#include <Mantids30/Memory/a_uint32.h>
+#include <Mantids30/Core/Memory/a_int32.h>
+#include <Mantids30/Core/Memory/a_string.h>
+#include <Mantids30/Core/Memory/a_uint32.h>
 
-using namespace Mantids30::Program;
+using namespace Mantids30::Runtime;
 using namespace Mantids30;
 
-IdentityManager_DB::IdentityManager_DB(Mantids30::Database::SQLConnector *_SQLDirConnection)
+IdentityManager_DB::IdentityManager_DB(Mantids30::DB::Common::SQLConnector *_SQLDirConnection)
 {
     applications = new Applications_DB(this);
     accounts = new Accounts_DB(this);

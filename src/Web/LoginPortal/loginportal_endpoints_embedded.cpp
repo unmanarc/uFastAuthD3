@@ -1,11 +1,11 @@
 #include "IdentityManager/ds_authentication.h"
-#include "Mantids30/DataFormat_JSON/json_detail.h"
+#include <Mantids30/DataFormat/JSON/json_detail.h>
 #include "Tokens/tokensmanager.h"
 #include "loginportal_endpoints.h"
-#include <Mantids30/Helpers/json.h>
-#include <Mantids30/Program_Logs/loglevels.h>
-#include <Mantids30/Protocol_HTTP/api_return.h>
-#include <Mantids30/DataFormat_JSON/json.h>
+#include <Mantids30/DataFormat/JSON/json.h>
+#include <Mantids30/Runtime/Logs/loglevels.h>
+#include <Mantids30/Protocol/HTTP/api_return.h>
+#include <Mantids30/DataFormat/JSON/json.h>
 
 #include "globals.h"
 
@@ -18,9 +18,10 @@
 #include <string>
 
 using namespace Mantids30;
-using namespace Program;
-using namespace API::RESTful;
-using namespace Network::Protocol;
+using namespace Mantids30::Protocol::HTTP;
+using namespace Mantids30::Runtime;
+using namespace Mantids30::Server::WebRESTFul::RESTful;
+using namespace Mantids30::Protocol;
 using namespace Mantids30::DataFormat;
 
 /**
@@ -55,17 +56,17 @@ using namespace Mantids30::DataFormat;
  *   "failedSlotId": 1
  * }
  */
-API::APIReturn LoginPortal_Endpoints::embedToken(void *context, const API::RESTful::RequestContext &request, ClientDetails &authClientDetails)
+APIReturn LoginPortal_Endpoints::embedToken(void *context, const Mantids30::Server::WebRESTFul::RESTful::RequestContext &request, ClientDetails &authClientDetails)
 {
     IdentityManager *identityManager = Globals::getIdentityManager();
 
     // -----------------------------------------------------------------
     // 1. Parse input JSON
     // -----------------------------------------------------------------
-    std::string accountName (Helpers::JSON::ASSTRING(*request.inputJSON, "accountName", ""));
-    std::string appName (Helpers::JSON::ASSTRING(*request.inputJSON, "app", ""));
-    uint32_t schemeId = Helpers::JSON::ASUINT(*request.inputJSON, "schemeId", 0);
-    bool keepAuthenticated = Helpers::JSON::ASBOOL(*request.inputJSON, "keepAuthenticated", false);
+    std::string accountName (DataFormat::JSON::ASSTRING(*request.inputJSON, "accountName", ""));
+    std::string appName (DataFormat::JSON::ASSTRING(*request.inputJSON, "app", ""));
+    uint32_t schemeId = DataFormat::JSON::ASUINT(*request.inputJSON, "schemeId", 0);
+    bool keepAuthenticated = DataFormat::JSON::ASBOOL(*request.inputJSON, "keepAuthenticated", false);
     bool usingEmbeddedInPortalAuthentication = false;
 
     const std::string apiKey = request.clientRequest->getHeaderOption("x-api-key");
@@ -93,7 +94,7 @@ API::APIReturn LoginPortal_Endpoints::embedToken(void *context, const API::RESTf
         }
     }
 
-    const boost::json::value &jCredentials = Helpers::JSON::MEMBER_OR_NULL(*request.inputJSON,"credentials");
+    const boost::json::value &jCredentials = DataFormat::JSON::MEMBER_OR_NULL(*request.inputJSON,"credentials");
 
     // Validate required fields
     if (accountName.empty())
@@ -159,8 +160,8 @@ API::APIReturn LoginPortal_Endpoints::embedToken(void *context, const API::RESTf
     std::map<uint32_t, std::string> credentialsMap;
     for (const auto &cred : jCredentials.as_array())
     {
-        uint32_t slotId = Helpers::JSON::ASUINT(cred, "slotId", 0);
-        std::string value (Helpers::JSON::ASSTRING(cred, "value", ""));
+        uint32_t slotId = DataFormat::JSON::ASUINT(cred, "slotId", 0);
+        std::string value (DataFormat::JSON::ASSTRING(cred, "value", ""));
         if (slotId > 0 && !value.empty())
         {
             credentialsMap[slotId] = value;
@@ -308,7 +309,7 @@ API::APIReturn LoginPortal_Endpoints::embedToken(void *context, const API::RESTf
         return {HTTP::Status::Code::S_500_INTERNAL_SERVER_ERROR, "internal_error", "Application configuration error"};
     }
 
-    std::string refreshTokenId = Mantids30::Helpers::Random::createRandomString(16);
+    std::string refreshTokenId = Mantids30::Core::Helpers::Random::createRandomString(16);
 
     JWT::Token accessToken, refreshToken;
 
