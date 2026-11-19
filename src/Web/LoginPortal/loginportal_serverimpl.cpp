@@ -93,7 +93,8 @@ bool LoginPortal_ServerImpl::createService()
     }
 
     // Handle the login function for APP personalized site:
-    loginWebServer->config.dynamicRequestHandlersByRoute["/logout"] = {&LoginPortal_Endpoints::handleLogoutDynamicRequest, nullptr};
+    loginWebServer->config.dynamicRequestHandlersByRoute.push_back(
+        {"/logout", {&LoginPortal_Endpoints::handleLogoutDynamicRequest, nullptr}});
 
     // Set the software version:
     loginWebServer->config.setSoftwareVersion(atoi(PROJECT_VER_MAJOR), atoi(PROJECT_VER_MINOR), atoi(PROJECT_VER_PATCH), "a");

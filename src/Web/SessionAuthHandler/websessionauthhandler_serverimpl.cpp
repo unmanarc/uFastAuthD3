@@ -124,7 +124,8 @@ bool WebSessionAuthHandler_ServerImpl::createService()
     }
 
     // Handle the login function for APP personalized site:
-    webSessionAuthHandlerServer->config.dynamicRequestHandlersByRoute["/retokenize"] = {&WebSessionAuthHandler_Endpoints::handleRetokenizeHTML, nullptr};
+    webSessionAuthHandlerServer->config.dynamicRequestHandlersByRoute.push_back(
+        {"/retokenize", {&WebSessionAuthHandler_Endpoints::handleRetokenizeHTML, nullptr}});
 
     // Set the software version:
     webSessionAuthHandlerServer->config.setSoftwareVersion(atoi(PROJECT_VER_MAJOR), atoi(PROJECT_VER_MINOR), atoi(PROJECT_VER_PATCH), "a");
