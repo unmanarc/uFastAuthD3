@@ -5,6 +5,7 @@
 #include <Mantids30/DataFormat/JSON/json.h>
 #include <Mantids30/Runtime/Logs/applog.h>
 #include <Mantids30/Protocol/HTTP/api_return.h>
+#include <boost/algorithm/string/trim.hpp>
 #include <optional>
 #include <string>
 
@@ -70,6 +71,7 @@ APIReturn AdminPortal_Endpoints_Applications::removeApplication(void *context, c
     }
     return response;
 }
+/** @brief Validate creation input and reject trailing slashes before generating default URLs. */
 APIReturn AdminPortal_Endpoints_Applications::addApplication(void *context, const RequestContext &request, ClientDetails &authClientDetails)
 {
     APIReturn response;
@@ -77,6 +79,14 @@ APIReturn AdminPortal_Endpoints_Applications::addApplication(void *context, cons
     // Extract application name and description from input JSON
     std::string appName(DataFormat::JSON::ASSTRING(*request.inputJSON, "appName", ""));
     std::string appDescription(DataFormat::JSON::ASSTRING(*request.inputJSON, "description", ""));
+    std::string appURL(DataFormat::JSON::ASSTRING(*request.inputJSON, "appURL", ""));
+    boost::algorithm::trim(appURL);
+
+    // Default callback and redirect URLs append their own slash.
+    if (!appURL.empty() && appURL.back() == '/')
+    {
+        return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Application URL must not end with /"};
+    }
 
     // Validate input data
     if (appName.empty())
@@ -109,7 +119,7 @@ APIReturn AdminPortal_Endpoints_Applications::addApplication(void *context, cons
                                                                         request.jwtToken->getSubject(),
                                                                         appName,
                                                                         appDescription,
-                                                                        DataFormat::JSON::ASSTRING(*request.inputJSON, "appURL", ""),
+                                                                        appURL,
                                                                         DataFormat::JSON::ASSTRING(*request.inputJSON, "appKey", ""),
                                                                         request.jwtToken->getSubject(),
                                                                         attribs,

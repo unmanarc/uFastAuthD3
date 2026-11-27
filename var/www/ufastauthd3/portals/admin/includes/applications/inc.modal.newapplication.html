@@ -24,6 +24,7 @@
     }
 
 
+    /** @brief Validate application details before submitting the creation request. */
     function ajaxCreateApplication() {
 
         var appName = $("#appNameCreate").val().trim();
@@ -40,6 +41,12 @@
         }
 
         var appURL = $("#appURLCreate").val().trim();
+        // Default callback and redirect URLs append their own slash.
+        if (appURL.endsWith('/')) {
+            showTextToastError("Application URL must not end with /");
+            $("#appURLCreate").focus();
+            return false;
+        }
         // Check if appURL is a valid URL and starts with https
         try {
             var urlObj = new URL(appURL);
@@ -67,7 +74,7 @@
             data: JSON.stringify({
                 appName: $("#appNameCreate").val(),
                 description: $("#appDescriptionCreate").val(),
-                appURL: $("#appURLCreate").val(),
+                appURL: appURL,
                 applicationAttributes: {
                     canAdminModifyApplicationSecurityContext: $("#canAdminModifyApplicationSecurityContextCreate").is(":checked"),
                     canUserAutoRegister: $("#canUserAutoRegisterCreate").is(":checked"),
