@@ -1,1 +1,0 @@
-- All the project must be written in english.
