@@ -53,7 +53,7 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::changeCredential(void *con
         if (!tokenVerified)
         {
             LOG_APP->log2(__func__,
-                          std::string(std::string_view(request.jwtToken->getClaim("app").as_string())),
+                          std::string(DataFormat::JSON::ASSTRING_D(request.jwtToken->getClaim("app"))),
                           clientDetails.ipAddress,
                           Logs::LogLevel::SECURITY_ALERT,
                           "Challenge Token verification failed. Reason: %s",
@@ -114,7 +114,7 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::createChallengeToken(void 
                   "Account Authorization Result: %" PRIu16 " - %s, for application '%s', and slotId = '%" PRIu32 "'",
                   static_cast<uint16_t>(authResult),
                   authResultToString(authResult),
-                  std::string(std::string_view(request.jwtToken->getClaim("app").as_string())).c_str(),
+                  std::string(DataFormat::JSON::ASSTRING_D(request.jwtToken->getClaim("app"))).c_str(),
                   slotId);
 
     if (!IS_CREDENTIAL_AUTHENTICATED(authResult))
@@ -380,7 +380,7 @@ UserPortal_Endpoints::APIReturn UserPortal_Endpoints::removeCredential(void *con
                   "Account Authorization Result: %" PRIu16 " - %s, for application '%s', and slotId = '%" PRIu32 "'",
                   static_cast<uint16_t>(authResult),
                   authResultToString(authResult),
-                  std::string(std::string_view(request.jwtToken->getClaim("app").as_string())).c_str(),
+                  std::string(DataFormat::JSON::ASSTRING_D(request.jwtToken->getClaim("app"))).c_str(),
                   slotId);
 
     if (!IS_CREDENTIAL_AUTHENTICATED(authResult))

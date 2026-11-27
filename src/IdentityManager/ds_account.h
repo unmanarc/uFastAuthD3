@@ -51,6 +51,7 @@ struct AccountDetailFieldValue
                                    };
     }
 
+    /** @brief Load field data, preserving the distinction between null and an empty string. */
     void fromJSON(const boost::json::value &json)
     {
         name = Mantids30::DataFormat::JSON::ASSTRING(json, "name", "");
@@ -60,10 +61,12 @@ struct AccountDetailFieldValue
         extendedAttribs = Mantids30::DataFormat::JSON::MEMBER_OR_NULL(json, "extendedAttribs");
         orderPriority = Mantids30::DataFormat::JSON::ASINT(json, "orderPriority", 0);
 
-        boost::json::value _value = Mantids30::DataFormat::JSON::MEMBER_OR_NULL(json, "value");
-        if (!_value.is_null())
+        const auto &fieldValue = Mantids30::DataFormat::JSON::MEMBER_OR_NULL(json, "value");
+        // Read the member itself and clear any previous value when it is absent or null.
+        value.reset();
+        if (fieldValue.is_string())
         {
-            value = Mantids30::DataFormat::JSON::ASSTRING_D(json, "value");
+            value = Mantids30::DataFormat::JSON::ASSTRING_D(fieldValue);
         }
     }
 };

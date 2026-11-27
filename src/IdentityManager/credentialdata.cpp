@@ -38,7 +38,8 @@ bool CredentialData::parse(std::string_view sAuth)
 
 bool CredentialData::setJSON(const boost::json::value &jsonObject)
 {
-    if (!DataFormat::JSON::HAS_MEMBER(jsonObject,"pass") || DataFormat::JSON::HAS_MEMBER(jsonObject,"slotId"))
+    // Both members are required; a present slot ID must not reject valid credentials.
+    if (!DataFormat::JSON::HAS_MEMBER(jsonObject,"pass") || !DataFormat::JSON::HAS_MEMBER(jsonObject,"slotId"))
     {
         return false;
     }

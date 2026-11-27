@@ -169,7 +169,14 @@ APIReturn AdminPortal_Endpoints_AuthController::updateAuthenticationSlotsUsedByS
 
     std::list<AuthenticationSchemeUsedSlot> slotsUsedByScheme;
 
-    for (const boost::json::value &jSlot : DataFormat::JSON::MEMBER_OR_NULL(*request.inputJSON, "authSchemeSlots").as_array())
+    // Boost.JSON does not allow array access on null or other JSON types.
+    const auto &authSchemeSlots = DataFormat::JSON::MEMBER_OR_NULL(*request.inputJSON, "authSchemeSlots");
+    if (!authSchemeSlots.is_array())
+    {
+        return {HTTP::Status::Code::S_400_BAD_REQUEST, "invalid_request", "Authentication scheme slots must be an array"};
+    }
+
+    for (const boost::json::value &jSlot : authSchemeSlots.as_array())
     {
         AuthenticationSchemeUsedSlot slot(0, 0, false);
         slot.fromJSON(jSlot);
